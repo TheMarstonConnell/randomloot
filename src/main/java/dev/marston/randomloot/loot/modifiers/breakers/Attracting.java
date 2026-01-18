@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -15,6 +16,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Attracting implements BlockBreakModifier {
 
@@ -39,31 +42,29 @@ public class Attracting implements BlockBreakModifier {
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
 
-		Level l = player.level();
+		Level level = player.level();
 
+		if (level.isClientSide()) {
+			return false;
+		}
 
-
+		ServerLevel serverLevel = (ServerLevel) level;
 		AABB box = new AABB(pos.east().south().below().getCenter(), pos.west().north().above().getCenter());
 
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				List<Entity> items = l.getEntities(null, box);
+		// Schedule execution after a short delay to allow block drops to spawn
+		// Then submit to server thread for thread-safe execution
+		CompletableFuture.delayedExecutor(100, TimeUnit.MILLISECONDS).execute(() -> {
+			serverLevel.getServer().execute(() -> {
+				List<Entity> items = level.getEntities(null, box);
 
 				for (Entity entity : items) {
-
 					if (entity.getType() == EntityType.ITEM) {
 						entity.setPos(player.position());
 					}
 				}
-			}
-		};
+			});
+		});
 
-		thread.start();
 		return false;
 	}
 

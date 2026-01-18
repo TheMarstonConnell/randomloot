@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
@@ -12,13 +11,27 @@ import dev.marston.randomloot.loot.modifiers.users.FirePlace;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffects;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class ModifierRegistry {
 
-	public static HashMap<String, Modifier> Modifiers = new HashMap<>();
-	public static HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
+	private static final HashMap<String, Modifier> Modifiers = new HashMap<>();
+	private static final HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
+
+	public static Map<String, Modifier> getModifiers() {
+		return Collections.unmodifiableMap(Modifiers);
+	}
+
+	public static Map<String, Boolean> getModifierEnabled() {
+		return Collections.unmodifiableMap(ModifierEnabled);
+	}
+
+	public static Modifier getModifier(String name) {
+		return Modifiers.get(name);
+	}
 
 	public static Modifier EXPLODE = register(new Explode());
 	public static Modifier LEARNING = register(new Learning());
@@ -73,8 +86,7 @@ public class ModifierRegistry {
 		String tagName = modifier.tagName();
 
 		if (Modifiers.containsKey(tagName)) {
-			RandomLoot.LOGGER.error("Cannot register modifier twice!");
-			System.exit(1);
+			throw new IllegalStateException("Cannot register modifier twice: " + tagName);
 		}
 
 		Modifiers.put(tagName, modifier);

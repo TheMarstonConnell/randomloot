@@ -43,12 +43,9 @@ public class GenWiki {
 
     private static void writeMods(Set<Modifier> mods, FileWriter f) throws IOException {
         List<Modifier> sortedList = new ArrayList<>(mods);
-        sortedList.sort((o1, o2) -> {
-            return o1.tagName().compareTo(o2.name());
-        });
+        sortedList.sort(Comparator.comparing(Modifier::name));
 
-        for (Iterator<Modifier> iterator = sortedList.iterator(); iterator.hasNext();) {
-            Modifier modifier = iterator.next();
+        for (Modifier modifier : sortedList) {
             writeMod(modifier, f);
         }
     }
@@ -115,7 +112,7 @@ public class GenWiki {
         write("| Config Option | Modifier | Description |", f);
         write("|---------------|----------|-------------|", f);
 
-        List<Map.Entry<String, Modifier>> sortedMods = new ArrayList<>(ModifierRegistry.Modifiers.entrySet());
+        List<Map.Entry<String, Modifier>> sortedMods = new ArrayList<>(ModifierRegistry.getModifiers().entrySet());
         sortedMods.sort(Comparator.comparing(Map.Entry::getKey));
 
         for (Map.Entry<String, Modifier> entry : sortedMods) {

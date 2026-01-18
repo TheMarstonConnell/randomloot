@@ -1,12 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
-import dev.marston.randomloot.loot.modifiers.DummyContainer;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -22,6 +19,8 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class Melting implements BlockBreakModifier {
 
@@ -46,79 +45,73 @@ public class Melting implements BlockBreakModifier {
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
 
-		Level l = player.level();
+		Level level = player.level();
 
+		if (level.isClientSide()) {
+			return false;
+		}
+
+		ServerLevel serverLevel = (ServerLevel) level;
 		AABB box = new AABB(pos.east().south().below().getCenter(), pos.west().north().above().getCenter());
 
-		RegistryAccess access = l.registryAccess();
+		// Schedule execution after a short delay to allow block drops to spawn
+		// Then submit to server thread for thread-safe execution
+		CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS).execute(() -> {
+			serverLevel.getServer().execute(() -> {
+			List<Entity> items = level.getEntities(null, box);
 
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					Thread.sleep(100);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
+			for (Entity entity : items) {
+				if (entity.getType() != EntityType.ITEM) {
+					continue;
 				}
-				List<Entity> items = l.getEntities(null, box);
 
-				for (Entity entity : items) {
+				ItemEntity i = (ItemEntity) entity;
+				if (i.getAge() > 10) {
+					continue;
+				}
 
-					if (entity.getType() == EntityType.ITEM) {
-						ItemEntity i = (ItemEntity) entity;
-						if (i.getAge() > 10) {
-							continue;
-						}
+				ItemStack stack = i.getItem();
 
-						RandomLoot.LOGGER.info(i.getItem().getDisplayName().getString());
+				RecipeManager manager = serverLevel.recipeAccess();
 
-						ItemStack stack = i.getItem();
+				Collection<RecipeHolder<?>> recipes = manager.getRecipes();
+				List<SingleItemRecipe> smeltingRecipes = recipes.stream()
+						.map(RecipeHolder::value)
+						.filter(r -> r.getType() == RecipeType.SMELTING)
+						.map(r -> (SingleItemRecipe) r)
+						.toList();
 
-						DummyContainer mc = new DummyContainer(stack);
-
-						Level level = player.level();
-
-						if (level.isClientSide()) {
-							return;
-						}
-
-						ServerLevel serverLevel = (ServerLevel) level;
-
-						RecipeManager manager = serverLevel.recipeAccess();
-
-						Collection<RecipeHolder<?>> recipes = manager.getRecipes();
-						List<SingleItemRecipe> smeltingRecipes = recipes.stream().map(RecipeHolder::value).filter(r -> r.getType() == RecipeType.SMELTING).map(r->(SingleItemRecipe)r).toList();
-
-						for (SingleItemRecipe recipe : smeltingRecipes) {
-							if (!recipe.matches(new SingleRecipeInput(stack), level)) {
-								continue;
-							}
-
-							ItemStack result = recipe.assemble(new SingleRecipeInput(stack), null);
-
-							if (result.isEmpty()) {
-								continue;
-							}
-
-							ItemEntity k = new ItemEntity(l, i.getX(), i.getY(), i.getZ(), result);
-							k.setDeltaMovement(i.getDeltaMovement());
-
-							i.setPos(i.position().x, -1, i.position().z);
-							i.kill(serverLevel);
-
-							l.addFreshEntity(k);
-
-							break;
-						}
-
+				for (SingleItemRecipe recipe : smeltingRecipes) {
+					if (!recipe.matches(new SingleRecipeInput(stack), level)) {
+						continue;
 					}
+
+					ItemStack result = recipe.assemble(new SingleRecipeInput(stack), null);
+
+					if (result.isEmpty()) {
+						continue;
+					}
+
+					// Capture motion before modifying original item
+					var motion = i.getDeltaMovement();
+
+					ItemEntity k = new ItemEntity(level, i.getX(), i.getY(), i.getZ(), result);
+
+					i.setPos(i.position().x, -1, i.position().z);
+					i.kill(serverLevel);
+
+					level.addFreshEntity(k);
+
+					// Set motion after spawn to prevent it being reset
+					k.setDeltaMovement(motion);
+
+					break;
 				}
-
 			}
-		};
+			});
+		});
 
-		thread.start();
 		return false;
-
 	}
 
 	@Override
