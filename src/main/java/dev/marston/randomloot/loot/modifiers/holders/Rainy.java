@@ -51,7 +51,7 @@ public class Rainy implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Rainy(tag.getString(NAME), tag.getFloat(POWER));
+		return new Rainy(tag.getStringOr(NAME, "Rainy"), tag.getFloatOr(POWER, 4.0f));
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public class Rainy implements HoldModifier {
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		if (level.isRainingAt(holder.blockPosition())) {
-			MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 3, 2, false, false);
+			MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 3, 2, false, false);
 
 			if (holder instanceof LivingEntity) {
 				LivingEntity le = (LivingEntity) holder;

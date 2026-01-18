@@ -44,7 +44,7 @@ public class Critical implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Critical(tag.getString(NAME));
+		return new Critical(tag.getStringOr(NAME, "Critical"));
 	}
 
 	@Override

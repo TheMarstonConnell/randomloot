@@ -59,7 +59,7 @@ public class Explode implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Explode(tag.getString(NAME), tag.getFloat(POWER));
+		return new Explode(tag.getStringOr(NAME, "Explosive"), tag.getFloatOr(POWER, 4.0f));
 	}
 
 	@Override

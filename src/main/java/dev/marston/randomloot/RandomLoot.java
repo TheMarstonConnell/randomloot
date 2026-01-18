@@ -7,7 +7,7 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.recipes.Recipies;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -69,14 +69,14 @@ public class RandomLoot
 
 
     // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-    @EventBusSubscriber(modid = MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
     public static class ClientModEvents
     {
         @SubscribeEvent
         public static void registerRangeProperties(RegisterRangeSelectItemModelPropertyEvent event) {
             event.register(
                     // The name to reference as the type
-                    ResourceLocation.fromNamespaceAndPath(MODID, "cosmetic"),
+                    Identifier.fromNamespaceAndPath(MODID, "cosmetic"),
                     // The map codec
                     LootUtils.TextureProperty.MAP_CODEC
             );

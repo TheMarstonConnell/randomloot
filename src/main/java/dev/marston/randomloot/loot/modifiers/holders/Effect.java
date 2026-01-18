@@ -57,7 +57,7 @@ public class Effect implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Effect(tag.getString(NAME), this.tagname, tag.getInt(POWER), this.duration, this.effect);
+		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect);
 	}
 
 	@Override

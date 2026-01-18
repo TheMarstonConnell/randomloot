@@ -40,7 +40,7 @@ public class Busted implements StatsModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Busted(tag.getString(NAME));
+		return new Busted(tag.getStringOr(NAME, "Busted"));
 	}
 
 	@Override

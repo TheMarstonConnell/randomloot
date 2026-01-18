@@ -77,7 +77,7 @@ public class Melting implements BlockBreakModifier {
 
 						Level level = player.level();
 
-						if (level.isClientSide) {
+						if (level.isClientSide()) {
 							return;
 						}
 
@@ -99,8 +99,8 @@ public class Melting implements BlockBreakModifier {
 								continue;
 							}
 
-							ItemEntity k = i.copy();
-							k.setItem(result);
+							ItemEntity k = new ItemEntity(l, i.getX(), i.getY(), i.getZ(), result);
+							k.setDeltaMovement(i.getDeltaMovement());
 
 							i.setPos(i.position().x, -1, i.position().z);
 							i.kill(serverLevel);
@@ -135,7 +135,7 @@ public class Melting implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Melting(tag.getString(NAME), tag.getFloat(POWER));
+		return new Melting(tag.getStringOr(NAME, "Melting"), tag.getFloatOr(POWER, 1.0f));
 	}
 
 	@Override

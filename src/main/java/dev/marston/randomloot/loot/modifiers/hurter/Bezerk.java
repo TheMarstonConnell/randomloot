@@ -43,7 +43,7 @@ public class Bezerk implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Bezerk(tag.getString(NAME));
+		return new Bezerk(tag.getStringOr(NAME, "Bezerk"));
 	}
 
 	@Override

@@ -79,7 +79,7 @@ public class LootCase extends Item {
 
 
 
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
             assert player instanceof ServerPlayer;
             LootUtils.generateTool((ServerPlayer) player, level); // generate tool and give it to the player
 		}

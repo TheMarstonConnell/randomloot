@@ -62,7 +62,7 @@ public class FirePlace implements UseModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new FirePlace(tag.getString(NAME), tag.getInt(DAMAGE));
+		return new FirePlace(tag.getStringOr(NAME, "Fire Starter"), tag.getIntOr(DAMAGE, 2));
 	}
 
 	@Override

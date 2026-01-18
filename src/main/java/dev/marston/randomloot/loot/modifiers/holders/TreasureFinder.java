@@ -71,7 +71,7 @@ public class TreasureFinder implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new TreasureFinder(tag.getString(NAME), tag.getFloat(POWER));
+		return new TreasureFinder(tag.getStringOr(NAME, "Tomb Raider"), tag.getFloatOr(POWER, 4.0f));
 	}
 
 	@Override

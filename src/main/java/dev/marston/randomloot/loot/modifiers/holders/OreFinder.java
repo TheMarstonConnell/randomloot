@@ -71,7 +71,7 @@ public class OreFinder implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new OreFinder(tag.getString(NAME), tag.getFloat(POWER));
+		return new OreFinder(tag.getStringOr(NAME, "Detecting"), tag.getFloatOr(POWER, 4.0f));
 	}
 
 	@Override

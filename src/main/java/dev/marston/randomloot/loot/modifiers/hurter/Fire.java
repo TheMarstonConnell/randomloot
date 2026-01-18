@@ -46,7 +46,7 @@ public class Fire implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fire(tag.getString(NAME), tag.getInt(POINTS));
+		return new Fire(tag.getStringOr(NAME, "Flaming"), tag.getIntOr(POINTS, 2));
 	}
 
 	@Override

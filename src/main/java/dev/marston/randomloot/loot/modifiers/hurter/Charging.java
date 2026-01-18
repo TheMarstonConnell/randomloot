@@ -53,7 +53,7 @@ public class Charging implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Charging(tag.getString(NAME), tag.getInt(POINTS), tag.getLong(CHARGED));
+		return new Charging(tag.getStringOr(NAME, "Charged"), tag.getIntOr(POINTS, 10), tag.getLongOr(CHARGED, 0L));
 	}
 
 	@Override

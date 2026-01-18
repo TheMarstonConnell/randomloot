@@ -92,15 +92,12 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	}
 
 	@Override
-	public Optional<Ingredient> baseIngredient() {
-		return this.base;
+	public Ingredient baseIngredient() {
+		return this.base.get();
 	}
-
-
 
 	@Override
 	public Optional<Ingredient> additionIngredient() {
-
 		return Optional.of(Ingredient.of(this.addition.getItem()));
 	}
 
@@ -112,7 +109,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	@Override
 	public PlacementInfo placementInfo() {
 		if (this.placementInfo == null) {
-			this.placementInfo = PlacementInfo.createFromOptionals(List.of(this.template, this.base, this.additionIngredient()));
+			this.placementInfo = PlacementInfo.createFromOptionals(List.of(templateIngredient(), Optional.of(baseIngredient()), additionIngredient()));
 		}
 
 		return this.placementInfo;
@@ -122,10 +119,10 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	public List<RecipeDisplay> display() {
 		return List.of(
 				new SmithingRecipeDisplay(
-						Ingredient.optionalIngredientToDisplay(this.template),
-						Ingredient.optionalIngredientToDisplay(this.base),
-						new SlotDisplay.ItemSlotDisplay(this.addition.getItem()),
-						Ingredient.optionalIngredientToDisplay(this.base),
+						Ingredient.optionalIngredientToDisplay(templateIngredient()),
+						baseIngredient().display(),
+						Ingredient.optionalIngredientToDisplay(additionIngredient()),
+						baseIngredient().display(),
 						new SlotDisplay.ItemSlotDisplay(Items.SMITHING_TABLE)
 				)
 		);

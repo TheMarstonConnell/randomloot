@@ -48,7 +48,7 @@ public class Healing implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(tag.getString(NAME), tag.getFloat(POWER));
+		return new Healing(tag.getStringOr(NAME, "Living"), tag.getFloatOr(POWER, 0.005f));
 	}
 
 	@Override

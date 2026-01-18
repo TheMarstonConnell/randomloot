@@ -52,7 +52,7 @@ public class Combo implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Combo(tag.getString(NAME), tag.getInt(POINTS), tag.getLong(CHARGED));
+		return new Combo(tag.getStringOr(NAME, "Dexterous"), tag.getIntOr(POINTS, 2), tag.getLongOr(CHARGED, 0L));
 	}
 
 	@Override

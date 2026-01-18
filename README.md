@@ -28,16 +28,28 @@ Holding Control (command on a mac) while hovering over tools will give you a des
 ![tools with control information](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/main/.github/assets/expanded_info.png)
 
 #### Tool Modifiers
-For a complete list of modifiers check out the [modifier list](https://github.com/TheMarstonConnell/randomloot/blob/main/MODIFIERS.md).
+For a complete list of modifiers check out the [modifier list](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/MODIFIERS.md).
 
 ### Trait Addition/Subtraction Template
 Trait Addition/Subtraction Templates are items that allow you to add and remove traits from your tools. To do this, place either an addition template or subtraction template inside a Smithing Table, to add or remove a trait. Then place in your tool and the corresponding item listed in the [Modifiers](https://github.com/TheMarstonConnell/randomloot/blob/main/MODIFIERS.md) list. Then You can preview what will happen to your tool.
 
 You can find Trait Addition Templates in dungeon chests similarly to loot cases. To get Subtraction Templates, right click with an addition template in your hand. They can be swapped back and forth as many times as you'd like but once you use them they're gone.
 
+In this example, we're adding `Living` to the tool using an addition template.
+
+![smithing table addition](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/main/.github/assets/smithing_addition.png) 
+
 ### Automation
 
 You can place cases in dispensers to be opened automatically. Be aware that cases opened by dispensers will not keep the global progress they would follow if opened by a player, essentially they will always be the worst version of a tool.
+
+## Documentation
+
+- [Modifier List](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/MODIFIERS.md) - All available modifiers and recipes
+- [Configuration Guide](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/CONFIG.md) - Server/modpack configuration options
+- [Tool Progression](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/PROGRESSION.md) - Leveling, stats, and advancement
+- [Name Generation](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/NAMES.md) - How tool names are created
+- [Loot & Crafting](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/LOOT.md) - Where to find items and crafting guide
 
 ## Another Rewrite?
 The jump from 1.12 to 1.16 was one of the biggest changes to Forge & the Minecraft codebase making a complete rewrite of the mod very welcome. However, the 1.16 to 1.20 is again, a massive change and I'm overall dissatisfied with the 1.16 version of the mods codebase and sloppy planning. As such, 1.20 is a complete rewrite of Random Loot to make the mod feel more cohesive and less janky.

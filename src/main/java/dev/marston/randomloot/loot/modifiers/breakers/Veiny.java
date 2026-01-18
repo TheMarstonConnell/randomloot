@@ -95,7 +95,7 @@ public class Veiny implements BlockBreakModifier {
 
 		Level l = player.level();
 
-		if (l.isClientSide) {
+		if (l.isClientSide()) {
 			return false;
 		}
 
@@ -138,7 +138,7 @@ public class Veiny implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Veiny(tag.getString(NAME), tag.getFloat(POWER));
+		return new Veiny(tag.getStringOr(NAME, "Veiny"), tag.getFloatOr(POWER, 5.0f));
 	}
 
 	@Override

@@ -36,10 +36,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.Consumer;
 
 public class LootItem extends Item  {
 
@@ -201,7 +204,7 @@ public class LootItem extends Item  {
 	}
 
 	@Override
-	public boolean hurtEnemy(@NotNull ItemStack itemstack, @NotNull LivingEntity hurtee, @NotNull LivingEntity hurter) {
+	public void postHurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		ToolType type = LootUtils.getToolType(itemstack);
 
@@ -239,8 +242,6 @@ public class LootItem extends Item  {
 		if (!shouldSkipBreak) {
 			itemstack.hurtAndBreak(1, hurter, EquipmentSlot.MAINHAND);
 		}
-
-		return true;
 	}
 
 //	@Override
@@ -269,7 +270,7 @@ public class LootItem extends Item  {
 
 	@Override
 	public boolean mineBlock(@NotNull ItemStack stack, Level level, @NotNull BlockState blockState, @NotNull BlockPos pos, @NotNull LivingEntity player) {
-		if (!level.isClientSide && blockState.getDestroySpeed(level, pos) != 0.0F) {
+		if (!level.isClientSide() && blockState.getDestroySpeed(level, pos) != 0.0F) {
 
 			List<Modifier> mods = LootUtils.getModifiers(stack);
 
@@ -382,32 +383,36 @@ public class LootItem extends Item  {
 		return comp;
 	}
 
-	private void newLine(List<Component> tipList) {
-		tipList.add(makeComp("", ChatFormatting.GRAY));
+	private void newLine(Consumer<Component> tipList) {
+		tipList.accept(makeComp("", ChatFormatting.GRAY));
 	}
 
 	@Override
-	public void appendHoverText(@NotNull ItemStack item, @NotNull TooltipContext pContext, @NotNull List<Component> tipList, @NotNull TooltipFlag pTooltipFlag) {
+	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display, Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
 		Level level = pContext.level();
 
-		boolean show = Screen.hasShiftDown();
+		// Check if shift/ctrl are held using InputConstants
+		long window = net.minecraft.client.Minecraft.getInstance().getWindow().handle();
+		boolean show = org.lwjgl.glfw.GLFW.glfwGetKey(window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS
+				|| org.lwjgl.glfw.GLFW.glfwGetKey(window, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_SHIFT) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
 
-		boolean showDescription = Screen.hasControlDown();
+		boolean showDescription = org.lwjgl.glfw.GLFW.glfwGetKey(window, org.lwjgl.glfw.GLFW.GLFW_KEY_LEFT_CONTROL) == org.lwjgl.glfw.GLFW.GLFW_PRESS
+				|| org.lwjgl.glfw.GLFW.glfwGetKey(window, org.lwjgl.glfw.GLFW.GLFW_KEY_RIGHT_CONTROL) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
 
 		ToolType tt = LootUtils.getToolType(item);
 
 		if (show) {
-			tipList.add(makeComp(tt.toString(), ChatFormatting.BLUE));
+			tipList.accept(makeComp(tt.toString(), ChatFormatting.BLUE));
 		}
 
 		MutableComponent desc = makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY);
-		tipList.add(desc);
+		tipList.accept(desc);
 
 		if (show) {
 			newLine(tipList);
 			int itemLevel = LootUtils.getLevel(item);
-			tipList.add(makeComp("Level: " + itemLevel, ChatFormatting.GRAY));
-			tipList.add(makeComp("XP: " + LootUtils.getXP(item) + " / " + LootUtils.getMaxXP(itemLevel),
+			tipList.accept(makeComp("Level: " + itemLevel, ChatFormatting.GRAY));
+			tipList.accept(makeComp("XP: " + LootUtils.getXP(item) + " / " + LootUtils.getMaxXP(itemLevel),
 					ChatFormatting.GRAY));
 		}
 
@@ -425,20 +430,23 @@ public class LootItem extends Item  {
 			if (!Config.traitEnabled(modifier.tagName())) {
 				continue;
 			}
-			modifier.writeToLore(tipList, show);
+			// Wrapper to bridge List<Component> interface to Consumer<Component>
+			List<Component> tempList = new ArrayList<>();
+			modifier.writeToLore(tempList, show);
+			tempList.forEach(tipList);
 			if (show) {
 				Component details = modifier.writeDetailsToLore(level);
 
 				if (details != null) {
 					MutableComponent detailComp = makeComp(" - ", ChatFormatting.GRAY);
 					detailComp.append(details);
-					tipList.add(detailComp);
+					tipList.accept(detailComp);
 				}
 			}
 			if (showDescription) {
 				MutableComponent detailComp = makeComp("", ChatFormatting.GRAY);
 				detailComp.append(modifier.description());
-				tipList.add(detailComp);
+				tipList.accept(detailComp);
 			}
 		}
 
@@ -446,10 +454,10 @@ public class LootItem extends Item  {
 			newLine(tipList);
 
 			float digSpeed = LootItem.getDigSpeed(item, tt);
-			tipList.add(makeComp(String.format("Speed: %.2f", digSpeed), ChatFormatting.GRAY));
+			tipList.accept(makeComp(String.format("Speed: %.2f", digSpeed), ChatFormatting.GRAY));
 
 			float attackDamage = LootItem.getAttackDamage(item, tt);
-			tipList.add(makeComp(String.format("Damage: %.2f", attackDamage), ChatFormatting.GRAY));
+			tipList.accept(makeComp(String.format("Damage: %.2f", attackDamage), ChatFormatting.GRAY));
 
 		}
 
@@ -458,19 +466,20 @@ public class LootItem extends Item  {
 			MutableComponent comp = Component.empty();
 			comp.append("[Shift for more]");
 			comp = comp.withStyle(ChatFormatting.GRAY);
-			tipList.add(comp);
+			tipList.accept(comp);
 			MutableComponent descComp = Component.empty();
 			descComp.append("[Ctrl for trait info]");
 			descComp = descComp.withStyle(ChatFormatting.GRAY);
-			tipList.add(descComp);
+			tipList.accept(descComp);
 
 		}
 	}
 
 	@Override
-	public void inventoryTick(@NotNull ItemStack stack, @NotNull Level level, @NotNull Entity holder, int slot, boolean holding) {
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
 
-		if (holding) {
+		// Only trigger for mainhand slot (replacing the old 'holding' boolean check)
+		if (slot == EquipmentSlot.MAINHAND) {
 
 			List<Modifier> mods = LootUtils.getModifiers(stack);
 

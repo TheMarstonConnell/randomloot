@@ -59,7 +59,7 @@ public class Hasty implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Hasty(tag.getString(NAME), tag.getInt(POWER), tag.getInt(LEVEL));
+		return new Hasty(tag.getStringOr(NAME, "Hasty"), tag.getIntOr(POWER, 0), tag.getIntOr(LEVEL, 0));
 	}
 
 	@Override
@@ -114,7 +114,7 @@ public class Hasty implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 2, power, true, false);
+		MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 2, power, true, false);
 
 		if (holder instanceof LivingEntity) {
 			LivingEntity le = (LivingEntity) holder;

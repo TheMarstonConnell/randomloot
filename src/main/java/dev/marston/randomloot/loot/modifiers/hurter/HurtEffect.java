@@ -56,7 +56,7 @@ public class HurtEffect implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new HurtEffect(tag.getString(NAME), this.tagname, tag.getInt(POWER), this.duration, this.effect);
+		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect);
 	}
 
 	@Override
