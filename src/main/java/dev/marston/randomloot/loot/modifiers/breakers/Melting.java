@@ -78,6 +78,7 @@ public class Melting implements BlockBreakModifier {
 				List<SingleItemRecipe> smeltingRecipes = recipes.stream()
 						.map(RecipeHolder::value)
 						.filter(r -> r.getType() == RecipeType.SMELTING)
+						.filter(r -> r instanceof SingleItemRecipe)
 						.map(r -> (SingleItemRecipe) r)
 						.toList();
 
