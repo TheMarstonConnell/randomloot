@@ -45,7 +45,7 @@ public class ModifierRegistry {
 	public static Modifier FILLING = register(new Effect("Filling", "filling", 2, MobEffects.SATURATION));
 	public static Modifier ABSORBTION = register(new Effect("Appley", "absorption", 10, MobEffects.ABSORPTION));
 	public static Modifier REGENERATING = register(new Effect("Healing", "regeneration", 3, MobEffects.REGENERATION));
-	public static Modifier RESISTANT = register(new Effect("Resistant", "resistance", 1, MobEffects.DAMAGE_RESISTANCE));
+	public static Modifier RESISTANT = register(new Effect("Resistant", "resistance", 1, MobEffects.RESISTANCE));
 	public static Modifier FIRE_RESISTANT = register(
 			new Effect("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE));
 	public static Modifier RAINY = register(new Rainy());

@@ -30,7 +30,7 @@ public class ModTemplate extends Item {
 
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 
 			ItemStack s;
 

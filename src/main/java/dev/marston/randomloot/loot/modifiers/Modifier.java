@@ -38,7 +38,7 @@ public interface Modifier {
 	}
 
 	public static void TrackEntityParticle(Level level, Entity e, ParticleOptions particleType) {
-		if (!level.isClientSide) {
+		if (!level.isClientSide()) {
 			Random r = new Random();
 
 			ServerLevel sl = ((ServerLevel) level);

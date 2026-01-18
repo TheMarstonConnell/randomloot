@@ -29,6 +29,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
@@ -48,7 +49,7 @@ public class LootUtils {
 		public static final MapCodec<TextureProperty> MAP_CODEC = MapCodec.unit(new TextureProperty());
 
 		@Override
-		public float get(ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
+		public float get(ItemStack stack, @Nullable ClientLevel level, @Nullable ItemOwner owner, int seed) {
 			return LootUtils.getTexture(stack);
 		}
 
@@ -123,7 +124,7 @@ public class LootUtils {
 
 	public static String getItemLore(ItemStack stack) {
 		CompoundTag tag = getOrCreateTagElement(stack, "itemLore");
-        return tag.getString("itemLore");
+        return tag.getStringOr("itemLore", "");
 	}
 
 	public static int getMaxXP(int level) {
@@ -200,9 +201,9 @@ public class LootUtils {
 
 		CompoundTag tag = getOrCreateTagElement(item,"XP");
 
-		int level = tag.getInt("level");
+		int level = tag.getIntOr("level", 0);
 
-		int xp = tag.getInt("xp");
+		int xp = tag.getIntOr("xp", 0);
 
 		xp += amount;
 
@@ -225,14 +226,14 @@ public class LootUtils {
 
 		CompoundTag tag = getOrCreateTagElement(item,"XP");
 
-        return tag.getInt("level");
+        return tag.getIntOr("level", 0);
 	}
 
 	public static int getXP(ItemStack item) {
 
 		CompoundTag tag = getOrCreateTagElement(item,"XP");
 
-        return tag.getInt("xp");
+        return tag.getIntOr("xp", 0);
 	}
 
 	public static ItemStack setLevelAndXP(ItemStack item, int level, int xp) {
@@ -253,10 +254,10 @@ public class LootUtils {
 
 		CompoundTag modifiers = getOrCreateTagElement(item,Modifier.MODTAG);
 
-        Set<String> mods = modifiers.getAllKeys();
+        Set<String> mods = modifiers.keySet();
 
         for (String string : mods) {
-            CompoundTag modTag = modifiers.getCompound(string);
+            CompoundTag modTag = modifiers.getCompoundOrEmpty(string);
 
             Modifier finalModifier = ModifierRegistry.loadModifier(string, modTag);
             if (finalModifier == null) {
@@ -289,7 +290,7 @@ public class LootUtils {
 
 		}
 
-		CompoundTag oldmod = modifiers.getCompound(mod.tagName());
+		CompoundTag oldmod = modifiers.getCompoundOrEmpty(mod.tagName());
 		Modifier oldModifier = mod.fromNBT(oldmod);
 
 		if (!oldModifier.canLevel()) {
@@ -343,7 +344,7 @@ public class LootUtils {
 	public static float getStats(ItemStack stack) {
 		CompoundTag statTag = getOrCreateTagElement(stack,"itemStats");
 
-        return statTag.getFloat("goodness");
+        return statTag.getFloatOr("goodness", 0f);
 	}
 
 	public static void setTexture(ItemStack stack, int texture) {
@@ -357,7 +358,7 @@ public class LootUtils {
 	public static float getTexture(ItemStack stack) {
 		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
 
-		int texture = cosmeticTag.getInt("texture");
+		int texture = cosmeticTag.getIntOr("texture", 0);
 
 		float index = ((float) texture) / 10000.0f;
 
@@ -389,7 +390,7 @@ public class LootUtils {
 	public static int getTextureIndex(ItemStack stack) {
 		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
 
-        return cosmeticTag.getInt("texture");
+        return cosmeticTag.getIntOr("texture", 0);
 	}
 
 	private static void generateLore(ItemStack lootItem, Level level, Player player) {
@@ -427,7 +428,7 @@ public class LootUtils {
 
 	public static ToolType getToolType(ItemStack item) {
 		CompoundTag toolType = getOrCreateTagElement(item,"info");
-		String type = toolType.getString("type");
+		String type = toolType.getStringOr("type", "");
 		if (type == "") {
 			return ToolType.NULL;
 		}
@@ -555,7 +556,7 @@ public class LootUtils {
 		 * new ones have a clean XP slate so they can level faster again.
 		 */
 		int count = 0;
-		if (level.isClientSide) {
+		if (level.isClientSide()) {
 			return ItemStack.EMPTY;
 		}
 

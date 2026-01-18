@@ -47,7 +47,7 @@ public class Draining implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Draining(tag.getString(NAME), tag.getInt(POINTS));
+		return new Draining(tag.getStringOr(NAME, "Necrotic"), tag.getIntOr(POINTS, 2));
 	}
 
 	@Override

@@ -75,7 +75,7 @@ public class Learning implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Learning(tag.getString(NAME), tag.getInt(COUNT), tag.getInt(POINTS));
+		return new Learning(tag.getStringOr(NAME, "Learning"), tag.getIntOr(COUNT, 0), tag.getIntOr(POINTS, 3));
 	}
 
 	@Override

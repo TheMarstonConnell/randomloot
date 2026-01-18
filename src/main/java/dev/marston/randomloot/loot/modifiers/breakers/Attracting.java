@@ -81,7 +81,7 @@ public class Attracting implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Attracting(tag.getString(NAME), tag.getFloat(POWER));
+		return new Attracting(tag.getStringOr(NAME, "Magnetic"), tag.getFloatOr(POWER, 2.0f));
 	}
 
 	@Override

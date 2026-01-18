@@ -73,7 +73,7 @@ public class Unbreaking implements Modifier {
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Unbreaking(tag.getString(NAME), tag.getInt(LEVEL));
+		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), tag.getIntOr(LEVEL, 0));
 	}
 
 	public boolean compatible(Modifier mod) {
