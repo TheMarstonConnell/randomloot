@@ -15,32 +15,32 @@ jobs:
         runs-on: ubuntu-latest
     
         steps:
-        - uses: actions/checkout@v3
-        - name: Set up JDK 17
-          uses: actions/setup-java@v3
+        - uses: actions/checkout@v4
+        - name: Set up JDK 21
+          uses: actions/setup-java@v4
           with:
-            java-version: '17'
+            java-version: '21'
             distribution: 'temurin'
         - name: Change wrapper permissions
           run: chmod +x ./gradlew
         - name: Get the version
           id: get_version
-          run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\/v/}
+          run: echo "VERSION=${GITHUB_REF/refs\/tags\/v/}" >> $GITHUB_OUTPUT
         - name: Declare Commit Variables
           id: is_pre_release
           shell: bash
           run: |
-            echo "::set-output name=IS_PRE_RELEASE::$(echo "${{ steps.get_version.outputs.VERSION }}" | awk 'BEGIN{prerelease="false"} /beta|alpha/{prerelease="true"} END{print prerelease}')"
+            echo "IS_PRE_RELEASE=$(echo "${{ steps.get_version.outputs.VERSION }}" | awk 'BEGIN{prerelease="false"} /beta|alpha/{prerelease="true"} END{print prerelease}')" >> $GITHUB_OUTPUT
         - name: Set Release Type
           id: release_type
           shell: bash
           run: |
-            echo "::set-output name=RELEASE_TYPE::$(echo "${{ steps.get_version.outputs.VERSION }}" | awk 'BEGIN{release_type="release"} /beta|alpha/{release_type="alpha"} END{print release_type}')"
+            echo "RELEASE_TYPE=$(echo "${{ steps.get_version.outputs.VERSION }}" | awk 'BEGIN{release_type="release"} /beta|alpha/{release_type="alpha"} END{print release_type}')" >> $GITHUB_OUTPUT
         - name: Set File Name
           id: file_name
           shell: bash
           run: |
-            echo "::set-output name=FILE_NAME::$(echo randomloot-$(echo "${{ steps.get_version.outputs.VERSION }}" | grep -o '[0-9]*\.[0-9]*\.[0-9]*').jar)"
+            echo "FILE_NAME=$(echo randomloot-$(echo "${{ steps.get_version.outputs.VERSION }}" | grep -o '[0-9]*\.[0-9]*\.[0-9]*').jar)" >> $GITHUB_OUTPUT
            
         - name: Build with Gradle
           uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
@@ -57,7 +57,7 @@ jobs:
           with:
             file_path: "build/libs/${{ steps.file_name.outputs.FILE_NAME }}"
             game_endpoint: "minecraft"
-            game_versions: "Minecraft 1.21:1.21.4,Java 17,NeoForge"
+            game_versions: "Minecraft 1.21:1.21.11,Java 21,NeoForge"
             token: "${{ secrets.CurseForge }}"
             project_id: "301631"
             display_name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }}"
@@ -72,6 +72,6 @@ jobs:
             files: build/libs/*.jar
             name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }}"
             version-type: ${{ steps.release_type.outputs.RELEASE_TYPE }}
-            game-versions: "[1.21.4,)"
+            game-versions: "[1.21.11,)"
             loaders: neoforge
-            java: 17
+            java: 21
