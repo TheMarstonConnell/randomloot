@@ -67,15 +67,20 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 			ItemStack stack = LootUtils.CloneItem(tool);
 
-			Modifier modToAdd = ModifierRegistry.Modifiers.get(this.trait);
-			
+			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+
+			if (modToAdd == null) {
+				RandomLoot.LOGGER.warn("Unknown modifier trait in recipe: {}", this.trait);
+				return stack;
+			}
+
 			if (template.is(ModItems.MOD_ADD.asItem())) {
 				LootUtils.addModifier(stack, modToAdd);
 			} else if (template.is(ModItems.MOD_SUB.asItem())) {
 				LootUtils.removeModifier(stack, modToAdd);
 			}
-			
-			
+
+
 			return stack;
 	}
 

@@ -1,6 +1,5 @@
 package dev.marston.randomloot.recipes;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
@@ -29,22 +28,16 @@ public class TextureChangeRecipe extends CustomRecipe {
 
 	public TextureChangeRecipe(CraftingBookCategory cat) {
 		super(cat);
-		RandomLoot.LOGGER.info("CREATING TEXTURE CHANGE");
 	}
 
 	@Override
 	public boolean matches(CraftingInput container, Level level) {
-		RandomLoot.LOGGER.info("CHECKING TEXTURE CHANGE");
-
 		if (container.ingredientCount() < 2) {
 			return false;
 		}
 
-
 		boolean hasTool = false;
 		List<ItemStack> items = container.items();
-
-		RandomLoot.LOGGER.info(items.toString());
 
 		for (ItemStack item: items) {
 			if (item.isEmpty()) {
@@ -70,8 +63,6 @@ public class TextureChangeRecipe extends CustomRecipe {
 
 	@Override
 	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput, HolderLookup.Provider provider) {
-		RandomLoot.LOGGER.info("ASSEMBLING TEXTURE CHANGE");
-
 		int modCount = 0;
 		List<ItemStack> stacks = craftingInput.items();
 
@@ -94,7 +85,6 @@ public class TextureChangeRecipe extends CustomRecipe {
         }
 
 		if (result.isEmpty()) {
-			RandomLoot.LOGGER.info("Item is empty!!!");
 			return ItemStack.EMPTY;
 		}
 

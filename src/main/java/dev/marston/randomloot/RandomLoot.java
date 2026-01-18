@@ -5,7 +5,6 @@ import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.recipes.Recipies;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
@@ -87,7 +86,6 @@ public class RandomLoot
         {
             // Some client setup code
             LOGGER.info("HELLO FROM CLIENT SETUP");
-            LOGGER.info("MINECRAFT NAME >> {}", Minecraft.getInstance().getUser().getName());
         }
     }
 

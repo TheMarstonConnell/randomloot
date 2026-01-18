@@ -24,8 +24,8 @@ import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.server.ServerStoppingEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 @EventBusSubscriber(modid = RandomLoot.MODID)
 public class OreFinder implements HoldModifier {
@@ -38,10 +38,9 @@ public class OreFinder implements HoldModifier {
 	static int time = 0;
 	static int maxShulkerLife = 10;
 
-	static boolean locked = false;
-
-	private static ArrayList<Shulker> shulkers = new ArrayList<Shulker>();
-	private static ArrayList<Integer> timings = new ArrayList<Integer>();
+	// Thread-safe lists for concurrent access between tick events and hold()
+	private static final List<Shulker> shulkers = new CopyOnWriteArrayList<>();
+	private static final List<Integer> timings = new CopyOnWriteArrayList<>();
 
 	public OreFinder(String name, float power) {
 		this.name = name;
@@ -128,39 +127,33 @@ public class OreFinder implements HoldModifier {
 
 	@SubscribeEvent
 	public static void tickEvent(ServerTickEvent.Post event) {
-		locked = true;
-
 		time++;
 		time = time % maxTime;
 
 		if (time == 0) {
-			int off = 0;
-			for (int i = 0; i < shulkers.size(); i++) {
-				int iOff = i - off;
-				int tick = timings.get(iOff) + 1;
-				timings.set(iOff, tick);
-				Shulker sh = shulkers.get(iOff);
+			// Iterate over copy to avoid ConcurrentModificationException
+			for (int i = shulkers.size() - 1; i >= 0; i--) {
+				if (i >= shulkers.size() || i >= timings.size()) {
+					continue; // List may have been modified
+				}
+
+				int tick = timings.get(i) + 1;
+				timings.set(i, tick);
+				Shulker sh = shulkers.get(i);
 
 				if (tick > maxShulkerLife
 						|| sh.level().getBlockState(sh.blockPosition()).getBlock().equals(Blocks.AIR)) {
-					shulkers.get(iOff).setPos(0, -256, 0);
-					shulkers.get(iOff).setHealth(0);
-					shulkers.remove(iOff);
-					timings.remove(iOff);
-					off++;
+					sh.setPos(0, -256, 0);
+					sh.setHealth(0);
+					shulkers.remove(i);
+					timings.remove(i);
 				}
 			}
 		}
-
-		locked = false;
 	}
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (locked) {
-			return;
-		}
-
 		int size = 10;
 		for (int i = -size; i < size; i++) {
 			for (int j = -size; j < size; j++) {

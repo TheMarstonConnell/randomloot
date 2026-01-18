@@ -41,7 +41,7 @@ public class Config
     public static double Goodness;
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
-    private static Map<String, Boolean> ModsEnabled;
+    private static Map<String, Boolean> ModsEnabled = new HashMap<>();
 
     public static void init() {
 
@@ -54,7 +54,7 @@ public class Config
         BUILDER.push("Modifiers Enabled");
         MODIFIERS_ENABLED = new HashMap<String, ModConfigSpec.BooleanValue>();
 
-        for (Map.Entry<String, Modifier> entry : ModifierRegistry.Modifiers.entrySet()) {
+        for (Map.Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
             String key = entry.getKey();
             Modifier mod = entry.getValue();
 
@@ -70,7 +70,7 @@ public class Config
     }
 
     public static boolean traitEnabled(String tagName) {
-        return ModsEnabled.get(tagName);
+        return ModsEnabled.getOrDefault(tagName, true);
     }
 
     @SubscribeEvent

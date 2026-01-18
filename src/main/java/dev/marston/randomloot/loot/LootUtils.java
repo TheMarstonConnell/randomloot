@@ -67,20 +67,19 @@ public class LootUtils {
 	public static ItemStack CloneItem(ItemStack stack) {
 		ItemStack copy = new ItemStack(ModItems.TOOL.asItem());
 
-		ToolModifier copyMods = new ToolModifier(new HashMap<>());
-
 		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER);
 		if (mods == null) {
 			return copy;
 		}
 
-		Map<String, CompoundTag> ts = copyMods.getTags();
-
+		// Build the new map first, then create ToolModifier with it
+		Map<String, CompoundTag> newTags = new HashMap<>();
 		Map<String, CompoundTag> tags = mods.getTags();
 		tags.forEach((s, compoundTag) -> {
-			ts.put(s, compoundTag.copy());
+			newTags.put(s, compoundTag.copy());
 		});
 
+		ToolModifier copyMods = new ToolModifier(newTags);
 		copy.set(ModDataComponents.TOOL_MODIFIER, copyMods);
 
 		copy.set(DataComponents.CUSTOM_NAME, stack.get(DataComponents.CUSTOM_NAME));
@@ -429,7 +428,7 @@ public class LootUtils {
 	public static ToolType getToolType(ItemStack item) {
 		CompoundTag toolType = getOrCreateTagElement(item,"info");
 		String type = toolType.getStringOr("type", "");
-		if (type == "") {
+		if (type.isEmpty()) {
 			return ToolType.NULL;
 		}
 		return ToolType.valueOf(type);
@@ -448,7 +447,7 @@ public class LootUtils {
 
 		ArrayList<Modifier> allowedMods = new ArrayList<Modifier>();
 
-		for (Entry<String, Modifier> entry : ModifierRegistry.Modifiers.entrySet()) {
+		for (Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
 			Modifier newMod = entry.getValue();
 
 			if (!Config.traitEnabled(newMod.tagName())) {
@@ -527,6 +526,10 @@ public class LootUtils {
 
 	public static int addToolTextures(ItemStack stack, int count) {
 		int max = getToolMaxTextures(stack);
+
+		if (max == 0) {
+			return 0;
+		}
 
 		int current = getTextureIndex(stack);
 
