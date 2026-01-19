@@ -122,6 +122,6 @@ public class Scorched implements EntityHurtModifier, HoldModifier, BiomeRestrict
 
 	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
-		return temperature >= 1.0f || dimension.equals("minecraft:the_nether");
+		return temperature >= 1.0f || (dimension != null && dimension.equals("minecraft:the_nether"));
 	}
 }
