@@ -94,6 +94,11 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 
 	@Override
 	public boolean compatible(Modifier mod) {
+		// Allow leveling up by being compatible with same modifier
+		if (mod.tagName().equals(this.tagName())) {
+			return true;
+		}
+		// Incompatible with other USERS modifiers
 		return !ModifierRegistry.USERS.contains(mod);
 	}
 

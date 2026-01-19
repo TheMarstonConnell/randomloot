@@ -488,6 +488,7 @@ public class LootUtils {
 		String[] words = biomeName.split("_");
 		StringBuilder result = new StringBuilder();
 		for (String word : words) {
+			if (word.isEmpty()) continue;  // Skip empty strings from split
 			if (result.length() > 0) result.append(" ");
 			result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
 		}
