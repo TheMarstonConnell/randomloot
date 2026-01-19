@@ -476,7 +476,7 @@ public class LootUtils {
 		}
 	}
 
-	private static String biomKeyToReadableName(String biomeKey) {
+	private static String biomeKeyToReadableName(String biomeKey) {
 		if (biomeKey == null || biomeKey.isEmpty() || biomeKey.equals("unknown")) {
 			return "an Unknown Biome";
 		}
@@ -519,7 +519,7 @@ public class LootUtils {
 
 		// Get biome name for lore
 		String biomeKey = getBiomeKey(lootItem);
-		String biomeName = biomKeyToReadableName(biomeKey);
+		String biomeName = biomeKeyToReadableName(biomeKey);
 
 		String loreText = "Discovered by " + name + " in " + biomeName + ", forged by " + forger + ".";
 
@@ -584,7 +584,7 @@ public class LootUtils {
 
 			for (Modifier modifier : mods) {
 
-				if (modifier.tagName() == newMod.tagName()) {
+				if (modifier.tagName().equals(newMod.tagName())) {
 					if (!modifier.canLevel()) {
 						RandomLoot.LOGGER.info("  {} - SKIP (already has max level)", newMod.tagName());
 						compatible = false;
