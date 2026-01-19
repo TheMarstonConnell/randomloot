@@ -476,6 +476,25 @@ public class LootUtils {
 		}
 	}
 
+	private static String biomKeyToReadableName(String biomeKey) {
+		if (biomeKey == null || biomeKey.isEmpty() || biomeKey.equals("unknown")) {
+			return "an Unknown Biome";
+		}
+
+		// Remove namespace (minecraft:desert -> desert)
+		String biomeName = biomeKey.contains(":") ? biomeKey.substring(biomeKey.indexOf(":") + 1) : biomeKey;
+
+		// Replace underscores with spaces and capitalize each word
+		String[] words = biomeName.split("_");
+		StringBuilder result = new StringBuilder();
+		for (String word : words) {
+			if (result.length() > 0) result.append(" ");
+			result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+		}
+
+		return "a " + result.toString();
+	}
+
 	private static void generateLore(ItemStack lootItem, Level level, Player player) {
 		String nameColor = "#50ab4b";
 		float temp = getBiomeTemperature(lootItem); // Get stored temperature
@@ -497,7 +516,11 @@ public class LootUtils {
 			name = player.getDisplayName().getString();
 		}
 
-		String loreText = "Discovered by " + name + ", forged by " + forger + ".";
+		// Get biome name for lore
+		String biomeKey = getBiomeKey(lootItem);
+		String biomeName = biomKeyToReadableName(biomeKey);
+
+		String loreText = "Discovered by " + name + " in " + biomeName + ", forged by " + forger + ".";
 
 		LootUtils.setItemLore(lootItem, loreText);
 
