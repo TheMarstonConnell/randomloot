@@ -9,12 +9,16 @@ import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -357,6 +361,28 @@ public class LootUtils {
 		return infoTag.getFloatOr("biomeTemp", 0.7f);
 	}
 
+	public static void setBiomeKey(ItemStack stack, String biomeKey) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		infoTag.putString("biomeKey", biomeKey);
+		addTagElement(stack, "info", infoTag);
+	}
+
+	public static String getBiomeKey(ItemStack stack) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		return infoTag.getStringOr("biomeKey", "");
+	}
+
+	public static void setDimension(ItemStack stack, String dimension) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		infoTag.putString("dimension", dimension);
+		addTagElement(stack, "info", infoTag);
+	}
+
+	public static String getDimension(ItemStack stack) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		return infoTag.getStringOr("dimension", "minecraft:overworld");
+	}
+
 	public static void setTexture(ItemStack stack, int texture) {
 		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
 
@@ -403,25 +429,64 @@ public class LootUtils {
         return cosmeticTag.getIntOr("texture", 0);
 	}
 
-	private static void generateLore(ItemStack lootItem, Level level, Player player) {
-		String nameColor = "#50ab4b";
+	private static void storeBiomeData(ItemStack lootItem, Level level, Player player) {
 		float temp = 0.7f;
 
 		if (player != null) {
 			Holder<Biome> biome = level.getBiome(player.blockPosition());
-
 			Biome b = biome.value();
-
 			temp = b.getBaseTemperature();
+		}
 
+		setBiomeTemperature(lootItem, temp);
+
+		// Store biome key for modifier filtering
+		if (player != null) {
+			final float finalTemp = temp; // Capture for lambda
+			Holder<Biome> biomeHolder = level.getBiome(player.blockPosition());
+
+			// Get biome key from registry
+			String biomeKey = "unknown";
+			Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
+
+			// Try unwrapKey first
+			if (biomeHolder.unwrapKey().isPresent()) {
+				biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
+				RandomLoot.LOGGER.info("Got biome key from unwrapKey: {}", biomeKey);
+			} else {
+				// Fallback: search registry for this biome
+				RandomLoot.LOGGER.warn("Biome key not available via unwrapKey, searching registry...");
+				Biome biome = biomeHolder.value();
+				for (var entry : biomeRegistry.entrySet()) {
+					if (entry.getValue() == biome) {
+						biomeKey = entry.getKey().identifier().toString();
+						RandomLoot.LOGGER.info("Found biome key via registry search: {}", biomeKey);
+						break;
+					}
+				}
+			}
+
+			setBiomeKey(lootItem, biomeKey);
+			RandomLoot.LOGGER.info("Tool generated in biome: {} with temp: {}", biomeKey, finalTemp);
+
+			// Store dimension
+			String dim = level.dimension().identifier().toString();
+			setDimension(lootItem, dim);
+			RandomLoot.LOGGER.info("Tool generated in dimension: {}", dim);
+		}
+	}
+
+	private static void generateLore(ItemStack lootItem, Level level, Player player) {
+		String nameColor = "#50ab4b";
+		float temp = getBiomeTemperature(lootItem); // Get stored temperature
+
+		if (player != null) {
 			if (level.dimension().equals(Level.NETHER)) {
 				nameColor = "#FF8C19";
 			} else if (level.dimension().equals(Level.END)) {
 				nameColor = "#C419FF";
 			}
 		}
-
-		setBiomeTemperature(lootItem, temp);
 
 		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(temp, level.isRaining()), nameColor);
 
@@ -460,14 +525,34 @@ public class LootUtils {
 
 		ArrayList<Modifier> allowedMods = new ArrayList<Modifier>();
 
+		RandomLoot.LOGGER.info("=== Generating trait for {} ===", type);
+
 		for (Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
 			Modifier newMod = entry.getValue();
 
 			if (!Config.traitEnabled(newMod.tagName())) {
+				RandomLoot.LOGGER.info("  {} - SKIP (disabled in config)", newMod.tagName());
 				continue;
 			}
 
+			// Filter by biome restrictions (for natural spawning only)
+			if (newMod instanceof BiomeRestrictedModifier biomeRestricted) {
+				String biomeKey = getBiomeKey(stack);
+				float temp = getBiomeTemperature(stack);
+				String dimension = getDimension(stack);
+
+				boolean canSpawn = biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension);
+				RandomLoot.LOGGER.info("  {} - biome: {}, temp: {}, dim: {}, canSpawn: {}",
+					newMod.tagName(), biomeKey, temp, dimension, canSpawn);
+
+				if (!canSpawn) {
+					RandomLoot.LOGGER.info("  {} - SKIP (biome restriction)", newMod.tagName());
+					continue; // Skip this modifier if biome doesn't match
+				}
+			}
+
 			if (!newMod.forTool(type)) {
+				RandomLoot.LOGGER.info("  {} - SKIP (wrong tool type)", newMod.tagName());
 				continue;
 			}
 
@@ -477,12 +562,14 @@ public class LootUtils {
 
 				if (modifier.tagName() == newMod.tagName()) {
 					if (!modifier.canLevel()) {
+						RandomLoot.LOGGER.info("  {} - SKIP (already has max level)", newMod.tagName());
 						compatible = false;
 						break;
 					}
 				}
 
 				if (!modifier.compatible(newMod)) {
+					RandomLoot.LOGGER.info("  {} - SKIP (incompatible with {})", newMod.tagName(), modifier.tagName());
 					compatible = false;
 					break;
 				}
@@ -490,6 +577,7 @@ public class LootUtils {
 			}
 
 			if (compatible) {
+				RandomLoot.LOGGER.info("  {} - ALLOWED", newMod.tagName());
 				allowedMods.add(newMod);
 			}
 
@@ -497,13 +585,18 @@ public class LootUtils {
 
 		int size = allowedMods.size();
 
+		RandomLoot.LOGGER.info("Total allowed modifiers: {}", size);
+
 		if (size == 0) {
+			RandomLoot.LOGGER.info("No modifiers available - skipping trait generation");
 			return;
 		}
 
 		int choice = (int) (Math.random() * size);
 
 		Modifier m = allowedMods.get(choice);
+
+		RandomLoot.LOGGER.info("SELECTED: {}", m.tagName());
 
 		addModifier(stack, m);
 
@@ -626,6 +719,9 @@ public class LootUtils {
 		};
 
 		lootItem = setToolType(lootItem, m);
+
+		// Store biome data BEFORE generating traits (so biome-restricted modifiers work)
+		storeBiomeData(lootItem, level, player);
 
 		generateInitialTraits(lootItem, m, traits);
 

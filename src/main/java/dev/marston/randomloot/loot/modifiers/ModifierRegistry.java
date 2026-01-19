@@ -7,6 +7,7 @@ import dev.marston.randomloot.loot.modifiers.stats.Busted;
 //import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.loot.modifiers.users.FireBall;
 import dev.marston.randomloot.loot.modifiers.users.FirePlace;
+import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
 //import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffects;
@@ -55,6 +56,13 @@ public class ModifierRegistry {
 	public static Modifier BEZERK = register(new Bezerk());
 	public static Modifier NEMESIS = register(new Nemesis());
 
+	// Biome-restricted modifiers
+	public static Modifier AQUATIC = register(new Aquatic());
+	public static Modifier SCORCHED = register(new Scorched());
+	public static Modifier FROZEN = register(new Frozen());
+	public static Modifier OVERGROWN = register(new Overgrown());
+	public static Modifier VOID_TOUCHED = register(new VoidTouched());
+
 	public static Modifier HASTY = register(new Hasty());
 	public static Modifier FILLING = register(new Effect("Filling", "filling", 2, MobEffects.SATURATION));
 	public static Modifier ABSORBTION = register(new Effect("Appley", "absorption", 10, MobEffects.ABSORPTION));
@@ -72,11 +80,11 @@ public class ModifierRegistry {
 	public static Modifier UNBREAKING = register(new Unbreaking());
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING);
-	public static final Set<Modifier> USERS = Set.of(/**TORCH_PLACE, DIRT_PLACE,**/ FIRE_PLACE, FIRE_BALL);
+	public static final Set<Modifier> USERS = Set.of(/**TORCH_PLACE, DIRT_PLACE,**/ FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SCORCHED, FROZEN, OVERGROWN);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC);
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED);
 
