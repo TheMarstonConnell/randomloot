@@ -28,6 +28,10 @@ These effects are applied when holding the tool.
 **id:** `absorption` | **crafting:** `minecraft:golden_apple` ![golden_apple](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_apple.png)
 
 **Decription:** While holding the tool, get the absorption I effect.
+### Aquatic
+**id:** `aquatic` | **crafting:** `minecraft:prismarine_shard` ![prismarine_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/prismarine_shard.png)
+
+**Decription:** Grants water breathing and Haste II when underwater.
 ### Detecting
 **id:** `detecting` | **crafting:** `minecraft:spyglass` ![spyglass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spyglass.png)
 
@@ -74,6 +78,10 @@ These effects are applied when right clicking.
 **id:** `flame_thrower` | **crafting:** `minecraft:fire_charge` ![fire_charge](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fire_charge.png)
 
 **Decription:** Right clicking throws a fire ball.
+### Void-Touched
+**id:** `void_touched` | **crafting:** `minecraft:ender_pearl` ![ender_pearl](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/ender_pearl.png)
+
+**Decription:** Right-click to teleport up to 8.0 blocks. Costs 10 durability.
 ## Hurters
 These effects are applied when hurting enemies.
 ### Bezerk
@@ -100,6 +108,10 @@ These effects are applied when hurting enemies.
 **id:** `flaming` | **crafting:** `minecraft:blaze_rod` ![blaze_rod](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_rod.png)
 
 **Decription:** Sets enemy on fire for 2 seconds.
+### Frozen
+**id:** `frozen` | **crafting:** `minecraft:packed_ice` ![packed_ice](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/packed_ice.png)
+
+**Decription:** Slows enemies on hit. Creates 3 block radius of frosted ice on water.
 ### Necrotic
 **id:** `necrotic` | **crafting:** `minecraft:wither_skeleton_skull` ![wither_skeleton_skull](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_skeleton_skull.png)
 
@@ -108,10 +120,18 @@ These effects are applied when hurting enemies.
 **id:** `nemesis` | **crafting:** `minecraft:ender_eye` ![ender_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/ender_eye.png)
 
 **Decription:** Tracks mob kills and deals 5% bonus damage to your most killed mob type.
+### Overgrown
+**id:** `overgrown` | **crafting:** `minecraft:vine` ![vine](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/vine.png)
+
+**Decription:** Grants poison immunity. Deals 2.5 bonus damage to arthropods.
 ### Poisonous
 **id:** `poison` | **crafting:** `minecraft:poisonous_potato` ![poisonous_potato](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/poisonous_potato.png)
 
 **Decription:** When attacking with tool, apply the poison I effect to the target for 5 seconds.
+### Scorched
+**id:** `scorched` | **crafting:** `minecraft:blaze_powder` ![blaze_powder](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_powder.png)
+
+**Decription:** Sets enemies on fire for 4 seconds. Grants fire resistance while held.
 ### Withering
 **id:** `wither` | **crafting:** `minecraft:wither_rose` ![wither_rose](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_rose.png)
 
