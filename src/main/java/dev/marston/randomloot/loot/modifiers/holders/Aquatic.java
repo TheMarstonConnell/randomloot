@@ -104,7 +104,7 @@ public class Aquatic implements HoldModifier, BiomeRestrictedModifier {
 
 		// Extra haste when underwater
 		if (living.isUnderWater()) {
-			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 2, this.level + 1, true, false));
+			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, this.level + 1, true, false));
 		}
 	}
 
