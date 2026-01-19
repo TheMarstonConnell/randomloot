@@ -204,13 +204,12 @@ public class LootItem extends Item  {
 	}
 
 	@Override
-	public void postHurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		ToolType type = LootUtils.getToolType(itemstack);
 
 		if (type == ToolType.AXE || type == ToolType.SWORD) {
 			LootUtils.addXp(itemstack, hurter, 1);
-
 		}
 
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
@@ -222,10 +221,9 @@ public class LootItem extends Item  {
 					continue;
 				}
 
-                if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
+				if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
 					shouldSkipBreak = true;
 				}
-
 			}
 
 			if (mod instanceof Unbreaking unbreaking) {
@@ -233,10 +231,9 @@ public class LootItem extends Item  {
 					continue;
 				}
 
-                if (unbreaking.test(hurtee.level())) {
+				if (unbreaking.test(hurtee.level())) {
 					shouldSkipBreak = true;
 				}
-
 			}
 		}
 		if (!shouldSkipBreak) {

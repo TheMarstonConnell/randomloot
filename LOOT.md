@@ -84,6 +84,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Living | `minecraft:moss_block` | 4 |
 | Melting | `minecraft:lava_bucket` | 1 |
 | Necrotic | `minecraft:wither_skeleton_skull` | 1 |
+| Nemesis | `minecraft:ender_eye` | 1 |
 | Poison | `minecraft:poisonous_potato` | 4 |
 | Rainy | `minecraft:cauldron` | 1 |
 | Regeneration | `minecraft:glowstone` | 8 |

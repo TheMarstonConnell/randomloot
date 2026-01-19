@@ -104,6 +104,10 @@ These effects are applied when hurting enemies.
 **id:** `necrotic` | **crafting:** `minecraft:wither_skeleton_skull` ![wither_skeleton_skull](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_skeleton_skull.png)
 
 **Decription:** Heals 10% of damage dealt to target.
+### Nemesis
+**id:** `nemesis` | **crafting:** `minecraft:ender_eye` ![ender_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/ender_eye.png)
+
+**Decription:** Tracks mob kills and deals 5% bonus damage to your most killed mob type.
 ### Poisonous
 **id:** `poison` | **crafting:** `minecraft:poisonous_potato` ![poisonous_potato](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/poisonous_potato.png)
 

@@ -1,5 +1,7 @@
 # Random Loot 2 - Minecraft Mod
 
+> **Claude: Whenever you discover something important during development (API quirks, patterns, gotchas, or useful snippets), automatically add it to this file so you'll remember it in future sessions.**
+
 ## Overview
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. Built for NeoForge.
 
@@ -87,7 +89,7 @@ src/main/java/dev/marston/randomloot/
 - `MobEffects.DIG_SPEED` → `MobEffects.HASTE`
 - `MobEffects.DAMAGE_RESISTANCE` → `MobEffects.RESISTANCE`
 - `ItemEntity.copy()` removed - create new `ItemEntity` with constructor and `setDeltaMovement()`
-- `Item.hurtEnemy()` → `Item.postHurtEnemy()` with void return type
+- `Item.hurtEnemy()` - both `hurtEnemy` and `postHurtEnemy` exist, but `hurtEnemy` is the one called during attacks
 - `Item.appendHoverText()` signature changed: `List<Component>` → `Consumer<Component>`, added `TooltipDisplay` parameter
 - `Item.inventoryTick()` signature changed: `Level` → `ServerLevel`, slot int/boolean → `EquipmentSlot`
 - `Screen.hasShiftDown()/hasControlDown()` - use GLFW directly: `GLFW.glfwGetKey(window.handle(), GLFW_KEY_LEFT_SHIFT)`
@@ -145,6 +147,84 @@ Refresh Gradle project in IDE (IntelliJ: click elephant icon with refresh arrows
 ## Adding New Modifiers
 1. Create class in appropriate `modifiers/` subdirectory
 2. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
-3. Register in `ModifierRegistry.java`
-4. Add recipe JSON in `data/randomloot/recipe/`
+3. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
+4. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
 5. Add to config in `Config.java` if toggleable
+
+### Hurter Modifier Pattern (EntityHurtModifier)
+```java
+public class MyModifier implements EntityHurtModifier {
+    // Required fields
+    private String name;
+    private int level;
+
+    // For stateful modifiers (tracking data between uses)
+    private Map<String, Integer> myData = new HashMap<>();
+
+    @Override
+    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+        // Server-side only for state changes
+        if (hurtee.level().isClientSide()) {
+            return false;
+        }
+
+        // Get entity registry key
+        String entityKey = EntityType.getKey(hurtee.getType()).toString(); // e.g., "minecraft:zombie"
+
+        // Check if entity is dead (after damage applied)
+        if (hurtee.getHealth() <= 0) {
+            // Update state and save
+            LootUtils.updateModifier(itemstack, this);
+        }
+
+        return false; // return true to skip durability damage
+    }
+
+    @Override
+    public boolean forTool(ToolType type) {
+        return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+    }
+
+    // For leveling: canLevel() returns true if can level up, levelUp() increments level
+}
+```
+
+### Recipe JSON Format
+```json
+{
+  "type": "randomloot:trait_change",
+  "item": {
+    "count": 1,
+    "id": "minecraft:ender_eye"
+  },
+  "trait": "mytrait"
+}
+```
+
+## Useful Code Patterns
+
+### Send Chat Message to Player
+```java
+if (entity instanceof Player player) {
+    player.displayClientMessage(Component.literal("Message here"), false);
+}
+```
+
+### Get Entity Display Name from Registry Key
+```java
+String registryName = "minecraft:zombie";
+String simpleName = registryName.substring(registryName.indexOf(":") + 1);
+// Convert "zombie_villager" to "Zombie Villager"
+String[] words = simpleName.split("_");
+StringBuilder result = new StringBuilder();
+for (String word : words) {
+    if (result.length() > 0) result.append(" ");
+    result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+}
+```
+
+### Roman Numerals
+```java
+LootUtils.roman(1); // Returns "I"
+LootUtils.roman(2); // Returns "II"
+```
