@@ -53,6 +53,7 @@ public class ModifierRegistry {
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER));
 	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS));
 	public static Modifier BEZERK = register(new Bezerk());
+	public static Modifier NEMESIS = register(new Nemesis());
 
 	public static Modifier HASTY = register(new Hasty());
 	public static Modifier FILLING = register(new Effect("Filling", "filling", 2, MobEffects.SATURATION));
@@ -73,7 +74,7 @@ public class ModifierRegistry {
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING);
 	public static final Set<Modifier> USERS = Set.of(/**TORCH_PLACE, DIRT_PLACE,**/ FIRE_PLACE, FIRE_BALL);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK);
+			WITHERING, BLINDING, BEZERK, NEMESIS);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT);
 

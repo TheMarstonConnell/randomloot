@@ -45,6 +45,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `living_enabled` | [Living](MODIFIERS.md#living) | While holding the tool, it will randomly heal itself |
 | `melting_enabled` | [Melting](MODIFIERS.md#melting) | Items dropped by blocks broken with this tool will be smelted. |
 | `necrotic_enabled` | [Necrotic](MODIFIERS.md#necrotic) | Heals 10% of damage dealt to target. |
+| `nemesis_enabled` | [Nemesis](MODIFIERS.md#nemesis) | Tracks mob kills and deals 5% bonus damage to your most killed mob type. |
 | `poison_enabled` | [Poisonous](MODIFIERS.md#poisonous) | When attacking with tool, apply the poison I effect to the target for 5 seconds. |
 | `rainy_enabled` | [Rainy](MODIFIERS.md#rainy) | While holding the tool in the rain, mine faster! |
 | `regeneration_enabled` | [Healing](MODIFIERS.md#healing) | While holding the tool, get the regeneration I effect. |
