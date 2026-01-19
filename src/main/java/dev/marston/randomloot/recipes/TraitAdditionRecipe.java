@@ -52,8 +52,27 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		// Note: Biome-restricted modifiers can still be added via smithing table
-		// The biome restriction only applies to natural spawning during tool generation
+		// Check if we're adding a modifier (not removing)
+		if (input.template().is(ModItems.MOD_ADD.asItem())) {
+			// Get the modifier being added
+			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+
+			// If it's a biome-restricted modifier, check if the tool's biome matches
+			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
+				ItemStack tool = input.base();
+				String biomeKey = LootUtils.getBiomeKey(tool);
+				float temp = LootUtils.getBiomeTemperature(tool);
+				String dimension = LootUtils.getDimension(tool);
+
+				boolean canAdd = biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension);
+
+				if (!canAdd) {
+					RandomLoot.LOGGER.info("Recipe blocked: {} cannot be added to tool from biome: {}, temp: {}, dim: {}",
+							this.trait, biomeKey, temp, dimension);
+					return false;
+				}
+			}
+		}
 
 //		if (this.addition.getCount() > input.addition().getCount()) {
 //			return false;
