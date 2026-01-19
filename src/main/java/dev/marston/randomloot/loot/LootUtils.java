@@ -346,6 +346,17 @@ public class LootUtils {
         return statTag.getFloatOr("goodness", 0f);
 	}
 
+	public static void setBiomeTemperature(ItemStack stack, float temperature) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		infoTag.putFloat("biomeTemp", temperature);
+		addTagElement(stack, "info", infoTag);
+	}
+
+	public static float getBiomeTemperature(ItemStack stack) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		return infoTag.getFloatOr("biomeTemp", 0.7f);
+	}
+
 	public static void setTexture(ItemStack stack, int texture) {
 		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
 
@@ -409,6 +420,8 @@ public class LootUtils {
 				nameColor = "#C419FF";
 			}
 		}
+
+		setBiomeTemperature(lootItem, temp);
 
 		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(temp, level.isRaining()), nameColor);
 
