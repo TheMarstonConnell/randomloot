@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
@@ -69,8 +70,8 @@ public class FireBall implements UseModifier {
 	}
 
 	@Override
-	public void use(UseOnContext ctx) {
-		return;
+	public InteractionResult use(UseOnContext ctx) {
+		return InteractionResult.PASS;
 	}
 
 	@Override

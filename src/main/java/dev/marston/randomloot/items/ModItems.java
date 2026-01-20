@@ -19,7 +19,7 @@ public class ModItems {
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(RandomLoot.MODID);
 
 
-    public static DeferredItem<Item> TOOL = ITEMS.registerItem("tool", p -> new LootItem(p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>()))));
+    public static DeferredItem<Item> TOOL = ITEMS.registerItem("tool", p -> new LootItem(p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>())).enchantable(15)));
     public static DeferredItem<Item> CASE = ITEMS.registerItem("case", LootCase::new);
     public static DeferredItem<Item> MOD_ADD = ITEMS.registerItem("mod_add", p -> new ModTemplate(p, true));
     public static DeferredItem<Item> MOD_SUB = ITEMS.registerItem("mod_sub", p -> new ModTemplate(p, false));
