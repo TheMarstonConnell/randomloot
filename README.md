@@ -46,6 +46,7 @@ You can place cases in dispensers to be opened automatically. Be aware that case
 ## Documentation
 
 - [Modifier List](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/MODIFIERS.md) - All available modifiers and recipes
+- [Biome-Specific Traits](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/BIOMES.md) - Traits tied to specific biomes
 - [Configuration Guide](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/CONFIG.md) - Server/modpack configuration options
 - [Tool Progression](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/PROGRESSION.md) - Leveling, stats, and advancement
 - [Name Generation](https://github.com/TheMarstonConnell/randomloot/blob/1.21.x/NAMES.md) - How tool names are created

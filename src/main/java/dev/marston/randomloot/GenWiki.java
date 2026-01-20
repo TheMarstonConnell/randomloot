@@ -293,6 +293,60 @@ public class GenWiki {
         write(sb.toString(), f);
     }
 
+    private static void writeBiomes(FileWriter f) throws IOException {
+        write("# Biome-Specific Traits", f);
+        write("", f);
+        write("Some traits in Random Loot are tied to specific biomes. These special traits can only appear on tools generated in matching biomes, and can only be added via smithing table to tools that originated from compatible biomes.", f);
+        write("", f);
+
+        write("## How It Works", f);
+        write("", f);
+        write("When you open a Loot Case, the tool remembers:", f);
+        write("- The **biome** you were standing in", f);
+        write("- The **temperature** of that biome", f);
+        write("- The **dimension** you were in (Overworld, Nether, or End)", f);
+        write("", f);
+        write("This information determines which biome-specific traits can appear on the tool, both at creation and when crafting.", f);
+        write("", f);
+
+        write("## Biome-Restricted Traits", f);
+        write("", f);
+        write("| Trait | Biome Requirement | Details |", f);
+        write("|-------|-------------------|---------|", f);
+        write("| [Aquatic](MODIFIERS.md#aquatic) | Ocean or River biomes | Water breathing + Haste underwater |", f);
+        write("| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temp <= 0.15) | Slowness on hit, frost walker |", f);
+        write("| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temp >= 1.0) or Nether | Fire damage, fire resistance |", f);
+        write("| [Overgrown](MODIFIERS.md#overgrown) | Jungle, Swamp, or Bamboo biomes | Arthropod damage, poison immunity |", f);
+        write("| [Void-Touched](MODIFIERS.md#void-touched) | The End dimension only | Teleport on right-click |", f);
+        write("", f);
+        write("See [MODIFIERS.md](MODIFIERS.md) for full effect descriptions and crafting recipes.", f);
+        write("", f);
+
+        write("## Crafting Restrictions", f);
+        write("", f);
+        write("When using the Smithing Table to add a biome-specific trait, the recipe will only work if the tool was originally created in a compatible biome. A tool created in the desert cannot have the Frozen trait added to it, even with a Smithing Table.", f);
+        write("", f);
+
+        write("## Tips", f);
+        write("", f);
+        write("- **Explore different biomes** to collect tools with different trait possibilities", f);
+        write("- **Nether tools** can have Scorched trait naturally", f);
+        write("- **End tools** are the only way to get Void-Touched", f);
+        write("- **Biome data is permanent** - you cannot change a tool's origin biome", f);
+        write("", f);
+
+        write("## Biome Temperature Reference", f);
+        write("", f);
+        write("| Temperature | Biome Examples |", f);
+        write("|-------------|----------------|", f);
+        write("| <= 0.15 (Cold) | Snowy Plains, Ice Spikes, Frozen Ocean, Grove |", f);
+        write("| 0.15 - 1.0 (Temperate) | Plains, Forest, Taiga, Ocean, Mountains |", f);
+        write("| >= 1.0 (Hot) | Desert, Badlands, Savanna, Jungle |", f);
+        write("", f);
+        write("*Note: The Nether counts as \"hot\" for Scorched regardless of specific biome temperature.*", f);
+        write("", f);
+    }
+
     private static void writeLoot(FileWriter f) throws IOException {
         write("# Loot & Crafting Guide", f);
         write("", f);
@@ -433,6 +487,11 @@ public class GenWiki {
                 writeLoot(lootWriter);
                 lootWriter.close();
                 RandomLoot.LOGGER.info("Generated LOOT.md");
+
+                FileWriter biomesWriter = new FileWriter("../BIOMES.md");
+                writeBiomes(biomesWriter);
+                biomesWriter.close();
+                RandomLoot.LOGGER.info("Generated BIOMES.md");
 
                 RandomLoot.LOGGER.info("Wiki generation complete!");
             } catch (IOException e) {

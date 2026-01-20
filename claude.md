@@ -69,6 +69,43 @@ src/main/java/dev/marston/randomloot/
 ### Tool Types
 - PICKAXE, AXE, SHOVEL, SWORD (defined in `LootItem.ToolType`)
 
+### Biome-Specific Traits
+Some modifiers are restricted to tools generated in specific biomes. These implement `BiomeRestrictedModifier` interface.
+
+#### How It Works
+1. When a tool is generated, biome data is stored in the tool's NBT under "info" tag:
+   - `biomeTemp` - Temperature value (0.0 to 2.0+)
+   - `biomeKey` - Full registry key (e.g., "minecraft:ocean")
+   - `dimension` - Dimension key (e.g., "minecraft:the_nether")
+2. Biome-restricted modifiers only spawn on tools generated in matching biomes
+3. Smithing table recipes also check biome restrictions - you cannot add a biome trait to a tool from an incompatible biome
+
+#### Biome-Restricted Modifiers
+
+| Modifier | Biome Restriction | Recipe Item | Effects |
+|----------|-------------------|-------------|---------|
+| **Aquatic** | Ocean/river biomes (key contains "ocean" or "river") | Prismarine Shard | Water breathing + Haste underwater |
+| **Frozen** | Cold biomes (temp ≤ 0.15) | Packed Ice | Slowness on hit, frost walker effect |
+| **Scorched** | Hot biomes (temp ≥ 1.0) or Nether | Blaze Powder | Fire damage on hit, fire resistance |
+| **Overgrown** | Jungle/swamp/bamboo biomes | Vine | Extra arthropod damage, poison immunity |
+| **Void-Touched** | The End dimension only | Ender Pearl | Right-click teleport (8-16 blocks) |
+
+#### Adding a New Biome-Restricted Modifier
+```java
+public class MyBiomeModifier implements EntityHurtModifier, BiomeRestrictedModifier {
+    // ... standard modifier fields and methods ...
+
+    @Override
+    public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
+        // Example: Desert biomes only
+        return biomeKey != null && biomeKey.contains("desert");
+
+        // Or temperature-based: return temperature >= 1.5f;
+        // Or dimension-based: return dimension.equals("minecraft:the_nether");
+    }
+}
+```
+
 ## Build Commands
 ```bash
 ./gradlew runClient          # Run client
