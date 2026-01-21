@@ -181,12 +181,65 @@ rm -rf build/
 ### IDE Not Finding Classes
 Refresh Gradle project in IDE (IntelliJ: click elephant icon with refresh arrows)
 
+## Git Worktree Workflow for New Modifiers
+
+> **IMPORTANT: When creating a new modifier (including in plan mode), ALWAYS use a git worktree to isolate development from the main directory.**
+
+This keeps the main `randomloot` directory clean and allows parallel development of multiple features.
+
+### Creating a Worktree for a New Modifier
+```bash
+# From the main randomloot directory
+git worktree add ../randomloot-feature/<modifier-name> -b feature/<modifier-name>
+
+# Example: Creating an "Excavator" modifier
+git worktree add ../randomloot-feature/excavator -b feature/excavator
+```
+
+### Worktree Directory Structure
+```
+~/Documents/Github/
+├── randomloot/                    # Main directory (keep clean!)
+└── randomloot-feature/
+    ├── excavator/                 # Worktree for excavator modifier
+    ├── lightning/                 # Worktree for lightning modifier
+    └── ...
+```
+
+### Development Workflow
+1. **Create worktree** before writing any code for a new modifier
+2. **Do all development** in the worktree directory (e.g., `../randomloot-feature/excavator/`)
+3. **Build and test** from the worktree: `cd ../randomloot-feature/excavator && ./gradlew runClient`
+4. **When complete**, push the branch and create a PR:
+   ```bash
+   cd ../randomloot-feature/excavator
+   git push -u origin feature/excavator
+   gh pr create --base main --head feature/excavator
+   ```
+5. **Clean up** the worktree after the PR is merged:
+   ```bash
+   git worktree remove ../randomloot-feature/excavator
+   git branch -d feature/excavator
+   ```
+
+### Listing Active Worktrees
+```bash
+git worktree list
+```
+
+### Why Worktrees?
+- Main directory stays on the stable branch
+- Multiple features can be developed in parallel
+- Easy to abandon/restart features without affecting main
+- Clear separation between stable code and work-in-progress
+
 ## Adding New Modifiers
-1. Create class in appropriate `modifiers/` subdirectory
-2. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
-3. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
-4. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
-5. Add to config in `Config.java` if toggleable
+1. **Create a git worktree first** (see above section)
+2. Create class in appropriate `modifiers/` subdirectory
+3. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
+4. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
+5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
+6. Add to config in `Config.java` if toggleable
 
 ### Hurter Modifier Pattern (EntityHurtModifier)
 ```java
