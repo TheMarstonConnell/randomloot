@@ -80,7 +80,6 @@ public interface Modifier {
 
 	public boolean forTool(ToolType type);
 
-	// Default implementations for commonly-overridden-but-identical methods
 	default Component writeDetailsToLore(Level level) {
 		return null;
 	}
