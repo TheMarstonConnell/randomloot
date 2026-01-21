@@ -118,13 +118,13 @@ public class FirePlace implements UseModifier {
 	}
 
 	@Override
-	public void use(UseOnContext ctx) {
+	public InteractionResult use(UseOnContext ctx) {
 
 		if (!ctx.getPlayer().isCrouching()) {
-			return;
+			return InteractionResult.PASS;  // Allow axe stripping when not crouching
 		}
 
-		flintNSteel(ctx);
+		return flintNSteel(ctx);
 
 	}
 
