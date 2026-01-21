@@ -383,6 +383,28 @@ public class LootUtils {
 		return infoTag.getStringOr("dimension", "minecraft:overworld");
 	}
 
+	public static void setOwnerUUID(ItemStack stack, String uuid) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		infoTag.putString("ownerUUID", uuid);
+		addTagElement(stack, "info", infoTag);
+	}
+
+	public static String getOwnerUUID(ItemStack stack) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		return infoTag.getStringOr("ownerUUID", "");
+	}
+
+	public static void setOwnerName(ItemStack stack, String name) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		infoTag.putString("ownerName", name);
+		addTagElement(stack, "info", infoTag);
+	}
+
+	public static String getOwnerName(ItemStack stack) {
+		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
+		return infoTag.getStringOr("ownerName", "");
+	}
+
 	public static void setTexture(ItemStack stack, int texture) {
 		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
 
@@ -746,6 +768,12 @@ public class LootUtils {
 
 		// Store biome data BEFORE generating traits (so biome-restricted modifiers work)
 		storeBiomeData(lootItem, level, player);
+
+		// Store owner data for Soulbound modifier
+		if (player != null) {
+			setOwnerUUID(lootItem, player.getStringUUID());
+			setOwnerName(lootItem, player.getDisplayName().getString());
+		}
 
 		generateInitialTraits(lootItem, m, traits);
 
