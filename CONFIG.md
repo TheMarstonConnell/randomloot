@@ -55,6 +55,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `regeneration_enabled` | [Healing](MODIFIERS.md#healing) | While holding the tool, get the regeneration I effect. |
 | `resistance_enabled` | [Resistant](MODIFIERS.md#resistant) | While holding the tool, get the resistance I effect. |
 | `scorched_enabled` | [Scorched](MODIFIERS.md#scorched) | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
+| `soulbound_enabled` | [Soulbound](MODIFIERS.md#soulbound) | Grants 15% bonus damage and mining speed when wielded by the original owner. |
 | `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While holding the spawners around you will glow. |
 | `torch_place_enabled` | [Spelunking](MODIFIERS.md#spelunking) | Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. |
 | `unbreaking_enabled` | [Unbreaking](MODIFIERS.md#unbreaking) | This tool has a 20% chance of not taking damage. |

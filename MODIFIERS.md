@@ -140,6 +140,10 @@ These effects are applied when hurting enemies.
 **id:** `scorched` | **crafting:** `minecraft:blaze_powder` ![blaze_powder](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_powder.png)
 
 **Decription:** Sets enemies on fire for 4 seconds. Grants fire resistance while held.
+### Soulbound
+**id:** `soulbound` | **crafting:** `minecraft:nether_star` ![nether_star](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/nether_star.png)
+
+**Decription:** Grants 15% bonus damage and mining speed when wielded by the original owner.
 ### Withering
 **id:** `wither` | **crafting:** `minecraft:wither_rose` ![wither_rose](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_rose.png)
 

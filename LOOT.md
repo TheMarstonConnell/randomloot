@@ -93,6 +93,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Regeneration | `minecraft:glowstone` | 8 |
 | Resistance | `minecraft:turtle_scute` | 5 |
 | Scorched | `minecraft:blaze_powder` | 1 |
+| Soulbound | `minecraft:nether_star` | 1 |
 | Spawner | `minecraft:mossy_cobblestone` | 12 |
 | Torch place | `minecraft:torch` | 64 |
 | Unbreaking | `minecraft:obsidian` | 8 |

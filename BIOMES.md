@@ -16,8 +16,8 @@ This information determines which biome-specific traits can appear on the tool, 
 | Trait | Biome Requirement | Details |
 |-------|-------------------|---------|
 | [Aquatic](MODIFIERS.md#aquatic) | Ocean or River biomes | Water breathing + Haste underwater |
-| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temp ≤ 0.15) | Slowness on hit, frost walker |
-| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temp ≥ 1.0) or Nether | Fire damage, fire resistance |
+| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temp <= 0.15) | Slowness on hit, frost walker |
+| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temp >= 1.0) or Nether | Fire damage, fire resistance |
 | [Overgrown](MODIFIERS.md#overgrown) | Jungle, Swamp, or Bamboo biomes | Arthropod damage, poison immunity |
 | [Void-Touched](MODIFIERS.md#void-touched) | The End dimension only | Teleport on right-click |
 
@@ -38,8 +38,9 @@ When using the Smithing Table to add a biome-specific trait, the recipe will onl
 
 | Temperature | Biome Examples |
 |-------------|----------------|
-| ≤ 0.15 (Cold) | Snowy Plains, Ice Spikes, Frozen Ocean, Grove |
+| <= 0.15 (Cold) | Snowy Plains, Ice Spikes, Frozen Ocean, Grove |
 | 0.15 - 1.0 (Temperate) | Plains, Forest, Taiga, Ocean, Mountains |
-| ≥ 1.0 (Hot) | Desert, Badlands, Savanna, Jungle |
+| >= 1.0 (Hot) | Desert, Badlands, Savanna, Jungle |
 
 *Note: The Nether counts as "hot" for Scorched regardless of specific biome temperature.*
+
