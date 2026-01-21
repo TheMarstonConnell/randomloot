@@ -35,10 +35,6 @@ public class Unbreaking implements Modifier {
 		list.add(comp);
 	}
 
-	public Component writeDetailsToLore(Level level) {
-		return null;
-	}
-
 	public String description() {
 		return "This tool has a " + String.format("%.0f", chance() * 100) + "% chance of not taking damage.";
 	}
@@ -74,10 +70,6 @@ public class Unbreaking implements Modifier {
 
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), tag.getIntOr(LEVEL, 0));
-	}
-
-	public boolean compatible(Modifier mod) {
-		return true;
 	}
 
 	public boolean forTool(ToolType type) {

@@ -114,26 +114,7 @@ public class Attracting implements BlockBreakModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }

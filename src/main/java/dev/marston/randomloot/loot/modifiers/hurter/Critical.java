@@ -76,17 +76,6 @@ public class Critical implements EntityHurtModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
 	}
@@ -108,13 +97,5 @@ public class Critical implements EntityHurtModifier {
 		hurtee.hurt(hurter.damageSources().mobAttack(hurter), amt);
 
 		return false;
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }

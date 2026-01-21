@@ -78,16 +78,6 @@ public class Soulbound implements EntityHurtModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		// Works for all tool types
 		return true;
@@ -128,16 +118,6 @@ public class Soulbound implements EntityHurtModifier {
 		}
 
 		return ownerUUID.equals(entity.getStringUUID());
-	}
-
-	@Override
-	public boolean canLevel() {
-		return false; // Soulbound doesn't level
-	}
-
-	@Override
-	public void levelUp() {
-		// Does nothing - Soulbound doesn't level
 	}
 
 	/**

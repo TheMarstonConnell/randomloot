@@ -180,11 +180,6 @@ public class TorchPlace implements UseModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-		return null;
-	}
-
-	@Override
 	public boolean compatible(Modifier mod) {
 		return !ModifierRegistry.USERS.contains(mod);
 	}
@@ -202,13 +197,5 @@ public class TorchPlace implements UseModifier {
 	@Override
 	public boolean useAnywhere() {
 		return false;
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }
