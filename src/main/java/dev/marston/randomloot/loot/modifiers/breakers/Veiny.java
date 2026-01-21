@@ -178,7 +178,8 @@ public class Veiny implements BlockBreakModifier {
 
 	@Override
 	public boolean compatible(Modifier mod) {
-		return true;
+		// Incompatible with Excavator
+		return !(mod instanceof Excavator);
 	}
 
 	@Override
