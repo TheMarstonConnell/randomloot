@@ -35,6 +35,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `combo_enabled` | [Dexterous](MODIFIERS.md#dexterous) | Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. |
 | `critical_enabled` | [Critical](MODIFIERS.md#critical) | Always critically strikes enemy. |
 | `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While holding the tool, ores around you will glow. |
+| `dirt_place_enabled` | [Heartha's Grace](MODIFIERS.md#heartha's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
 | `explode_enabled` | [Explosive](MODIFIERS.md#explosive) | Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. |
 | `filling_enabled` | [Filling](MODIFIERS.md#filling) | While holding the tool, get the saturation I effect. |
 | `fire_place_enabled` | [Fire Starter](MODIFIERS.md#fire-starter) | Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points. |
@@ -55,6 +56,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `resistance_enabled` | [Resistant](MODIFIERS.md#resistant) | While holding the tool, get the resistance I effect. |
 | `scorched_enabled` | [Scorched](MODIFIERS.md#scorched) | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
 | `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While holding the spawners around you will glow. |
+| `torch_place_enabled` | [Spelunking](MODIFIERS.md#spelunking) | Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. |
 | `unbreaking_enabled` | [Unbreaking](MODIFIERS.md#unbreaking) | This tool has a 20% chance of not taking damage. |
 | `veiny_enabled` | [Veiny](MODIFIERS.md#veiny) | Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 5 in each direction. |
 | `void_touched_enabled` | [Void-Touched](MODIFIERS.md#void-touched) | Right-click to teleport up to 8.0 blocks. Costs 10 durability. |

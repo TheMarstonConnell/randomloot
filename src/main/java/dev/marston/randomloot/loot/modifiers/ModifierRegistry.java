@@ -4,11 +4,11 @@ import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
-//import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
+import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.loot.modifiers.users.FireBall;
 import dev.marston.randomloot.loot.modifiers.users.FirePlace;
 import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
-//import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
+import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffects;
 
@@ -40,8 +40,8 @@ public class ModifierRegistry {
 	public static Modifier VEINY = register(new Veiny());
 	public static Modifier MELTING = register(new Melting());
 
-//	public static Modifier TORCH_PLACE = register(new TorchPlace());
-//	public static Modifier DIRT_PLACE = register(new DirtPlace());
+	public static Modifier TORCH_PLACE = register(new TorchPlace());
+	public static Modifier DIRT_PLACE = register(new DirtPlace());
 	public static Modifier FIRE_PLACE = register(new FirePlace());
 	public static Modifier FIRE_BALL = register(new FireBall());
 
@@ -80,7 +80,7 @@ public class ModifierRegistry {
 	public static Modifier UNBREAKING = register(new Unbreaking());
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING);
-	public static final Set<Modifier> USERS = Set.of(/**TORCH_PLACE, DIRT_PLACE,**/ FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
+	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SCORCHED, FROZEN, OVERGROWN);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
