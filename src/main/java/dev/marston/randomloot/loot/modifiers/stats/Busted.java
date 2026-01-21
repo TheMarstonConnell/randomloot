@@ -75,27 +75,8 @@ public class Busted implements StatsModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		return type == ToolType.AXE || type == ToolType.PICKAXE || type == ToolType.SHOVEL;
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 
 	@Override

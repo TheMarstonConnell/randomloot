@@ -88,12 +88,6 @@ public class FireBall implements UseModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
 	public boolean compatible(Modifier mod) {
 		return !ModifierRegistry.USERS.contains(mod);
 	}
@@ -124,13 +118,4 @@ public class FireBall implements UseModifier {
 	public boolean useAnywhere() {
 		return true;
 	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
-	}
-
 }

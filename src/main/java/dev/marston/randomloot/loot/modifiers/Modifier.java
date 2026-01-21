@@ -66,8 +66,6 @@ public interface Modifier {
 
 	public void writeToLore(List<Component> list, boolean shift);
 
-	public Component writeDetailsToLore(Level level);
-
 	public String description();
 
 	public String name();
@@ -80,11 +78,20 @@ public interface Modifier {
 
 	public Modifier fromNBT(CompoundTag tag);
 
-	public boolean compatible(Modifier mod);
-
 	public boolean forTool(ToolType type);
 
-	public boolean canLevel();
+	default Component writeDetailsToLore(Level level) {
+		return null;
+	}
 
-	public void levelUp();
+	default boolean compatible(Modifier mod) {
+		return true;
+	}
+
+	default boolean canLevel() {
+		return false;
+	}
+
+	default void levelUp() {
+	}
 }
