@@ -36,6 +36,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `critical_enabled` | [Critical](MODIFIERS.md#critical) | Always critically strikes enemy. |
 | `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While holding the tool, ores around you will glow. |
 | `dirt_place_enabled` | [Heartha's Grace](MODIFIERS.md#heartha's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
+| `excavator_enabled` | [Excavator](MODIFIERS.md#excavator) | Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. |
 | `explode_enabled` | [Explosive](MODIFIERS.md#explosive) | Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. |
 | `filling_enabled` | [Filling](MODIFIERS.md#filling) | While holding the tool, get the saturation I effect. |
 | `fire_place_enabled` | [Fire Starter](MODIFIERS.md#fire-starter) | Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points. |
@@ -51,6 +52,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `nemesis_enabled` | [Nemesis](MODIFIERS.md#nemesis) | Tracks mob kills and deals 5% bonus damage to your most killed mob type. |
 | `overgrown_enabled` | [Overgrown](MODIFIERS.md#overgrown) | Grants poison immunity. Deals 2.5 bonus damage to arthropods. |
 | `poison_enabled` | [Poisonous](MODIFIERS.md#poisonous) | When attacking with tool, apply the poison I effect to the target for 5 seconds. |
+| `prospector_enabled` | [Prospector](MODIFIERS.md#prospector) | Mining stone has a 4% chance to discover bonus minerals. |
 | `rainy_enabled` | [Rainy](MODIFIERS.md#rainy) | While holding the tool in the rain, mine faster! |
 | `regeneration_enabled` | [Healing](MODIFIERS.md#healing) | While holding the tool, get the regeneration I effect. |
 | `resistance_enabled` | [Resistant](MODIFIERS.md#resistant) | While holding the tool, get the resistance I effect. |

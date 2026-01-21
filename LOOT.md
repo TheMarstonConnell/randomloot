@@ -74,6 +74,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Critical | `minecraft:ghast_tear` | 1 |
 | Detecting | `minecraft:spyglass` | 1 |
 | Dirt place | `minecraft:dirt` | 64 |
+| Excavator | `minecraft:piston` | 1 |
 | Explode | `minecraft:tnt` | 8 |
 | Filling | `minecraft:cake` | 1 |
 | Fire place | `minecraft:flint_and_steel` | 1 |
@@ -89,6 +90,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Nemesis | `minecraft:ender_eye` | 1 |
 | Overgrown | `minecraft:vine` | 1 |
 | Poison | `minecraft:poisonous_potato` | 4 |
+| Prospector | `minecraft:raw_gold` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |
 | Regeneration | `minecraft:glowstone` | 8 |
 | Resistance | `minecraft:turtle_scute` | 5 |

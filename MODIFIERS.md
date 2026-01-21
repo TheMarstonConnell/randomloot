@@ -2,6 +2,10 @@
 This is a full list of modifiers in the game and a description of what they do.
 ## Breakers
 These effects are applied when breaking blocks.
+### Excavator
+**id:** `excavator` | **crafting:** `minecraft:piston` ![piston](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/piston.png)
+
+**Decription:** Breaking blocks while crouching mines a 3x3 area perpendicular to the surface.
 ### Explosive
 **id:** `explode` | **crafting:** `minecraft:tnt` ![tnt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/tnt.png)
 
@@ -18,6 +22,10 @@ These effects are applied when breaking blocks.
 **id:** `melting` | **crafting:** `minecraft:lava_bucket` ![lava_bucket](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lava_bucket.png)
 
 **Decription:** Items dropped by blocks broken with this tool will be smelted.
+### Prospector
+**id:** `prospector` | **crafting:** `minecraft:raw_gold` ![raw_gold](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/raw_gold.png)
+
+**Decription:** Mining stone has a 4% chance to discover bonus minerals.
 ### Veiny
 **id:** `veiny` | **crafting:** `minecraft:diamond_pickaxe` ![diamond_pickaxe](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/diamond_pickaxe.png)
 
