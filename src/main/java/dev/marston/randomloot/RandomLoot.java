@@ -1,93 +1,51 @@
 package dev.marston.randomloot;
 
-import com.mojang.logging.LogUtils;
-import dev.marston.randomloot.component.ModDataComponents;
-import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.recipes.Recipies;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.Identifier;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.neoforge.client.event.RegisterRangeSelectItemModelPropertyEvent;
-import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import org.slf4j.Logger;
+import dev.marston.randomloot.loot.LootTableHandler;
+import dev.marston.randomloot.recipes.AnvilRecipeHandler;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod.EventHandler;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(RandomLoot.MODID)
-public class RandomLoot
-{
-    // Define mod id in a common place for everything to reference
+@Mod(modid = RandomLoot.MODID, name = RandomLoot.NAME, version = RandomLoot.VERSION)
+public class RandomLoot {
     public static final String MODID = "randomloot";
-    // Directly reference a slf4j logger
-    public static final Logger LOGGER = LogUtils.getLogger();
-    // Create a Deferred Register to hold Blocks which will all be registered under the "randomloot" namespace
+    public static final String NAME = "Random Loot 2";
+    public static final String VERSION = "1.0.0";
 
+    public static final Logger LOGGER = LogManager.getLogger(MODID);
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public RandomLoot(IEventBus modEventBus, ModContainer modContainer)
-    {
-        modEventBus.addListener(this::commonSetup);
+    @SidedProxy(clientSide = "dev.marston.randomloot.ClientProxy", serverSide = "dev.marston.randomloot.CommonProxy")
+    public static CommonProxy proxy;
 
-        ModDataComponents.register(modEventBus);
+    @Mod.Instance(MODID)
+    public static RandomLoot instance;
 
-        ModItems.register(modEventBus);
-        Recipies.register(modEventBus);
-        ModLootModifiers.register(modEventBus);
-
-        NeoForge.EVENT_BUS.register(this);
-        modEventBus.addListener(ModItems::addCreative);
-
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
-
-        GenWiki.genWiki();
+    @EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        LOGGER.info("Random Loot 2 Pre-Initialization");
+        Config.init(event.getSuggestedConfigurationFile());
+        proxy.preInit(event);
     }
 
-    private void commonSetup(final FMLCommonSetupEvent event)
-    {
+    @EventHandler
+    public void init(FMLInitializationEvent event) {
+        LOGGER.info("Random Loot 2 Initialization");
+        proxy.init(event);
+        
+        // Register event handlers
+        MinecraftForge.EVENT_BUS.register(new AnvilRecipeHandler());
+        MinecraftForge.EVENT_BUS.register(new LootTableHandler());
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event)
-    {
-        // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+    @EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        LOGGER.info("Random Loot 2 Post-Initialization");
+        proxy.postInit(event);
     }
-
-    // In some client class where the event is registered to the mod event bus
-
-
-    // You can use EventBusSubscriber to automatically register all static methods in the class annotated with @SubscribeEvent
-    @EventBusSubscriber(modid = MODID, value = Dist.CLIENT)
-    public static class ClientModEvents
-    {
-        @SubscribeEvent
-        public static void registerRangeProperties(RegisterRangeSelectItemModelPropertyEvent event) {
-            event.register(
-                    // The name to reference as the type
-                    Identifier.fromNamespaceAndPath(MODID, "cosmetic"),
-                    // The map codec
-                    LootUtils.TextureProperty.MAP_CODEC
-            );
-        }
-
-        @SubscribeEvent
-        public static void onClientSetup(FMLClientSetupEvent event)
-        {
-            // Some client setup code
-            LOGGER.info("HELLO FROM CLIENT SETUP");
-        }
-    }
-
-
 }

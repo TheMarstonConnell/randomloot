@@ -4,19 +4,16 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.block.Block;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.HashSet;
 import java.util.Iterator;
@@ -43,25 +40,25 @@ public class Veiny implements BlockBreakModifier {
 		return new Veiny();
 	}
 
-	private void removeBlock(ItemStack itemstack, BlockPos pos, ServerPlayer player, Level level, BlockState state) {
-		if (!state.canHarvestBlock(level, pos, player)) {
+	private void removeBlock(ItemStack itemstack, BlockPos pos, EntityPlayerMP player, World world, IBlockState state) {
+		if (!state.getBlock().canHarvestBlock(world, pos, player)) {
 			return;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
-		level.removeBlock(pos, false);
+		state.getBlock().harvestBlock(world, player, pos, state, null, itemstack);
+		world.setBlockToAir(pos);
 	}
 
-	public void checkAndBreak(ItemStack itemstack, BlockPos pos, Player player, Level level, int index, Block blockType,
+	public void checkAndBreak(ItemStack itemstack, BlockPos pos, EntityPlayer player, World world, int index, Block blockType,
 			Set<BlockPos> tobreak) {
 
 		if (index > power) {
 			return;
 		}
 
-		BlockState startingState = level.getBlockState(pos);
+		IBlockState startingState = world.getBlockState(pos);
 
-		if (!startingState.is(blockType)) {
+		if (startingState.getBlock() != blockType) {
 			return;
 		}
 
@@ -71,39 +68,39 @@ public class Veiny implements BlockBreakModifier {
 
 		int dex = index + 1;
 
-		checkAndBreak(itemstack, pos.above(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.below(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.east(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.west(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.north(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.south(), player, level, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.up(), player, world, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.down(), player, world, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.east(), player, world, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.west(), player, world, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.north(), player, world, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.south(), player, world, dex, blockType, tobreak);
 
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase p) {
 
-		if (!(p instanceof ServerPlayer)) {
+		if (!(p instanceof EntityPlayerMP)) {
 			return false;
 		}
 
-		ServerPlayer player = (ServerPlayer) p;
+		EntityPlayerMP player = (EntityPlayerMP) p;
 
-		if (!player.isCrouching()) {
+		if (!player.isSneaking()) {
 			return false;
 		}
 
-		Level l = player.level();
+		World world = player.world;
 
-		if (l.isClientSide()) {
+		if (world.isRemote) {
 			return false;
 		}
 
-		BlockState state = l.getBlockState(pos);
+		IBlockState state = world.getBlockState(pos);
 
 		LootItem li = (LootItem) itemstack.getItem();
 
-		if (!li.isCorrectToolForDrops(itemstack, state)) {
+		if (!li.canHarvestBlock(state, itemstack)) {
 			return false;
 		}
 
@@ -111,34 +108,36 @@ public class Veiny implements BlockBreakModifier {
 
 		Set<BlockPos> toBreak = new HashSet<BlockPos>();
 
-		checkAndBreak(itemstack, pos, player, l, 0, b, toBreak);
+		checkAndBreak(itemstack, pos, player, world, 0, b, toBreak);
 
 		for (Iterator<BlockPos> iterator = toBreak.iterator(); iterator.hasNext();) {
 			BlockPos blockPos = iterator.next();
 
-			removeBlock(itemstack, blockPos, player, l, l.getBlockState(blockPos));
+			removeBlock(itemstack, blockPos, player, world, world.getBlockState(blockPos));
 
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			itemstack.damageItem(1, player);
 
 		}
 		return false;
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putFloat(POWER, power);
+		tag.setFloat(POWER, power);
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Veiny(tag.getStringOr(NAME, "Veiny"), tag.getFloatOr(POWER, 5.0f));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Veiny(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Veiny",
+			tag.hasKey(POWER) ? tag.getFloat(POWER) : 5.0f);
 	}
 
 	@Override
@@ -153,7 +152,7 @@ public class Veiny implements BlockBreakModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.DARK_GREEN.name();
+		return TextFormatting.DARK_GREEN.getFriendlyName();
 	}
 
 	@Override
@@ -163,10 +162,8 @@ public class Veiny implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 

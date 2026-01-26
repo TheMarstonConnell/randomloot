@@ -4,29 +4,20 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.SoundType;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.block.Block;
+import net.minecraft.block.SoundType;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -50,19 +41,18 @@ public class TorchPlace implements UseModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(DAMAGE, damage);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(DAMAGE, damage);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
+	public Modifier fromNBT(NBTTagCompound tag) {
 		return new TorchPlace(
-			tag.getStringOr(NAME, "Spelunking"),
-			tag.getIntOr(DAMAGE, 10)
-		);
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Spelunking",
+			tag.hasKey(DAMAGE) ? tag.getInteger(DAMAGE) : 10);
 	}
 
 	@Override
@@ -77,91 +67,52 @@ public class TorchPlace implements UseModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.YELLOW.getName();
+		return TextFormatting.YELLOW.getFriendlyName();
 	}
 
-	private boolean canPlace(LevelReader level, BlockState state, BlockPos pos) {
-		return state.canSurvive(level, pos);
-	}
+	private EnumActionResult placeTorch(World world, EntityPlayer player, BlockPos pos, EnumFacing facing, EnumHand hand) {
+		BlockPos placePos = pos.offset(facing);
+		IBlockState targetState = world.getBlockState(placePos);
 
-	private BlockState getPlacementState(BlockPlaceContext ctx) {
-		// Try standing torch first, then wall torch based on placement direction
-		LevelReader level = ctx.getLevel();
-		BlockPos blockpos = ctx.getClickedPos();
-
-		// Check each direction the player is looking at
-		for (Direction direction : ctx.getNearestLookingDirections()) {
-			BlockState torchState;
-			if (direction == Direction.DOWN) {
-				// Can't place torch pointing down
-				continue;
-			} else if (direction == Direction.UP) {
-				// Standing torch
-				torchState = Blocks.TORCH.getStateForPlacement(ctx);
-			} else {
-				// Wall torch - placed on the opposite face
-				torchState = Blocks.WALL_TORCH.getStateForPlacement(ctx);
-			}
-
-			if (torchState != null && canPlace(level, torchState, blockpos)) {
-				// Check if the position is unobstructed
-				if (level.isUnobstructed(torchState, blockpos, CollisionContext.empty())) {
-					return torchState;
-				}
-			}
+		// Check if position is air or replaceable
+		if (!targetState.getBlock().isReplaceable(world, placePos)) {
+			return EnumActionResult.FAIL;
 		}
 
-		return null;
-	}
-
-	private InteractionResult place(UseOnContext ctx) {
-		BlockPlaceContext placeCtx = new BlockPlaceContext(ctx);
-
-		if (!placeCtx.canPlace()) {
-			return InteractionResult.FAIL;
+		// Try to place standing torch first, then wall torch
+		IBlockState torchState = null;
+		if (facing == EnumFacing.UP) {
+			// Standing torch on top of block
+			torchState = Blocks.TORCH.getDefaultState();
+		} else if (facing != EnumFacing.DOWN) {
+			// Wall torch on side of block
+			torchState = Blocks.TORCH.getStateForPlacement(world, placePos, facing, 0, 0, 0, 0, player, hand);
 		}
 
-		BlockState blockstate = getPlacementState(placeCtx);
-		if (blockstate == null) {
-			return InteractionResult.FAIL;
+		if (torchState != null && torchState.getBlock().canPlaceBlockAt(world, placePos)) {
+			world.setBlockState(placePos, torchState, 11);
+
+			SoundType soundtype = torchState.getBlock().getSoundType(torchState, world, placePos, player);
+			world.playSound(player, placePos, soundtype.getPlaceSound(), SoundCategory.BLOCKS,
+					(soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
+
+			return EnumActionResult.SUCCESS;
 		}
 
-		Level level = placeCtx.getLevel();
-		BlockPos blockpos = placeCtx.getClickedPos();
-
-		if (!level.setBlock(blockpos, blockstate, 11)) {
-			return InteractionResult.FAIL;
-		}
-
-		Player player = placeCtx.getPlayer();
-		ItemStack itemstack = placeCtx.getItemInHand();
-		BlockState placedState = level.getBlockState(blockpos);
-
-		if (placedState.is(blockstate.getBlock())) {
-			placedState.getBlock().setPlacedBy(level, blockpos, placedState, player, itemstack);
-			if (player instanceof ServerPlayer serverPlayer) {
-				CriteriaTriggers.PLACED_BLOCK.trigger(serverPlayer, blockpos, itemstack);
-			}
-		}
-
-		SoundType soundtype = placedState.getSoundType(level, blockpos, player);
-		level.playSound(player, blockpos, soundtype.getPlaceSound(), SoundSource.BLOCKS,
-				(soundtype.getVolume() + 1.0F) / 2.0F, soundtype.getPitch() * 0.8F);
-		level.gameEvent(GameEvent.BLOCK_PLACE, blockpos, GameEvent.Context.of(player, placedState));
-
-		return InteractionResult.SUCCESS;
+		return EnumActionResult.FAIL;
 	}
 
 	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		if (!ctx.getPlayer().isCrouching()) {
-			return InteractionResult.PASS;  // Allow normal tool behaviors when not crouching
+	public EnumActionResult use(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+		if (!player.isSneaking()) {
+			return EnumActionResult.PASS;  // Allow normal tool behaviors when not crouching
 		}
 
-		InteractionResult result = place(ctx);
+		EnumActionResult result = placeTorch(world, player, pos, facing, hand);
 
-		if (result == InteractionResult.SUCCESS) {
-			ctx.getItemInHand().hurtAndBreak(this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
+		if (result == EnumActionResult.SUCCESS) {
+			ItemStack stack = player.getHeldItem(hand);
+			stack.damageItem(this.damage, player);
 		}
 
 		return result;
@@ -174,8 +125,8 @@ public class TorchPlace implements UseModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -190,7 +141,7 @@ public class TorchPlace implements UseModifier {
 	}
 
 	@Override
-	public boolean use(Level level, Player player, InteractionHand hand) {
+	public boolean use(World world, EntityPlayer player, EnumHand hand) {
 		return true;
 	}
 

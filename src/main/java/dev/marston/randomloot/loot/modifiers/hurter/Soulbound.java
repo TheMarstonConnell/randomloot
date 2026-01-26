@@ -5,24 +5,23 @@ import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootNBT;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.List;
 
-@EventBusSubscriber(modid = RandomLoot.MODID)
+@Mod.EventBusSubscriber(modid = RandomLoot.MODID)
 public class Soulbound implements EntityHurtModifier {
 
 	private String name;
@@ -40,15 +39,15 @@ public class Soulbound implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Soulbound(tag.getStringOr(NAME, "Soulbound"));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Soulbound(tag.hasKey(NAME) ? tag.getString(NAME) : "Soulbound");
 	}
 
 	@Override
@@ -63,7 +62,7 @@ public class Soulbound implements EntityHurtModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.DARK_PURPLE.getName();
+		return TextFormatting.DARK_PURPLE.getFriendlyName();
 	}
 
 	@Override
@@ -72,8 +71,8 @@ public class Soulbound implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -84,7 +83,7 @@ public class Soulbound implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 		// Only apply bonus damage for swords and axes
 		ToolType type = LootUtils.getToolType(itemstack);
 		if (!type.equals(ToolType.SWORD) && !type.equals(ToolType.AXE)) {
@@ -99,7 +98,7 @@ public class Soulbound implements EntityHurtModifier {
 		// Apply 15% bonus damage
 		float baseDamage = LootItem.getAttackDamage(itemstack, type);
 		float bonusDamage = baseDamage * 0.15f;
-		hurtee.hurt(hurtee.damageSources().mobAttack(hurter), bonusDamage);
+		hurtee.attackEntityFrom(DamageSource.causeMobDamage(hurter), bonusDamage);
 
 		return false;
 	}
@@ -107,17 +106,17 @@ public class Soulbound implements EntityHurtModifier {
 	/**
 	 * Check if the given entity is the original owner of the tool.
 	 */
-	public static boolean isOwner(ItemStack stack, LivingEntity entity) {
+	public static boolean isOwner(ItemStack stack, EntityLivingBase entity) {
 		if (entity == null) {
 			return false;
 		}
 
-		String ownerUUID = LootUtils.getOwnerUUID(stack);
+		String ownerUUID = LootNBT.getOwnerUUID(stack);
 		if (ownerUUID.isEmpty()) {
 			return false;
 		}
 
-		return ownerUUID.equals(entity.getStringUUID());
+		return ownerUUID.equals(entity.getUniqueID().toString());
 	}
 
 	/**
@@ -125,16 +124,16 @@ public class Soulbound implements EntityHurtModifier {
 	 */
 	@SubscribeEvent
 	public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-		Player player = event.getEntity();
-		ItemStack stack = player.getMainHandItem();
+		EntityPlayer player = event.getEntityPlayer();
+		ItemStack stack = player.getHeldItemMainhand();
 
 		// Check if holding a LootItem
-		if (!stack.is(ModItems.TOOL.get())) {
+		if (stack.getItem() != ModItems.TOOL) {
 			return;
 		}
 
 		// Check if the tool has Soulbound modifier
-		List<Modifier> mods = LootUtils.getModifiers(stack);
+		List<Modifier> mods = LootNBT.getModifiers(stack);
 		boolean hasSoulbound = false;
 		for (Modifier mod : mods) {
 			if (mod.tagName().equals("soulbound")) {

@@ -1,97 +1,128 @@
 package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleOptions;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 import java.util.List;
 import java.util.Random;
 
 public interface Modifier {
 
-	public static MutableComponent makeComp(String text, ChatFormatting color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		comp = comp.withStyle(color);
+    public static final String MODTAG = "modifiers";
+    static final String NAME = "name";
 
-		return comp;
-	}
+    /**
+     * Spawn particles around an entity
+     */
+    public static void TrackEntityParticle(World world, Entity e, EnumParticleTypes particleType) {
+        if (!world.isRemote && world instanceof WorldServer) {
+            Random r = new Random();
+            WorldServer ws = (WorldServer) world;
 
-	public static MutableComponent makeComp(String text, String color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		comp = comp.withStyle(ChatFormatting.getByName(color));
+            for (int i = 0; i < 32; ++i) {
+                double d0 = (double) (r.nextFloat() * 2.0F - 1.0F);
+                double d1 = (double) (r.nextFloat() * 2.0F - 1.0F);
+                double d2 = (double) (r.nextFloat() * 2.0F - 1.0F);
+                if (!(d0 * d0 + d1 * d1 + d2 * d2 > 1.0D)) {
+                    double d3 = e.posX + d0 * e.width / 4.0D;
+                    double d4 = e.posY + e.height / 2.0D + d1 * e.height / 4.0D;
+                    double d5 = e.posZ + d2 * e.width / 4.0D;
+                    ws.spawnParticle(particleType, d3, d4, d5, 1, d0, d1 + 0.2D, d2, 0.0D);
+                }
+            }
+        }
+    }
 
-		return comp;
-	}
+    /**
+     * Format text with color
+     */
+    public static String formatText(String text, TextFormatting color) {
+        return color + text + TextFormatting.RESET;
+    }
 
-	public static MutableComponent makeComp(Component compIn) {
-		MutableComponent comp = Component.empty();
-		comp.append(compIn);
-		return comp;
-	}
+    /**
+     * Format text with color name
+     */
+    public static String formatText(String text, String colorName) {
+        TextFormatting color = TextFormatting.getValueByName(colorName);
+        if (color == null) color = TextFormatting.WHITE;
+        return color + text + TextFormatting.RESET;
+    }
 
-	public static void TrackEntityParticle(Level level, Entity e, ParticleOptions particleType) {
-		if (!level.isClientSide()) {
-			Random r = new Random();
+    /**
+     * The internal tag name used for NBT storage
+     */
+    public String tagName();
 
-			ServerLevel sl = ((ServerLevel) level);
+    /**
+     * Write lore text to the list for tooltip display
+     */
+    public void writeToLore(List<String> list, boolean shift);
 
-			for (int i = 0; i < 32; ++i) {
-				double d0 = (double) (r.nextFloat() * 2.0F - 1.0F);
-				double d1 = (double) (r.nextFloat() * 2.0F - 1.0F);
-				double d2 = (double) (r.nextFloat() * 2.0F - 1.0F);
-				if (!(d0 * d0 + d1 * d1 + d2 * d2 > 1.0D)) {
-					double d3 = e.getX(d0 / 4.0D);
-					double d4 = e.getY(0.5D + d1 / 4.0D);
-					double d5 = e.getZ(d2 / 4.0D);
-					sl.sendParticles(particleType, d3, d4, d5, 1, d0, d1 + 0.2D, d2, 0.0D);
-				}
-			}
+    /**
+     * Short description of what this modifier does
+     */
+    public String description();
 
-		}
-	}
+    /**
+     * Display name of the modifier
+     */
+    public String name();
 
-	public static final String MODTAG = "modifiers";
+    /**
+     * Color name for display (lowercase, e.g., "gold", "aqua")
+     */
+    public String color();
 
-	static final String NAME = "name";
+    /**
+     * Create a copy of this modifier
+     */
+    public Modifier clone();
 
-	public String tagName();
+    /**
+     * Serialize to NBT
+     */
+    public NBTTagCompound toNBT();
 
-	public void writeToLore(List<Component> list, boolean shift);
+    /**
+     * Deserialize from NBT
+     */
+    public Modifier fromNBT(NBTTagCompound tag);
 
-	public String description();
+    /**
+     * Check if this modifier is compatible with the given tool type
+     */
+    public boolean forTool(ToolType type);
 
-	public String name();
+    /**
+     * Write additional details to lore (called when shift is held)
+     */
+    default String writeDetailsToLore(World world) {
+        return null;
+    }
 
-	public String color();
+    /**
+     * Check if this modifier is compatible with another modifier
+     */
+    default boolean compatible(Modifier mod) {
+        return true;
+    }
 
-	public Modifier clone();
+    /**
+     * Check if this modifier can level up
+     */
+    default boolean canLevel() {
+        return false;
+    }
 
-	public CompoundTag toNBT();
-
-	public Modifier fromNBT(CompoundTag tag);
-
-	public boolean forTool(ToolType type);
-
-	default Component writeDetailsToLore(Level level) {
-		return null;
-	}
-
-	default boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	default boolean canLevel() {
-		return false;
-	}
-
-	default void levelUp() {
-	}
+    /**
+     * Level up this modifier
+     */
+    default void levelUp() {
+    }
 }

@@ -4,15 +4,13 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -42,19 +40,19 @@ public class Learning implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity entity) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase entity) {
 
-		if (!(entity instanceof Player)) {
+		if (!(entity instanceof EntityPlayer)) {
 			return false;
 		}
 
-		Player player = (Player) entity;
+		EntityPlayer player = (EntityPlayer) entity;
 
 		this.count++;
 
 		while (count >= max) {
 			count = count - max;
-			player.giveExperiencePoints(this.points);
+			player.addExperience(this.points);
 		}
 
 		LootUtils.updateModifier(itemstack, this);
@@ -62,20 +60,23 @@ public class Learning implements BlockBreakModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putInt(COUNT, count);
-		tag.putInt(POINTS, points);
-		tag.putString(NAME, name);
+		tag.setInteger(COUNT, count);
+		tag.setInteger(POINTS, points);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Learning(tag.getStringOr(NAME, "Learning"), tag.getIntOr(COUNT, 0), tag.getIntOr(POINTS, 3));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Learning(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Learning",
+			tag.hasKey(COUNT) ? tag.getInteger(COUNT) : 0,
+			tag.hasKey(POINTS) ? tag.getInteger(POINTS) : 3);
 	}
 
 	@Override
@@ -99,20 +100,16 @@ public class Learning implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
-
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
+	public String writeDetailsToLore(World world) {
 		float amt = ((float) count) / ((float) max) * 100;
 		String perc = String.format("%.0f%% Learned", amt);
-
-		return Modifier.makeComp(perc, ChatFormatting.GRAY);
+		return Modifier.formatText(perc, TextFormatting.GRAY);
 	}
 
 	@Override

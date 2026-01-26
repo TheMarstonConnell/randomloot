@@ -1,8 +1,0 @@
-{
-  "type": "randomloot:trait_change",
-  "item": {
-    "count": 8,
-    "id": "minecraft:tnt"
-  },
-  "trait": "explode"
-}

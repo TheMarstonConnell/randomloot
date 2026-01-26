@@ -1,10 +1,12 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import net.minecraft.world.Container;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.inventory.IInventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.ITextComponent;
+import net.minecraft.util.text.TextComponentString;
 
-public class DummyContainer implements Container {
+public class DummyContainer implements IInventory {
 
 	ItemStack item;
 
@@ -17,13 +19,12 @@ public class DummyContainer implements Container {
 	}
 
 	@Override
-	public void clearContent() {
+	public void clear() {
 		item = ItemStack.EMPTY;
-
 	}
 
 	@Override
-	public int getContainerSize() {
+	public int getSizeInventory() {
 		return 1;
 	}
 
@@ -33,36 +34,87 @@ public class DummyContainer implements Container {
 	}
 
 	@Override
-	public ItemStack getItem(int _index) {
+	public ItemStack getStackInSlot(int index) {
 		return item;
 	}
 
 	@Override
-	public ItemStack removeItem(int _x, int _y) {
+	public ItemStack decrStackSize(int index, int count) {
+		if (item.isEmpty()) {
+			return ItemStack.EMPTY;
+		}
+		ItemStack result = item.splitStack(count);
+		if (item.isEmpty()) {
+			item = ItemStack.EMPTY;
+		}
+		return result;
+	}
+
+	@Override
+	public ItemStack removeStackFromSlot(int index) {
+		ItemStack result = item;
 		item = ItemStack.EMPTY;
-		return item;
+		return result;
 	}
 
 	@Override
-	public ItemStack removeItemNoUpdate(int _index) {
-		item = ItemStack.EMPTY;
-		return item;
-	}
-
-	@Override
-	public void setItem(int _index, ItemStack stack) {
+	public void setInventorySlotContents(int index, ItemStack stack) {
 		item = stack;
 	}
 
 	@Override
-	public void setChanged() {
-
+	public int getInventoryStackLimit() {
+		return 64;
 	}
 
 	@Override
-	public boolean stillValid(Player p_18946_) {
+	public void markDirty() {
+	}
 
+	@Override
+	public boolean isUsableByPlayer(EntityPlayer player) {
 		return true;
 	}
 
+	@Override
+	public void openInventory(EntityPlayer player) {
+	}
+
+	@Override
+	public void closeInventory(EntityPlayer player) {
+	}
+
+	@Override
+	public boolean isItemValidForSlot(int index, ItemStack stack) {
+		return true;
+	}
+
+	@Override
+	public int getField(int id) {
+		return 0;
+	}
+
+	@Override
+	public void setField(int id, int value) {
+	}
+
+	@Override
+	public int getFieldCount() {
+		return 0;
+	}
+
+	@Override
+	public String getName() {
+		return "DummyContainer";
+	}
+
+	@Override
+	public boolean hasCustomName() {
+		return false;
+	}
+
+	@Override
+	public ITextComponent getDisplayName() {
+		return new TextComponentString(getName());
+	}
 }

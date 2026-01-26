@@ -4,29 +4,19 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.CriteriaTriggers;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseFireBlock;
-import net.minecraft.world.level.block.CampfireBlock;
-import net.minecraft.world.level.block.CandleBlock;
-import net.minecraft.world.level.block.CandleCakeBlock;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -50,19 +40,21 @@ public class FirePlace implements UseModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putString(NAME, name);
-		tag.putInt(DAMAGE, damage);
+		tag.setString(NAME, name);
+		tag.setInteger(DAMAGE, damage);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new FirePlace(tag.getStringOr(NAME, "Fire Starter"), tag.getIntOr(DAMAGE, 2));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new FirePlace(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Fire Starter",
+			tag.hasKey(DAMAGE) ? tag.getInteger(DAMAGE) : 2);
 	}
 
 	@Override
@@ -77,54 +69,34 @@ public class FirePlace implements UseModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.RED.getName();
+		return TextFormatting.RED.getFriendlyName();
 	}
 
-	private InteractionResult flintNSteel(UseOnContext ctx) {
-		Player player = ctx.getPlayer();
-		Level level = ctx.getLevel();
-		BlockPos blockpos = ctx.getClickedPos();
-		BlockState blockstate = level.getBlockState(blockpos);
-		if (!CampfireBlock.canLight(blockstate) && !CandleBlock.canLight(blockstate)
-				&& !CandleCakeBlock.canLight(blockstate)) {
-			BlockPos blockpos1 = blockpos.relative(ctx.getClickedFace());
-			if (BaseFireBlock.canBePlacedAt(level, blockpos1, ctx.getHorizontalDirection())) {
-				level.playSound(player, blockpos1, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
-						level.getRandom().nextFloat() * 0.4F + 0.8F);
-				BlockState blockstate1 = BaseFireBlock.getState(level, blockpos1);
-				level.setBlock(blockpos1, blockstate1, 11);
-				level.gameEvent(player, GameEvent.BLOCK_PLACE, blockpos);
-				ItemStack itemstack = ctx.getItemInHand();
-				if (player instanceof ServerPlayer) {
-					CriteriaTriggers.PLACED_BLOCK.trigger((ServerPlayer) player, blockpos1, itemstack);
-					ctx.getItemInHand().hurtAndBreak(this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
-				}
+	private EnumActionResult flintNSteel(World world, EntityPlayer player, BlockPos pos, EnumFacing facing, EnumHand hand) {
+		BlockPos blockpos1 = pos.offset(facing);
+		IBlockState state = world.getBlockState(blockpos1);
 
-				return InteractionResult.SUCCESS;
-			} else {
-				return InteractionResult.FAIL;
-			}
-		} else {
-			level.playSound(player, blockpos, SoundEvents.FLINTANDSTEEL_USE, SoundSource.BLOCKS, 1.0F,
-					level.getRandom().nextFloat() * 0.4F + 0.8F);
-			level.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)), 11);
-			level.gameEvent(player, GameEvent.BLOCK_CHANGE, blockpos);
-			if (player != null) {
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
+		if (state.getBlock().isAir(state, world, blockpos1)) {
+			world.playSound(player, blockpos1, SoundEvents.ITEM_FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1.0F,
+					world.rand.nextFloat() * 0.4F + 0.8F);
+			world.setBlockState(blockpos1, Blocks.FIRE.getDefaultState(), 11);
 
-			return InteractionResult.SUCCESS;
+			ItemStack stack = player.getHeldItem(hand);
+			stack.damageItem(this.damage, player);
+
+			return EnumActionResult.SUCCESS;
 		}
+		return EnumActionResult.FAIL;
 	}
 
 	@Override
-	public InteractionResult use(UseOnContext ctx) {
+	public EnumActionResult use(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
 
-		if (!ctx.getPlayer().isCrouching()) {
-			return InteractionResult.PASS;  // Allow axe stripping when not crouching
+		if (!player.isSneaking()) {
+			return EnumActionResult.PASS;  // Allow axe stripping when not crouching
 		}
 
-		return flintNSteel(ctx);
+		return flintNSteel(world, player, pos, facing, hand);
 
 	}
 
@@ -135,11 +107,9 @@ public class FirePlace implements UseModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
-
 	}
 
 	@Override
@@ -153,7 +123,7 @@ public class FirePlace implements UseModifier {
 	}
 
 	@Override
-	public boolean use(Level level, Player player, InteractionHand hand) {
+	public boolean use(World world, EntityPlayer player, EnumHand hand) {
 		return true;
 	}
 

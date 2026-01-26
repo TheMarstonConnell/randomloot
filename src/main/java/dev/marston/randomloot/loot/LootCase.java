@@ -1,106 +1,65 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.core.Direction;
-import net.minecraft.core.Position;
-import net.minecraft.core.dispenser.BlockSource;
-import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.stats.StatType;
-import net.minecraft.stats.Stats;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.DispenserBlock;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.client.util.ITooltipFlag;
+import dev.marston.randomloot.items.ModItems;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.stats.StatList;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
+import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 public class LootCase extends Item {
 
-	public static void initDispenser() {
-		DispenserBlock.registerBehavior(ModItems.CASE.get(), new DefaultDispenseItemBehavior() {
-			public @NotNull ItemStack execute(@NotNull BlockSource source, @NotNull ItemStack stack) {
-				Direction direction = source.state().getValue(DispenserBlock.FACING);
-				Position position = DispenserBlock.getDispensePosition(source);
+    public LootCase() {
+        super();
+        this.setMaxStackSize(1);
+    }
 
-				ItemStack tool = LootUtils.genTool(null, source.level()); // generate tool and give it to the player
+    @Override
+    @SideOnly(Side.CLIENT)
+    public boolean hasEffect(ItemStack stack) {
+        return true; // Enchanted glow effect
+    }
 
-				spawnTool(source.level(), tool, 6, direction, position);
+    @Override
+    public ActionResult<ItemStack> onItemRightClick(World world, EntityPlayer player, EnumHand hand) {
+        ItemStack lootCase = player.getHeldItem(hand);
 
-				return ItemStack.EMPTY;
-			}
-		});
-	}
+        // Spawn particles around player
+        Modifier.TrackEntityParticle(world, player, EnumParticleTypes.CLOUD);
 
-	public static void spawnTool(Level level, ItemStack stack, int speed, Direction direction, Position pos) {
-		double d0 = pos.x();
-		double d1 = pos.y();
-		double d2 = pos.z();
-		if (direction.getAxis() == Direction.Axis.Y) {
-			d1 -= 0.125D;
-		} else {
-			d1 -= 0.15625D;
-		}
+        if (!world.isRemote && player instanceof EntityPlayerMP) {
+            EntityPlayerMP serverPlayer = (EntityPlayerMP) player;
+            
+            // Increment the case usage stat BEFORE generating (so first case = count 0)
+            serverPlayer.addStat(StatList.getObjectUseStats(ModItems.CASE));
+            
+            LootUtils.generateTool(serverPlayer, world);
+        }
 
-		ItemEntity itementity = new ItemEntity(level, d0, d1, d2, stack);
-		double d3 = level.random.nextDouble() * 0.1D + 0.2D;
-		itementity.setDeltaMovement(
-				level.random.triangle((double) direction.getStepX() * d3, 0.0172275D * (double) speed),
-				level.random.triangle(0.2D, 0.0172275D * (double) speed),
-				level.random.triangle((double) direction.getStepZ() * d3, 0.0172275D * (double) speed));
-		level.addFreshEntity(itementity);
-	}
+        // Consume the case unless in creative mode
+        if (!player.capabilities.isCreativeMode) {
+            lootCase.shrink(1);
+        }
 
-	public LootCase(Properties p) {
-		super(p.stacksTo(1));
-	}
+        return new ActionResult<>(EnumActionResult.SUCCESS, lootCase);
+    }
 
-	@Override
-	public boolean isFoil(@NotNull ItemStack stack) {
-		return true;
-	}
-
-	@Override
-	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
-		ItemStack lootCase = player.getItemInHand(hand);
-
-		if (player instanceof ServerPlayer sPlayer) {
-            StatType<Item> itemUsed = Stats.ITEM_USED;
-
-			sPlayer.getStats().increment(sPlayer, itemUsed.get(ModItems.CASE.get()), 1);
-		}
-
-		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
-
-
-
-		if (!level.isClientSide()) {
-            assert player instanceof ServerPlayer;
-            LootUtils.generateTool((ServerPlayer) player, level); // generate tool and give it to the player
-		}
-
-		player.awardStat(Stats.ITEM_USED.get(this));
-		if (!player.getAbilities().instabuild) {
-			lootCase.shrink(1);
-		}
-
-		return InteractionResult.SUCCESS;
-	}
-
-//	@Override
-//	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tipList, TooltipFlag flag) {
-//
-//		MutableComponent comp = Component.empty();
-//		comp.append("Right-click for loot!");
-//		comp = comp.withStyle(ChatFormatting.GRAY);
-//
-//		tipList.add(comp);
-//
-//	}
-
+    @Override
+    @SideOnly(Side.CLIENT)
+    public void addInformation(ItemStack stack, @Nullable World world, List<String> tooltip, ITooltipFlag flag) {
+        tooltip.add(TextFormatting.GRAY + "Right-click for loot!");
+    }
 }

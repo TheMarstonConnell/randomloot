@@ -5,14 +5,14 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.EntityList;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.HashMap;
 import java.util.List;
@@ -43,30 +43,32 @@ public class Nemesis implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
 
-		CompoundTag killCountsTag = new CompoundTag();
+		NBTTagCompound killCountsTag = new NBTTagCompound();
 		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
-			killCountsTag.putInt(entry.getKey(), entry.getValue());
+			killCountsTag.setInteger(entry.getKey(), entry.getValue());
 		}
-		tag.put(KILL_COUNTS, killCountsTag);
+		tag.setTag(KILL_COUNTS, killCountsTag);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		String name = tag.getStringOr(NAME, "Nemesis");
-		int level = tag.getIntOr(LEVEL, 1);
+	public Modifier fromNBT(NBTTagCompound tag) {
+		String name = tag.hasKey(NAME) ? tag.getString(NAME) : "Nemesis";
+		int level = tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 1;
 
 		Map<String, Integer> killCounts = new HashMap<>();
-		CompoundTag killCountsTag = tag.getCompoundOrEmpty(KILL_COUNTS);
-		for (String key : killCountsTag.keySet()) {
-			killCounts.put(key, killCountsTag.getIntOr(key, 0));
+		if (tag.hasKey(KILL_COUNTS)) {
+			NBTTagCompound killCountsTag = tag.getCompoundTag(KILL_COUNTS);
+			for (String key : killCountsTag.getKeySet()) {
+				killCounts.put(key, killCountsTag.getInteger(key));
+			}
 		}
 
 		return new Nemesis(name, level, killCounts);
@@ -87,7 +89,7 @@ public class Nemesis implements EntityHurtModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.DARK_RED.getName();
+		return TextFormatting.DARK_RED.getFriendlyName();
 	}
 
 	@Override
@@ -145,22 +147,22 @@ public class Nemesis implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
+	public String writeDetailsToLore(World world) {
 		String mostKilled = getMostKilledEntity();
 		if (mostKilled == null) {
-			return Modifier.makeComp("No nemesis yet", ChatFormatting.GRAY);
+			return Modifier.formatText("No nemesis yet", TextFormatting.GRAY);
 		}
 
 		String entityName = getEntityDisplayName(mostKilled);
 		int bonusPercent = (int) (bonusDamagePercent() * 100);
 
-		return Modifier.makeComp(entityName + " +" + bonusPercent + "%", ChatFormatting.GRAY);
+		return Modifier.formatText(entityName + " +" + bonusPercent + "%", TextFormatting.GRAY);
 	}
 
 	@Override
@@ -169,20 +171,21 @@ public class Nemesis implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 		// Only track kills on server side
-		if (hurtee.level().isClientSide()) {
+		if (hurtee.world.isRemote) {
 			return false;
 		}
 
-		String entityKey = EntityType.getKey(hurtee.getType()).toString();
+		ResourceLocation entityRL = EntityList.getKey(hurtee);
+		String entityKey = entityRL != null ? entityRL.toString() : "unknown";
 		String mostKilled = getMostKilledEntity();
 
 		// Apply bonus damage if attacking most-killed type
 		if (mostKilled != null && mostKilled.equals(entityKey)) {
 			float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 			float bonusDamage = baseDamage * bonusDamagePercent();
-			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
+			hurtee.attackEntityFrom(DamageSource.causeMobDamage(hurter), bonusDamage);
 		}
 
 		// Track kill if the entity is dead

@@ -6,22 +6,20 @@ import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumActionResult;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.EnumHand;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 import java.util.List;
 
@@ -46,16 +44,18 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new VoidTouched(tag.getStringOr(NAME, "Void-Touched"), tag.getIntOr(LEVEL, 0));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new VoidTouched(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Void-Touched",
+			tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 0);
 	}
 
 	@Override
@@ -73,7 +73,7 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.DARK_PURPLE.getName();
+		return TextFormatting.DARK_PURPLE.getFriendlyName();
 	}
 
 	@Override
@@ -83,8 +83,8 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -104,50 +104,52 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		return InteractionResult.PASS;
+	public EnumActionResult use(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ) {
+		return EnumActionResult.PASS;
 	}
 
 	@Override
-	public boolean use(Level level, Player player, InteractionHand hand) {
-		if (level.isClientSide()) return false;
+	public boolean use(World world, EntityPlayer player, EnumHand hand) {
+		if (world.isRemote) return false;
 
 		float distance = 8.0f + (this.level * 4.0f);
-		Vec3 lookVec = player.getLookAngle();
-		Vec3 destination = player.position().add(
-			lookVec.x * distance,
-			lookVec.y * distance,
-			lookVec.z * distance
+		Vec3d lookVec = player.getLookVec();
+		Vec3d destination = new Vec3d(
+			player.posX + lookVec.x * distance,
+			player.posY + lookVec.y * distance,
+			player.posZ + lookVec.z * distance
 		);
 
-		BlockPos targetPos = BlockPos.containing(destination);
-		BlockPos safePos = findSafeTeleportLocation(level, targetPos);
+		BlockPos targetPos = new BlockPos(destination);
+		BlockPos safePos = findSafeTeleportLocation(world, targetPos);
 
 		if (safePos != null) {
-			player.teleportTo(safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5);
+			player.setPositionAndUpdate(safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5);
 
-			if (level instanceof ServerLevel serverLevel) {
-				serverLevel.sendParticles(ParticleTypes.PORTAL,
-					player.getX(), player.getY() + 1, player.getZ(),
+			if (world instanceof WorldServer) {
+				WorldServer serverWorld = (WorldServer) world;
+				serverWorld.spawnParticle(EnumParticleTypes.PORTAL,
+					player.posX, player.posY + 1, player.posZ,
 					32, 0.5, 0.5, 0.5, 0.1);
 			}
 
-			player.getItemInHand(hand).hurtAndBreak(10, player, EquipmentSlot.MAINHAND);
-			player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
+			ItemStack stack = player.getHeldItem(hand);
+			stack.damageItem(10, player);
+			player.playSound(SoundEvents.ENTITY_ENDERMEN_TELEPORT, 1.0f, 1.0f);
 		}
 
 		return true;
 	}
 
-	private BlockPos findSafeTeleportLocation(Level level, BlockPos target) {
+	private BlockPos findSafeTeleportLocation(World world, BlockPos target) {
 		for (int yOffset = 0; yOffset >= -5; yOffset--) {
-			BlockPos checkPos = target.offset(0, yOffset, 0);
-			BlockState below = level.getBlockState(checkPos);
-			BlockState at = level.getBlockState(checkPos.above());
-			BlockState above = level.getBlockState(checkPos.above(2));
+			BlockPos checkPos = target.add(0, yOffset, 0);
+			IBlockState below = world.getBlockState(checkPos);
+			IBlockState at = world.getBlockState(checkPos.up());
+			IBlockState above = world.getBlockState(checkPos.up(2));
 
-			if (below.isSolid() && at.isAir() && above.isAir()) {
-				return checkPos.above();
+			if (below.isFullBlock() && !at.isFullBlock() && !above.isFullBlock()) {
+				return checkPos.up();
 			}
 		}
 		return null;

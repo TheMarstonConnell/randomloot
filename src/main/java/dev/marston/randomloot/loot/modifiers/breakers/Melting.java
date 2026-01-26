@@ -3,24 +3,18 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.FurnaceRecipes;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class Melting implements BlockBreakModifier {
 
@@ -43,72 +37,58 @@ public class Melting implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase player) {
 
-		Level level = player.level();
+		World world = player.world;
 
-		if (level.isClientSide()) {
+		if (world.isRemote) {
 			return false;
 		}
 
-		ServerLevel serverLevel = (ServerLevel) level;
-		AABB box = new AABB(pos.east().south().below().getCenter(), pos.west().north().above().getCenter());
+		final WorldServer serverWorld = (WorldServer) world;
+		AxisAlignedBB box = new AxisAlignedBB(
+			pos.getX() - 1, pos.getY() - 1, pos.getZ() - 1,
+			pos.getX() + 2, pos.getY() + 2, pos.getZ() + 2);
 
 		// Schedule execution after a short delay to allow block drops to spawn
-		// Then submit to server thread for thread-safe execution
-		CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS).execute(() -> {
-			serverLevel.getServer().execute(() -> {
-			List<Entity> items = level.getEntities(null, box);
+		serverWorld.addScheduledTask(() -> {
+			// Schedule for next tick to allow drops to spawn
+			serverWorld.addScheduledTask(() -> {
+				List<Entity> items = world.getEntitiesWithinAABB(Entity.class, box);
 
-			for (Entity entity : items) {
-				if (entity.getType() != EntityType.ITEM) {
-					continue;
-				}
-
-				ItemEntity i = (ItemEntity) entity;
-				if (i.getAge() > 10) {
-					continue;
-				}
-
-				ItemStack stack = i.getItem();
-
-				RecipeManager manager = serverLevel.recipeAccess();
-
-				Collection<RecipeHolder<?>> recipes = manager.getRecipes();
-				List<SingleItemRecipe> smeltingRecipes = recipes.stream()
-						.map(RecipeHolder::value)
-						.filter(r -> r.getType() == RecipeType.SMELTING)
-						.filter(r -> r instanceof SingleItemRecipe)
-						.map(r -> (SingleItemRecipe) r)
-						.toList();
-
-				for (SingleItemRecipe recipe : smeltingRecipes) {
-					if (!recipe.matches(new SingleRecipeInput(stack), level)) {
+				for (Entity entity : items) {
+					if (!(entity instanceof EntityItem)) {
 						continue;
 					}
 
-					ItemStack result = recipe.assemble(new SingleRecipeInput(stack), null);
+					EntityItem i = (EntityItem) entity;
+					if (i.getAge() > 10) {
+						continue;
+					}
+
+					ItemStack stack = i.getItem();
+					ItemStack result = FurnaceRecipes.instance().getSmeltingResult(stack);
 
 					if (result.isEmpty()) {
 						continue;
 					}
 
-					// Capture motion before modifying original item
-					var motion = i.getDeltaMovement();
+					// Copy the result with correct count
+					ItemStack newResult = result.copy();
+					newResult.setCount(stack.getCount());
 
-					ItemEntity k = new ItemEntity(level, i.getX(), i.getY(), i.getZ(), result);
+					// Create new item entity
+					EntityItem k = new EntityItem(world, i.posX, i.posY, i.posZ, newResult);
+					k.motionX = i.motionX;
+					k.motionY = i.motionY;
+					k.motionZ = i.motionZ;
 
-					i.setPos(i.position().x, -1, i.position().z);
-					i.kill(serverLevel);
+					// Remove old item
+					i.setDead();
 
-					level.addFreshEntity(k);
-
-					// Set motion after spawn to prevent it being reset
-					k.setDeltaMovement(motion);
-
-					break;
+					// Spawn new item
+					world.spawnEntity(k);
 				}
-			}
 			});
 		});
 
@@ -116,20 +96,22 @@ public class Melting implements BlockBreakModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putFloat(POWER, power);
+		tag.setFloat(POWER, power);
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Melting(tag.getStringOr(NAME, "Melting"), tag.getFloatOr(POWER, 1.0f));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Melting(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Melting",
+			tag.hasKey(POWER) ? tag.getFloat(POWER) : 1.0f);
 	}
 
 	@Override
@@ -153,10 +135,8 @@ public class Melting implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 

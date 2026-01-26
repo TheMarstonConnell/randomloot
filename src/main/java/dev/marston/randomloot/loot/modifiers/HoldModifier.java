@@ -1,9 +1,16 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.world.World;
 
 public interface HoldModifier extends Modifier {
-	public void hold(ItemStack stack, Level level, Entity holder);
+    /**
+     * Called every tick when this tool is held in the player's hand.
+     * 
+     * @param stack The tool being held
+     * @param world The world
+     * @param holder The entity holding the tool
+     */
+    public void hold(ItemStack stack, World world, Entity holder);
 }

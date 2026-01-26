@@ -6,16 +6,13 @@ import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LightningBolt;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.effect.EntityLightningBolt;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -41,19 +38,22 @@ public class Charging implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putInt(ModifierConstants.POINTS, points);
-		tag.putString(ModifierConstants.NAME, name);
-		tag.putLong(ModifierConstants.CHARGED, charged);
+		tag.setInteger(ModifierConstants.POINTS, points);
+		tag.setString(ModifierConstants.NAME, name);
+		tag.setLong(ModifierConstants.CHARGED, charged);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Charging(tag.getStringOr(ModifierConstants.NAME, "Charged"), tag.getIntOr(ModifierConstants.POINTS, 10), tag.getLongOr(ModifierConstants.CHARGED, 0L));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Charging(
+			tag.hasKey(ModifierConstants.NAME) ? tag.getString(ModifierConstants.NAME) : "Charged",
+			tag.hasKey(ModifierConstants.POINTS) ? tag.getInteger(ModifierConstants.POINTS) : 10,
+			tag.hasKey(ModifierConstants.CHARGED) ? tag.getLong(ModifierConstants.CHARGED) : 0L);
 	}
 
 	@Override
@@ -68,7 +68,7 @@ public class Charging implements EntityHurtModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.YELLOW.getName();
+		return TextFormatting.YELLOW.getFriendlyName();
 	}
 
 	@Override
@@ -78,19 +78,19 @@ public class Charging implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-		if (level != null) {
-			float charge = ChargeTracker.getCharge(level, charged, points);
+	public String writeDetailsToLore(World world) {
+		if (world != null) {
+			float charge = ChargeTracker.getCharge(world, charged, points);
 
 			String perc = String.format("%.0f%% Charged", charge * 100.0f);
 
-			return Modifier.makeComp(perc, ChatFormatting.GREEN);
+			return Modifier.formatText(perc, TextFormatting.GREEN);
 		}
 
 		return null;
@@ -102,21 +102,16 @@ public class Charging implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 
-		Level level = hurtee.level();
+		World world = hurtee.world;
 
-		long time = level.getGameTime();
+		long time = world.getTotalWorldTime();
 
-		if (ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
-			LightningBolt lb = new LightningBolt(EntityType.LIGHTNING_BOLT, level);
-			lb.setPos(hurtee.position());
-			if (hurter instanceof ServerPlayer) {
-				lb.setCause((ServerPlayer) hurter);
-			}
+		if (ChargeTracker.getCharge(world, charged, points) >= 1.0f) {
+			EntityLightningBolt lb = new EntityLightningBolt(world, hurtee.posX, hurtee.posY, hurtee.posZ, false);
 
-
-			level.addFreshEntity(lb);
+			world.spawnEntity(lb);
 
 			this.charged = time;
 			LootUtils.updateModifier(itemstack, this);

@@ -5,14 +5,13 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -32,18 +31,18 @@ public class Bezerk implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Bezerk(tag.getStringOr(NAME, "Bezerk"));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Bezerk(tag.hasKey(NAME) ? tag.getString(NAME) : "Bezerk");
 	}
 
 	@Override
@@ -58,7 +57,7 @@ public class Bezerk implements EntityHurtModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.GOLD.getName();
+		return TextFormatting.GOLD.getFriendlyName();
 	}
 
 	@Override
@@ -67,11 +66,9 @@ public class Bezerk implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
-
 	}
 
 	@Override
@@ -80,7 +77,7 @@ public class Bezerk implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
 		float maxHealth = hurter.getMaxHealth();
@@ -90,13 +87,13 @@ public class Bezerk implements EntityHurtModifier {
 
 		float amt = dmg * 0.05f * (ratio - 1);
 
-		if (hurter instanceof Player) {
-			Player p = (Player) hurter;
-			hurtee.hurt(hurter.damageSources().playerAttack(p), amt);
+		if (hurter instanceof EntityPlayer) {
+			EntityPlayer p = (EntityPlayer) hurter;
+			hurtee.attackEntityFrom(DamageSource.causePlayerDamage(p), amt);
 			return false;
 		}
 
-		hurtee.hurt(hurter.damageSources().mobAttack(hurter), amt);
+		hurtee.attackEntityFrom(DamageSource.causeMobDamage(hurter), amt);
 
 		return false;
 	}

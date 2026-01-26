@@ -4,28 +4,19 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.init.SoundEvents;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.SoundCategory;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
+import net.minecraft.world.storage.loot.LootContext;
+import net.minecraft.world.storage.loot.LootTable;
 
 import java.util.List;
 import java.util.Random;
@@ -42,9 +33,7 @@ public class Prospector implements BlockBreakModifier {
 	private static final float BASE_CHANCE = 0.03f;
 	private static final float CHANCE_PER_LEVEL = 0.01f;
 
-	private static final ResourceKey<LootTable> LOOT_TABLE = ResourceKey.create(
-			Registries.LOOT_TABLE,
-			Identifier.fromNamespaceAndPath("randomloot", "prospector_drops"));
+	private static final ResourceLocation LOOT_TABLE = new ResourceLocation("randomloot", "prospector_drops");
 
 	public Prospector(String name, int level, int totalFinds) {
 		this.name = name;
@@ -62,28 +51,27 @@ public class Prospector implements BlockBreakModifier {
 		return new Prospector();
 	}
 
-	private boolean isStoneBlock(BlockState state) {
-		return state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.BASE_STONE_NETHER);
+	private boolean isStoneBlock(net.minecraft.block.state.IBlockState state) {
+		net.minecraft.block.Block block = state.getBlock();
+		return block == net.minecraft.init.Blocks.STONE ||
+			   block == net.minecraft.init.Blocks.COBBLESTONE ||
+			   block == net.minecraft.init.Blocks.NETHERRACK;
 	}
 
-	private List<ItemStack> getDropsFromLootTable(ServerLevel serverLevel, BlockPos pos) {
-		LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(LOOT_TABLE);
-
-		LootParams params = new LootParams.Builder(serverLevel)
-				.withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
-				.create(LootContextParamSets.EMPTY);
-
-		return lootTable.getRandomItems(params);
+	private List<ItemStack> getDropsFromLootTable(WorldServer serverLevel, BlockPos pos) {
+		LootTable lootTable = serverLevel.getLootTableManager().getLootTableFromLocation(LOOT_TABLE);
+		LootContext.Builder builder = new LootContext.Builder(serverLevel);
+		return lootTable.generateLootForPools(serverLevel.rand, builder.build());
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity entity) {
-		Level level = entity.level();
-		if (level.isClientSide()) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase entity) {
+		World world = entity.world;
+		if (world.isRemote) {
 			return false;
 		}
 
-		BlockState state = level.getBlockState(pos);
+		net.minecraft.block.state.IBlockState state = world.getBlockState(pos);
 		if (!isStoneBlock(state)) {
 			return false;
 		}
@@ -94,19 +82,19 @@ public class Prospector implements BlockBreakModifier {
 			return false;
 		}
 
-		ServerLevel serverLevel = (ServerLevel) level;
+		WorldServer serverLevel = (WorldServer) world;
 		List<ItemStack> drops = getDropsFromLootTable(serverLevel, pos);
 
 		for (ItemStack drop : drops) {
 			if (!drop.isEmpty()) {
-				ItemEntity itemEntity = new ItemEntity(level,
+				EntityItem itemEntity = new EntityItem(world,
 						pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop);
-				level.addFreshEntity(itemEntity);
+				world.spawnEntity(itemEntity);
 			}
 		}
 
 		if (!drops.isEmpty()) {
-			level.playSound(null, pos, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.2f);
+			world.playSound(null, pos, SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP, SoundCategory.BLOCKS, 0.5f, 1.2f);
 			this.totalFinds++;
 			LootUtils.updateModifier(itemstack, this);
 		}
@@ -115,20 +103,20 @@ public class Prospector implements BlockBreakModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
-		tag.putInt(TOTAL_FINDS, totalFinds);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
+		tag.setInteger(TOTAL_FINDS, totalFinds);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
+	public Modifier fromNBT(NBTTagCompound tag) {
 		return new Prospector(
-				tag.getStringOr(NAME, "Prospector"),
-				tag.getIntOr(LEVEL, 1),
-				tag.getIntOr(TOTAL_FINDS, 0));
+				tag.hasKey(NAME) ? tag.getString(NAME) : "Prospector",
+				tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 1,
+				tag.hasKey(TOTAL_FINDS) ? tag.getInteger(TOTAL_FINDS) : 0);
 	}
 
 	@Override
@@ -146,7 +134,7 @@ public class Prospector implements BlockBreakModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.GOLD.getName();
+		return TextFormatting.GOLD.getFriendlyName();
 	}
 
 	@Override
@@ -156,17 +144,17 @@ public class Prospector implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
+	public String writeDetailsToLore(World world) {
 		if (totalFinds == 0) {
-			return Modifier.makeComp("No minerals found yet", ChatFormatting.GRAY);
+			return Modifier.formatText("No minerals found yet", TextFormatting.GRAY);
 		}
-		return Modifier.makeComp(totalFinds + " minerals found", ChatFormatting.GRAY);
+		return Modifier.formatText(totalFinds + " minerals found", TextFormatting.GRAY);
 	}
 
 	@Override

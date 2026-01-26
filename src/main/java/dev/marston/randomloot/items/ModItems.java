@@ -1,40 +1,36 @@
 package dev.marston.randomloot.items;
 
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.component.ModDataComponents;
-import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.loot.LootCase;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ModTemplate;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.item.Item;
+import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.registry.GameRegistry;
 
-import java.util.HashMap;
-
+@Mod.EventBusSubscriber(modid = RandomLoot.MODID)
 public class ModItems {
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(RandomLoot.MODID);
+    
+    @GameRegistry.ObjectHolder(RandomLoot.MODID + ":tool")
+    public static LootItem TOOL;
+    
+    @GameRegistry.ObjectHolder(RandomLoot.MODID + ":case")
+    public static LootCase CASE;
 
-
-    public static DeferredItem<Item> TOOL = ITEMS.registerItem("tool", p -> new LootItem(p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>())).enchantable(15)));
-    public static DeferredItem<Item> CASE = ITEMS.registerItem("case", LootCase::new);
-    public static DeferredItem<Item> MOD_ADD = ITEMS.registerItem("mod_add", p -> new ModTemplate(p, true));
-    public static DeferredItem<Item> MOD_SUB = ITEMS.registerItem("mod_sub", p -> new ModTemplate(p, false));
-
-
-    public static void register(IEventBus eventBus) {
-        ITEMS.register(eventBus);
-    }
-
-    public static void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            event.accept(TOOL);
-            event.accept(CASE);
-        }
+    @SubscribeEvent
+    public static void registerItems(RegistryEvent.Register<Item> event) {
+        LootItem tool = new LootItem();
+        tool.setRegistryName(RandomLoot.MODID, "tool");
+        tool.setTranslationKey(RandomLoot.MODID + ".tool");
+        tool.setCreativeTab(CreativeTabs.TOOLS);
+        
+        LootCase lootCase = new LootCase();
+        lootCase.setRegistryName(RandomLoot.MODID, "case");
+        lootCase.setTranslationKey(RandomLoot.MODID + ".case");
+        lootCase.setCreativeTab(CreativeTabs.TOOLS);
+        
+        event.getRegistry().registerAll(tool, lootCase);
     }
 }
-
-

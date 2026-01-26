@@ -1,8 +1,0 @@
-{
-  "type": "randomloot:trait_change",
-  "item": {
-    "count": 16,
-    "id": "minecraft:beef"
-  },
-  "trait": "bezerk"
-}

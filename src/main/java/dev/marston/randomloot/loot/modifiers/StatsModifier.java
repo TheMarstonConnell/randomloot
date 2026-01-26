@@ -1,8 +1,14 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.item.ItemStack;
 
 public interface StatsModifier extends Modifier {
-	public float getStats(ItemStack itemstack);
-
+    /**
+     * Get the stat modifier value for this modifier.
+     * Positive values increase stats, negative values decrease them.
+     * 
+     * @param itemstack The tool
+     * @return The stat modifier value
+     */
+    public float getStats(ItemStack itemstack);
 }

@@ -3,15 +3,11 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Explosion;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.Level.ExplosionInteraction;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -36,30 +32,32 @@ public class Explode implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase player) {
 
-		Level l = player.level();
+		World world = player.world;
 
-		l.explode(player, Explosion.getDefaultDamageSource(l, player), null, pos.getX(), pos.getY() + 0.5, pos.getZ(), power, false, ExplosionInteraction.TNT);
+		world.createExplosion(player, pos.getX(), pos.getY() + 0.5, pos.getZ(), power, true);
 
 		return false;
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putFloat(POWER, power);
+		tag.setFloat(POWER, power);
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Explode(tag.getStringOr(NAME, "Explosive"), tag.getFloatOr(POWER, 4.0f));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Explode(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Explosive",
+			tag.hasKey(POWER) ? tag.getFloat(POWER) : 4.0f);
 	}
 
 	@Override
@@ -83,10 +81,8 @@ public class Explode implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 

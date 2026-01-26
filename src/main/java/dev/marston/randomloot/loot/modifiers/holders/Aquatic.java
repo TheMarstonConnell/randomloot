@@ -5,16 +5,14 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.init.MobEffects;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -39,16 +37,18 @@ public class Aquatic implements HoldModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Aquatic(tag.getStringOr(NAME, "Aquatic"), tag.getIntOr(LEVEL, 0));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Aquatic(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Aquatic",
+			tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 0);
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class Aquatic implements HoldModifier, BiomeRestrictedModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.AQUA.getName();
+		return TextFormatting.AQUA.getFriendlyName();
 	}
 
 	@Override
@@ -75,8 +75,8 @@ public class Aquatic implements HoldModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -86,15 +86,16 @@ public class Aquatic implements HoldModifier, BiomeRestrictedModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof LivingEntity living)) return;
+	public void hold(ItemStack stack, World world, Entity holder) {
+		if (!(holder instanceof EntityLivingBase)) return;
+		EntityLivingBase living = (EntityLivingBase) holder;
 
 		// Water breathing
-		living.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, 40, 0, false, false));
+		living.addPotionEffect(new PotionEffect(MobEffects.WATER_BREATHING, 40, 0, false, false));
 
 		// Extra haste when underwater
-		if (living.isUnderWater()) {
-			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, this.level + 1, true, false));
+		if (living.isInWater()) {
+			living.addPotionEffect(new PotionEffect(MobEffects.HASTE, 40, this.level + 1, true, false));
 		}
 	}
 

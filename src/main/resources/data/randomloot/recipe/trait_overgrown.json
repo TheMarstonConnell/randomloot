@@ -1,8 +1,0 @@
-{
-  "type": "randomloot:trait_change",
-  "item": {
-    "count": 1,
-    "id": "minecraft:vine"
-  },
-  "trait": "overgrown"
-}

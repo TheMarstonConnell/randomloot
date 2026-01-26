@@ -3,17 +3,15 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.MobEffects;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -38,20 +36,22 @@ public class Rainy implements HoldModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putFloat(POWER, power);
+		tag.setFloat(POWER, power);
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Rainy(tag.getStringOr(NAME, "Rainy"), tag.getFloatOr(POWER, 4.0f));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Rainy(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Rainy",
+			tag.hasKey(POWER) ? tag.getFloat(POWER) : 4.0f);
 	}
 
 	@Override
@@ -66,7 +66,7 @@ public class Rainy implements HoldModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.BLUE.getName();
+		return TextFormatting.BLUE.getFriendlyName();
 	}
 
 	@Override
@@ -75,10 +75,8 @@ public class Rainy implements HoldModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -88,17 +86,17 @@ public class Rainy implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (level.isRainingAt(holder.blockPosition())) {
-			MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 3, 2, false, false);
+	public void hold(ItemStack stack, World world, Entity holder) {
+		if (world.isRainingAt(holder.getPosition())) {
+			PotionEffect haste = new PotionEffect(MobEffects.HASTE, 3, 2, false, false);
 
-			if (holder instanceof LivingEntity) {
-				LivingEntity le = (LivingEntity) holder;
-				le.addEffect(haste);
+			if (holder instanceof EntityLivingBase) {
+				EntityLivingBase le = (EntityLivingBase) holder;
+				le.addPotionEffect(haste);
 			}
-			if (holder instanceof Player) {
-				Player p = (Player) holder;
-				p.addEffect(haste);
+			if (holder instanceof EntityPlayer) {
+				EntityPlayer p = (EntityPlayer) holder;
+				p.addPotionEffect(haste);
 			}
 		}
 

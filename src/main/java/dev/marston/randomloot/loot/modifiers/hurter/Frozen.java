@@ -6,21 +6,19 @@ import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.block.BlockLiquid;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
+import net.minecraft.init.MobEffects;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -45,16 +43,18 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Frozen(tag.getStringOr(NAME, "Frozen"), tag.getIntOr(LEVEL, 0));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Frozen(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Frozen",
+			tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 0);
 	}
 
 	@Override
@@ -72,18 +72,18 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 
 	@Override
 	public String color() {
-		return ChatFormatting.AQUA.getName();
+		return TextFormatting.AQUA.getFriendlyName();
 	}
 
 	@Override
 	public String description() {
 		int radius = 3 + this.level;
-		return "Slows enemies on hit. Creates " + radius + " block radius of frosted ice on water.";
+		return "Slows enemies on hit. Creates " + radius + " block radius of ice on water.";
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -93,25 +93,26 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 		int duration = 3 * 20;
-		hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, duration, this.level + 1, false, true));
+		hurtee.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, duration, this.level + 1, false, true));
 		return false;
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof Player player)) return;
+	public void hold(ItemStack stack, World world, Entity holder) {
+		if (!(holder instanceof EntityPlayer)) return;
+		EntityPlayer player = (EntityPlayer) holder;
 
 		// Check every 2 ticks for smoother ice generation
-		if (level.getGameTime() % 2 != 0) return;
+		if (world.getTotalWorldTime() % 2 != 0) return;
 
-		BlockPos centerPos = player.blockPosition().below();
+		BlockPos centerPos = player.getPosition().down();
 
 		// Radius scales with level: 3.0, 4.0, 5.0
 		double radius = 3.0 + this.level;
 
-		// Create circular pattern of frosted ice (like Frost Walker but wider)
+		// Create circular pattern of ice (like Frost Walker but wider)
 		int radiusInt = (int) Math.ceil(radius);
 		for (int xOffset = -radiusInt; xOffset <= radiusInt; xOffset++) {
 			for (int zOffset = -radiusInt; zOffset <= radiusInt; zOffset++) {
@@ -121,12 +122,13 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 					continue; // Skip blocks outside the circle
 				}
 
-				BlockPos pos = centerPos.offset(xOffset, 0, zOffset);
-				BlockState below = level.getBlockState(pos);
+				BlockPos pos = centerPos.add(xOffset, 0, zOffset);
+				IBlockState below = world.getBlockState(pos);
 
-				// Create frosted ice on water surface (mimic Frost Walker)
-				if (below.is(Blocks.WATER) && below.getValue(LiquidBlock.LEVEL) == 0) {
-					level.setBlockAndUpdate(pos, Blocks.FROSTED_ICE.defaultBlockState());
+				// Create ice on water surface (mimic Frost Walker)
+				if (below.getBlock() == Blocks.WATER && below.getValue(BlockLiquid.LEVEL) == 0) {
+					// Use packed ice instead of frosted ice (1.12.2 doesn't have frosted ice)
+					world.setBlockState(pos, Blocks.ICE.getDefaultState());
 				}
 			}
 		}

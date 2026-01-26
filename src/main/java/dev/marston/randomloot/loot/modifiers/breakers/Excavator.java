@@ -4,18 +4,15 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.block.state.IBlockState;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.EnumFacing;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,28 +33,28 @@ public class Excavator implements BlockBreakModifier {
 		return new Excavator();
 	}
 
-	private List<BlockPos> get3x3Positions(BlockPos center, ServerPlayer player) {
+	private List<BlockPos> get3x3Positions(BlockPos center, EntityPlayerMP player) {
 		List<BlockPos> positions = new ArrayList<>();
 
-		Direction facing = player.getDirection();
-		float pitch = player.getXRot();
+		EnumFacing facing = player.getHorizontalFacing();
+		float pitch = player.rotationPitch;
 
 		if (Math.abs(pitch) > 45) {
 			// Looking up or down -> horizontal plane (X-Z)
 			for (int x = -1; x <= 1; x++) {
 				for (int z = -1; z <= 1; z++) {
 					if (x == 0 && z == 0) continue; // Skip center
-					positions.add(center.offset(x, 0, z));
+					positions.add(center.add(x, 0, z));
 				}
 			}
 		} else {
 			// Looking horizontally -> vertical plane perpendicular to facing
-			if (facing == Direction.NORTH || facing == Direction.SOUTH) {
+			if (facing == EnumFacing.NORTH || facing == EnumFacing.SOUTH) {
 				// Mine in X-Y plane
 				for (int x = -1; x <= 1; x++) {
 					for (int y = -1; y <= 1; y++) {
 						if (x == 0 && y == 0) continue; // Skip center
-						positions.add(center.offset(x, y, 0));
+						positions.add(center.add(x, y, 0));
 					}
 				}
 			} else {
@@ -65,7 +62,7 @@ public class Excavator implements BlockBreakModifier {
 				for (int z = -1; z <= 1; z++) {
 					for (int y = -1; y <= 1; y++) {
 						if (z == 0 && y == 0) continue; // Skip center
-						positions.add(center.offset(0, y, z));
+						positions.add(center.add(0, y, z));
 					}
 				}
 			}
@@ -75,21 +72,21 @@ public class Excavator implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase p) {
 
-		if (!(p instanceof ServerPlayer)) {
+		if (!(p instanceof EntityPlayerMP)) {
 			return false;
 		}
 
-		ServerPlayer player = (ServerPlayer) p;
+		EntityPlayerMP player = (EntityPlayerMP) p;
 
-		if (!player.isCrouching()) {
+		if (!player.isSneaking()) {
 			return false;
 		}
 
-		Level level = player.level();
+		World world = player.world;
 
-		if (level.isClientSide()) {
+		if (world.isRemote) {
 			return false;
 		}
 
@@ -97,42 +94,42 @@ public class Excavator implements BlockBreakModifier {
 		List<BlockPos> positions = get3x3Positions(pos, player);
 
 		for (BlockPos blockPos : positions) {
-			BlockState state = level.getBlockState(blockPos);
+			IBlockState state = world.getBlockState(blockPos);
 
 			// Skip air and unharvestable blocks
-			if (state.isAir()) {
+			if (state.getBlock().isAir(state, world, blockPos)) {
 				continue;
 			}
 
-			if (!state.canHarvestBlock(level, blockPos, player)) {
+			if (!state.getBlock().canHarvestBlock(world, blockPos, player)) {
 				continue;
 			}
 
-			if (!li.isCorrectToolForDrops(itemstack, state)) {
+			if (!li.canHarvestBlock(state, itemstack)) {
 				continue;
 			}
 
 			// Break the block with drops
-			state.getBlock().playerDestroy(level, player, blockPos, state, null, itemstack);
-			level.removeBlock(blockPos, false);
+			state.getBlock().harvestBlock(world, player, blockPos, state, null, itemstack);
+			world.setBlockToAir(blockPos);
 
 			// Apply durability damage for each block
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			itemstack.damageItem(1, player);
 		}
 
 		return false;
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Excavator(tag.getStringOr(NAME, "Excavator"));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Excavator(tag.hasKey(NAME) ? tag.getString(NAME) : "Excavator");
 	}
 
 	@Override
@@ -147,7 +144,7 @@ public class Excavator implements BlockBreakModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.GREEN.name();
+		return TextFormatting.GREEN.getFriendlyName();
 	}
 
 	@Override
@@ -156,8 +153,8 @@ public class Excavator implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 

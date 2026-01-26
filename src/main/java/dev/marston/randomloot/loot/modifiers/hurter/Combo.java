@@ -7,14 +7,13 @@ import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.EnumParticleTypes;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -40,19 +39,22 @@ public class Combo implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putInt(ModifierConstants.POINTS, points);
-		tag.putString(ModifierConstants.NAME, name);
-		tag.putLong(ModifierConstants.CHARGED, charged);
+		tag.setInteger(ModifierConstants.POINTS, points);
+		tag.setString(ModifierConstants.NAME, name);
+		tag.setLong(ModifierConstants.CHARGED, charged);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Combo(tag.getStringOr(ModifierConstants.NAME, "Dexterous"), tag.getIntOr(ModifierConstants.POINTS, 2), tag.getLongOr(ModifierConstants.CHARGED, 0L));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Combo(
+			tag.hasKey(ModifierConstants.NAME) ? tag.getString(ModifierConstants.NAME) : "Dexterous",
+			tag.hasKey(ModifierConstants.POINTS) ? tag.getInteger(ModifierConstants.POINTS) : 2,
+			tag.hasKey(ModifierConstants.CHARGED) ? tag.getLong(ModifierConstants.CHARGED) : 0L);
 	}
 
 	@Override
@@ -67,7 +69,7 @@ public class Combo implements EntityHurtModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.YELLOW.getName();
+		return TextFormatting.YELLOW.getFriendlyName();
 	}
 
 	@Override
@@ -76,24 +78,22 @@ public class Combo implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
-
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-		if (level != null) {
-			float charge = ChargeTracker.getCharge(level, charged, points);
+	public String writeDetailsToLore(World world) {
+		if (world != null) {
+			float charge = ChargeTracker.getCharge(world, charged, points);
 
 			String s = "Not Ready";
 			if (charge < 1.0f) {
 				s = "Ready";
 			}
 
-			return Modifier.makeComp(s, ChatFormatting.RED);
+			return Modifier.formatText(s, TextFormatting.RED);
 		}
 
 		return null;
@@ -105,19 +105,19 @@ public class Combo implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
 
-		Level level = hurtee.level();
+		World world = hurtee.world;
 
-		long time = level.getGameTime();
+		long time = world.getTotalWorldTime();
 
-		if (ChargeTracker.getCharge(level, charged, points) < 1.0f) {
+		if (ChargeTracker.getCharge(world, charged, points) < 1.0f) {
 
 			float damage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
-			hurtee.hurt(hurter.damageSources().mobAttack(hurtee), damage * 0.25f);
+			hurtee.attackEntityFrom(DamageSource.causeMobDamage(hurtee), damage * 0.25f);
 
-			Modifier.TrackEntityParticle(level, hurtee, ParticleTypes.CRIT);
+			Modifier.TrackEntityParticle(world, hurtee, EnumParticleTypes.CRIT);
 
 		}
 

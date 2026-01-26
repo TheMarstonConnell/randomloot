@@ -3,12 +3,10 @@ package dev.marston.randomloot.loot.modifiers.stats;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -29,18 +27,18 @@ public class Busted implements StatsModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Busted(tag.getStringOr(NAME, "Busted"));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Busted(tag.hasKey(NAME) ? tag.getString(NAME) : "Busted");
 	}
 
 	@Override
@@ -57,7 +55,7 @@ public class Busted implements StatsModifier {
 	@Override
 	public String color() {
 
-		return ChatFormatting.LIGHT_PURPLE.getName();
+		return TextFormatting.LIGHT_PURPLE.getFriendlyName();
 
 	}
 
@@ -67,10 +65,8 @@ public class Busted implements StatsModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -82,7 +78,7 @@ public class Busted implements StatsModifier {
 	@Override
 	public float getStats(ItemStack itemstack) {
 		float maxDamage = itemstack.getMaxDamage();
-		float currentDamage = itemstack.getDamageValue();
+		float currentDamage = itemstack.getItemDamage();
 
 		float ratio = currentDamage / maxDamage;
 

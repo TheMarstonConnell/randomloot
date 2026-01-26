@@ -1,8 +1,0 @@
-{
-  "type": "randomloot:trait_change",
-  "item": {
-    "count": 5,
-    "id": "minecraft:turtle_scute"
-  },
-  "trait": "resistance"
-}

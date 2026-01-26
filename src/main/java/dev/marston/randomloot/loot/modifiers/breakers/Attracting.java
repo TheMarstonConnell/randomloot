@@ -3,21 +3,17 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.item.EntityItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraft.world.WorldServer;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class Attracting implements BlockBreakModifier {
 
@@ -40,26 +36,32 @@ public class Attracting implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase player) {
 
-		Level level = player.level();
+		World world = player.world;
 
-		if (level.isClientSide()) {
+		if (world.isRemote) {
 			return false;
 		}
 
-		ServerLevel serverLevel = (ServerLevel) level;
-		AABB box = new AABB(pos.east().south().below().getCenter(), pos.west().north().above().getCenter());
+		final WorldServer serverWorld = (WorldServer) world;
+		AxisAlignedBB box = new AxisAlignedBB(
+			pos.getX() - 1, pos.getY() - 1, pos.getZ() - 1,
+			pos.getX() + 2, pos.getY() + 2, pos.getZ() + 2);
+
+		final double playerX = player.posX;
+		final double playerY = player.posY;
+		final double playerZ = player.posZ;
 
 		// Schedule execution after a short delay to allow block drops to spawn
-		// Then submit to server thread for thread-safe execution
-		CompletableFuture.delayedExecutor(100, TimeUnit.MILLISECONDS).execute(() -> {
-			serverLevel.getServer().execute(() -> {
-				List<Entity> items = level.getEntities(null, box);
+		serverWorld.addScheduledTask(() -> {
+			// Schedule for next tick to allow drops to spawn
+			serverWorld.addScheduledTask(() -> {
+				List<Entity> items = world.getEntitiesWithinAABB(Entity.class, box);
 
 				for (Entity entity : items) {
-					if (entity.getType() == EntityType.ITEM) {
-						entity.setPos(player.position());
+					if (entity instanceof EntityItem) {
+						entity.setPosition(playerX, playerY, playerZ);
 					}
 				}
 			});
@@ -69,20 +71,22 @@ public class Attracting implements BlockBreakModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
+	public NBTTagCompound toNBT() {
 
-		CompoundTag tag = new CompoundTag();
+		NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putFloat(POWER, power);
+		tag.setFloat(POWER, power);
 
-		tag.putString(NAME, name);
+		tag.setString(NAME, name);
 
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Attracting(tag.getStringOr(NAME, "Magnetic"), tag.getFloatOr(POWER, 2.0f));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Attracting(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Magnetic",
+			tag.hasKey(POWER) ? tag.getFloat(POWER) : 2.0f);
 	}
 
 	@Override
@@ -106,10 +110,8 @@ public class Attracting implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 

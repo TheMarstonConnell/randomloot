@@ -2,95 +2,95 @@ package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.level.Level;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
+import java.util.Random;
 
 public class Unbreaking implements Modifier {
 
-	final String name;
-	int level;
+    final String name;
+    int level;
 
-	final static String LEVEL = "trait_level";
+    final static String LEVEL = "trait_level";
 
-	public Unbreaking(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
+    public Unbreaking(String name, int level) {
+        this.name = name;
+        this.level = level;
+    }
 
-	public Unbreaking() {
-		this("Unbreaking", 0);
-	}
+    public Unbreaking() {
+        this("Unbreaking", 0);
+    }
 
-	public String tagName() {
-		return "unbreaking";
-	}
+    public String tagName() {
+        return "unbreaking";
+    }
 
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-	}
+    public void writeToLore(List<String> list, boolean shift) {
+        list.add(Modifier.formatText(this.name(), this.color()));
+    }
 
-	public String description() {
-		return "This tool has a " + String.format("%.0f", chance() * 100) + "% chance of not taking damage.";
-	}
+    public String description() {
+        return "This tool has a " + String.format("%.0f", chance() * 100) + "% chance of not taking damage.";
+    }
 
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
+    public String name() {
+        if (this.level == 0) {
+            return this.name;
+        }
 
-		if (!this.canLevel()) {
-			return "Unbreakable";
-		}
+        if (!this.canLevel()) {
+            return "Unbreakable";
+        }
 
-		return this.name + " " + LootUtils.roman(this.level + 1);
-	}
+        return this.name + " " + LootUtils.roman(this.level + 1);
+    }
 
-	public String color() {
-		return ChatFormatting.AQUA.getName();
-	}
+    public String color() {
+        return TextFormatting.AQUA.getFriendlyName();
+    }
 
-	public Modifier clone() {
-		return new Unbreaking(this.name, this.level);
-	}
+    public Modifier clone() {
+        return new Unbreaking(this.name, this.level);
+    }
 
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
+    public NBTTagCompound toNBT() {
+        NBTTagCompound tag = new NBTTagCompound();
 
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+        tag.setString(NAME, name);
+        tag.setInteger(LEVEL, level);
 
-		return tag;
-	}
+        return tag;
+    }
 
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), tag.getIntOr(LEVEL, 0));
-	}
+    public Modifier fromNBT(NBTTagCompound tag) {
+        String n = tag.hasKey(NAME) ? tag.getString(NAME) : "Unbreaking";
+        int l = tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 0;
+        return new Unbreaking(n, l);
+    }
 
-	public boolean forTool(ToolType type) {
-		return true;
-	}
+    public boolean forTool(ToolType type) {
+        return true;
+    }
 
-	public boolean canLevel() {
-		return this.level < 4;
-	}
+    public boolean canLevel() {
+        return this.level < 4;
+    }
 
-	public void levelUp() {
-		this.level++;
-	}
+    public void levelUp() {
+        this.level++;
+    }
 
-	private float chance() {
-		return 0.2f * (float) (this.level + 1);
-	}
+    private float chance() {
+        return 0.2f * (float) (this.level + 1);
+    }
 
-	public boolean test(Level level) {
-		float f = level.getRandom().nextFloat();
-
-		return f <= chance();
-	}
+    public boolean test(World world) {
+        Random r = new Random();
+        float f = r.nextFloat();
+        return f <= chance();
+    }
 }

@@ -6,17 +6,19 @@ import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.monster.EntityCaveSpider;
+import net.minecraft.entity.monster.EntityEndermite;
+import net.minecraft.entity.monster.EntitySilverfish;
+import net.minecraft.entity.monster.EntitySpider;
+import net.minecraft.init.MobEffects;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NBTTagCompound;
+import net.minecraft.potion.PotionEffect;
+import net.minecraft.util.DamageSource;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraft.world.World;
 
 import java.util.List;
 
@@ -41,16 +43,18 @@ public class Overgrown implements EntityHurtModifier, HoldModifier, BiomeRestric
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+	public NBTTagCompound toNBT() {
+		NBTTagCompound tag = new NBTTagCompound();
+		tag.setString(NAME, name);
+		tag.setInteger(LEVEL, level);
 		return tag;
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), tag.getIntOr(LEVEL, 0));
+	public Modifier fromNBT(NBTTagCompound tag) {
+		return new Overgrown(
+			tag.hasKey(NAME) ? tag.getString(NAME) : "Overgrown",
+			tag.hasKey(LEVEL) ? tag.getInteger(LEVEL) : 0);
 	}
 
 	@Override
@@ -68,7 +72,7 @@ public class Overgrown implements EntityHurtModifier, HoldModifier, BiomeRestric
 
 	@Override
 	public String color() {
-		return ChatFormatting.GREEN.getName();
+		return TextFormatting.GREEN.getFriendlyName();
 	}
 
 	@Override
@@ -78,8 +82,8 @@ public class Overgrown implements EntityHurtModifier, HoldModifier, BiomeRestric
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
+	public void writeToLore(List<String> list, boolean shift) {
+		String comp = Modifier.formatText(this.name(), this.color());
 		list.add(comp);
 	}
 
@@ -89,28 +93,27 @@ public class Overgrown implements EntityHurtModifier, HoldModifier, BiomeRestric
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		EntityType<?> type = hurtee.getType();
-		boolean isArthropod = type == EntityType.SPIDER ||
-							  type == EntityType.CAVE_SPIDER ||
-							  type == EntityType.SILVERFISH ||
-							  type == EntityType.ENDERMITE ||
-							  type == EntityType.BEE;
+	public boolean hurtEnemy(ItemStack itemstack, EntityLivingBase hurtee, EntityLivingBase hurter) {
+		boolean isArthropod = hurtee instanceof EntitySpider ||
+							  hurtee instanceof EntityCaveSpider ||
+							  hurtee instanceof EntitySilverfish ||
+							  hurtee instanceof EntityEndermite;
 
 		if (isArthropod) {
 			float bonusDamage = 2.5f + (this.level * 2.5f);
-			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
-			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, this.level));
+			hurtee.attackEntityFrom(DamageSource.causeMobDamage(hurter), bonusDamage);
+			hurtee.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 60, this.level));
 		}
 
 		return false;
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof LivingEntity living)) return;
-		if (living.hasEffect(MobEffects.POISON)) {
-			living.removeEffect(MobEffects.POISON);
+	public void hold(ItemStack stack, World world, Entity holder) {
+		if (!(holder instanceof EntityLivingBase)) return;
+		EntityLivingBase living = (EntityLivingBase) holder;
+		if (living.isPotionActive(MobEffects.POISON)) {
+			living.removePotionEffect(MobEffects.POISON);
 		}
 	}
 

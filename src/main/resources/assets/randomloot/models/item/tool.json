@@ -240,6 +240,18 @@
         },
         {
             "predicate": {
+                "randomloot:cosmetic": 0.3012
+            },
+            "model": "randomloot:item/tools/axe/13"
+        },
+        {
+            "predicate": {
+                "randomloot:cosmetic": 0.3013
+            },
+            "model": "randomloot:item/tools/axe/14"
+        },
+        {
+            "predicate": {
                 "randomloot:cosmetic": 0.4
             },
             "model": "randomloot:item/tools/sword/1"
@@ -519,6 +531,24 @@
                 "randomloot:cosmetic": 0.4046
             },
             "model": "randomloot:item/tools/sword/47"
+        },
+        {
+            "predicate": {
+                "randomloot:cosmetic": 0.4047
+            },
+            "model": "randomloot:item/tools/sword/48"
+        },
+        {
+            "predicate": {
+                "randomloot:cosmetic": 0.4048
+            },
+            "model": "randomloot:item/tools/sword/49"
+        },
+        {
+            "predicate": {
+                "randomloot:cosmetic": 0.4049
+            },
+            "model": "randomloot:item/tools/sword/50"
         }
     ]
 }
