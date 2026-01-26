@@ -1,5 +1,6 @@
 package dev.marston.randomloot.recipes;
 
+import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootNBT;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
@@ -10,6 +11,7 @@ import net.minecraft.init.Items;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraftforge.event.AnvilUpdateEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 
 import java.util.HashMap;
@@ -19,6 +21,7 @@ import java.util.Map;
  * Handles anvil recipes for adding traits to tools.
  * All traits cost 30 XP levels.
  */
+@Mod.EventBusSubscriber(modid = RandomLoot.MODID)
 public class AnvilRecipeHandler {
 
     private static final int XP_COST = 30;
@@ -69,7 +72,7 @@ public class AnvilRecipeHandler {
     }
 
     @SubscribeEvent
-    public void onAnvilUpdate(AnvilUpdateEvent event) {
+    public static void onAnvilUpdate(AnvilUpdateEvent event) {
         ItemStack tool = event.getLeft();
         ItemStack ingredient = event.getRight();
 
@@ -123,7 +126,7 @@ public class AnvilRecipeHandler {
         event.setMaterialCost(1);
     }
 
-    private String getTraitForItem(ItemStack stack) {
+    private static String getTraitForItem(ItemStack stack) {
         if (stack.isEmpty()) {
             return null;
         }
