@@ -28,47 +28,46 @@ public class AnvilRecipeHandler {
     private static final Map<Item, String> TRAIT_RECIPES = new HashMap<>();
 
     static {
-        // Initialize trait recipes
-        TRAIT_RECIPES.put(Items.ENDER_PEARL, "teleportuse");
+        // Initialize trait recipes - tagNames must match ModifierRegistry exactly
+        TRAIT_RECIPES.put(Items.ENDER_PEARL, "void_touched");
         TRAIT_RECIPES.put(Items.BLAZE_POWDER, "scorched");
         TRAIT_RECIPES.put(Items.PRISMARINE_SHARD, "aquatic");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.PACKED_ICE), "frozen");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.VINE), "overgrown");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.TNT), "explode");
         TRAIT_RECIPES.put(Items.MAGMA_CREAM, "flaming");
-        TRAIT_RECIPES.put(Items.GOLDEN_APPLE, "draining");
+        TRAIT_RECIPES.put(Items.GOLDEN_APPLE, "necrotic");  // Draining
         TRAIT_RECIPES.put(Items.EXPERIENCE_BOTTLE, "learning");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.IRON_BLOCK), "attracting");
         TRAIT_RECIPES.put(Items.LAVA_BUCKET, "melting");
         TRAIT_RECIPES.put(Items.DIAMOND_PICKAXE, "excavator");
         TRAIT_RECIPES.put(Items.DIAMOND, "prospector");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.REDSTONE_BLOCK), "veiny");
-        TRAIT_RECIPES.put(Items.COAL, "torchplace");
-        TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.DIRT), "dirtplace");
-        TRAIT_RECIPES.put(Items.FLINT_AND_STEEL, "fireplace");
-        TRAIT_RECIPES.put(Items.FIRE_CHARGE, "fireball");
+        TRAIT_RECIPES.put(Items.COAL, "torch_place");
+        TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.DIRT), "dirt_place");
+        TRAIT_RECIPES.put(Items.FLINT_AND_STEEL, "fire_place");
+        TRAIT_RECIPES.put(Items.FIRE_CHARGE, "flame_thrower");
         TRAIT_RECIPES.put(Items.DIAMOND_SWORD, "critical");
         TRAIT_RECIPES.put(Items.FERMENTED_SPIDER_EYE, "poison");
         TRAIT_RECIPES.put(Items.SKULL, "wither"); // Wither skeleton skull (meta 1)
         TRAIT_RECIPES.put(Items.DYE, "blinding"); // Ink sac (meta 0)
         TRAIT_RECIPES.put(Items.NETHER_STAR, "bezerk");
         TRAIT_RECIPES.put(Items.NAME_TAG, "nemesis");
-        // Player head would be skull with meta 3
-        TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.PISTON), "charging");
+        TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.PISTON), "charged");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.HOPPER), "combo");
         TRAIT_RECIPES.put(Items.SUGAR, "hasty");
         TRAIT_RECIPES.put(Items.GOLDEN_CARROT, "filling");
-        // Enchanted golden apple - use regular golden apple for now
         TRAIT_RECIPES.put(Items.GHAST_TEAR, "regeneration");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.OBSIDIAN), "resistance");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.MAGMA), "fire_resistance");
         TRAIT_RECIPES.put(Items.BUCKET, "rainy");
-        TRAIT_RECIPES.put(Items.EMERALD, "orefinder");
-        TRAIT_RECIPES.put(Items.ENDER_EYE, "spawnerfinder");
-        // Heart of the Sea doesn't exist in 1.12.2, use prismarine crystals instead
+        TRAIT_RECIPES.put(Items.EMERALD, "detecting");  // OreFinder
+        TRAIT_RECIPES.put(Items.ENDER_EYE, "spawner");  // TreasureFinder
         TRAIT_RECIPES.put(Items.PRISMARINE_CRYSTALS, "living");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.DIAMOND_BLOCK), "unbreaking");
         TRAIT_RECIPES.put(Item.getItemFromBlock(Blocks.SLIME_BLOCK), "busted");
+        TRAIT_RECIPES.put(Items.TOTEM_OF_UNDYING, "absorption");  // Appley effect
+        TRAIT_RECIPES.put(Items.BONE, "soulbound");
     }
 
     @SubscribeEvent
