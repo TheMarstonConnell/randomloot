@@ -3,16 +3,11 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
-import net.minecraft.entity.item.EntityItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.FurnaceRecipes;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import net.minecraft.world.WorldServer;
 
 import java.util.List;
 
@@ -38,72 +33,33 @@ public class Melting implements BlockBreakModifier {
 
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, EntityLivingBase player) {
-
-		World world = player.world;
-
-		if (world.isRemote) {
-			return false;
-		}
-
-		final WorldServer serverWorld = (WorldServer) world;
-		AxisAlignedBB box = new AxisAlignedBB(
-			pos.getX() - 1, pos.getY() - 1, pos.getZ() - 1,
-			pos.getX() + 2, pos.getY() + 2, pos.getZ() + 2);
-
-		// Schedule execution after a short delay to allow block drops to spawn
-		serverWorld.addScheduledTask(() -> {
-			// Schedule for next tick to allow drops to spawn
-			serverWorld.addScheduledTask(() -> {
-				List<Entity> items = world.getEntitiesWithinAABB(Entity.class, box);
-
-				for (Entity entity : items) {
-					if (!(entity instanceof EntityItem)) {
-						continue;
-					}
-
-					EntityItem i = (EntityItem) entity;
-					if (i.getAge() > 10) {
-						continue;
-					}
-
-					ItemStack stack = i.getItem();
-					ItemStack result = FurnaceRecipes.instance().getSmeltingResult(stack);
-
-					if (result.isEmpty()) {
-						continue;
-					}
-
-					// Copy the result with correct count
-					ItemStack newResult = result.copy();
-					newResult.setCount(stack.getCount());
-
-					// Create new item entity
-					EntityItem k = new EntityItem(world, i.posX, i.posY, i.posZ, newResult);
-					k.motionX = i.motionX;
-					k.motionY = i.motionY;
-					k.motionZ = i.motionZ;
-
-					// Remove old item
-					i.setDead();
-
-					// Spawn new item
-					world.spawnEntity(k);
-				}
-			});
-		});
-
+		// Melting is now handled via MeltingHandler event
+		// This method is kept for interface compliance but does nothing
 		return false;
+	}
+
+	/**
+	 * Process drops for smelting - called from MeltingHandler event.
+	 * Modifies the drop list in place, replacing items with their smelted versions.
+	 */
+	public static void processDrops(List<ItemStack> drops) {
+		for (int i = 0; i < drops.size(); i++) {
+			ItemStack stack = drops.get(i);
+			ItemStack result = FurnaceRecipes.instance().getSmeltingResult(stack);
+
+			if (!result.isEmpty()) {
+				ItemStack newResult = result.copy();
+				newResult.setCount(stack.getCount());
+				drops.set(i, newResult);
+			}
+		}
 	}
 
 	@Override
 	public NBTTagCompound toNBT() {
-
 		NBTTagCompound tag = new NBTTagCompound();
-
 		tag.setFloat(POWER, power);
-
 		tag.setString(NAME, name);
-
 		return tag;
 	}
 
