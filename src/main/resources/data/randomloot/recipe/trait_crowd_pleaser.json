@@ -1,0 +1,8 @@
+{
+  "type": "randomloot:trait_change",
+  "item": {
+    "count": 1,
+    "id": "minecraft:firework_star"
+  },
+  "trait": "crowd_pleaser"
+}
