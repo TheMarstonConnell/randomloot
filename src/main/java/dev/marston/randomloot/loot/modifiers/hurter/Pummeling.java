@@ -8,8 +8,10 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 public class Pummeling implements EntityHurtModifier {
@@ -37,7 +39,7 @@ public class Pummeling implements EntityHurtModifier {
 
     @Override
     public String color() {
-        return ChatFormatting.GRAY.getName();
+        return ChatFormatting.DARK_RED.getName();
     }
 
     @Override
@@ -78,22 +80,18 @@ public class Pummeling implements EntityHurtModifier {
             return false;
         }
 
-        // Get current velocity and add downward force
-        Vec3 currentVelocity = hurtee.getDeltaMovement();
-
-        // Push the entity down by adding negative Y velocity (-0.5 blocks worth of force)
-        // Also add a small amount of the attacker's facing direction for realism
-        Vec3 lookVec = hurter.getLookAngle();
-        double downwardForce = -0.5;
-        double horizontalForce = 0.1;
-
-        hurtee.setDeltaMovement(
-            currentVelocity.x + (lookVec.x * horizontalForce),
-            downwardForce,
-            currentVelocity.z + (lookVec.z * horizontalForce)
-        );
-
-        // Mark velocity as changed so it syncs to client
+        Level level = hurtee.level();
+        Vec3 pos = hurtee.position();
+        
+        // Check if there's air 2 blocks below
+        BlockPos twoBelow = BlockPos.containing(pos.x, pos.y - 2, pos.z);
+        boolean airBelow = !level.getBlockState(twoBelow).isSolid();
+        
+        // If air below, slam through floor (1.5 blocks), otherwise partial slam (0.9 blocks)
+        double slamDepth = airBelow ? 1.5 : 0.9;
+        
+        hurtee.teleportTo(pos.x, pos.y - slamDepth, pos.z);
+        hurtee.setDeltaMovement(0, 0, 0);
         hurtee.hurtMarked = true;
 
         return false;
