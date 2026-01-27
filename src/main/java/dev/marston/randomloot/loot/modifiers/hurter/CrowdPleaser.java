@@ -112,6 +112,9 @@ public class CrowdPleaser implements EntityHurtModifier {
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
             float bonusDamage = baseDamage * bonusPercent;
             
+            // Reset invulnerability frames so bonus damage applies
+            hurtee.invulnerableTime = 0;
+            
             // Apply bonus damage
             if (hurter instanceof Player player) {
                 hurtee.hurt(hurter.damageSources().playerAttack(player), bonusDamage);
