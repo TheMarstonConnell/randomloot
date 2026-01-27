@@ -19,7 +19,7 @@ import net.minecraft.world.phys.Vec3;
 
 public class Clunky implements EntityHurtModifier, HoldModifier {
 
-    private static final double KNOCKBACK_STRENGTH = 1.5;
+    private static final double KNOCKBACK_STRENGTH = 0.4;
     
     private String name;
 
