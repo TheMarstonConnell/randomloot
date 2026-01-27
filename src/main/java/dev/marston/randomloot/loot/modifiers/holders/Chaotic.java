@@ -7,40 +7,33 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class Chaotic implements HoldModifier, StatsModifier, EntityHurtModifier {
+public class Chaotic implements StatsModifier, EntityHurtModifier {
 
-    private static final String LAST_UPDATE = "lastUpdate";
-    private static final String CURRENT_STATE = "currentState";
-    private static final long UPDATE_INTERVAL = 100; // 5 seconds = 100 ticks
-    private static final float MODIFIER_AMOUNT = 0.50f; // 50%
+    private static final String SEED = "chaoticSeed";
+    private static final long UPDATE_INTERVAL = 100L; // 5 seconds = 100 ticks (20 ticks/sec)
+    private static final float MAX_MODIFIER = 0.50f; // +/- 50% max
 
     private String name;
-    private long lastUpdateTick;
-    private int currentState; // -1 = debuff, 0 = neutral, 1 = buff
-    private Random random = new Random();
+    private long seed;
 
     public Chaotic() {
         this.name = "Chaotic";
-        this.lastUpdateTick = 0;
-        this.currentState = 0;
+        this.seed = new Random().nextLong();
     }
 
-    public Chaotic(String name, long lastUpdateTick, int currentState) {
+    public Chaotic(String name, long seed) {
         this.name = name;
-        this.lastUpdateTick = lastUpdateTick;
-        this.currentState = currentState;
+        this.seed = seed;
     }
 
     @Override
@@ -50,13 +43,7 @@ public class Chaotic implements HoldModifier, StatsModifier, EntityHurtModifier 
 
     @Override
     public String name() {
-        String suffix = "";
-        if (currentState > 0) {
-            suffix = " (+)";
-        } else if (currentState < 0) {
-            suffix = " (-)";
-        }
-        return this.name + suffix;
+        return this.name;
     }
 
     @Override
@@ -73,17 +60,15 @@ public class Chaotic implements HoldModifier, StatsModifier, EntityHurtModifier 
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
-        tag.putLong(LAST_UPDATE, lastUpdateTick);
-        tag.putInt(CURRENT_STATE, currentState);
+        tag.putLong(SEED, seed);
         return tag;
     }
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
         String name = tag.getStringOr(NAME, "Chaotic");
-        long lastUpdate = tag.getLongOr(LAST_UPDATE, 0L);
-        int state = tag.getIntOr(CURRENT_STATE, 0);
-        return new Chaotic(name, lastUpdate, state);
+        long s = tag.getLongOr(SEED, 12345L); // Fixed default seed
+        return new Chaotic(name, s);
     }
 
     @Override
@@ -102,36 +87,56 @@ public class Chaotic implements HoldModifier, StatsModifier, EntityHurtModifier 
         list.add(comp);
     }
 
-    private void updateState(ItemStack itemstack, long currentTick) {
-        if (currentTick - lastUpdateTick >= UPDATE_INTERVAL) {
-            // Randomly choose new state: -1, 0, or 1 (weighted towards extremes)
-            int roll = random.nextInt(100);
-            if (roll < 40) {
-                currentState = 1; // 40% chance buff
-            } else if (roll < 80) {
-                currentState = -1; // 40% chance debuff
-            } else {
-                currentState = 0; // 20% chance neutral
-            }
-            lastUpdateTick = currentTick;
-            LootUtils.updateModifier(itemstack, this);
+    /**
+     * Calculate current state based on game time and seed.
+     * This works on both client and server since it's deterministic.
+     */
+    private float getCurrentState(Level level) {
+        if (level == null) {
+            return 0f;
         }
+        // Get which "period" we're in (changes every UPDATE_INTERVAL ticks)
+        long period = level.getGameTime() / UPDATE_INTERVAL;
+        // Use seed XOR'd with period * large prime for better distribution
+        Random rand = new Random(seed ^ (period * 6364136223846793005L));
+        return (rand.nextFloat() * 2 * MAX_MODIFIER) - MAX_MODIFIER;
     }
 
     @Override
-    public void hold(ItemStack stack, Level level, Entity holder) {
-        if (level.isClientSide()) {
-            return;
+    public Component writeDetailsToLore(Level level) {
+        if (level == null) {
+            return Modifier.makeComp("Unknown", ChatFormatting.GRAY);
         }
-
-        long currentTick = level.getGameTime();
-        updateState(stack, currentTick);
+        
+        float currentState = getCurrentState(level);
+        int percentage = Math.round(currentState * 100);
+        
+        // Calculate time until next update
+        long gameTime = level.getGameTime();
+        long ticksUntilUpdate = UPDATE_INTERVAL - (gameTime % UPDATE_INTERVAL);
+        int secondsUntilUpdate = (int) Math.ceil(ticksUntilUpdate / 20.0);
+        
+        String stateText;
+        ChatFormatting stateColor;
+        if (percentage > 0) {
+            stateText = "+" + percentage + "%";
+            stateColor = ChatFormatting.GREEN;
+        } else if (percentage < 0) {
+            stateText = percentage + "%";
+            stateColor = ChatFormatting.RED;
+        } else {
+            stateText = "0%";
+            stateColor = ChatFormatting.GRAY;
+        }
+        
+        return Modifier.makeComp(stateText + " (" + secondsUntilUpdate + "s)", stateColor);
     }
 
     @Override
     public float getStats(ItemStack itemstack) {
-        // Mining speed modifier: 1.0 = neutral, 1.5 = buff, 0.5 = debuff
-        return 1.0f + (currentState * MODIFIER_AMOUNT);
+        // Can't get level here, so return neutral
+        // The actual effect happens in hurtEnemy
+        return 1.0f;
     }
 
     @Override
@@ -140,10 +145,14 @@ public class Chaotic implements HoldModifier, StatsModifier, EntityHurtModifier 
             return false;
         }
 
+        float currentState = getCurrentState(hurtee.level());
+
         // Apply damage modifier based on current state
         if (currentState != 0) {
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-            float bonusDamage = baseDamage * (currentState * MODIFIER_AMOUNT);
+            float bonusDamage = baseDamage * currentState;
+            // Reset invulnerability to apply bonus damage
+            hurtee.invulnerableTime = 0;
             hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
         }
 
