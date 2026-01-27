@@ -80,6 +80,7 @@ public class ModifierRegistry {
 	public static Modifier FIRE_RESISTANT = register(
 			new Effect("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE));
 	public static Modifier RAINY = register(new Rainy());
+	public static Modifier NATURALIST = register(new Naturalist());
 	public static Modifier ORE_FINDER = register(new OreFinder());
 	public static Modifier SPAWNER_FINDER = register(new TreasureFinder());
 	public static Modifier LIVING = register(new Healing());
@@ -96,7 +97,7 @@ public class ModifierRegistry {
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST);
 
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE);
