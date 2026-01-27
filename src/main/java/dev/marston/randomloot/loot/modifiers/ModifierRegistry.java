@@ -86,6 +86,7 @@ public class ModifierRegistry {
 	public static Modifier SPAWNER_FINDER = register(new TreasureFinder());
 	public static Modifier LIVING = register(new Healing());
 	public static Modifier HUNTER = register(new Hunter());
+	public static Modifier CHAOTIC = register(new Chaotic());
 
 	public static Modifier BUSTED = register(new Busted());
 	public static Modifier FIERCE = register(new Fierce());
@@ -97,12 +98,11 @@ public class ModifierRegistry {
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, MUNCHIES);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST);
 
-
-	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES);
+	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC);
 
 	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
 
