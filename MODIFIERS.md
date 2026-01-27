@@ -10,10 +10,18 @@ These effects are applied when breaking blocks.
 **id:** `explode` | **crafting:** `minecraft:tnt` ![tnt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/tnt.png)
 
 **Decription:** Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks.
+### Fragile
+**id:** `fragile` | **crafting:** `minecraft:glass` ![glass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glass.png)
+
+**Decription:** 25% more damage and speed, but loses durability twice as fast
 ### Learning
 **id:** `learning` | **crafting:** `minecraft:book` ![book](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/book.png)
 
 **Decription:** After breaking 10 blocks as allowed by this tool, gain 3 experience points.
+### Lumbering
+**id:** `lumbering` | **crafting:** `minecraft:stripped_oak_log` ![stripped_oak_log](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/stripped_oak_log.png)
+
+**Decription:** Breaking a log fells all connected logs
 ### Magnetic
 **id:** `attracting` | **crafting:** `minecraft:iron_block` ![iron_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_block.png)
 
@@ -22,6 +30,10 @@ These effects are applied when breaking blocks.
 **id:** `melting` | **crafting:** `minecraft:lava_bucket` ![lava_bucket](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lava_bucket.png)
 
 **Decription:** Items dropped by blocks broken with this tool will be smelted.
+### Munchies
+**id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
+
+**Decription:** 15% stat boost, but 10% chance to consume hunger on use
 ### Prospector
 **id:** `prospector` | **crafting:** `minecraft:raw_gold` ![raw_gold](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/raw_gold.png)
 
@@ -40,10 +52,18 @@ These effects are applied when holding the tool.
 **id:** `aquatic` | **crafting:** `minecraft:prismarine_shard` ![prismarine_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/prismarine_shard.png)
 
 **Decription:** Grants water breathing and Haste II when underwater.
+### Clunky
+**id:** `clunky` | **crafting:** `minecraft:iron_chain` ![iron_chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_chain.png)
+
+**Decription:** Applies slowness to holder but extra knockback on hit
 ### Detecting
 **id:** `detecting` | **crafting:** `minecraft:spyglass` ![spyglass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spyglass.png)
 
 **Decription:** While holding the tool, ores around you will glow.
+### Feasting
+**id:** `feasting` | **crafting:** `minecraft:golden_carrot` ![golden_carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_carrot.png)
+
+**Decription:** Performance scales with hunger level
 ### Filling
 **id:** `filling` | **crafting:** `minecraft:cake` ![cake](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cake.png)
 
@@ -60,10 +80,18 @@ These effects are applied when holding the tool.
 **id:** `fire_resistance` | **crafting:** `minecraft:magma_cream` ![magma_cream](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/magma_cream.png)
 
 **Decription:** While holding the tool, get the fire resistance I effect.
+### Hunter
+**id:** `hunter` | **crafting:** `minecraft:spider_eye` ![spider_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spider_eye.png)
+
+**Decription:** Nearby hostile mobs get the glowing effect
 ### Living
 **id:** `living` | **crafting:** `minecraft:moss_block` ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
 
 **Decription:** While holding the tool, it will randomly heal itself
+### Naturalist
+**id:** `naturalist` | **crafting:** `minecraft:bone_meal` ![bone_meal](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/bone_meal.png)
+
+**Decription:** Bone meals nearby crops and saplings every 10 seconds
 ### Rainy
 **id:** `rainy` | **crafting:** `minecraft:cauldron` ![cauldron](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cauldron.png)
 
@@ -108,26 +136,66 @@ These effects are applied when hurting enemies.
 **id:** `blinding` | **crafting:** `minecraft:carrot` ![carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/carrot.png)
 
 **Decription:** When attacking with tool, apply the blindness I effect to the target for 4 seconds.
+### Chaotic
+**id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
+
+**Decription:** Stats randomly fluctuate every 5 seconds
 ### Charged
 **id:** `charged` | **crafting:** `minecraft:lightning_rod` ![lightning_rod](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lightning_rod.png)
 
 **Decription:** After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter.
+### Clunky
+**id:** `clunky` | **crafting:** `minecraft:iron_chain` ![iron_chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_chain.png)
+
+**Decription:** Applies slowness to holder but extra knockback on hit
 ### Critical
 **id:** `critical` | **crafting:** `minecraft:ghast_tear` ![ghast_tear](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/ghast_tear.png)
 
 **Decription:** Always critically strikes enemy.
+### Crowd Pleaser
+**id:** `crowd_pleaser` | **crafting:** `minecraft:firework_star` ![firework_star](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/firework_star.png)
+
+**Decription:** Deals bonus damage based on nearby mobs of the same type
 ### Dexterous
 **id:** `combo` | **crafting:** `minecraft:chorus_fruit` ![chorus_fruit](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/chorus_fruit.png)
 
 **Decription:** Hitting enemies within 2 seconds after hitting them deals an extra 25% damage.
+### Early Bird
+**id:** `early_bird` | **crafting:** `minecraft:sunflower` ![sunflower](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sunflower.png)
+
+**Decription:** Deals 15% extra damage to full-health targets
+### Executioner
+**id:** `executioner` | **crafting:** `minecraft:iron_sword` ![iron_sword](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_sword.png)
+
+**Decription:** Instantly kills mobs below 30% health
+### Feasting
+**id:** `feasting` | **crafting:** `minecraft:golden_carrot` ![golden_carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_carrot.png)
+
+**Decription:** Performance scales with hunger level
+### Fierce
+**id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
+
+**Decription:** Deals more damage as durability decreases
 ### Flaming
 **id:** `flaming` | **crafting:** `minecraft:blaze_rod` ![blaze_rod](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_rod.png)
 
 **Decription:** Sets enemy on fire for 2 seconds.
+### Fragile
+**id:** `fragile` | **crafting:** `minecraft:glass` ![glass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glass.png)
+
+**Decription:** 25% more damage and speed, but loses durability twice as fast
 ### Frozen
 **id:** `frozen` | **crafting:** `minecraft:packed_ice` ![packed_ice](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/packed_ice.png)
 
 **Decription:** Slows enemies on hit. Creates 3 block radius of frosted ice on water.
+### Hailey's Wrath
+**id:** `haileys_wrath` | **crafting:** `minecraft:honeycomb` ![honeycomb](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/honeycomb.png)
+
+**Decription:** Spawns a bee when the target is killed
+### Munchies
+**id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
+
+**Decription:** 15% stat boost, but 10% chance to consume hunger on use
 ### Necrotic
 **id:** `necrotic` | **crafting:** `minecraft:wither_skeleton_skull` ![wither_skeleton_skull](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_skeleton_skull.png)
 
@@ -144,6 +212,10 @@ These effects are applied when hurting enemies.
 **id:** `poison` | **crafting:** `minecraft:poisonous_potato` ![poisonous_potato](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/poisonous_potato.png)
 
 **Decription:** When attacking with tool, apply the poison I effect to the target for 5 seconds.
+### Pummeling
+**id:** `pummeling` | **crafting:** `minecraft:anvil` ![anvil](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/anvil.png)
+
+**Decription:** Slams enemies into the ground
 ### Scorched
 **id:** `scorched` | **crafting:** `minecraft:blaze_powder` ![blaze_powder](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_powder.png)
 
@@ -162,6 +234,22 @@ These effects are used to calculate stats for tools.
 **id:** `busted` | **crafting:** `minecraft:cracked_stone_bricks` ![cracked_stone_bricks](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cracked_stone_bricks.png)
 
 **Decription:** Dig speed is increased as tool durability drops.
+### Chaotic
+**id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
+
+**Decription:** Stats randomly fluctuate every 5 seconds
+### Fierce
+**id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
+
+**Decription:** Deals more damage as durability decreases
+### Fragile
+**id:** `fragile` | **crafting:** `minecraft:glass` ![glass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glass.png)
+
+**Decription:** 25% more damage and speed, but loses durability twice as fast
+### Munchies
+**id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
+
+**Decription:** 15% stat boost, but 10% chance to consume hunger on use
 ## Misc.
 These effects are general and don't fit into any other categories.
 ### Unbreaking

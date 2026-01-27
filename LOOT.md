@@ -69,28 +69,42 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Bezerk | `minecraft:beef` | 16 |
 | Blinding | `minecraft:carrot` | 24 |
 | Busted | `minecraft:cracked_stone_bricks` | 3 |
+| Chaotic | `minecraft:amethyst_shard` | 1 |
 | Charged | `minecraft:lightning_rod` | 1 |
+| Clunky | `minecraft:iron_chain` | 1 |
 | Combo | `minecraft:chorus_fruit` | 1 |
 | Critical | `minecraft:ghast_tear` | 1 |
+| Crowd pleaser | `minecraft:firework_star` | 1 |
 | Detecting | `minecraft:spyglass` | 1 |
 | Dirt place | `minecraft:dirt` | 64 |
+| Early bird | `minecraft:sunflower` | 1 |
 | Excavator | `minecraft:piston` | 1 |
+| Executioner | `minecraft:iron_sword` | 1 |
 | Explode | `minecraft:tnt` | 8 |
+| Feasting | `minecraft:golden_carrot` | 1 |
+| Fierce | `minecraft:flint` | 1 |
 | Filling | `minecraft:cake` | 1 |
 | Fire place | `minecraft:flint_and_steel` | 1 |
 | Fire resistance | `minecraft:magma_cream` | 1 |
 | Flame thrower | `minecraft:fire_charge` | 12 |
 | Flaming | `minecraft:blaze_rod` | 1 |
+| Fragile | `minecraft:glass` | 1 |
 | Frozen | `minecraft:packed_ice` | 1 |
+| Haileys wrath | `minecraft:honeycomb` | 1 |
 | Hasty | `minecraft:sugar` | 16 |
+| Hunter | `minecraft:spider_eye` | 1 |
 | Learning | `minecraft:book` | 12 |
 | Living | `minecraft:moss_block` | 4 |
+| Lumbering | `minecraft:stripped_oak_log` | 1 |
 | Melting | `minecraft:lava_bucket` | 1 |
+| Munchies | `minecraft:cookie` | 1 |
+| Naturalist | `minecraft:bone_meal` | 1 |
 | Necrotic | `minecraft:wither_skeleton_skull` | 1 |
 | Nemesis | `minecraft:ender_eye` | 1 |
 | Overgrown | `minecraft:vine` | 1 |
 | Poison | `minecraft:poisonous_potato` | 4 |
 | Prospector | `minecraft:raw_gold` | 1 |
+| Pummeling | `minecraft:anvil` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |
 | Regeneration | `minecraft:glowstone` | 8 |
 | Resistance | `minecraft:turtle_scute` | 5 |
