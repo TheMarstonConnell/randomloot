@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Random;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -20,22 +21,41 @@ import net.minecraft.world.item.ItemStack;
 public class Munchies implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.15f; // 15% boost
-	private static final float HUNGER_CHANCE = 0.10f; // 10% chance
+	private static final String LEVEL = "level";
+	private static final int MAX_LEVEL = 5;
 
 	private String name;
+	private int level;
 	private Random random = new Random();
 
 	public Munchies() {
 		this.name = "Munchies";
+		this.level = 1;
 	}
 
-	public Munchies(String name) {
+	public Munchies(String name, int level) {
 		this.name = name;
+		this.level = level;
 	}
 
 	@Override
 	public Modifier clone() {
-		return new Munchies(this.name);
+		return new Munchies();
+	}
+
+	@Override
+	public boolean canLevel() {
+		return level < MAX_LEVEL;
+	}
+
+	@Override
+	public void levelUp() {
+		this.level++;
+	}
+
+	private float getHungerChance() {
+		// Level 1: 10%, Level 2: 8%, Level 3: 6%, Level 4: 4%, Level 5: 2%
+		return 0.12f - (level * 0.02f);
 	}
 
 	@Override
@@ -45,7 +65,10 @@ public class Munchies implements EntityHurtModifier, BlockBreakModifier, StatsMo
 
 	@Override
 	public String name() {
-		return this.name;
+		if (level == 1) {
+			return this.name;
+		}
+		return this.name + " " + LootUtils.roman(level);
 	}
 
 	@Override
@@ -55,19 +78,20 @@ public class Munchies implements EntityHurtModifier, BlockBreakModifier, StatsMo
 
 	@Override
 	public String description() {
-		return "15% stat boost, but 10% chance to consume hunger on use";
+		return "15% stat boost, but " + String.format("%.0f", getHungerChance() * 100) + "% chance to consume hunger on use";
 	}
 
 	@Override
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
+		tag.putInt(LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Munchies(tag.getStringOr(NAME, "Munchies"));
+		return new Munchies(tag.getStringOr(NAME, "Munchies"), tag.getIntOr(LEVEL, 1));
 	}
 
 	@Override
@@ -83,7 +107,7 @@ public class Munchies implements EntityHurtModifier, BlockBreakModifier, StatsMo
 
 	private void tryConsumeHunger(LivingEntity entity) {
 		if (entity instanceof Player player) {
-			if (random.nextFloat() < HUNGER_CHANCE) {
+			if (random.nextFloat() < getHungerChance()) {
 				int currentFood = player.getFoodData().getFoodLevel();
 				if (currentFood > 0) {
 					player.getFoodData().setFoodLevel(currentFood - 1);

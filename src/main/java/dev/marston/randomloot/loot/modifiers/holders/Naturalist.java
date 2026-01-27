@@ -24,21 +24,30 @@ import net.minecraft.util.RandomSource;
 public class Naturalist implements HoldModifier {
 
     private static final String LAST_UPDATE = "lastUpdate";
-    private static final long UPDATE_INTERVAL = 200; // 10 seconds = 200 ticks
+    private static final String LEVEL = "level";
+    private static final int MAX_LEVEL = 3;
     private static final int SEARCH_RADIUS = 5;
 
     private String name;
+    private int level;
     private long lastUpdateTick;
     private RandomSource random = RandomSource.create();
 
     public Naturalist() {
         this.name = "Naturalist";
+        this.level = 1;
         this.lastUpdateTick = 0;
     }
 
-    public Naturalist(String name, long lastUpdateTick) {
+    public Naturalist(String name, int level, long lastUpdateTick) {
         this.name = name;
+        this.level = level;
         this.lastUpdateTick = lastUpdateTick;
+    }
+
+    private long getUpdateInterval() {
+        // Level 1: 200 ticks (10s), Level 2: 140 ticks (7s), Level 3: 100 ticks (5s)
+        return 260 - (level * 60);
     }
 
     @Override
@@ -48,7 +57,20 @@ public class Naturalist implements HoldModifier {
 
     @Override
     public String name() {
-        return this.name;
+        if (level == 1) {
+            return this.name;
+        }
+        return this.name + " " + LootUtils.roman(level);
+    }
+
+    @Override
+    public boolean canLevel() {
+        return level < MAX_LEVEL;
+    }
+
+    @Override
+    public void levelUp() {
+        this.level++;
     }
 
     @Override
@@ -58,13 +80,15 @@ public class Naturalist implements HoldModifier {
 
     @Override
     public String description() {
-        return "Bone meals nearby crops and saplings every 10 seconds";
+        float seconds = getUpdateInterval() / 20.0f;
+        return "Bone meals nearby crops and saplings every " + String.format("%.0f", seconds) + " seconds";
     }
 
     @Override
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
+        tag.putInt(LEVEL, level);
         tag.putLong(LAST_UPDATE, lastUpdateTick);
         return tag;
     }
@@ -72,8 +96,9 @@ public class Naturalist implements HoldModifier {
     @Override
     public Modifier fromNBT(CompoundTag tag) {
         String name = tag.getStringOr(NAME, "Naturalist");
+        int level = tag.getIntOr(LEVEL, 1);
         long lastUpdate = tag.getLongOr(LAST_UPDATE, 0L);
-        return new Naturalist(name, lastUpdate);
+        return new Naturalist(name, level, lastUpdate);
     }
 
     @Override
@@ -102,7 +127,7 @@ public class Naturalist implements HoldModifier {
         }
 
         long currentTick = level.getGameTime();
-        if (currentTick - lastUpdateTick < UPDATE_INTERVAL) {
+        if (currentTick - lastUpdateTick < getUpdateInterval()) {
             return;
         }
 

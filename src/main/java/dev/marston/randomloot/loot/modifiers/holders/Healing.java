@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -16,18 +17,20 @@ import java.util.List;
 
 public class Healing implements HoldModifier {
 
-	private String name;
-	private float power;
-	private final static String POWER = "power";
+	private static final String LEVEL = "level";
+	private static final int MAX_LEVEL = 3;
 
-	public Healing(String name, float power) {
+	private String name;
+	private int level;
+
+	public Healing(String name, int level) {
 		this.name = name;
-		this.power = power;
+		this.level = level;
 	}
 
 	public Healing() {
 		this.name = "Living";
-		this.power = 0.005f;
+		this.level = 1;
 	}
 
 	public Modifier clone() {
@@ -35,25 +38,39 @@ public class Healing implements HoldModifier {
 	}
 
 	@Override
+	public boolean canLevel() {
+		return level < MAX_LEVEL;
+	}
+
+	@Override
+	public void levelUp() {
+		this.level++;
+	}
+
+	private float getPower() {
+		// Level 1: 0.5%, Level 2: 1%, Level 3: 2%
+		return 0.005f * (float) Math.pow(2, level - 1);
+	}
+
+	@Override
 	public CompoundTag toNBT() {
-
 		CompoundTag tag = new CompoundTag();
-
-		tag.putFloat(POWER, power);
-
+		tag.putInt(LEVEL, level);
 		tag.putString(NAME, name);
-
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(tag.getStringOr(NAME, "Living"), tag.getFloatOr(POWER, 0.005f));
+		return new Healing(tag.getStringOr(NAME, "Living"), tag.getIntOr(LEVEL, 1));
 	}
 
 	@Override
 	public String name() {
-		return name;
+		if (level == 1) {
+			return name;
+		}
+		return name + " " + LootUtils.roman(level);
 	}
 
 	@Override
@@ -68,7 +85,7 @@ public class Healing implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the tool, it will randomly heal itself";
+		return "While holding, " + String.format("%.1f", getPower() * 100) + "% chance per tick to repair itself";
 	}
 
 	@Override
@@ -86,7 +103,7 @@ public class Healing implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-
+		float power = getPower();
 		float f = level.getRandom().nextFloat();
 		if (f < power) {
 

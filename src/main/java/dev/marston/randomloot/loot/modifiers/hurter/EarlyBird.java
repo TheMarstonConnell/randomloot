@@ -16,15 +16,20 @@ import net.minecraft.world.item.ItemStack;
 import java.util.List;
 
 public class EarlyBird implements EntityHurtModifier {
-	private String name;
-	private static final float BONUS_DAMAGE = 0.15f;
+	private static final String LEVEL = "level";
+	private static final int MAX_LEVEL = 3;
 
-	public EarlyBird(String name) {
+	private String name;
+	private int level;
+
+	public EarlyBird(String name, int level) {
 		this.name = name;
+		this.level = level;
 	}
 
 	public EarlyBird() {
 		this.name = "Early Bird";
+		this.level = 1;
 	}
 
 	public Modifier clone() {
@@ -32,20 +37,44 @@ public class EarlyBird implements EntityHurtModifier {
 	}
 
 	@Override
+	public boolean canLevel() {
+		return level < MAX_LEVEL;
+	}
+
+	@Override
+	public void levelUp() {
+		this.level++;
+	}
+
+	private float getBonusDamage() {
+		// Level 1: 15%, Level 2: 25%, Level 3: 40%
+		switch (level) {
+			case 1: return 0.15f;
+			case 2: return 0.25f;
+			case 3: return 0.40f;
+			default: return 0.15f;
+		}
+	}
+
+	@Override
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
+		tag.putInt(LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"));
+		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), tag.getIntOr(LEVEL, 1));
 	}
 
 	@Override
 	public String name() {
-		return name;
+		if (level == 1) {
+			return name;
+		}
+		return name + " " + LootUtils.roman(level);
 	}
 
 	@Override
@@ -60,7 +89,7 @@ public class EarlyBird implements EntityHurtModifier {
 
 	@Override
 	public String description() {
-		return "Deals 15% extra damage to full-health targets";
+		return "Deals " + String.format("%.0f", getBonusDamage() * 100) + "% extra damage to full-health targets";
 	}
 
 	@Override
@@ -83,7 +112,7 @@ public class EarlyBird implements EntityHurtModifier {
 		// Check if target was at full health before this attack
 		// Since damage is already applied, check if current health + base damage >= max health
 		if (currentHealth + dmg >= maxHealth * 0.95f) {
-			float bonusDamage = dmg * BONUS_DAMAGE;
+			float bonusDamage = dmg * getBonusDamage();
 
 			if (hurter instanceof Player p) {
 				hurtee.hurt(hurter.damageSources().playerAttack(p), bonusDamage);
