@@ -80,17 +80,18 @@ public class ModifierRegistry {
 	public static Modifier LIVING = register(new Healing());
 
 	public static Modifier BUSTED = register(new Busted());
+	public static Modifier FIERCE = register(new Fierce());
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC);
 
-	public static final Set<Modifier> STATS = Set.of(BUSTED);
+	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE);
 
 	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
 
