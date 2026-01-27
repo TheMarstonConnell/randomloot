@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers;
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
+import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
 import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
@@ -61,6 +62,7 @@ public class ModifierRegistry {
 	public static Modifier SOULBOUND = register(new Soulbound());
 	public static Modifier EXECUTIONER = register(new Executioner());
 	public static Modifier CROWD_PLEASER = register(new CrowdPleaser());
+	public static Modifier PUMMELING = register(new Pummeling());
 
 	// Biome-restricted modifiers
 	public static Modifier AQUATIC = register(new Aquatic());
@@ -91,7 +93,7 @@ public class ModifierRegistry {
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING);
 
