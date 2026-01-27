@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -19,21 +20,40 @@ import net.minecraft.world.item.ItemStack;
 
 public class Executioner implements EntityHurtModifier {
 
-    private static final float HEALTH_THRESHOLD = 0.30f;
+    private static final String LEVEL = "level";
+    private static final int MAX_LEVEL = 5;
     
     private String name;
+    private int level;
 
     public Executioner() {
         this.name = "Executioner";
+        this.level = 1;
     }
 
-    public Executioner(String name) {
+    public Executioner(String name, int level) {
         this.name = name;
+        this.level = level;
     }
 
     @Override
     public Modifier clone() {
         return new Executioner();
+    }
+
+    @Override
+    public boolean canLevel() {
+        return level < MAX_LEVEL;
+    }
+
+    @Override
+    public void levelUp() {
+        this.level++;
+    }
+
+    private float getHealthThreshold() {
+        // Level 1: 20%, Level 2: 25%, Level 3: 30%, Level 4: 35%, Level 5: 40%
+        return 0.15f + (level * 0.05f);
     }
 
     @Override
@@ -43,7 +63,10 @@ public class Executioner implements EntityHurtModifier {
 
     @Override
     public String name() {
-        return this.name;
+        if (level == 1) {
+            return this.name;
+        }
+        return this.name + " " + LootUtils.roman(level);
     }
 
     @Override
@@ -53,19 +76,20 @@ public class Executioner implements EntityHurtModifier {
 
     @Override
     public String description() {
-        return "Instantly kills mobs below 30% health";
+        return "Instantly kills mobs below " + String.format("%.0f", getHealthThreshold() * 100) + "% health";
     }
 
     @Override
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
+        tag.putInt(LEVEL, level);
         return tag;
     }
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Executioner(tag.getStringOr(NAME, "Executioner"));
+        return new Executioner(tag.getStringOr(NAME, "Executioner"), tag.getIntOr(LEVEL, 1));
     }
 
     @Override
@@ -87,7 +111,7 @@ public class Executioner implements EntityHurtModifier {
 
         float healthPercent = hurtee.getHealth() / hurtee.getMaxHealth();
         
-        if (healthPercent <= HEALTH_THRESHOLD) {
+        if (healthPercent <= getHealthThreshold()) {
             if (hurter instanceof Player player) {
                 hurtee.hurt(hurter.damageSources().playerAttack(player), Float.MAX_VALUE);
             } else {
