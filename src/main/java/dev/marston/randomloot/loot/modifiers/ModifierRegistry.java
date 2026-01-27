@@ -42,6 +42,7 @@ public class ModifierRegistry {
 	public static Modifier MELTING = register(new Melting());
 	public static Modifier EXCAVATOR = register(new Excavator());
 	public static Modifier PROSPECTOR = register(new Prospector());
+	public static Modifier CASCADING = register(new Cascading());
 
 	public static Modifier TORCH_PLACE = register(new TorchPlace());
 	public static Modifier DIRT_PLACE = register(new DirtPlace());
@@ -83,7 +84,7 @@ public class ModifierRegistry {
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
 
-	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
+	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, CASCADING);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN);
