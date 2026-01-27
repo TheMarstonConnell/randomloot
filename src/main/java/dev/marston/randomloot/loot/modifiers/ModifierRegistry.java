@@ -79,6 +79,7 @@ public class ModifierRegistry {
 	public static Modifier ORE_FINDER = register(new OreFinder());
 	public static Modifier SPAWNER_FINDER = register(new TreasureFinder());
 	public static Modifier LIVING = register(new Healing());
+	public static Modifier HUNTER = register(new Hunter());
 
 	public static Modifier BUSTED = register(new Busted());
 
@@ -91,7 +92,8 @@ public class ModifierRegistry {
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FEASTING, EXECUTIONER);
 
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, FEASTING);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING);
+
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED);
 
