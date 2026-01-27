@@ -59,6 +59,7 @@ public class ModifierRegistry {
 	public static Modifier BEZERK = register(new Bezerk());
 	public static Modifier NEMESIS = register(new Nemesis());
 	public static Modifier SOULBOUND = register(new Soulbound());
+	public static Modifier EXECUTIONER = register(new Executioner());
 
 	// Biome-restricted modifiers
 	public static Modifier AQUATIC = register(new Aquatic());
@@ -83,13 +84,16 @@ public class ModifierRegistry {
 	public static Modifier BUSTED = register(new Busted());
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
+	public static Modifier FEASTING = register(new Feasting());
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FEASTING, EXECUTIONER);
+
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING);
+
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED);
 
