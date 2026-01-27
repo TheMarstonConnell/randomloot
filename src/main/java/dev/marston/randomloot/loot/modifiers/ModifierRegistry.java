@@ -4,6 +4,7 @@ import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
+import dev.marston.randomloot.loot.modifiers.misc.Territorial;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
 import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.loot.modifiers.users.FireBall;
@@ -82,13 +83,14 @@ public class ModifierRegistry {
 	public static Modifier BUSTED = register(new Busted());
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
+	public static Modifier TERRITORIAL = register(new Territorial());
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, TERRITORIAL);
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED);
 
