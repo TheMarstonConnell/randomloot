@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.modifiers.hurter.*;
 import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
+import dev.marston.randomloot.loot.modifiers.hurter.Munchies;
 import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.loot.modifiers.users.FireBall;
 import dev.marston.randomloot.loot.modifiers.users.FirePlace;
@@ -88,19 +89,20 @@ public class ModifierRegistry {
 
 	public static Modifier BUSTED = register(new Busted());
 	public static Modifier FIERCE = register(new Fierce());
+	public static Modifier MUNCHIES = register(new Munchies());
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
 	public static Modifier FEASTING = register(new Feasting());
 
-	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
+	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, MUNCHIES);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST);
 
 
-	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE);
+	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES);
 
 	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
 
