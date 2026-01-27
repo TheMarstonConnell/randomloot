@@ -64,6 +64,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Trait | Required Item | Count |
 |-------|---------------|-------|
 | Absorption | `minecraft:golden_apple` | 1 |
+| Aquatic | `minecraft:prismarine_shard` | 1 |
 | Attracting | `minecraft:iron_block` | 1 |
 | Bezerk | `minecraft:beef` | 16 |
 | Blinding | `minecraft:carrot` | 24 |
@@ -73,24 +74,32 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Critical | `minecraft:ghast_tear` | 1 |
 | Detecting | `minecraft:spyglass` | 1 |
 | Dirt place | `minecraft:dirt` | 64 |
+| Excavator | `minecraft:piston` | 1 |
 | Explode | `minecraft:tnt` | 8 |
 | Filling | `minecraft:cake` | 1 |
 | Fire place | `minecraft:flint_and_steel` | 1 |
 | Fire resistance | `minecraft:magma_cream` | 1 |
 | Flame thrower | `minecraft:fire_charge` | 12 |
 | Flaming | `minecraft:blaze_rod` | 1 |
+| Frozen | `minecraft:packed_ice` | 1 |
 | Hasty | `minecraft:sugar` | 16 |
 | Learning | `minecraft:book` | 12 |
 | Living | `minecraft:moss_block` | 4 |
 | Melting | `minecraft:lava_bucket` | 1 |
 | Necrotic | `minecraft:wither_skeleton_skull` | 1 |
+| Nemesis | `minecraft:ender_eye` | 1 |
+| Overgrown | `minecraft:vine` | 1 |
 | Poison | `minecraft:poisonous_potato` | 4 |
+| Prospector | `minecraft:raw_gold` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |
 | Regeneration | `minecraft:glowstone` | 8 |
 | Resistance | `minecraft:turtle_scute` | 5 |
+| Scorched | `minecraft:blaze_powder` | 1 |
+| Soulbound | `minecraft:nether_star` | 1 |
 | Spawner | `minecraft:mossy_cobblestone` | 12 |
 | Torch place | `minecraft:torch` | 64 |
 | Unbreaking | `minecraft:obsidian` | 8 |
 | Veiny | `minecraft:diamond_pickaxe` | 1 |
+| Void touched | `minecraft:ender_pearl` | 1 |
 | Wither | `minecraft:wither_rose` | 1 |
 

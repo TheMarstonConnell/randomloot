@@ -171,26 +171,13 @@ public class Veiny implements BlockBreakModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
 	public boolean compatible(Modifier mod) {
-		return true;
+		// Incompatible with Excavator
+		return !(mod instanceof Excavator);
 	}
 
 	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }

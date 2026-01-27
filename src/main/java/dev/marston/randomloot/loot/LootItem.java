@@ -10,14 +10,19 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
+import net.minecraft.core.Holder;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
@@ -36,7 +41,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.common.ItemAbilities;
+import net.neoforged.neoforge.common.ItemAbility;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -149,9 +157,23 @@ public class LootItem extends Item  {
 		} else if (type == ToolType.SHOVEL) {
 			blocks = BlockTags.MINEABLE_WITH_SHOVEL;
 		} else if (type == ToolType.SWORD) {
-			if (block.getBlock() == Blocks.COBWEB) {
+			Block blockType = block.getBlock();
+
+			// Cobwebs - instant break (vanilla sword behavior)
+			if (blockType == Blocks.COBWEB) {
 				return 15.0f;
 			}
+
+			// Bamboo - instant break (vanilla sword behavior)
+			if (blockType == Blocks.BAMBOO || blockType == Blocks.BAMBOO_SAPLING) {
+				return 100.0f;
+			}
+
+			// Leaves - faster than fists (vanilla sword behavior)
+			if (block.is(BlockTags.LEAVES)) {
+				return 1.5f;
+			}
+
 			return 1.0f;
 		} else {
 			return 1.0f;
@@ -204,13 +226,27 @@ public class LootItem extends Item  {
 	}
 
 	@Override
-	public void postHurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
+		ToolType type = LootUtils.getToolType(stack);
+
+		if (type == ToolType.AXE) {
+			return itemAbility == ItemAbilities.AXE_STRIP ||
+				   itemAbility == ItemAbilities.AXE_SCRAPE ||
+				   itemAbility == ItemAbilities.AXE_WAX_OFF;
+		}
+		if (type == ToolType.SHOVEL) {
+			return itemAbility == ItemAbilities.SHOVEL_FLATTEN;
+		}
+		return false;
+	}
+
+	@Override
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		ToolType type = LootUtils.getToolType(itemstack);
 
 		if (type == ToolType.AXE || type == ToolType.SWORD) {
 			LootUtils.addXp(itemstack, hurter, 1);
-
 		}
 
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
@@ -222,10 +258,9 @@ public class LootItem extends Item  {
 					continue;
 				}
 
-                if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
+				if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
 					shouldSkipBreak = true;
 				}
-
 			}
 
 			if (mod instanceof Unbreaking unbreaking) {
@@ -233,10 +268,9 @@ public class LootItem extends Item  {
 					continue;
 				}
 
-                if (unbreaking.test(hurtee.level())) {
+				if (unbreaking.test(hurtee.level())) {
 					shouldSkipBreak = true;
 				}
-
 			}
 		}
 		if (!shouldSkipBreak) {
@@ -320,9 +354,10 @@ public class LootItem extends Item  {
 	public @NotNull InteractionResult useOn(UseOnContext ctx) {
 
 		ItemStack itemstack = ctx.getItemInHand();
-
+		ToolType type = LootUtils.getToolType(itemstack);
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
 
+		// First, try UseModifier abilities
 		for (Modifier mod : mods) {
 
 			if (mod instanceof UseModifier um) {
@@ -330,11 +365,93 @@ public class LootItem extends Item  {
 					continue;
 				}
 
-                um.use(ctx);
+				InteractionResult result = um.use(ctx);
+				if (result.consumesAction()) {
+					return result;  // Modifier consumed the action
+				}
 			}
 
 		}
 
+		// No modifier consumed - try vanilla tool behaviors
+		if (type == ToolType.AXE) {
+			InteractionResult result = tryAxeActions(ctx);
+			if (result.consumesAction()) return result;
+		}
+
+		if (type == ToolType.SHOVEL) {
+			InteractionResult result = tryShovelFlatten(ctx);
+			if (result.consumesAction()) return result;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+	private InteractionResult tryAxeActions(UseOnContext ctx) {
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+		BlockState state = level.getBlockState(pos);
+		Player player = ctx.getPlayer();
+		ItemStack stack = ctx.getItemInHand();
+
+		// Try stripping logs
+		BlockState stripped = state.getToolModifiedState(ctx, ItemAbilities.AXE_STRIP, false);
+		if (stripped != null) {
+			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, stripped, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		// Try scraping oxidation
+		BlockState scraped = state.getToolModifiedState(ctx, ItemAbilities.AXE_SCRAPE, false);
+		if (scraped != null) {
+			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, scraped, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		// Try removing wax
+		BlockState unwaxed = state.getToolModifiedState(ctx, ItemAbilities.AXE_WAX_OFF, false);
+		if (unwaxed != null) {
+			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, unwaxed, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+	private InteractionResult tryShovelFlatten(UseOnContext ctx) {
+		if (ctx.getClickedFace() != Direction.UP) return InteractionResult.PASS;
+
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+
+		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
+
+		BlockState flattened = level.getBlockState(pos).getToolModifiedState(ctx, ItemAbilities.SHOVEL_FLATTEN, false);
+		if (flattened != null) {
+			Player player = ctx.getPlayer();
+			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, flattened, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
+				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
 		return InteractionResult.PASS;
 	}
 
@@ -493,6 +610,35 @@ public class LootItem extends Item  {
 			}
 		}
 
+	}
+
+	@Override
+	public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
+		ToolType type = LootUtils.getToolType(stack);
+		String enchantPath = enchantment.getRegisteredName();
+
+		// Universal enchantments - all tools (Unbreaking, Mending)
+		if (enchantPath.contains("unbreaking") || enchantPath.contains("mending")) {
+			return true;
+		}
+
+		// Mining enchantments - pickaxe, axe, shovel only (Efficiency, Fortune, Silk Touch)
+		if (enchantPath.contains("efficiency") || enchantPath.contains("fortune") || enchantPath.contains("silk_touch")) {
+			return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
+		}
+
+		// Weapon enchantments - sword and axe (Sharpness, Smite, Bane, Knockback, Fire Aspect, Looting)
+		if (enchantPath.contains("sharpness") || enchantPath.contains("smite") || enchantPath.contains("bane_of_arthropods") ||
+			enchantPath.contains("knockback") || enchantPath.contains("fire_aspect") || enchantPath.contains("looting")) {
+			return type == ToolType.SWORD || type == ToolType.AXE;
+		}
+
+		// Sword-only enchantments (Sweeping Edge)
+		if (enchantPath.contains("sweeping")) {
+			return type == ToolType.SWORD;
+		}
+
+		return false;
 	}
 
 }

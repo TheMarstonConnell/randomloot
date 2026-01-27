@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
@@ -69,8 +70,8 @@ public class FireBall implements UseModifier {
 	}
 
 	@Override
-	public void use(UseOnContext ctx) {
-		return;
+	public InteractionResult use(UseOnContext ctx) {
+		return InteractionResult.PASS;
 	}
 
 	@Override
@@ -84,12 +85,6 @@ public class FireBall implements UseModifier {
 		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
 		list.add(comp);
 
-	}
-
-	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
 	}
 
 	@Override
@@ -123,13 +118,4 @@ public class FireBall implements UseModifier {
 	public boolean useAnywhere() {
 		return true;
 	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
-	}
-
 }

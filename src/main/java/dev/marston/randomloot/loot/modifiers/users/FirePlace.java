@@ -118,13 +118,13 @@ public class FirePlace implements UseModifier {
 	}
 
 	@Override
-	public void use(UseOnContext ctx) {
+	public InteractionResult use(UseOnContext ctx) {
 
 		if (!ctx.getPlayer().isCrouching()) {
-			return;
+			return InteractionResult.PASS;  // Allow axe stripping when not crouching
 		}
 
-		flintNSteel(ctx);
+		return flintNSteel(ctx);
 
 	}
 
@@ -140,12 +140,6 @@ public class FirePlace implements UseModifier {
 		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
 		list.add(comp);
 
-	}
-
-	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
 	}
 
 	@Override
@@ -166,13 +160,5 @@ public class FirePlace implements UseModifier {
 	@Override
 	public boolean useAnywhere() {
 		return false;
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }

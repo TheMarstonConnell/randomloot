@@ -86,17 +86,6 @@ public class Draining implements EntityHurtModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
 	}

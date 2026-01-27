@@ -1,33 +1,51 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
+import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
+import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
-//import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
+import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.loot.modifiers.users.FireBall;
 import dev.marston.randomloot.loot.modifiers.users.FirePlace;
-//import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
+import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
+import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffects;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class ModifierRegistry {
 
-	public static HashMap<String, Modifier> Modifiers = new HashMap<>();
-	public static HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
+	private static final HashMap<String, Modifier> Modifiers = new HashMap<>();
+	private static final HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
+
+	public static Map<String, Modifier> getModifiers() {
+		return Collections.unmodifiableMap(Modifiers);
+	}
+
+	public static Map<String, Boolean> getModifierEnabled() {
+		return Collections.unmodifiableMap(ModifierEnabled);
+	}
+
+	public static Modifier getModifier(String name) {
+		return Modifiers.get(name);
+	}
 
 	public static Modifier EXPLODE = register(new Explode());
 	public static Modifier LEARNING = register(new Learning());
 	public static Modifier ATTRACTING = register(new Attracting());
 	public static Modifier VEINY = register(new Veiny());
 	public static Modifier MELTING = register(new Melting());
+	public static Modifier EXCAVATOR = register(new Excavator());
+	public static Modifier PROSPECTOR = register(new Prospector());
 
-//	public static Modifier TORCH_PLACE = register(new TorchPlace());
-//	public static Modifier DIRT_PLACE = register(new DirtPlace());
+	public static Modifier TORCH_PLACE = register(new TorchPlace());
+	public static Modifier DIRT_PLACE = register(new DirtPlace());
 	public static Modifier FIRE_PLACE = register(new FirePlace());
 	public static Modifier FIRE_BALL = register(new FireBall());
 
@@ -40,6 +58,19 @@ public class ModifierRegistry {
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER));
 	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS));
 	public static Modifier BEZERK = register(new Bezerk());
+	public static Modifier NEMESIS = register(new Nemesis());
+	public static Modifier SOULBOUND = register(new Soulbound());
+	public static Modifier EXECUTIONER = register(new Executioner());
+	public static Modifier CROWD_PLEASER = register(new CrowdPleaser());
+	public static Modifier PUMMELING = register(new Pummeling());
+	public static Modifier HAILEYS_WRATH = register(new HaileysWrath());
+
+	// Biome-restricted modifiers
+	public static Modifier AQUATIC = register(new Aquatic());
+	public static Modifier SCORCHED = register(new Scorched());
+	public static Modifier FROZEN = register(new Frozen());
+	public static Modifier OVERGROWN = register(new Overgrown());
+	public static Modifier VOID_TOUCHED = register(new VoidTouched());
 
 	public static Modifier HASTY = register(new Hasty());
 	public static Modifier FILLING = register(new Effect("Filling", "filling", 2, MobEffects.SATURATION));
@@ -52,19 +83,25 @@ public class ModifierRegistry {
 	public static Modifier ORE_FINDER = register(new OreFinder());
 	public static Modifier SPAWNER_FINDER = register(new TreasureFinder());
 	public static Modifier LIVING = register(new Healing());
+	public static Modifier HUNTER = register(new Hunter());
 
 	public static Modifier BUSTED = register(new Busted());
+	public static Modifier FIERCE = register(new Fierce());
 
 	public static Modifier UNBREAKING = register(new Unbreaking());
+	public static Modifier FEASTING = register(new Feasting());
 
-	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING);
-	public static final Set<Modifier> USERS = Set.of(/**TORCH_PLACE, DIRT_PLACE,**/ FIRE_PLACE, FIRE_BALL);
+	public static Modifier PACIFIST = register(new Pacifist());
+
+	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR);
+	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK);
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, PACIFIST);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING);
 
-	public static final Set<Modifier> STATS = Set.of(BUSTED);
+
+	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, PACIFIST);
 
 	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
 
@@ -73,8 +110,7 @@ public class ModifierRegistry {
 		String tagName = modifier.tagName();
 
 		if (Modifiers.containsKey(tagName)) {
-			RandomLoot.LOGGER.error("Cannot register modifier twice!");
-			System.exit(1);
+			throw new IllegalStateException("Cannot register modifier twice: " + tagName);
 		}
 
 		Modifiers.put(tagName, modifier);

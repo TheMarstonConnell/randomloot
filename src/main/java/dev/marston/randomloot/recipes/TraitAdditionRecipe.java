@@ -10,6 +10,7 @@ import javax.annotation.Nullable;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.HolderLookup;
@@ -48,8 +49,29 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		}
 
 		if (!this.addition.is(input.addition().getItem())) {
-
 			return false;
+		}
+
+		// Check if we're adding a modifier (not removing)
+		if (input.template().is(ModItems.MOD_ADD.asItem())) {
+			// Get the modifier being added
+			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+
+			// If it's a biome-restricted modifier, check if the tool's biome matches
+			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
+				ItemStack tool = input.base();
+				String biomeKey = LootUtils.getBiomeKey(tool);
+				float temp = LootUtils.getBiomeTemperature(tool);
+				String dimension = LootUtils.getDimension(tool);
+
+				boolean canAdd = biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension);
+
+				if (!canAdd) {
+					RandomLoot.LOGGER.info("Recipe blocked: {} cannot be added to tool from biome: {}, temp: {}, dim: {}",
+							this.trait, biomeKey, temp, dimension);
+					return false;
+				}
+			}
 		}
 
 //		if (this.addition.getCount() > input.addition().getCount()) {
@@ -67,15 +89,20 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 			ItemStack stack = LootUtils.CloneItem(tool);
 
-			Modifier modToAdd = ModifierRegistry.Modifiers.get(this.trait);
-			
+			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+
+			if (modToAdd == null) {
+				RandomLoot.LOGGER.warn("Unknown modifier trait in recipe: {}", this.trait);
+				return stack;
+			}
+
 			if (template.is(ModItems.MOD_ADD.asItem())) {
 				LootUtils.addModifier(stack, modToAdd);
 			} else if (template.is(ModItems.MOD_SUB.asItem())) {
 				LootUtils.removeModifier(stack, modToAdd);
 			}
-			
-			
+
+
 			return stack;
 	}
 

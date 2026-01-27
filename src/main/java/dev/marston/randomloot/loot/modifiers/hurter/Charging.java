@@ -2,8 +2,10 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -20,9 +22,7 @@ import java.util.List;
 public class Charging implements EntityHurtModifier {
 	private String name;
 	private int points;
-	private final static String POINTS = "points";
 	private long charged;
-	private final static String CHARGED = "charged";
 
 	public Charging(String name, int points, long charged) {
 		this.name = name;
@@ -45,15 +45,15 @@ public class Charging implements EntityHurtModifier {
 
 		CompoundTag tag = new CompoundTag();
 
-		tag.putInt(POINTS, points);
-		tag.putString(NAME, name);
-		tag.putLong(CHARGED, charged);
+		tag.putInt(ModifierConstants.POINTS, points);
+		tag.putString(ModifierConstants.NAME, name);
+		tag.putLong(ModifierConstants.CHARGED, charged);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Charging(tag.getStringOr(NAME, "Charged"), tag.getIntOr(POINTS, 10), tag.getLongOr(CHARGED, 0L));
+		return new Charging(tag.getStringOr(ModifierConstants.NAME, "Charged"), tag.getIntOr(ModifierConstants.POINTS, 10), tag.getLongOr(ModifierConstants.CHARGED, 0L));
 	}
 
 	@Override
@@ -83,28 +83,10 @@ public class Charging implements EntityHurtModifier {
 		list.add(comp);
 	}
 
-	private float getCharge(Level level) {
-		if (level != null) {
-			long time = level.getGameTime();
-
-			long diff = time - charged;
-
-			float rate = (float) (diff) / (float) (points * 20);
-			if (rate > 1.0f) {
-				rate = 1.0f;
-			}
-
-			return rate;
-		}
-
-		return 0.0f;
-	}
-
 	@Override
 	public Component writeDetailsToLore(Level level) {
-
 		if (level != null) {
-			float charge = getCharge(level);
+			float charge = ChargeTracker.getCharge(level, charged, points);
 
 			String perc = String.format("%.0f%% Charged", charge * 100.0f);
 
@@ -112,11 +94,6 @@ public class Charging implements EntityHurtModifier {
 		}
 
 		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
 	}
 
 	@Override
@@ -131,7 +108,7 @@ public class Charging implements EntityHurtModifier {
 
 		long time = level.getGameTime();
 
-		if (getCharge(level) >= 1.0f) {
+		if (ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
 			LightningBolt lb = new LightningBolt(EntityType.LIGHTNING_BOLT, level);
 			lb.setPos(hurtee.position());
 			if (hurter instanceof ServerPlayer) {
@@ -148,13 +125,4 @@ public class Charging implements EntityHurtModifier {
 		return false;
 
 	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
-	}
-
 }

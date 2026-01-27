@@ -1,5 +1,7 @@
 # Random Loot 2 - Minecraft Mod
 
+> **Claude: Whenever you discover something important during development (API quirks, patterns, gotchas, or useful snippets), automatically add it to this file so you'll remember it in future sessions.**
+
 ## Overview
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. Built for NeoForge.
 
@@ -67,6 +69,43 @@ src/main/java/dev/marston/randomloot/
 ### Tool Types
 - PICKAXE, AXE, SHOVEL, SWORD (defined in `LootItem.ToolType`)
 
+### Biome-Specific Traits
+Some modifiers are restricted to tools generated in specific biomes. These implement `BiomeRestrictedModifier` interface.
+
+#### How It Works
+1. When a tool is generated, biome data is stored in the tool's NBT under "info" tag:
+   - `biomeTemp` - Temperature value (0.0 to 2.0+)
+   - `biomeKey` - Full registry key (e.g., "minecraft:ocean")
+   - `dimension` - Dimension key (e.g., "minecraft:the_nether")
+2. Biome-restricted modifiers only spawn on tools generated in matching biomes
+3. Smithing table recipes also check biome restrictions - you cannot add a biome trait to a tool from an incompatible biome
+
+#### Biome-Restricted Modifiers
+
+| Modifier | Biome Restriction | Recipe Item | Effects |
+|----------|-------------------|-------------|---------|
+| **Aquatic** | Ocean/river biomes (key contains "ocean" or "river") | Prismarine Shard | Water breathing + Haste underwater |
+| **Frozen** | Cold biomes (temp ≤ 0.15) | Packed Ice | Slowness on hit, frost walker effect |
+| **Scorched** | Hot biomes (temp ≥ 1.0) or Nether | Blaze Powder | Fire damage on hit, fire resistance |
+| **Overgrown** | Jungle/swamp/bamboo biomes | Vine | Extra arthropod damage, poison immunity |
+| **Void-Touched** | The End dimension only | Ender Pearl | Right-click teleport (8-16 blocks) |
+
+#### Adding a New Biome-Restricted Modifier
+```java
+public class MyBiomeModifier implements EntityHurtModifier, BiomeRestrictedModifier {
+    // ... standard modifier fields and methods ...
+
+    @Override
+    public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
+        // Example: Desert biomes only
+        return biomeKey != null && biomeKey.contains("desert");
+
+        // Or temperature-based: return temperature >= 1.5f;
+        // Or dimension-based: return dimension.equals("minecraft:the_nether");
+    }
+}
+```
+
 ## Build Commands
 ```bash
 ./gradlew runClient          # Run client
@@ -87,7 +126,7 @@ src/main/java/dev/marston/randomloot/
 - `MobEffects.DIG_SPEED` → `MobEffects.HASTE`
 - `MobEffects.DAMAGE_RESISTANCE` → `MobEffects.RESISTANCE`
 - `ItemEntity.copy()` removed - create new `ItemEntity` with constructor and `setDeltaMovement()`
-- `Item.hurtEnemy()` → `Item.postHurtEnemy()` with void return type
+- `Item.hurtEnemy()` - both `hurtEnemy` and `postHurtEnemy` exist, but `hurtEnemy` is the one called during attacks
 - `Item.appendHoverText()` signature changed: `List<Component>` → `Consumer<Component>`, added `TooltipDisplay` parameter
 - `Item.inventoryTick()` signature changed: `Level` → `ServerLevel`, slot int/boolean → `EquipmentSlot`
 - `Screen.hasShiftDown()/hasControlDown()` - use GLFW directly: `GLFW.glfwGetKey(window.handle(), GLFW_KEY_LEFT_SHIFT)`
@@ -142,9 +181,140 @@ rm -rf build/
 ### IDE Not Finding Classes
 Refresh Gradle project in IDE (IntelliJ: click elephant icon with refresh arrows)
 
+## Git Worktree Workflow for New Modifiers
+
+> **IMPORTANT: When creating a new modifier (including in plan mode), ALWAYS use a git worktree to isolate development from the main directory.**
+
+This keeps the main `randomloot` directory clean and allows parallel development of multiple features.
+
+### Creating a Worktree for a New Modifier
+```bash
+# From the main randomloot directory
+git worktree add ../randomloot-feature/<modifier-name> -b feature/<modifier-name>
+
+# Example: Creating an "Excavator" modifier
+git worktree add ../randomloot-feature/excavator -b feature/excavator
+```
+
+### Worktree Directory Structure
+```
+~/Documents/Github/
+├── randomloot/                    # Main directory (keep clean!)
+└── randomloot-feature/
+    ├── excavator/                 # Worktree for excavator modifier
+    ├── lightning/                 # Worktree for lightning modifier
+    └── ...
+```
+
+### Development Workflow
+1. **Create worktree** before writing any code for a new modifier
+2. **Do all development** in the worktree directory (e.g., `../randomloot-feature/excavator/`)
+3. **Build and test** from the worktree: `cd ../randomloot-feature/excavator && ./gradlew runClient`
+4. **When complete**, push the branch and create a PR:
+   ```bash
+   cd ../randomloot-feature/excavator
+   git push -u origin feature/excavator
+   gh pr create --base main --head feature/excavator
+   ```
+5. **Clean up** the worktree after the PR is merged:
+   ```bash
+   git worktree remove ../randomloot-feature/excavator
+   git branch -d feature/excavator
+   ```
+
+### Listing Active Worktrees
+```bash
+git worktree list
+```
+
+### Why Worktrees?
+- Main directory stays on the stable branch
+- Multiple features can be developed in parallel
+- Easy to abandon/restart features without affecting main
+- Clear separation between stable code and work-in-progress
+
 ## Adding New Modifiers
-1. Create class in appropriate `modifiers/` subdirectory
-2. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
-3. Register in `ModifierRegistry.java`
-4. Add recipe JSON in `data/randomloot/recipe/`
-5. Add to config in `Config.java` if toggleable
+1. **Create a git worktree first** (see above section)
+2. Create class in appropriate `modifiers/` subdirectory
+3. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
+4. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
+5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
+6. Add to config in `Config.java` if toggleable
+
+### Hurter Modifier Pattern (EntityHurtModifier)
+```java
+public class MyModifier implements EntityHurtModifier {
+    // Required fields
+    private String name;
+    private int level;
+
+    // For stateful modifiers (tracking data between uses)
+    private Map<String, Integer> myData = new HashMap<>();
+
+    @Override
+    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+        // Server-side only for state changes
+        if (hurtee.level().isClientSide()) {
+            return false;
+        }
+
+        // Get entity registry key
+        String entityKey = EntityType.getKey(hurtee.getType()).toString(); // e.g., "minecraft:zombie"
+
+        // Check if entity is dead (after damage applied)
+        if (hurtee.getHealth() <= 0) {
+            // Update state and save
+            LootUtils.updateModifier(itemstack, this);
+        }
+
+        return false; // return true to skip durability damage
+    }
+
+    @Override
+    public boolean forTool(ToolType type) {
+        return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+    }
+
+    // For leveling: canLevel() returns true if can level up, levelUp() increments level
+}
+```
+
+### Recipe JSON Format
+```json
+{
+  "type": "randomloot:trait_change",
+  "item": {
+    "count": 1,
+    "id": "minecraft:ender_eye"
+  },
+  "trait": "mytrait"
+}
+```
+
+## Useful Code Patterns
+
+### Send Chat Message to Player
+```java
+if (entity instanceof Player player) {
+    player.displayClientMessage(Component.literal("Message here"), false);
+}
+```
+
+### Get Entity Display Name from Registry Key
+```java
+String registryName = "minecraft:zombie";
+String simpleName = registryName.substring(registryName.indexOf(":") + 1);
+// Convert "zombie_villager" to "Zombie Villager"
+String[] words = simpleName.split("_");
+StringBuilder result = new StringBuilder();
+for (String word : words) {
+    if (result.length() > 0) result.append(" ");
+    result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+}
+```
+
+### Roman Numerals
+```java
+LootUtils.roman(1); // Returns "I"
+LootUtils.roman(2); // Returns "II"
+```

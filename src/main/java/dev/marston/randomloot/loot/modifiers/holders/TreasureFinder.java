@@ -103,17 +103,6 @@ public class TreasureFinder implements HoldModifier {
 	}
 
 	@Override
-	public Component writeDetailsToLore(Level level) {
-
-		return null;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return true;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		return true;
 	}
@@ -205,13 +194,5 @@ public class TreasureFinder implements HoldModifier {
 			}
 		}
 
-	}
-
-	public boolean canLevel() {
-		return false;
-	}
-
-	public void levelUp() {
-		return;
 	}
 }
