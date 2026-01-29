@@ -89,6 +89,7 @@ public class ModifierRegistry {
 	public static Modifier LIVING = register(new Healing());
 	public static Modifier HUNTER = register(new Hunter());
 	public static Modifier CHAOTIC = register(new Chaotic());
+	public static Modifier LIGHTWEIGHT = register(new Lightweight());
 
 	public static Modifier BUSTED = register(new Busted());
 	public static Modifier FIERCE = register(new Fierce());
@@ -105,7 +106,7 @@ public class ModifierRegistry {
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC, FRAGILE, CLUNKY, EARLY_BIRD);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY, LIGHTWEIGHT);
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC, FRAGILE);
 
