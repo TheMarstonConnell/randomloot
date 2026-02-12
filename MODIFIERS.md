@@ -30,6 +30,10 @@ These effects are applied when breaking blocks.
 **id:** `melting` | **crafting:** `minecraft:lava_bucket` ![lava_bucket](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lava_bucket.png)
 
 **Decription:** Items dropped by blocks broken with this tool will be smelted.
+### Momentum
+**id:** `momentum` | **crafting:** `minecraft:redstone_block` ![redstone_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/redstone_block.png)
+
+**Decription:** Each consecutive block broken or enemy hit within 3 seconds increases speed/damage by 5% (max 25%). Resets when idle.
 ### Munchies
 **id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
 
@@ -192,6 +196,10 @@ These effects are applied when hurting enemies.
 **id:** `haileys_wrath` | **crafting:** `minecraft:honeycomb` ![honeycomb](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/honeycomb.png)
 
 **Decription:** Spawns a bee when the target is killed
+### Momentum
+**id:** `momentum` | **crafting:** `minecraft:redstone_block` ![redstone_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/redstone_block.png)
+
+**Decription:** Each consecutive block broken or enemy hit within 3 seconds increases speed/damage by 5% (max 25%). Resets when idle.
 ### Munchies
 **id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
 
@@ -242,6 +250,10 @@ These effects are used to calculate stats for tools.
 **id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
 
 **Decription:** Deals more damage as durability decreases
+### Momentum
+**id:** `momentum` | **crafting:** `minecraft:redstone_block` ![redstone_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/redstone_block.png)
+
+**Decription:** Each consecutive block broken or enemy hit within 3 seconds increases speed/damage by 5% (max 25%). Resets when idle.
 ### Fragile
 **id:** `fragile` | **crafting:** `minecraft:glass` ![glass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glass.png)
 
