@@ -104,6 +104,10 @@ These effects are applied when holding the tool.
 **id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
 
 **Decription:** While holding the spawners around you will glow.
+### Vampiric
+**id:** `vampiric` | **crafting:** `minecraft:fermented_spider_eye` ![fermented_spider_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fermented_spider_eye.png)
+
+**Decription:** Heals player for 5% of damage dealt to enemies, but prevents natural health regeneration and causes 0.5 hearts damage per 30 seconds when not hitting enemies.
 ## Users
 These effects are applied when right clicking.
 ### Fire Starter
@@ -224,6 +228,10 @@ These effects are applied when hurting enemies.
 **id:** `soulbound` | **crafting:** `minecraft:nether_star` ![nether_star](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/nether_star.png)
 
 **Decription:** Grants 15% bonus damage and mining speed when wielded by the original owner.
+### Vampiric
+**id:** `vampiric` | **crafting:** `minecraft:fermented_spider_eye` ![fermented_spider_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fermented_spider_eye.png)
+
+**Decription:** Heals player for 5% of damage dealt to enemies, but prevents natural health regeneration and causes 0.5 hearts damage per 30 seconds when not hitting enemies.
 ### Withering
 **id:** `wither` | **crafting:** `minecraft:wither_rose` ![wither_rose](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_rose.png)
 

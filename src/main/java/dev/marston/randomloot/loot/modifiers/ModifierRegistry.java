@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers;
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
+import dev.marston.randomloot.loot.modifiers.hurter.Vampiric;
 import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
@@ -56,6 +57,7 @@ public class ModifierRegistry {
 	public static Modifier CHARGING = register(new Charging());
 	public static Modifier COMBO = register(new Combo());
 	public static Modifier DRAINING = register(new Draining());
+	public static Modifier VAMPIRIC = register(new Vampiric());
 	public static Modifier POISONOUS = register(new HurtEffect("Poisonous", "poison", 5, MobEffects.POISON));
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER));
 	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS));
@@ -102,10 +104,10 @@ public class ModifierRegistry {
 
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, MUNCHIES, FRAGILE, LUMBERING);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
-	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
+	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, VAMPIRIC, POISONOUS,
 			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC, FRAGILE, CLUNKY, EARLY_BIRD);
 	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY);
+			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY, VAMPIRIC);
 
 	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC, FRAGILE);
 
