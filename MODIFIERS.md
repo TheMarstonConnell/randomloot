@@ -88,6 +88,10 @@ These effects are applied when holding the tool.
 **id:** `living` | **crafting:** `minecraft:moss_block` ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
 
 **Decription:** While holding the tool, it will randomly heal itself
+### Moonlit
+**id:** `moonlit` | **crafting:** `minecraft:glow_ink_sac` ![glow_ink_sac](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glow_ink_sac.png)
+
+**Decription:** Grants Luck I and +15% damage/mining speed during nighttime. Applies Weakness I during daytime.
 ### Naturalist
 **id:** `naturalist` | **crafting:** `minecraft:bone_meal` ![bone_meal](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/bone_meal.png)
 
@@ -192,6 +196,10 @@ These effects are applied when hurting enemies.
 **id:** `haileys_wrath` | **crafting:** `minecraft:honeycomb` ![honeycomb](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/honeycomb.png)
 
 **Decription:** Spawns a bee when the target is killed
+### Moonlit
+**id:** `moonlit` | **crafting:** `minecraft:glow_ink_sac` ![glow_ink_sac](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glow_ink_sac.png)
+
+**Decription:** Grants Luck I and +15% damage/mining speed during nighttime. Applies Weakness I during daytime.
 ### Munchies
 **id:** `munchies` | **crafting:** `minecraft:cookie` ![cookie](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cookie.png)
 
@@ -242,6 +250,10 @@ These effects are used to calculate stats for tools.
 **id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
 
 **Decription:** Deals more damage as durability decreases
+### Moonlit
+**id:** `moonlit` | **crafting:** `minecraft:glow_ink_sac` ![glow_ink_sac](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glow_ink_sac.png)
+
+**Decription:** Grants Luck I and +15% damage/mining speed during nighttime. Applies Weakness I during daytime.
 ### Fragile
 **id:** `fragile` | **crafting:** `minecraft:glass` ![glass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glass.png)
 

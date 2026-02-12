@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
+import dev.marston.randomloot.loot.modifiers.holders.Moonlit;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
 import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
@@ -83,6 +84,7 @@ public class ModifierRegistry {
 	public static Modifier FIRE_RESISTANT = register(
 			new Effect("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE));
 	public static Modifier RAINY = register(new Rainy());
+	public static Modifier MOONLIT = register(new Moonlit());
 	public static Modifier NATURALIST = register(new Naturalist());
 	public static Modifier ORE_FINDER = register(new OreFinder());
 	public static Modifier SPAWNER_FINDER = register(new TreasureFinder());
@@ -103,11 +105,11 @@ public class ModifierRegistry {
 	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, MUNCHIES, FRAGILE, LUMBERING);
 	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
 	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC, FRAGILE, CLUNKY, EARLY_BIRD);
-	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
+			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC, FRAGILE, CLUNKY, EARLY_BIRD, MOONLIT);
+	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, MOONLIT, ORE_FINDER, SPAWNER_FINDER,
 			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY);
 
-	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC, FRAGILE);
+	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC, FRAGILE, MOONLIT);
 
 	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
 
