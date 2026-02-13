@@ -216,6 +216,10 @@ These effects are applied when hurting enemies.
 **id:** `pummeling` | **crafting:** `minecraft:anvil` ![anvil](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/anvil.png)
 
 **Decription:** Slams enemies into the ground
+### Riftwalk
+**id:** `riftwalk` | **crafting:** `minecraft:chorus_flower` ![chorus_flower](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/chorus_flower.png)
+
+**Decription:** 15% chance to teleport behind your target after hitting them, dealing bonus damage on the next hit.
 ### Scorched
 **id:** `scorched` | **crafting:** `minecraft:blaze_powder` ![blaze_powder](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/blaze_powder.png)
 
