@@ -224,6 +224,10 @@ These effects are applied when hurting enemies.
 **id:** `soulbound` | **crafting:** `minecraft:nether_star` ![nether_star](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/nether_star.png)
 
 **Decription:** Grants 15% bonus damage and mining speed when wielded by the original owner.
+### Synergy
+**id:** `synergy` | **crafting:** `minecraft:echo_shard` ![echo_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/echo_shard.png)
+
+**Decription:** Gains 8% bonus damage for each other modifier on this tool.
 ### Withering
 **id:** `wither` | **crafting:** `minecraft:wither_rose` ![wither_rose](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_rose.png)
 
