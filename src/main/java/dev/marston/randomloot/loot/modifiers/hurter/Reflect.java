@@ -80,7 +80,12 @@ public class Reflect implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Reflect(tag.getStringOr(NAME, "Reflect"), tag.getIntOr(LEVEL, 1));
+		return new Reflect(tag.getString(NAME), tag.getInt(LEVEL));
+	}
+
+	@Override
+	public boolean compatible(Modifier mod) {
+		return true;
 	}
 
 	@Override
@@ -111,6 +116,11 @@ public class Reflect implements EntityHurtModifier {
 	public void writeToLore(List<Component> list, boolean shift) {
 		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
 		list.add(comp);
+	}
+
+	@Override
+	public Component writeDetailsToLore(@javax.annotation.Nullable net.minecraft.world.level.Level level) {
+		return null;
 	}
 
 	@Override
