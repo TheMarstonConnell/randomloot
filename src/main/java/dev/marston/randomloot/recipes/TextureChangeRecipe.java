@@ -1,10 +1,12 @@
 package dev.marston.randomloot.recipes;
 
+import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.core.NonNullList;
+import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.AirItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -26,9 +28,12 @@ public class TextureChangeRecipe extends CustomRecipe {
 
 
 
-	public TextureChangeRecipe(CraftingBookCategory cat) {
-		super(cat);
+	public TextureChangeRecipe() {
 	}
+
+	public static final TextureChangeRecipe INSTANCE = new TextureChangeRecipe();
+	public static final MapCodec<TextureChangeRecipe> CODEC = MapCodec.unit(INSTANCE);
+	public static final StreamCodec<RegistryFriendlyByteBuf, TextureChangeRecipe> STREAM_CODEC = StreamCodec.unit(INSTANCE);
 
 	@Override
 	public boolean matches(CraftingInput container, Level level) {
@@ -62,7 +67,7 @@ public class TextureChangeRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput, HolderLookup.Provider provider) {
+	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput) {
 		int modCount = 0;
 		List<ItemStack> stacks = craftingInput.items();
 

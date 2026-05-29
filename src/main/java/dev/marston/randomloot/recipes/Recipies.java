@@ -14,9 +14,9 @@ import java.util.function.Supplier;
 
 public final class Recipies {
 	public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, RandomLoot.MODID);
-	public static final Supplier<RecipeSerializer<TextureChangeRecipe>> TEXTURE_CHANGE_SHAPELESS = RECIPE_SERIALIZERS.register("texture_change_recipe", () -> new CustomRecipe.Serializer<>(TextureChangeRecipe::new));
+	public static final Supplier<RecipeSerializer<TextureChangeRecipe>> TEXTURE_CHANGE_SHAPELESS = RECIPE_SERIALIZERS.register("texture_change_recipe", () -> new RecipeSerializer<>(TextureChangeRecipe.CODEC, TextureChangeRecipe.STREAM_CODEC));
 
-	public static final Supplier<RecipeSerializer<TraitAdditionRecipe>> TRAIT_ADDITION_RECIPE = RECIPE_SERIALIZERS.register("trait_change", TraitAdditionRecipe.Serializer::new);
+	public static final Supplier<RecipeSerializer<TraitAdditionRecipe>> TRAIT_ADDITION_RECIPE = RECIPE_SERIALIZERS.register("trait_change", () -> new RecipeSerializer<>(TraitAdditionRecipe.CODEC, TraitAdditionRecipe.STREAM_CODEC));
 
 	public static void register(IEventBus eventBus) {
 		RandomLoot.LOGGER.info("REGISTERING RECIPES!");

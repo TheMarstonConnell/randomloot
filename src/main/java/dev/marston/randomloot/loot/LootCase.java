@@ -48,11 +48,11 @@ public class LootCase extends Item {
 		}
 
 		ItemEntity itementity = new ItemEntity(level, d0, d1, d2, stack);
-		double d3 = level.random.nextDouble() * 0.1D + 0.2D;
+		double d3 = level.getRandom().nextDouble() * 0.1D + 0.2D;
 		itementity.setDeltaMovement(
-				level.random.triangle((double) direction.getStepX() * d3, 0.0172275D * (double) speed),
-				level.random.triangle(0.2D, 0.0172275D * (double) speed),
-				level.random.triangle((double) direction.getStepZ() * d3, 0.0172275D * (double) speed));
+				level.getRandom().triangle((double) direction.getStepX() * d3, 0.0172275D * (double) speed),
+				level.getRandom().triangle(0.2D, 0.0172275D * (double) speed),
+				level.getRandom().triangle((double) direction.getStepZ() * d3, 0.0172275D * (double) speed));
 		level.addFreshEntity(itementity);
 	}
 

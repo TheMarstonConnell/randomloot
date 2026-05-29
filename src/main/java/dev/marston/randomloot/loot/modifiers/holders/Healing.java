@@ -122,7 +122,7 @@ public class Healing implements HoldModifier {
 
 				if (holder instanceof Player) {
 					Player p = (Player) holder;
-					p.displayClientMessage(comp, false);
+					p.sendSystemMessage(comp);
 				}
 			}
 

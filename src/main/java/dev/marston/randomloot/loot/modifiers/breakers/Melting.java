@@ -87,7 +87,7 @@ public class Melting implements BlockBreakModifier {
 						continue;
 					}
 
-					ItemStack result = recipe.assemble(new SingleRecipeInput(stack), null);
+					ItemStack result = recipe.assemble(new SingleRecipeInput(stack));
 
 					if (result.isEmpty()) {
 						continue;

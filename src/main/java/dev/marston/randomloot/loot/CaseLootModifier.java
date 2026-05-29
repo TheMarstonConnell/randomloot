@@ -26,8 +26,8 @@ public class CaseLootModifier extends LootModifier {
     );
 
     // First constructor parameter is the list of conditions. The rest is our extra properties.
-    public CaseLootModifier(LootItemCondition[] conditions, Item itemIn) {
-        super(conditions);
+    public CaseLootModifier(LootItemCondition[] conditions, int priority, Item itemIn) {
+        super(conditions, priority);
         this.item = itemIn;
     }
 

@@ -6,11 +6,15 @@
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. Built for NeoForge.
 
 ## Current Version
-- **Minecraft**: 1.21.11
-- **NeoForge**: 21.11.34-beta
-- **ModDevGradle**: 2.0.131
+- **Minecraft**: 26.1.2
+- **NeoForge**: 26.1.2.68-beta
+- **ModDevGradle**: 2.0.141
+- **Gradle**: 9.1.0 (wrapper) — required for Java 25
+- **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
+
+> **Versioning note:** Minecraft moved to calendar versioning. `26.1.2.68-beta` = Minecraft `26.1.2`, NeoForge build `68`. Parchment is no longer used: 26.1 ships deobfuscated with official Mojang parameter names.
 
 ## Useful Links
 - [NeoForge Versions](https://projects.neoforged.net/neoforged/neoforge) - Find latest NeoForge versions
@@ -138,6 +142,26 @@ public class MyBiomeModifier implements EntityHurtModifier, BiomeRestrictedModif
 - `Ingredient.EMPTY` removed - use `Optional.empty()` for optional ingredients
 - `PlacementInfo.createFromOptionals(List<Optional<Ingredient>>)` for mixed ingredients
 - `Ingredient.optionalIngredientToDisplay()` for display from optionals
+
+## Migration Notes (1.21.11 → 26.1)
+
+Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See NeoForge primer: https://docs.neoforged.net/primer/docs/26.1/
+
+### Toolchain
+- **Java 21 → 25**; **Gradle 8.12 → 9.1.0** (wrapper); **ModDevGradle 2.0.131 → 2.0.141**.
+- **foojay-resolver-convention 0.9.0 → 1.0.0** — 0.9.0 references `JvmVendorSpec.IBM_SEMERU`, removed in Gradle 9, causing a config-time failure. 1.0.0 fixes it and auto-provisions JDK 25.
+- **Parchment removed** entirely (build.gradle block + `parchment_*` props in gradle.properties) — official Mojang param names ship in-box.
+
+### API Changes Applied
+- `Level.random` field is now `protected` → use `level.getRandom()`.
+- **RecipeSerializer is now a `record`**: `new RecipeSerializer<>(MapCodec, StreamCodec)`. Inner `Serializer` classes are gone; `CustomRecipe.Serializer<>` removed. Hoist `CODEC`/`STREAM_CODEC` to fields on the recipe and register via `() -> new RecipeSerializer<>(Recipe.CODEC, Recipe.STREAM_CODEC)`.
+- `Recipe#assemble()` lost the `HolderLookup.Provider` param → `assemble(T input)`.
+- `Recipe#group()` and `Recipe#showNotification()` are no longer default — must be implemented (`SmithingRecipe` does NOT provide them; it does provide `getType()` and `recipeBookCategory()`).
+- `CustomRecipe` constructor takes **no args** now (no `CraftingBookCategory`); it provides `group()`/`category()`/`showNotification()`/`placementInfo()`. For a no-data custom recipe, mirror vanilla `RepairItemRecipe`: a singleton `INSTANCE` + `MapCodec.unit(INSTANCE)` + `StreamCodec.unit(INSTANCE)` (share the same instance — `StreamCodec.unit` does a reference-equality check on encode).
+- NeoForge `LootModifier` constructor is now `(LootItemCondition[] conditions, int priority)` and `codecStart()` returns a P2 that adds an optional `"priority"` int → subclass constructor needs a `priority` param: `super(conditions, priority)`.
+- `IItemExtension#canPerformAction` first param changed `ItemStack` → `ItemInstance` (the shared read-only interface implemented by both `ItemStack` and `ItemStackTemplate`). Cast to `ItemStack` inside if you need stack-only utils.
+- `Player.displayClientMessage(Component, boolean)` removed → `player.sendSystemMessage(Component)`.
+- `ItemStackTemplate` is the new immutable stack for data/recipe contexts; `ItemStack.CODEC`/`STREAM_CODEC` still exist and work for recipe deserialization (registries are loaded by recipe-load time).
 
 ## Testing
 - Use `/give @p randomloot:case` to get a loot case

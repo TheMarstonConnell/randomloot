@@ -33,6 +33,7 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
@@ -226,8 +227,11 @@ public class LootItem extends Item  {
 	}
 
 	@Override
-	public boolean canPerformAction(ItemStack stack, ItemAbility itemAbility) {
-		ToolType type = LootUtils.getToolType(stack);
+	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
+		if (!(stack instanceof ItemStack itemStack)) {
+			return false;
+		}
+		ToolType type = LootUtils.getToolType(itemStack);
 
 		if (type == ToolType.AXE) {
 			return itemAbility == ItemAbilities.AXE_STRIP ||

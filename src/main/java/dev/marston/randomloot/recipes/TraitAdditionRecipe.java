@@ -13,7 +13,6 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
@@ -33,6 +32,21 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	final String trait;
 	@Nullable
 	private PlacementInfo placementInfo;
+
+	public static final MapCodec<TraitAdditionRecipe> CODEC = RecordCodecBuilder.mapCodec(
+			builder -> builder.group(
+							ItemStack.CODEC.fieldOf("item").forGetter(g -> g.addition),
+							Codec.STRING.fieldOf("trait").forGetter(g -> g.trait)
+					)
+					.apply(builder, TraitAdditionRecipe::new)
+	);
+	public static final StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> STREAM_CODEC = StreamCodec.composite(
+			ItemStack.STREAM_CODEC,
+			c -> c.addition,
+			ByteBufCodecs.STRING_UTF8,
+			c -> c.trait,
+			TraitAdditionRecipe::new
+	);
 
 	public TraitAdditionRecipe(ItemStack addition, String traitIn) {
 		this.addition = addition;
@@ -109,8 +123,19 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 
 
-	public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider provider) {
+	@Override
+	public ItemStack assemble(SmithingRecipeInput input) {
 		return this.getResult(input);
+	}
+
+	@Override
+	public String group() {
+		return "";
+	}
+
+	@Override
+	public boolean showNotification() {
+		return true;
 	}
 
 	@Override
@@ -153,33 +178,6 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 						new SlotDisplay.ItemSlotDisplay(Items.SMITHING_TABLE)
 				)
 		);
-	}
-
-	public static class Serializer implements RecipeSerializer<TraitAdditionRecipe> {
-		private static final MapCodec<TraitAdditionRecipe> CODEC = RecordCodecBuilder.mapCodec(
-				builder -> builder.group(
-								ItemStack.CODEC.fieldOf("item").forGetter(g -> g.addition),
-								Codec.STRING.fieldOf("trait").forGetter(g -> g.trait)
-						)
-						.apply(builder, TraitAdditionRecipe::new)
-		);
-		public static final StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> STREAM_CODEC = StreamCodec.composite(
-				ItemStack.STREAM_CODEC,
-				c -> c.addition,
-				ByteBufCodecs.STRING_UTF8,
-				c -> c.trait,
-				TraitAdditionRecipe::new
-		);
-
-		@Override
-		public MapCodec<TraitAdditionRecipe> codec() {
-			return CODEC;
-		}
-
-		@Override
-		public StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> streamCodec() {
-			return STREAM_CODEC;
-		}
 	}
 }
 
