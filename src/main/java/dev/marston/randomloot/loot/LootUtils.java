@@ -71,6 +71,9 @@ public class LootUtils {
 	public static ItemStack CloneItem(ItemStack stack) {
 		ItemStack copy = new ItemStack(ModItems.TOOL.asItem());
 
+		// Preserve the tool's durability so texture/trait changes don't repair it.
+		copy.set(DataComponents.DAMAGE, stack.get(DataComponents.DAMAGE));
+
 		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER);
 		if (mods == null) {
 			return copy;
