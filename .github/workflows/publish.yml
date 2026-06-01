@@ -40,7 +40,7 @@ jobs:
           id: file_name
           shell: bash
           run: |
-            echo "FILE_NAME=$(echo randomloot-$(echo "${{ steps.get_version.outputs.VERSION }}" | grep -o '[0-9]*\.[0-9]*\.[0-9]*').jar)" >> $GITHUB_OUTPUT
+            echo "FILE_NAME=randomloot-${{ steps.get_version.outputs.VERSION }}.jar" >> $GITHUB_OUTPUT
         - name: Update mod version in gradle.properties
           run: |
             sed -i "s/^mod_version=.*/mod_version=${{ steps.get_version.outputs.VERSION }}/" gradle.properties
