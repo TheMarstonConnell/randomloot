@@ -58,7 +58,7 @@ jobs:
             files: "build/libs/*.jar"
         
         - name: Upload to CurseForge
-          uses: itsmeow/curseforge-upload@3.1.2
+          uses: itsmeow/curseforge-upload@v3.1.2
           with:
             file_path: "build/libs/${{ steps.file_name.outputs.FILE_NAME }}"
             game_endpoint: "minecraft"
