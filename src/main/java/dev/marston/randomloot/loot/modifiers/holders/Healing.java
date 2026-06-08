@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -17,7 +18,6 @@ import net.minecraft.world.level.Level;
 
 public class Healing extends AbstractModifier implements HoldModifier {
 
-	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 3;
 
 	private int level;
@@ -54,14 +54,14 @@ public class Healing extends AbstractModifier implements HoldModifier {
 	@Override
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		tag.putString(NAME, name);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(tag.getStringOr(NAME, "Living"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
+		return new Healing(tag.getStringOr(NAME, "Living"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

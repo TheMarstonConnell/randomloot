@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -20,7 +21,6 @@ import net.minecraft.world.level.Level;
 public class Scorched extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
 	private int level = 0;
-	private final static String LEVEL = "trait_level";
 
 	public Scorched(String name, int level) {
 		this.name = name;
@@ -40,13 +40,13 @@ public class Scorched extends AbstractModifier implements EntityHurtModifier, Ho
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Scorched(tag.getStringOr(NAME, "Scorched"), tag.getIntOr(LEVEL, 0));
+		return new Scorched(tag.getStringOr(NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

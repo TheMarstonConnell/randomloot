@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -19,7 +20,6 @@ import net.minecraft.world.level.Level;
 public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRestrictedModifier {
 
 	private int level = 0;
-	private final static String LEVEL = "trait_level";
 
 	public Aquatic(String name, int level) {
 		this.name = name;
@@ -39,13 +39,13 @@ public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRest
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Aquatic(tag.getStringOr(NAME, "Aquatic"), tag.getIntOr(LEVEL, 0));
+		return new Aquatic(tag.getStringOr(NAME, "Aquatic"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

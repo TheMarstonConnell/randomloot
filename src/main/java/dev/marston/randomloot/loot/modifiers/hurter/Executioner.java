@@ -4,6 +4,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -18,7 +19,6 @@ import net.minecraft.world.item.ItemStack;
 
 public class Executioner extends AbstractModifier implements EntityHurtModifier {
 
-    private static final String LEVEL = "trait_level";
     private static final int MAX_LEVEL = 5;
 
     private int level;
@@ -80,13 +80,13 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
-        tag.putInt(LEVEL, level);
+        tag.putInt(ModifierConstants.LEVEL, level);
         return tag;
     }
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Executioner(tag.getStringOr(NAME, "Executioner"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
+        return new Executioner(tag.getStringOr(NAME, "Executioner"), ModifierConstants.getLevel(tag, 1));
     }
 
     @Override

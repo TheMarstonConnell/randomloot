@@ -5,6 +5,7 @@ import java.util.Random;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -19,7 +20,6 @@ import net.minecraft.world.item.ItemStack;
 public class Munchies extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.15f; // 15% boost
-	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 5;
 
 	private int level;
@@ -82,13 +82,13 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Munchies(tag.getStringOr(NAME, "Munchies"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
+		return new Munchies(tag.getStringOr(NAME, "Munchies"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

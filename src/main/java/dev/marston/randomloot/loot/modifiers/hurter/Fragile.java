@@ -4,6 +4,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -19,7 +20,6 @@ import net.minecraft.world.item.ItemStack;
 public class Fragile extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.25f; // 25% boost
-	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 3;
 
 	private int level;
@@ -78,13 +78,13 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fragile(tag.getStringOr(NAME, "Fragile"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
+		return new Fragile(tag.getStringOr(NAME, "Fragile"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

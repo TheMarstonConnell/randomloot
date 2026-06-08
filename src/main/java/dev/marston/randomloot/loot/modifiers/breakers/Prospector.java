@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -34,7 +35,6 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	private int level;
 	private int totalFinds;
 
-	private static final String LEVEL = "trait_level";
 	private static final String TOTAL_FINDS = "totalFinds";
 	private static final int MAX_LEVEL = 10;
 	private static final float BASE_CHANCE = 0.03f;
@@ -115,7 +115,7 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		tag.putInt(TOTAL_FINDS, totalFinds);
 		return tag;
 	}
@@ -124,7 +124,7 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Prospector(
 				tag.getStringOr(NAME, "Prospector"),
-				tag.getIntOr(LEVEL, tag.getIntOr("level", 1)),
+				ModifierConstants.getLevel(tag, 1),
 				tag.getIntOr(TOTAL_FINDS, 0));
 	}
 

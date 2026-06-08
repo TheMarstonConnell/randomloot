@@ -4,6 +4,7 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -13,7 +14,6 @@ import net.minecraft.world.item.ItemStack;
 
 
 public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
-	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 3;
 
 	private int level;
@@ -56,13 +56,13 @@ public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
+		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

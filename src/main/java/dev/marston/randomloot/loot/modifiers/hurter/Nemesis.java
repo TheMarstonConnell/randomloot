@@ -4,6 +4,7 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -21,7 +22,6 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 	private int level;
 	private Map<String, Integer> killCounts;
 
-	private static final String LEVEL = "trait_level";
 	private static final String KILL_COUNTS = "killCounts";
 
 	public Nemesis(String name, int level, Map<String, Integer> killCounts) {
@@ -45,7 +45,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 		CompoundTag tag = new CompoundTag();
 
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 
 		CompoundTag killCountsTag = new CompoundTag();
 		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
@@ -59,7 +59,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		String name = tag.getStringOr(NAME, "Nemesis");
-		int level = tag.getIntOr(LEVEL, tag.getIntOr("level", 1));
+		int level = ModifierConstants.getLevel(tag, 1);
 
 		Map<String, Integer> killCounts = new HashMap<>();
 		CompoundTag killCountsTag = tag.getCompoundOrEmpty(KILL_COUNTS);

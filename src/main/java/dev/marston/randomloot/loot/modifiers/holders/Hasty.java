@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -19,7 +20,6 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 
 	private int power;
 	private final static String POWER = "power";
-	private final static String LEVEL = "trait_level";
 
 	private int level = 0;
 
@@ -48,14 +48,14 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 
 		tag.putInt(POWER, power);
 
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Hasty(tag.getStringOr(NAME, "Hasty"), tag.getIntOr(POWER, 0), tag.getIntOr(LEVEL, 0));
+		return new Hasty(tag.getStringOr(NAME, "Hasty"), tag.getIntOr(POWER, 0), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

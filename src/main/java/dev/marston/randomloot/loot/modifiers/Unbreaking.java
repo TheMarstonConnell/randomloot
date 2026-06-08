@@ -12,7 +12,6 @@ public class Unbreaking extends AbstractModifier {
 	final String name;
 	int level;
 
-	final static String LEVEL = "trait_level";
 
 	public Unbreaking(String name, int level) {
 		this.name = name;
@@ -55,13 +54,13 @@ public class Unbreaking extends AbstractModifier {
 		CompoundTag tag = new CompoundTag();
 
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 
 		return tag;
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), tag.getIntOr(LEVEL, 0));
+		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	public boolean forTool(ToolType type) {

@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -21,7 +22,6 @@ import net.minecraft.world.level.Level;
 public class Overgrown extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
 	private int level = 0;
-	private final static String LEVEL = "trait_level";
 
 	public Overgrown(String name, int level) {
 		this.name = name;
@@ -41,13 +41,13 @@ public class Overgrown extends AbstractModifier implements EntityHurtModifier, H
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), tag.getIntOr(LEVEL, 0));
+		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
