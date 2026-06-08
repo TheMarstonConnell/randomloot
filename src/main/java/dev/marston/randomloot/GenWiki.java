@@ -25,10 +25,8 @@ public class GenWiki {
     private static void writeMod(Modifier m, FileWriter f) throws IOException {
         String tag = m.tagName();
         String recipe = "n/a";
-        int count = 1;
         try {
             recipe = readRecipe(tag);
-            count = readCount(tag);
         } catch (Exception e) {
             RandomLoot.LOGGER.warn("failed to find recipe for " + tag + ".");
         }
@@ -515,23 +513,6 @@ public class GenWiki {
         JsonObject itemObj = item.getAsJsonObject();
 
         return itemObj.get("id").getAsString();
-
-    }
-
-    public static int readCount(String trait) throws FileNotFoundException {
-        FileReader reader = new FileReader(
-                "../src/main/resources/data/randomloot/recipe/trait_" + trait + ".json");
-        Gson gson = new Gson();
-        BufferedReader bufferedReader = new BufferedReader(reader);
-
-        JsonObject obj;
-        obj = gson.fromJson(bufferedReader, JsonObject.class);
-
-        JsonElement item = obj.get("item");
-
-        JsonObject itemObj = item.getAsJsonObject();
-
-        return itemObj.get("count").getAsInt();
 
     }
 

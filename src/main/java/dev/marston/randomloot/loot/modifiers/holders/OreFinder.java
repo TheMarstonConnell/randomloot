@@ -2,13 +2,12 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -28,9 +27,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @EventBusSubscriber(modid = RandomLoot.MODID)
-public class OreFinder implements HoldModifier {
+public class OreFinder extends AbstractModifier implements HoldModifier {
 
-	private String name;
 	private float power;
 	private final static String POWER = "power";
 
@@ -74,11 +72,6 @@ public class OreFinder implements HoldModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "detecting";
 	}
@@ -94,16 +87,8 @@ public class OreFinder implements HoldModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 
 	@SubscribeEvent

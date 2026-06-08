@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
@@ -10,8 +11,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -23,11 +22,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.List;
 
-public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
+public class VoidTouched extends AbstractModifier implements UseModifier, BiomeRestrictedModifier {
 
-	private String name;
 	private int level = 0;
 	private final static String LEVEL = "trait_level";
 
@@ -80,12 +77,6 @@ public class VoidTouched implements UseModifier, BiomeRestrictedModifier {
 	public String description() {
 		float distance = 8.0f + (this.level * 4.0f);
 		return "Right-click to teleport up to " + distance + " blocks. Costs 10 durability.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	@Override

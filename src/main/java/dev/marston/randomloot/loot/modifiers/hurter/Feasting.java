@@ -1,17 +1,15 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -20,12 +18,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class Feasting implements EntityHurtModifier, HoldModifier {
+public class Feasting extends AbstractModifier implements EntityHurtModifier, HoldModifier {
 
     private static final int HUNGER_THRESHOLD = 10; // 50% of max hunger (20)
     private static final float DAMAGE_BONUS = 0.10f; // 10% bonus/penalty
-
-    private String name;
 
     public Feasting() {
         this.name = "Feasting";
@@ -38,11 +34,6 @@ public class Feasting implements EntityHurtModifier, HoldModifier {
     @Override
     public String tagName() {
         return "feasting";
-    }
-
-    @Override
-    public String name() {
-        return this.name;
     }
 
     @Override
@@ -77,12 +68,6 @@ public class Feasting implements EntityHurtModifier, HoldModifier {
         return true; // Works with all tool types
     }
 
-    @Override
-    public void writeToLore(List<Component> list, boolean shift) {
-        MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-        list.add(comp);
-    }
-
     private boolean isWellFed(LivingEntity entity) {
         if (entity instanceof Player player) {
             return player.getFoodData().getFoodLevel() >= HUNGER_THRESHOLD;
@@ -92,23 +77,20 @@ public class Feasting implements EntityHurtModifier, HoldModifier {
 
     @Override
     public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+        if (hurtee.level().isClientSide()) {
+            return false;
+        }
+
+        // Only a well-fed attacker deals bonus melee damage. A "hungry penalty" cannot
+        // be applied as a post-hit negative hurt (that would heal the target already
+        // damaged by the primary swing), so the hungry case is handled purely by the
+        // mining-fatigue effect in hold().
+        if (!isWellFed(hurter)) {
+            return false;
+        }
+
         float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-        float modifier;
-
-        if (isWellFed(hurter)) {
-            modifier = DAMAGE_BONUS; // +10%
-        } else {
-            modifier = -DAMAGE_BONUS; // -10%
-        }
-
-        float bonusDamage = baseDamage * modifier;
-        if (bonusDamage != 0) {
-            if (hurter instanceof Player p) {
-                hurtee.hurt(hurter.damageSources().playerAttack(p), bonusDamage);
-            } else {
-                hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
-            }
-        }
+        dealBonusDamage(hurtee, hurter, baseDamage * DAMAGE_BONUS);
 
         return false;
     }

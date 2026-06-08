@@ -1,8 +1,6 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.Globals;
-
-import java.util.Random;
+import net.minecraft.util.RandomSource;
 
 public class NameGenerator {
 	public static final String[] Prefixes = new String[] { "Fyten", "Fetter", "Red", "Tita", "Ty", "A", "Demu", "Tra",
@@ -46,13 +44,10 @@ public class NameGenerator {
 			list = HotNames;
 		}
 
-		Random generator = new Random(Globals.Seed);
-
-		String adj = list[generator.nextInt(list.length)];
-		return adj;
+		return list[(int) (Math.random() * list.length)];
 	}
 
-	public static final String getAdj(float temp, boolean raining) {
+	public static final String getAdj(RandomSource random, float temp, boolean raining) {
 		String[] list = TemperateAdj;
 
 		if (raining) {
@@ -65,21 +60,20 @@ public class NameGenerator {
 			}
 		}
 
-		String adj = list[(int) (Math.random() * list.length)];
-		return adj;
+		return list[random.nextInt(list.length)];
 	}
 
-	public static String generateName() {
-		String prefix = Prefixes[(int) (Math.random() * Prefixes.length)];
-		String suffix = Suffixes[(int) (Math.random() * Suffixes.length)];
+	public static String generateName(RandomSource random) {
+		String prefix = Prefixes[random.nextInt(Prefixes.length)];
+		String suffix = Suffixes[random.nextInt(Suffixes.length)];
 
 		return prefix + suffix;
 
 	}
 
-	public static String generateNameWPrefix(float temp, boolean raining) {
-		String pref = getAdj(temp, raining);
-		String suff = generateName();
+	public static String generateNameWPrefix(RandomSource random, float temp, boolean raining) {
+		String pref = getAdj(random, temp, raining);
+		String suff = generateName(random);
 
 		return pref + " " + suff;
 

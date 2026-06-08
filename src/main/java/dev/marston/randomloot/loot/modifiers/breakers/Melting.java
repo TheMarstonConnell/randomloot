@@ -1,12 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -22,20 +21,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Melting implements BlockBreakModifier {
+public class Melting extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
-	private float power;
-	private final static String POWER = "power";
-
-	public Melting(String name, float power) {
+	public Melting(String name) {
 		this.name = name;
-		this.power = power;
 	}
 
 	public Melting() {
 		this.name = "Melting";
-		this.power = 1.0f;
 	}
 
 	public Modifier clone() {
@@ -120,8 +113,6 @@ public class Melting implements BlockBreakModifier {
 
 		CompoundTag tag = new CompoundTag();
 
-		tag.putFloat(POWER, power);
-
 		tag.putString(NAME, name);
 
 		return tag;
@@ -129,12 +120,7 @@ public class Melting implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Melting(tag.getStringOr(NAME, "Melting"), tag.getFloatOr(POWER, 1.0f));
-	}
-
-	@Override
-	public String name() {
-		return name;
+		return new Melting(tag.getStringOr(NAME, "Melting"));
 	}
 
 	@Override
@@ -153,15 +139,7 @@ public class Melting implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 }

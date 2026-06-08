@@ -1,16 +1,16 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -19,11 +19,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class Lumbering implements BlockBreakModifier {
+public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 
 	private static final int MAX_BLOCKS = 64;
-
-	private String name;
 
 	public Lumbering() {
 		this.name = "Lumbering";
@@ -36,11 +34,6 @@ public class Lumbering implements BlockBreakModifier {
 	@Override
 	public String tagName() {
 		return "lumbering";
-	}
-
-	@Override
-	public String name() {
-		return this.name;
 	}
 
 	@Override
@@ -73,11 +66,6 @@ public class Lumbering implements BlockBreakModifier {
 	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.AXE);
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		list.add(Modifier.makeComp(this.name(), this.color()));
 	}
 
 	private boolean isLog(BlockState state) {
@@ -118,15 +106,6 @@ public class Lumbering implements BlockBreakModifier {
 		}
 	}
 
-	private void removeBlock(ItemStack itemstack, BlockPos pos, ServerPlayer player, Level level, BlockState state) {
-		if (!state.canHarvestBlock(level, pos, player)) {
-			return;
-		}
-
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
-		level.removeBlock(pos, false);
-	}
-
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
 		if (!(p instanceof ServerPlayer player)) {
@@ -152,11 +131,13 @@ public class Lumbering implements BlockBreakModifier {
 		for (BlockPos logPos : logsToBreak) {
 			BlockState logState = level.getBlockState(logPos);
 			if (isLog(logState)) {
-				removeBlock(itemstack, logPos, player, level, logState);
-				itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, logPos, player, level, logState);
+				if (destroyed) {
+					itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
 
-				if (itemstack.isEmpty()) {
-					break;
+					if (itemstack.isEmpty()) {
+						break;
+					}
 				}
 			}
 		}

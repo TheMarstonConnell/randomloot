@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -13,14 +14,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Healing implements HoldModifier {
+public class Healing extends AbstractModifier implements HoldModifier {
 
-	private static final String LEVEL = "level";
+	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 3;
 
-	private String name;
 	private int level;
 
 	public Healing(String name, int level) {
@@ -62,7 +61,7 @@ public class Healing implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(tag.getStringOr(NAME, "Living"), tag.getIntOr(LEVEL, 1));
+		return new Healing(tag.getStringOr(NAME, "Living"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
 	}
 
 	@Override
@@ -86,14 +85,6 @@ public class Healing implements HoldModifier {
 	@Override
 	public String description() {
 		return "While holding, " + String.format("%.1f", getPower() * 100) + "% chance per tick to repair itself";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
 	}
 
 	@Override

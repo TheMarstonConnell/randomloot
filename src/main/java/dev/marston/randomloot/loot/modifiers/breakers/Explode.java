@@ -1,23 +1,20 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 
-import java.util.List;
 
-public class Explode implements BlockBreakModifier {
+public class Explode extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
 	private float power;
 	private final static String POWER = "power";
 
@@ -63,11 +60,6 @@ public class Explode implements BlockBreakModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "explode";
 	}
@@ -83,15 +75,7 @@ public class Explode implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 }

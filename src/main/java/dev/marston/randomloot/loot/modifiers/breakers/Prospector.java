@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -9,7 +10,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
@@ -28,15 +28,13 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
-import java.util.Random;
 
-public class Prospector implements BlockBreakModifier {
+public class Prospector extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
 	private int level;
 	private int totalFinds;
 
-	private static final String LEVEL = "level";
+	private static final String LEVEL = "trait_level";
 	private static final String TOTAL_FINDS = "totalFinds";
 	private static final int MAX_LEVEL = 10;
 	private static final float BASE_CHANCE = 0.03f;
@@ -88,9 +86,8 @@ public class Prospector implements BlockBreakModifier {
 			return false;
 		}
 
-		Random random = new Random();
 		float chance = BASE_CHANCE + (this.level * CHANCE_PER_LEVEL);
-		if (random.nextFloat() > chance) {
+		if (level.getRandom().nextFloat() > chance) {
 			return false;
 		}
 
@@ -127,7 +124,7 @@ public class Prospector implements BlockBreakModifier {
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Prospector(
 				tag.getStringOr(NAME, "Prospector"),
-				tag.getIntOr(LEVEL, 1),
+				tag.getIntOr(LEVEL, tag.getIntOr("level", 1)),
 				tag.getIntOr(TOTAL_FINDS, 0));
 	}
 
@@ -153,12 +150,6 @@ public class Prospector implements BlockBreakModifier {
 	public String description() {
 		int chancePercent = (int) ((BASE_CHANCE + (this.level * CHANCE_PER_LEVEL)) * 100);
 		return "Mining stone has a " + chancePercent + "% chance to discover bonus minerals.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	@Override

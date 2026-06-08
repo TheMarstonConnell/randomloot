@@ -8,7 +8,6 @@ import net.minecraft.core.dispenser.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -69,21 +68,14 @@ public class LootCase extends Item {
 	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack lootCase = player.getItemInHand(hand);
 
-		if (player instanceof ServerPlayer sPlayer) {
-            StatType<Item> itemUsed = Stats.ITEM_USED;
-
-			sPlayer.getStats().increment(sPlayer, itemUsed.get(ModItems.CASE.get()), 1);
-		}
-
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
-
-
-		if (!level.isClientSide()) {
-            assert player instanceof ServerPlayer;
-            LootUtils.generateTool((ServerPlayer) player, level); // generate tool and give it to the player
+		if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
+			LootUtils.generateTool(sPlayer, level); // generate tool and give it to the player
 		}
 
+		// Awards the single ITEM_USED stat for the case. genTool() reads this exact
+		// stat to size the loot "goodness" curve, so it must only be counted once.
 		player.awardStat(Stats.ITEM_USED.get(this));
 		if (!player.getAbilities().instabuild) {
 			lootCase.shrink(1);

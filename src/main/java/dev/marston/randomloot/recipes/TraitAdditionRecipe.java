@@ -66,11 +66,15 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
+		// An unknown/typo'd trait id (e.g. from a stale data pack) must not match, or the
+		// recipe would consume the template + addition while producing an unchanged tool.
+		Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+		if (modToAdd == null) {
+			return false;
+		}
+
 		// Check if we're adding a modifier (not removing)
 		if (input.template().is(ModItems.MOD_ADD.asItem())) {
-			// Get the modifier being added
-			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
-
 			// If it's a biome-restricted modifier, check if the tool's biome matches
 			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
 				ItemStack tool = input.base();

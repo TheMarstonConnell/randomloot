@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
@@ -12,14 +11,12 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -32,6 +29,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
@@ -41,7 +39,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import org.apache.logging.log4j.core.tools.picocli.CommandLine;
+import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -94,6 +92,21 @@ public class LootUtils {
 		return copy;
 	}
 	
+	/**
+	 * Breaks a block as if {@code player} had mined it (drops + block-break stats),
+	 * but only when the player can actually harvest it. Returns {@code true} when the
+	 * block was destroyed so callers only spend durability on blocks they really broke.
+	 */
+	public static boolean breakBlockAsPlayer(ItemStack itemstack, BlockPos pos, ServerPlayer player, Level level, BlockState state) {
+		if (!state.canHarvestBlock(level, pos, player)) {
+			return false;
+		}
+
+		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		level.removeBlock(pos, false);
+		return true;
+	}
+
 	public static void addLoreLine(ListTag lore, String text, String color) {
 		JsonObject value = new JsonObject();
 
@@ -108,7 +121,6 @@ public class LootUtils {
 
 	public static void setItemName(ItemStack stack, String name, String color) {
 		MutableComponent comp = Component.literal(name);
-		RandomLoot.LOGGER.info("COLOR: " + color);
 
 		Style style = Style.EMPTY;
 		style = style.withItalic(false);
@@ -290,7 +302,6 @@ public class LootUtils {
 		if (!oldModFound) { // tag doesn't exist so we're adding a new trait.
 
 			modifiers.put(mod.tagName(), newTag);
-			removeTagKey(item,Modifier.MODTAG);
 			addTagElement(item,Modifier.MODTAG, modifiers);
 			return;
 
@@ -306,7 +317,6 @@ public class LootUtils {
 		oldModifier.levelUp();
 		modifiers.put(oldModifier.tagName(), oldModifier.toNBT());
 
-		removeTagKey(item,Modifier.MODTAG);
 		addTagElement(item,Modifier.MODTAG, modifiers);
 
 	}
@@ -323,7 +333,6 @@ public class LootUtils {
 
 		modifiers.put(mod.tagName(), mod.toNBT());
 
-		removeTagKey(item,Modifier.MODTAG);
 		addTagElement(item,Modifier.MODTAG, modifiers);
 	}
 
@@ -333,7 +342,6 @@ public class LootUtils {
 
 		modifiers.remove(mod.tagName());
 
-		removeTagKey(item,Modifier.MODTAG);
 		addTagElement(item,Modifier.MODTAG, modifiers);
 
 		return item;
@@ -467,7 +475,6 @@ public class LootUtils {
 
 		// Store biome key for modifier filtering
 		if (player != null) {
-			final float finalTemp = temp; // Capture for lambda
 			Holder<Biome> biomeHolder = level.getBiome(player.blockPosition());
 
 			// Get biome key from registry
@@ -477,27 +484,22 @@ public class LootUtils {
 			// Try unwrapKey first
 			if (biomeHolder.unwrapKey().isPresent()) {
 				biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
-				RandomLoot.LOGGER.info("Got biome key from unwrapKey: {}", biomeKey);
 			} else {
 				// Fallback: search registry for this biome
-				RandomLoot.LOGGER.warn("Biome key not available via unwrapKey, searching registry...");
 				Biome biome = biomeHolder.value();
 				for (var entry : biomeRegistry.entrySet()) {
 					if (entry.getValue() == biome) {
 						biomeKey = entry.getKey().identifier().toString();
-						RandomLoot.LOGGER.info("Found biome key via registry search: {}", biomeKey);
 						break;
 					}
 				}
 			}
 
 			setBiomeKey(lootItem, biomeKey);
-			RandomLoot.LOGGER.info("Tool generated in biome: {} with temp: {}", biomeKey, finalTemp);
 
 			// Store dimension
 			String dim = level.dimension().identifier().toString();
 			setDimension(lootItem, dim);
-			RandomLoot.LOGGER.info("Tool generated in dimension: {}", dim);
 		}
 	}
 
@@ -533,7 +535,7 @@ public class LootUtils {
 			}
 		}
 
-		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(temp, level.isRaining()), nameColor);
+		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(level.getRandom(), temp, level.isRaining()), nameColor);
 
 		String forger = NameGenerator.generateForger(temp);
 
@@ -568,19 +570,16 @@ public class LootUtils {
 		return item;
 	}
 
-	public static void generateNewTrait(ItemStack stack, ToolType type) {
+	public static void generateNewTrait(ItemStack stack, ToolType type, RandomSource random) {
 
 		List<Modifier> mods = getModifiers(stack);
 
 		ArrayList<Modifier> allowedMods = new ArrayList<Modifier>();
 
-		RandomLoot.LOGGER.info("=== Generating trait for {} ===", type);
-
 		for (Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
 			Modifier newMod = entry.getValue();
 
 			if (!Config.traitEnabled(newMod.tagName())) {
-				RandomLoot.LOGGER.info("  {} - SKIP (disabled in config)", newMod.tagName());
 				continue;
 			}
 
@@ -590,18 +589,12 @@ public class LootUtils {
 				float temp = getBiomeTemperature(stack);
 				String dimension = getDimension(stack);
 
-				boolean canSpawn = biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension);
-				RandomLoot.LOGGER.info("  {} - biome: {}, temp: {}, dim: {}, canSpawn: {}",
-					newMod.tagName(), biomeKey, temp, dimension, canSpawn);
-
-				if (!canSpawn) {
-					RandomLoot.LOGGER.info("  {} - SKIP (biome restriction)", newMod.tagName());
+				if (!biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension)) {
 					continue; // Skip this modifier if biome doesn't match
 				}
 			}
 
 			if (!newMod.forTool(type)) {
-				RandomLoot.LOGGER.info("  {} - SKIP (wrong tool type)", newMod.tagName());
 				continue;
 			}
 
@@ -611,14 +604,12 @@ public class LootUtils {
 
 				if (modifier.tagName().equals(newMod.tagName())) {
 					if (!modifier.canLevel()) {
-						RandomLoot.LOGGER.info("  {} - SKIP (already has max level)", newMod.tagName());
 						compatible = false;
 						break;
 					}
 				}
 
 				if (!modifier.compatible(newMod)) {
-					RandomLoot.LOGGER.info("  {} - SKIP (incompatible with {})", newMod.tagName(), modifier.tagName());
 					compatible = false;
 					break;
 				}
@@ -626,7 +617,6 @@ public class LootUtils {
 			}
 
 			if (compatible) {
-				RandomLoot.LOGGER.info("  {} - ALLOWED", newMod.tagName());
 				allowedMods.add(newMod);
 			}
 
@@ -634,26 +624,21 @@ public class LootUtils {
 
 		int size = allowedMods.size();
 
-		RandomLoot.LOGGER.info("Total allowed modifiers: {}", size);
-
 		if (size == 0) {
-			RandomLoot.LOGGER.info("No modifiers available - skipping trait generation");
 			return;
 		}
 
-		int choice = (int) (Math.random() * size);
+		int choice = random.nextInt(size);
 
 		Modifier m = allowedMods.get(choice);
-
-		RandomLoot.LOGGER.info("SELECTED: {}", m.tagName());
 
 		addModifier(stack, m);
 
 	}
 
-	public static void generateInitialTraits(ItemStack stack, ToolType type, int count) {
+	public static void generateInitialTraits(ItemStack stack, ToolType type, int count, RandomSource random) {
 		for (int i = 0; i < count; i++) {
-			generateNewTrait(stack, getToolType(stack));
+			generateNewTrait(stack, getToolType(stack), random);
 		}
 	}
 
@@ -731,7 +716,7 @@ public class LootUtils {
 
 		LootUtils.setStats(lootItem, goodness);
 
-		int toolType = (int) (Math.random() * 4);
+		int toolType = level.getRandom().nextInt(4);
 		ToolType m = switch (toolType) {
 		case 0: {
 			yield ToolType.PICKAXE;
@@ -778,11 +763,13 @@ public class LootUtils {
 			setOwnerName(lootItem, player.getDisplayName().getString());
 		}
 
-		generateInitialTraits(lootItem, m, traits);
+		generateInitialTraits(lootItem, m, traits, level.getRandom());
 
 		generateLore(lootItem, level, player);
 
-		LootUtils.setTexture(lootItem, (int) (Math.random() * textureCount));
+		if (textureCount > 0) {
+			LootUtils.setTexture(lootItem, level.getRandom().nextInt(textureCount));
+		}
 
 		return lootItem;
 	}

@@ -3,22 +3,17 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.List;
 
-public class Fierce implements EntityHurtModifier, StatsModifier {
-
-	private String name;
+public class Fierce extends AbstractModifier implements EntityHurtModifier, StatsModifier {
 
 	public Fierce() {
 		this("Fierce");
@@ -46,11 +41,6 @@ public class Fierce implements EntityHurtModifier, StatsModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "fierce";
 	}
@@ -63,12 +53,6 @@ public class Fierce implements EntityHurtModifier, StatsModifier {
 	@Override
 	public String description() {
 		return "Deals more damage as durability decreases";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	@Override
@@ -88,19 +72,17 @@ public class Fierce implements EntityHurtModifier, StatsModifier {
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+		if (hurtee.level().isClientSide()) {
+			return false;
+		}
+
 		float multiplier = getDamageMultiplier(itemstack);
 		if (multiplier <= 1.0f) {
 			return false;
 		}
 
 		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-		float bonusDamage = baseDamage * (multiplier - 1.0f);
-
-		if (hurter instanceof Player p) {
-			hurtee.hurt(hurter.damageSources().playerAttack(p), bonusDamage);
-		} else {
-			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
-		}
+		dealBonusDamage(hurtee, hurter, baseDamage * (multiplier - 1.0f));
 
 		return false;
 	}

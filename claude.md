@@ -260,16 +260,21 @@ git worktree list
 ## Adding New Modifiers
 1. **Create a git worktree first** (see above section)
 2. Create class in appropriate `modifiers/` subdirectory
-3. Implement relevant interface (`BlockBreakModifier`, `HoldModifier`, etc.)
+3. **`extends AbstractModifier`** and implement the relevant interface(s) (`BlockBreakModifier`, `HoldModifier`, `EntityHurtModifier`, …). The base provides the shared `name` field and default `name()` / `writeToLore()`; only override `name()` when the trait is leveled. Use `isWeapon(type)` / `isMiningTool(type)` for `forTool(...)`.
 4. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
 5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
 6. Add to config in `Config.java` if toggleable
 
+### Shared modifier infrastructure
+- **`AbstractModifier`** (`loot/modifiers/`) — base for every modifier; holds `name` + default `name()`/`writeToLore()` and the `isWeapon`/`isMiningTool` tool-group helpers.
+- **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `invulnerableTime` (otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
+- **`LootUtils.breakBlockAsPlayer(stack, pos, player, level, state)`** — breaks a block as the player (drops + stats) and returns whether it was actually destroyed; only spend durability when it returns `true`.
+- **Leveled traits** persist their level under `ModifierConstants.LEVEL` (`"trait_level"`); classes migrated from the old `"level"` key read both for back-compat.
+
 ### Hurter Modifier Pattern (EntityHurtModifier)
 ```java
-public class MyModifier implements EntityHurtModifier {
-    // Required fields
-    private String name;
+public class MyModifier extends AbstractModifier implements EntityHurtModifier {
+    // `name` is inherited from AbstractModifier; declare only trait-specific state
     private int level;
 
     // For stateful modifiers (tracking data between uses)

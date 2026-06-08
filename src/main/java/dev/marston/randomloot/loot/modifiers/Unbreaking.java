@@ -4,13 +4,10 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Unbreaking implements Modifier {
+public class Unbreaking extends AbstractModifier {
 
 	final String name;
 	int level;
@@ -28,11 +25,6 @@ public class Unbreaking implements Modifier {
 
 	public String tagName() {
 		return "unbreaking";
-	}
-
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	public String description() {

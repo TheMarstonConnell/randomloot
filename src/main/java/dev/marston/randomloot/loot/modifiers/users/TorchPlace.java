@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
@@ -9,8 +10,6 @@ import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -28,10 +27,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-import java.util.List;
 
-public class TorchPlace implements UseModifier {
-	private String name;
+public class TorchPlace extends AbstractModifier implements UseModifier {
 	private int damage;
 	private static final String DAMAGE = "DAMAGE";
 
@@ -63,11 +60,6 @@ public class TorchPlace implements UseModifier {
 			tag.getStringOr(NAME, "Spelunking"),
 			tag.getIntOr(DAMAGE, 10)
 		);
-	}
-
-	@Override
-	public String name() {
-		return name;
 	}
 
 	@Override
@@ -171,12 +163,6 @@ public class TorchPlace implements UseModifier {
 	public String description() {
 		return "Right clicking on a block while crouching with the tool in hand will place a torch and use " + this.damage
 				+ " durability points.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	@Override

@@ -3,21 +3,16 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Bezerk implements EntityHurtModifier {
-	private String name;
+public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 
 	public Bezerk(String name) {
 		this.name = name;
@@ -47,11 +42,6 @@ public class Bezerk implements EntityHurtModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "bezerk";
 	}
@@ -67,36 +57,24 @@ public class Bezerk implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+		return isWeapon(type);
 	}
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-
-		float maxHealth = hurter.getMaxHealth();
-		float currentHealth = hurter.getHealth();
-
-		float ratio = maxHealth / currentHealth;
-
-		float amt = dmg * 0.05f * (ratio - 1);
-
-		if (hurter instanceof Player) {
-			Player p = (Player) hurter;
-			hurtee.hurt(hurter.damageSources().playerAttack(p), amt);
+		if (hurtee.level().isClientSide()) {
 			return false;
 		}
 
-		hurtee.hurt(hurter.damageSources().mobAttack(hurter), amt);
+		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
+
+		float maxHealth = hurter.getMaxHealth();
+		float currentHealth = Math.max(hurter.getHealth(), 1.0f);
+
+		float ratio = maxHealth / currentHealth;
+
+		dealBonusDamage(hurtee, hurter, dmg * 0.05f * (ratio - 1));
 
 		return false;
 	}

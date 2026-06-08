@@ -3,23 +3,19 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.List;
 
-public class EarlyBird implements EntityHurtModifier {
-	private static final String LEVEL = "level";
+public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
+	private static final String LEVEL = "trait_level";
 	private static final int MAX_LEVEL = 3;
 
-	private String name;
 	private int level;
 
 	public EarlyBird(String name, int level) {
@@ -66,7 +62,7 @@ public class EarlyBird implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), tag.getIntOr(LEVEL, 1));
+		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), tag.getIntOr(LEVEL, tag.getIntOr("level", 1)));
 	}
 
 	@Override
@@ -93,18 +89,16 @@ public class EarlyBird implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+		return isWeapon(type);
 	}
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+		if (hurtee.level().isClientSide()) {
+			return false;
+		}
+
 		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 		float currentHealth = hurtee.getHealth();
 		float maxHealth = hurtee.getMaxHealth();
@@ -112,13 +106,7 @@ public class EarlyBird implements EntityHurtModifier {
 		// Check if target was at full health before this attack
 		// Since damage is already applied, check if current health + base damage >= max health
 		if (currentHealth + dmg >= maxHealth * 0.95f) {
-			float bonusDamage = dmg * getBonusDamage();
-
-			if (hurter instanceof Player p) {
-				hurtee.hurt(hurter.damageSources().playerAttack(p), bonusDamage);
-			} else {
-				hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
-			}
+			dealBonusDamage(hurtee, hurter, dmg * getBonusDamage());
 		}
 
 		return false;

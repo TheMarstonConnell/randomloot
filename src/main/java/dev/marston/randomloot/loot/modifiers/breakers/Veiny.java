@@ -2,13 +2,13 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,13 +19,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
-public class Veiny implements BlockBreakModifier {
+public class Veiny extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
 	private float power;
 	private final static String POWER = "power";
 
@@ -43,19 +40,17 @@ public class Veiny implements BlockBreakModifier {
 		return new Veiny();
 	}
 
-	private void removeBlock(ItemStack itemstack, BlockPos pos, ServerPlayer player, Level level, BlockState state) {
-		if (!state.canHarvestBlock(level, pos, player)) {
+	public void checkAndBreak(ItemStack itemstack, BlockPos pos, Player player, Level level, int index, Block blockType,
+			Set<BlockPos> tobreak, Set<BlockPos> visited) {
+
+		if (index > power) {
 			return;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
-		level.removeBlock(pos, false);
-	}
-
-	public void checkAndBreak(ItemStack itemstack, BlockPos pos, Player player, Level level, int index, Block blockType,
-			Set<BlockPos> tobreak) {
-
-		if (index > power) {
+		// Guard against revisiting positions: without it the 6-way recursion
+		// re-expands the same cells exponentially. The origin is tracked here even
+		// though it is deliberately never added to tobreak.
+		if (!visited.add(pos.immutable())) {
 			return;
 		}
 
@@ -66,17 +61,17 @@ public class Veiny implements BlockBreakModifier {
 		}
 
 		if (index > 0) {
-			tobreak.add(pos);
+			tobreak.add(pos.immutable());
 		}
 
 		int dex = index + 1;
 
-		checkAndBreak(itemstack, pos.above(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.below(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.east(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.west(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.north(), player, level, dex, blockType, tobreak);
-		checkAndBreak(itemstack, pos.south(), player, level, dex, blockType, tobreak);
+		checkAndBreak(itemstack, pos.above(), player, level, dex, blockType, tobreak, visited);
+		checkAndBreak(itemstack, pos.below(), player, level, dex, blockType, tobreak, visited);
+		checkAndBreak(itemstack, pos.east(), player, level, dex, blockType, tobreak, visited);
+		checkAndBreak(itemstack, pos.west(), player, level, dex, blockType, tobreak, visited);
+		checkAndBreak(itemstack, pos.north(), player, level, dex, blockType, tobreak, visited);
+		checkAndBreak(itemstack, pos.south(), player, level, dex, blockType, tobreak, visited);
 
 	}
 
@@ -111,15 +106,17 @@ public class Veiny implements BlockBreakModifier {
 
 		Set<BlockPos> toBreak = new HashSet<BlockPos>();
 
-		checkAndBreak(itemstack, pos, player, l, 0, b, toBreak);
+		checkAndBreak(itemstack, pos, player, l, 0, b, toBreak, new HashSet<BlockPos>());
 
-		for (Iterator<BlockPos> iterator = toBreak.iterator(); iterator.hasNext();) {
-			BlockPos blockPos = iterator.next();
+		for (BlockPos blockPos : toBreak) {
+			boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, l, l.getBlockState(blockPos));
 
-			removeBlock(itemstack, blockPos, player, l, l.getBlockState(blockPos));
-
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-
+			if (destroyed) {
+				itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				if (itemstack.isEmpty()) {
+					break;
+				}
+			}
 		}
 		return false;
 	}
@@ -142,11 +139,6 @@ public class Veiny implements BlockBreakModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "veiny";
 	}
@@ -163,14 +155,6 @@ public class Veiny implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean compatible(Modifier mod) {
 		// Incompatible with Excavator
 		return !(mod instanceof Excavator);
@@ -178,6 +162,6 @@ public class Veiny implements BlockBreakModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 }
