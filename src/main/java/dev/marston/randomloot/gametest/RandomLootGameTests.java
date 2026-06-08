@@ -21,10 +21,13 @@ import net.minecraft.gametest.framework.TestEnvironmentDefinition;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.common.loot.LootModifierManager;
+import net.neoforged.neoforge.resource.NeoForgeReloadListeners;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
@@ -66,6 +69,7 @@ public final class RandomLootGameTests {
 		register(event, env, "modifier_roundtrip", RandomLootGameTests::modifierRoundTrip);
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
+		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -118,6 +122,20 @@ public final class RandomLootGameTests {
 
 		helper.assertTrue(destroyed, "breakBlockAsPlayer should destroy a harvestable block");
 		helper.assertBlockNotPresent(Blocks.DIRT, relative);
+
+		helper.succeed();
+	}
+
+	/** Both global loot modifiers (which inject cases/templates into chest loot) actually loaded. */
+	private static void lootModifiersLoad(GameTestHelper helper) {
+		MinecraftServer server = helper.getLevel().getServer();
+		LootModifierManager manager = server.getServerResources().managers()
+				.getListener(NeoForgeReloadListeners.LOOT_MODIFIERS_KEY);
+
+		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "case_dungeon")) != null,
+				"case_dungeon loot modifier should be loaded");
+		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
+				"trait_dungeon loot modifier should be loaded");
 
 		helper.succeed();
 	}
