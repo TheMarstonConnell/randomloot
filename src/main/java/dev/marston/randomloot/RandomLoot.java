@@ -2,6 +2,7 @@ package dev.marston.randomloot;
 
 import com.mojang.logging.LogUtils;
 import dev.marston.randomloot.component.ModDataComponents;
+import dev.marston.randomloot.gametest.RandomLootGameTests;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.recipes.Recipies;
@@ -42,6 +43,9 @@ public class RandomLoot
         ModItems.register(modEventBus);
         Recipies.register(modEventBus);
         ModLootModifiers.register(modEventBus);
+
+        // In-world GameTests (only run when the gametest system is enabled, e.g. runGameTestServer).
+        RandomLootGameTests.init(modEventBus);
 
         NeoForge.EVENT_BUS.register(this);
         modEventBus.addListener(ModItems::addCreative);
