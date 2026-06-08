@@ -9,7 +9,6 @@ import net.minecraft.world.level.Level;
 
 public class Unbreaking extends AbstractModifier {
 
-	final String name;
 	int level;
 
 

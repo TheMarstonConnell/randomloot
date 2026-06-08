@@ -12,6 +12,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -37,7 +38,7 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	}
 
 	public DirtPlace() {
-		this.name = NameGenerator.generateForger(0.5f) + "'s Grace";
+		this.name = NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace";
 		this.damage = 1;
 	}
 
@@ -56,7 +57,7 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new DirtPlace(
-			tag.getStringOr(NAME, NameGenerator.generateForger(0.5f) + "'s Grace"),
+			tag.getStringOr(NAME, NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace"),
 			tag.getIntOr(DAMAGE, 1)
 		);
 	}

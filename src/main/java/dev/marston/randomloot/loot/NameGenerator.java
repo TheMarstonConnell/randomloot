@@ -35,7 +35,7 @@ public class NameGenerator {
 	public static final String[] HotNames = new String[] { "Blazicus", "Dante", "Fyrus", "Pyrok", "Spaisee",
 			"Infernus" };
 
-	public static String generateForger(float temp) {
+	public static String generateForger(RandomSource random, float temp) {
 		String[] list = TemperateNames;
 
 		if (temp <= 0.1f) {
@@ -44,7 +44,7 @@ public class NameGenerator {
 			list = HotNames;
 		}
 
-		return list[(int) (Math.random() * list.length)];
+		return list[random.nextInt(list.length)];
 	}
 
 	public static final String getAdj(RandomSource random, float temp, boolean raining) {

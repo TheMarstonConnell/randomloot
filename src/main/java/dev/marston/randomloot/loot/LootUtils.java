@@ -537,7 +537,7 @@ public class LootUtils {
 
 		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(level.getRandom(), temp, level.isRaining()), nameColor);
 
-		String forger = NameGenerator.generateForger(temp);
+		String forger = NameGenerator.generateForger(level.getRandom(), temp);
 
 		String name = "a machine";
 		if (player != null) {
