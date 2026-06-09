@@ -1,17 +1,14 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
+# This workflow builds the mod, runs the JUnit unit tests (via the `build` task's
+# `check` dependency), and runs the in-world GameTests on a headless GameTestServer.
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
 
 name: Gradle Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "*.x" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "*.x" ]
 
 permissions:
   contents: read
@@ -28,7 +25,17 @@ jobs:
       with:
         java-version: '25'
         distribution: 'temurin'
-    - name: Build with Gradle
-      uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
+    - name: Setup Gradle
+      uses: gradle/actions/setup-gradle@v4
+    - name: Build and run unit tests
+      run: ./gradlew build
+    - name: Run in-world gametests
+      run: ./gradlew runGameTestServer
+    - name: Upload test reports
+      if: failure()
+      uses: actions/upload-artifact@v4
       with:
-        arguments: build
+        name: test-reports
+        path: |
+          build/reports/tests/
+          runs/gameTestServer/logs/
