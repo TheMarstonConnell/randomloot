@@ -24,6 +24,8 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.loot.LootModifierManager;
@@ -70,6 +72,7 @@ public final class RandomLootGameTests {
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
+		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -136,6 +139,36 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Enchantment compatibility is filtered per tool type via the randomloot enchantment
+	 * tags. supportsEnchantment is what the anvil checks - the regression here was a sword
+	 * accepting an efficiency book because the single tool item is in every
+	 * minecraft:enchantable/* tag.
+	 */
+	private static void enchantTypeFiltering(GameTestHelper helper) {
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> efficiency = enchants.getOrThrow(Enchantments.EFFICIENCY);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+		Holder<Enchantment> unbreaking = enchants.getOrThrow(Enchantments.UNBREAKING);
+
+		ItemStack sword = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(sword, ToolType.SWORD);
+		ItemStack pickaxe = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(pickaxe, ToolType.PICKAXE);
+
+		helper.assertFalse(sword.supportsEnchantment(efficiency), "sword must not accept efficiency (anvil path)");
+		helper.assertTrue(sword.supportsEnchantment(sharpness), "sword should accept sharpness");
+		helper.assertTrue(pickaxe.supportsEnchantment(efficiency), "pickaxe should accept efficiency");
+		helper.assertFalse(pickaxe.supportsEnchantment(sharpness), "pickaxe must not accept sharpness");
+		helper.assertTrue(sword.supportsEnchantment(unbreaking) && pickaxe.supportsEnchantment(unbreaking),
+				"unbreaking should fit every tool");
+
+		helper.assertFalse(sword.isPrimaryItemFor(efficiency), "sword must not roll efficiency at the table");
+		helper.assertTrue(pickaxe.isPrimaryItemFor(efficiency), "pickaxe should roll efficiency at the table");
 
 		helper.succeed();
 	}

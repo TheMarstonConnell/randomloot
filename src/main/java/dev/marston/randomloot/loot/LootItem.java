@@ -1,10 +1,13 @@
 package dev.marston.randomloot.loot;
 
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -605,33 +608,47 @@ public class LootItem extends Item  {
 
 	}
 
-	@Override
-	public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
-		ToolType type = LootUtils.getToolType(stack);
-		String enchantPath = enchantment.getRegisteredName();
+	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
+	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
+	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
+	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
+	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
 
-		// Universal enchantments - all tools (Unbreaking, Mending)
-		if (enchantPath.contains("unbreaking") || enchantPath.contains("mending")) {
+	/**
+	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:
+	 * the enchanting table consults isPrimaryItemFor, but the anvil/book path checks
+	 * supportsEnchantment, whose default just reads the enchantment's supported-items tag.
+	 * Since the single tool item sits in every minecraft:enchantable/* tag (it covers all
+	 * four tool types), that default let an efficiency book land on a sword. The default
+	 * isPrimaryItemFor delegates here, so the table stays filtered too.
+	 */
+	@Override
+	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+		ToolType type = LootUtils.getToolType(stack);
+
+		if (enchantment.is(ALL_TOOL_ENCHANTS)) {
 			return true;
 		}
 
-		// Mining enchantments - pickaxe, axe, shovel only (Efficiency, Fortune, Silk Touch)
-		if (enchantPath.contains("efficiency") || enchantPath.contains("fortune") || enchantPath.contains("silk_touch")) {
+		if (enchantment.is(MINING_ENCHANTS)) {
 			return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
 		}
 
-		// Weapon enchantments - sword and axe (Sharpness, Smite, Bane, Knockback, Fire Aspect, Looting)
-		if (enchantPath.contains("sharpness") || enchantPath.contains("smite") || enchantPath.contains("bane_of_arthropods") ||
-			enchantPath.contains("knockback") || enchantPath.contains("fire_aspect") || enchantPath.contains("looting")) {
+		if (enchantment.is(WEAPON_ENCHANTS)) {
 			return type == ToolType.SWORD || type == ToolType.AXE;
 		}
 
-		// Sword-only enchantments (Sweeping Edge)
-		if (enchantPath.contains("sweeping")) {
+		if (enchantment.is(SWORD_ENCHANTS)) {
 			return type == ToolType.SWORD;
 		}
 
-		return false;
+		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
+		// supported-items definition; add them to a randomloot tag to type-restrict them.
+		return super.supportsEnchantment(stack, enchantment);
 	}
 
 }
