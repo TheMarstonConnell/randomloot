@@ -2,33 +2,23 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.EffectModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 
-public class HurtEffect extends AbstractModifier implements EntityHurtModifier {
+public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 
-	private int power;
-	private String tagname;
-	private final static String POWER = "power";
-	private Holder<MobEffect> effect;
-	private int duration;
-	private ChatFormatting format;
+	private final ChatFormatting format;
 
 	public HurtEffect(String name, String tagname, int power, int duration, Holder<MobEffect> effect, ChatFormatting format) {
-		this.name = name;
-		this.effect = effect;
-		this.power = power;
-		this.tagname = tagname;
-		this.duration = duration;
+		super(name, tagname, power, duration, effect);
 		this.format = format;
 	}
 
@@ -37,36 +27,12 @@ public class HurtEffect extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	public Modifier clone() {
-		return new HurtEffect(this.name, this.tagname, this.duration, this.effect, this.format);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(POWER, power);
-
-		return tag;
+		return new HurtEffect(this.name, this.tagname, this.power, this.duration, this.effect, this.format);
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect, this.format);
-	}
-
-	@Override
-	public String name() {
-		if (this.power == 0) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(this.power + 1);
-	}
-
-	@Override
-	public String tagName() {
-		return tagname;
 	}
 
 	@Override
@@ -87,17 +53,7 @@ public class HurtEffect extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		MobEffectInstance eff = new MobEffectInstance(effect, duration * 20, power, false, false);
-
-		hurtee.addEffect(eff);
+		hurtee.addEffect(makeInstance());
 		return false;
-	}
-
-	public boolean canLevel() {
-		return this.power < 4;
-	}
-
-	public void levelUp() {
-		this.power++;
 	}
 }

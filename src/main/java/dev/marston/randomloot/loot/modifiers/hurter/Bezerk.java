@@ -14,6 +14,12 @@ import net.minecraft.world.item.ItemStack;
 
 public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 
+	/**
+	 * Bonus damage per "missing health ratio": bonus = attack * SCALE * (max/current - 1).
+	 * At half health that's a 5% bonus; near death it approaches +95% (20 max HP).
+	 */
+	private static final float BONUS_DAMAGE_SCALE = 0.05f;
+
 	public Bezerk(String name) {
 		this.name = name;
 	}
@@ -74,7 +80,7 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 
 		float ratio = maxHealth / currentHealth;
 
-		dealBonusDamage(hurtee, hurter, dmg * 0.05f * (ratio - 1));
+		dealBonusDamage(hurtee, hurter, dmg * BONUS_DAMAGE_SCALE * (ratio - 1));
 
 		return false;
 	}

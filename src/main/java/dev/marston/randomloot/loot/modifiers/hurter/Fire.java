@@ -12,8 +12,12 @@ import net.minecraft.world.item.ItemStack;
 
 
 public class Fire extends AbstractModifier implements EntityHurtModifier {
-	private int points;
 	private final static String POINTS = "points";
+	/** Seconds of fire at base level; each level-up adds one second up to the max. */
+	private final static int BASE_SECONDS = 2;
+	private final static int MAX_SECONDS = 5;
+
+	private int points;
 
 	public Fire(String name, int points) {
 		this.name = name;
@@ -22,7 +26,7 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 
 	public Fire() {
 		this.name = "Flaming";
-		this.points = 2;
+		this.points = BASE_SECONDS;
 	}
 
 	public Modifier clone() {
@@ -42,12 +46,12 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fire(tag.getStringOr(NAME, "Flaming"), tag.getIntOr(POINTS, 2));
+		return new Fire(tag.getStringOr(NAME, "Flaming"), tag.getIntOr(POINTS, BASE_SECONDS));
 	}
 
 	@Override
 	public String name() {
-		if (points == 2) {
+		if (points == BASE_SECONDS) {
 			return name;
 		}
 		return name + " " + LootUtils.roman(points - 1);
@@ -80,7 +84,7 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	public boolean canLevel() {
-		return this.points < 5;
+		return this.points < MAX_SECONDS;
 	}
 
 	public void levelUp() {
