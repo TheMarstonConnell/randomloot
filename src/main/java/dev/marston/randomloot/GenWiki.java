@@ -36,7 +36,7 @@ public class GenWiki {
                 + "](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/"
                 + stripItemName(recipe) + ".png)", f);
         write("", f);
-        write("**Decription:** " + m.description(), f);
+        write("**Description:** " + m.description(), f);
     }
 
     private static void writeMods(Set<Modifier> mods, FileWriter f) throws IOException {
