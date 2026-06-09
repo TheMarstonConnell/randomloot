@@ -618,8 +618,16 @@ public class LootItem extends Item  {
 	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
 			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
 
+	/**
+	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:
+	 * the enchanting table consults isPrimaryItemFor, but the anvil/book path checks
+	 * supportsEnchantment, whose default just reads the enchantment's supported-items tag.
+	 * Since the single tool item sits in every minecraft:enchantable/* tag (it covers all
+	 * four tool types), that default let an efficiency book land on a sword. The default
+	 * isPrimaryItemFor delegates here, so the table stays filtered too.
+	 */
 	@Override
-	public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
+	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
 		ToolType type = LootUtils.getToolType(stack);
 
 		if (enchantment.is(ALL_TOOL_ENCHANTS)) {
@@ -638,7 +646,9 @@ public class LootItem extends Item  {
 			return type == ToolType.SWORD;
 		}
 
-		return false;
+		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
+		// supported-items definition; add them to a randomloot tag to type-restrict them.
+		return super.supportsEnchantment(stack, enchantment);
 	}
 
 }
