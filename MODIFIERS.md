@@ -114,14 +114,14 @@ These effects are applied when right clicking.
 **id:** `flame_thrower` | **crafting:** `minecraft:fire_charge` ![fire_charge](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fire_charge.png)
 
 **Description:** Right clicking throws a fire ball.
+### Forger's Grace
+**id:** `dirt_place` | **crafting:** `minecraft:dirt` ![dirt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/dirt.png)
+
+**Description:** Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points.
 ### Spelunking
 **id:** `torch_place` | **crafting:** `minecraft:torch` ![torch](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/torch.png)
 
 **Description:** Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points.
-### Trunken's Grace
-**id:** `dirt_place` | **crafting:** `minecraft:dirt` ![dirt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/dirt.png)
-
-**Description:** Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points.
 ### Void-Touched
 **id:** `void_touched` | **crafting:** `minecraft:ender_pearl` ![ender_pearl](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/ender_pearl.png)
 

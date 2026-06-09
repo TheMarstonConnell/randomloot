@@ -22,6 +22,27 @@ public class GenWiki {
         return loc.getPath();
     }
 
+    // DirtPlace rolls a random forger name each launch ("Heartha's Grace",
+    // "Ivern's Grace", ...), so use a stable label in the docs to keep wiki
+    // regeneration deterministic.
+    private static String docName(Modifier m) {
+        if (m.tagName().equals("dirt_place")) {
+            return "Forger's Grace";
+        }
+        return m.name();
+    }
+
+    // Resolves a path relative to the repo root. RL_WIKI_DIR overrides the
+    // default of "..", which only holds when the game's working directory is a
+    // direct child of the repo root (e.g. run/) — CI run configs live deeper.
+    private static File repoFile(String relativePath) {
+        String root = System.getenv("RL_WIKI_DIR");
+        if (root == null || root.isBlank()) {
+            root = "..";
+        }
+        return new File(root.strip(), relativePath);
+    }
+
     private static void writeMod(Modifier m, FileWriter f) throws IOException {
         String tag = m.tagName();
         String recipe = "n/a";
@@ -30,7 +51,7 @@ public class GenWiki {
         } catch (Exception e) {
             RandomLoot.LOGGER.warn("failed to find recipe for " + tag + ".");
         }
-        write("### " + m.name(), f);
+        write("### " + docName(m), f);
 
         write("**id:** `" + tag + "` | **crafting:** `" + recipe + "` ![" + stripItemName(recipe)
                 + "](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/"
@@ -41,7 +62,7 @@ public class GenWiki {
 
     private static void writeMods(Set<Modifier> mods, FileWriter f) throws IOException {
         List<Modifier> sortedList = new ArrayList<>(mods);
-        sortedList.sort(Comparator.comparing(Modifier::name));
+        sortedList.sort(Comparator.comparing(GenWiki::docName));
 
         for (Modifier modifier : sortedList) {
             writeMod(modifier, f);
@@ -116,7 +137,7 @@ public class GenWiki {
         for (Map.Entry<String, Modifier> entry : sortedMods) {
             String key = entry.getKey();
             Modifier mod = entry.getValue();
-            write("| `" + key + "_enabled` | [" + mod.name() + "](MODIFIERS.md#" + mod.name().toLowerCase().replace(" ", "-") + ") | " + mod.description() + " |", f);
+            write("| `" + key + "_enabled` | [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | " + mod.description() + " |", f);
         }
         write("", f);
     }
@@ -419,7 +440,7 @@ public class GenWiki {
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
 
-        File recipeDir = new File("../src/main/resources/data/randomloot/recipe/");
+        File recipeDir = repoFile("src/main/resources/data/randomloot/recipe/");
         File[] recipeFiles = recipeDir.listFiles((dir, name) -> name.startsWith("trait_") && name.endsWith(".json"));
 
         if (recipeFiles != null) {
@@ -461,32 +482,32 @@ public class GenWiki {
             RandomLoot.LOGGER.info("Creating wiki...");
 
             try {
-                FileWriter modifiersWriter = new FileWriter("../MODIFIERS.md");
+                FileWriter modifiersWriter = new FileWriter(repoFile("MODIFIERS.md"));
                 writeModifiers(modifiersWriter);
                 modifiersWriter.close();
                 RandomLoot.LOGGER.info("Generated MODIFIERS.md");
 
-                FileWriter configWriter = new FileWriter("../CONFIG.md");
+                FileWriter configWriter = new FileWriter(repoFile("CONFIG.md"));
                 writeConfig(configWriter);
                 configWriter.close();
                 RandomLoot.LOGGER.info("Generated CONFIG.md");
 
-                FileWriter progressionWriter = new FileWriter("../PROGRESSION.md");
+                FileWriter progressionWriter = new FileWriter(repoFile("PROGRESSION.md"));
                 writeProgression(progressionWriter);
                 progressionWriter.close();
                 RandomLoot.LOGGER.info("Generated PROGRESSION.md");
 
-                FileWriter namesWriter = new FileWriter("../NAMES.md");
+                FileWriter namesWriter = new FileWriter(repoFile("NAMES.md"));
                 writeNames(namesWriter);
                 namesWriter.close();
                 RandomLoot.LOGGER.info("Generated NAMES.md");
 
-                FileWriter lootWriter = new FileWriter("../LOOT.md");
+                FileWriter lootWriter = new FileWriter(repoFile("LOOT.md"));
                 writeLoot(lootWriter);
                 lootWriter.close();
                 RandomLoot.LOGGER.info("Generated LOOT.md");
 
-                FileWriter biomesWriter = new FileWriter("../BIOMES.md");
+                FileWriter biomesWriter = new FileWriter(repoFile("BIOMES.md"));
                 writeBiomes(biomesWriter);
                 biomesWriter.close();
                 RandomLoot.LOGGER.info("Generated BIOMES.md");
@@ -501,7 +522,7 @@ public class GenWiki {
 
     public static String readRecipe(String trait) throws FileNotFoundException {
         FileReader reader = new FileReader(
-                "../src/main/resources/data/randomloot/recipe/trait_" + trait + ".json");
+                repoFile("src/main/resources/data/randomloot/recipe/trait_" + trait + ".json"));
         Gson gson = new Gson();
         BufferedReader bufferedReader = new BufferedReader(reader);
 

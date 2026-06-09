@@ -38,7 +38,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `critical_enabled` | [Critical](MODIFIERS.md#critical) | Always critically strikes enemy. |
 | `crowd_pleaser_enabled` | [Crowd Pleaser](MODIFIERS.md#crowd-pleaser) | Deals bonus damage based on nearby mobs of the same type |
 | `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While holding the tool, ores around you will glow. |
-| `dirt_place_enabled` | [Trunken's Grace](MODIFIERS.md#trunken's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
+| `dirt_place_enabled` | [Forger's Grace](MODIFIERS.md#forger's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
 | `early_bird_enabled` | [Early Bird](MODIFIERS.md#early-bird) | Deals 15% extra damage to full-health targets |
 | `excavator_enabled` | [Excavator](MODIFIERS.md#excavator) | Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. |
 | `executioner_enabled` | [Executioner](MODIFIERS.md#executioner) | Instantly kills mobs below 20% health |
