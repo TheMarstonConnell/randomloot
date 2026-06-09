@@ -382,6 +382,13 @@ public class GenWiki {
         write("- Dispenser tools will always have base stats (as if 0 cases opened)", f);
         write("", f);
 
+        write("## Repairing Tools", f);
+        write("", f);
+        write("Random Tools can be repaired in an **Anvil** with a repair material (default: **Diamond**). Each material restores 25% of the tool's maximum durability, just like vanilla tool repair. Repairing keeps the tool's name, traits, level and XP.", f);
+        write("", f);
+        write("Modpacks can change which items count as repair materials by editing the `randomloot:tool_repair_materials` item tag.", f);
+        write("", f);
+
         write("## Finding Trait Templates", f);
         write("", f);
         write("Trait Templates also spawn in structure chests.", f);

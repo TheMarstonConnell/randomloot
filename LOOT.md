@@ -30,6 +30,12 @@ Loot Cases can be placed in **Dispensers** for automated opening:
 - **Note:** Tools created by dispensers don't benefit from player progression
 - Dispenser tools will always have base stats (as if 0 cases opened)
 
+## Repairing Tools
+
+Random Tools can be repaired in an **Anvil** with a repair material (default: **Diamond**). Each material restores 25% of the tool's maximum durability, just like vanilla tool repair. Repairing keeps the tool's name, traits, level and XP.
+
+Modpacks can change which items count as repair materials by editing the `randomloot:tool_repair_materials` item tag.
+
 ## Finding Trait Templates
 
 Trait Templates also spawn in structure chests.
