@@ -31,6 +31,11 @@ public final class ChargeTracker {
 		if (rate > 1.0f) {
 			rate = 1.0f;
 		}
+		// A tool carried into a world with a lower total game time can produce a
+		// negative diff; clamp so the charge meter never shows a negative percentage.
+		if (rate < 0.0f) {
+			rate = 0.0f;
+		}
 
 		return rate;
 	}

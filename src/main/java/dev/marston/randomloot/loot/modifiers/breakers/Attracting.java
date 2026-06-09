@@ -1,13 +1,12 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -19,20 +18,14 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
-public class Attracting implements BlockBreakModifier {
+public class Attracting extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
-	private float power;
-	private final static String POWER = "power";
-
-	public Attracting(String name, float power) {
+	public Attracting(String name) {
 		this.name = name;
-		this.power = power;
 	}
 
 	public Attracting() {
 		this.name = "Magnetic";
-		this.power = 2.0f;
 	}
 
 	public Modifier clone() {
@@ -73,8 +66,6 @@ public class Attracting implements BlockBreakModifier {
 
 		CompoundTag tag = new CompoundTag();
 
-		tag.putFloat(POWER, power);
-
 		tag.putString(NAME, name);
 
 		return tag;
@@ -82,12 +73,7 @@ public class Attracting implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Attracting(tag.getStringOr(NAME, "Magnetic"), tag.getFloatOr(POWER, 2.0f));
-	}
-
-	@Override
-	public String name() {
-		return name;
+		return new Attracting(tag.getStringOr(NAME, "Magnetic"));
 	}
 
 	@Override
@@ -106,15 +92,7 @@ public class Attracting implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 }

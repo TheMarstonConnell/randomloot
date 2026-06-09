@@ -1,13 +1,10 @@
 package dev.marston.randomloot.recipes;
 
 import com.mojang.serialization.MapCodec;
-import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import net.minecraft.core.NonNullList;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.item.AirItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -62,8 +59,9 @@ public class TextureChangeRecipe extends CustomRecipe {
 			}
 		}
 
-
-		return true;
+		// Require an actual tool: matches() must not pass on shards alone, or it would
+		// shadow vanilla amethyst recipes and assemble() would return EMPTY.
+		return hasTool;
 	}
 
 	@Override

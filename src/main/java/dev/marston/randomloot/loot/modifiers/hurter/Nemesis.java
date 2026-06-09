@@ -3,27 +3,25 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-public class Nemesis implements EntityHurtModifier {
-	private String name;
+public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 	private int level;
 	private Map<String, Integer> killCounts;
 
-	private static final String LEVEL = "level";
 	private static final String KILL_COUNTS = "killCounts";
 
 	public Nemesis(String name, int level, Map<String, Integer> killCounts) {
@@ -47,7 +45,7 @@ public class Nemesis implements EntityHurtModifier {
 		CompoundTag tag = new CompoundTag();
 
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 
 		CompoundTag killCountsTag = new CompoundTag();
 		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
@@ -61,7 +59,7 @@ public class Nemesis implements EntityHurtModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		String name = tag.getStringOr(NAME, "Nemesis");
-		int level = tag.getIntOr(LEVEL, 1);
+		int level = ModifierConstants.getLevel(tag, 1);
 
 		Map<String, Integer> killCounts = new HashMap<>();
 		CompoundTag killCountsTag = tag.getCompoundOrEmpty(KILL_COUNTS);
@@ -145,12 +143,6 @@ public class Nemesis implements EntityHurtModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-	}
-
-	@Override
 	public Component writeDetailsToLore(Level level) {
 		String mostKilled = getMostKilledEntity();
 		if (mostKilled == null) {
@@ -165,7 +157,7 @@ public class Nemesis implements EntityHurtModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+		return isWeapon(type);
 	}
 
 	@Override

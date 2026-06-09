@@ -2,23 +2,21 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Learning implements BlockBreakModifier {
+public class Learning extends AbstractModifier implements BlockBreakModifier {
 
-	private String name;
 	private int count;
 	private final static String COUNT = "count";
 	private static final int max = 10;
@@ -79,11 +77,6 @@ public class Learning implements BlockBreakModifier {
 	}
 
 	@Override
-	public String name() {
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "learning";
 	}
@@ -99,14 +92,6 @@ public class Learning implements BlockBreakModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-
-	}
-
-	@Override
 	public Component writeDetailsToLore(Level level) {
 
 		float amt = ((float) count) / ((float) max) * 100;
@@ -117,6 +102,6 @@ public class Learning implements BlockBreakModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 }

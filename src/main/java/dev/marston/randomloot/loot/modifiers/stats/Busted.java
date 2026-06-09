@@ -1,20 +1,15 @@
 package dev.marston.randomloot.loot.modifiers.stats;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Busted implements StatsModifier {
-
-	private String name;
+public class Busted extends AbstractModifier implements StatsModifier {
 
 	public Busted() {
 		this("Busted");
@@ -44,12 +39,6 @@ public class Busted implements StatsModifier {
 	}
 
 	@Override
-	public String name() {
-
-		return name;
-	}
-
-	@Override
 	public String tagName() {
 		return "busted";
 	}
@@ -64,14 +53,6 @@ public class Busted implements StatsModifier {
 	@Override
 	public String description() {
 		return "Dig speed is increased as tool durability drops.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
 	}
 
 	@Override

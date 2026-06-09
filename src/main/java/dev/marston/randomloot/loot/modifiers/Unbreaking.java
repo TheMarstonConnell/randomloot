@@ -4,18 +4,13 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Unbreaking implements Modifier {
+public class Unbreaking extends AbstractModifier {
 
-	final String name;
 	int level;
 
-	final static String LEVEL = "trait_level";
 
 	public Unbreaking(String name, int level) {
 		this.name = name;
@@ -28,11 +23,6 @@ public class Unbreaking implements Modifier {
 
 	public String tagName() {
 		return "unbreaking";
-	}
-
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	public String description() {
@@ -63,13 +53,13 @@ public class Unbreaking implements Modifier {
 		CompoundTag tag = new CompoundTag();
 
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 
 		return tag;
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), tag.getIntOr(LEVEL, 0));
+		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	public boolean forTool(ToolType type) {

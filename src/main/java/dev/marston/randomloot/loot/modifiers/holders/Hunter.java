@@ -3,11 +3,11 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -16,12 +16,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
-public class Hunter implements HoldModifier {
+public class Hunter extends AbstractModifier implements HoldModifier {
 
     private static final String NAME = "name";
     private static final double SEARCH_RADIUS = 10.0;
-
-    private String name;
 
     public Hunter() {
         this.name = "Hunter";
@@ -34,11 +32,6 @@ public class Hunter implements HoldModifier {
     @Override
     public String tagName() {
         return "hunter";
-    }
-
-    @Override
-    public String name() {
-        return this.name;
     }
 
     @Override
@@ -71,11 +64,6 @@ public class Hunter implements HoldModifier {
     @Override
     public boolean forTool(ToolType type) {
         return type.equals(ToolType.SWORD);
-    }
-
-    @Override
-    public void writeToLore(List<Component> list, boolean shift) {
-        list.add(Modifier.makeComp(this.name(), this.color()));
     }
 
     @Override

@@ -2,6 +2,8 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -9,8 +11,6 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -22,13 +22,10 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.List;
 
-public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
+public class Frozen extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
-	private String name;
 	private int level = 0;
-	private final static String LEVEL = "trait_level";
 
 	public Frozen(String name, int level) {
 		this.name = name;
@@ -48,13 +45,13 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Frozen(tag.getStringOr(NAME, "Frozen"), tag.getIntOr(LEVEL, 0));
+		return new Frozen(tag.getStringOr(NAME, "Frozen"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -82,14 +79,8 @@ public class Frozen implements EntityHurtModifier, HoldModifier, BiomeRestricted
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+		return isWeapon(type);
 	}
 
 	@Override

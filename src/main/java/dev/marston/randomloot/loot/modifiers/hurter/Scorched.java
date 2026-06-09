@@ -2,14 +2,14 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -17,13 +17,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Scorched implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
+public class Scorched extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
-	private String name;
 	private int level = 0;
-	private final static String LEVEL = "trait_level";
 
 	public Scorched(String name, int level) {
 		this.name = name;
@@ -43,13 +40,13 @@ public class Scorched implements EntityHurtModifier, HoldModifier, BiomeRestrict
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Scorched(tag.getStringOr(NAME, "Scorched"), tag.getIntOr(LEVEL, 0));
+		return new Scorched(tag.getStringOr(NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -77,14 +74,8 @@ public class Scorched implements EntityHurtModifier, HoldModifier, BiomeRestrict
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
+		return isWeapon(type);
 	}
 
 	@Override

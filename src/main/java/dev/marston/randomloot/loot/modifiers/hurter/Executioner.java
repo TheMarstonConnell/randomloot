@@ -1,16 +1,15 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -18,12 +17,10 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public class Executioner implements EntityHurtModifier {
+public class Executioner extends AbstractModifier implements EntityHurtModifier {
 
-    private static final String LEVEL = "level";
     private static final int MAX_LEVEL = 5;
-    
-    private String name;
+
     private int level;
 
     public Executioner() {
@@ -83,24 +80,18 @@ public class Executioner implements EntityHurtModifier {
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
-        tag.putInt(LEVEL, level);
+        tag.putInt(ModifierConstants.LEVEL, level);
         return tag;
     }
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Executioner(tag.getStringOr(NAME, "Executioner"), tag.getIntOr(LEVEL, 1));
+        return new Executioner(tag.getStringOr(NAME, "Executioner"), ModifierConstants.getLevel(tag, 1));
     }
 
     @Override
     public boolean forTool(ToolType type) {
-        return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE);
-    }
-
-    @Override
-    public void writeToLore(List<Component> list, boolean shift) {
-        MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-        list.add(comp);
+        return isWeapon(type);
     }
 
     @Override

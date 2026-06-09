@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
@@ -8,8 +9,6 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -28,10 +27,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
 
-import java.util.List;
 
-public class FirePlace implements UseModifier {
-	private String name;
+public class FirePlace extends AbstractModifier implements UseModifier {
 	private int damage;
 	private static final String DAMAGE = "DAMAGE";
 
@@ -63,11 +60,6 @@ public class FirePlace implements UseModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new FirePlace(tag.getStringOr(NAME, "Fire Starter"), tag.getIntOr(DAMAGE, 2));
-	}
-
-	@Override
-	public String name() {
-		return name;
 	}
 
 	@Override
@@ -110,7 +102,7 @@ public class FirePlace implements UseModifier {
 			level.setBlock(blockpos, blockstate.setValue(BlockStateProperties.LIT, Boolean.valueOf(true)), 11);
 			level.gameEvent(player, GameEvent.BLOCK_CHANGE, blockpos);
 			if (player != null) {
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				ctx.getItemInHand().hurtAndBreak(this.damage, player, EquipmentSlot.MAINHAND);
 			}
 
 			return InteractionResult.SUCCESS;
@@ -132,14 +124,6 @@ public class FirePlace implements UseModifier {
 	public String description() {
 		return "Right clicking on the top of a block while crouching with the tool in hand will start a fire and use "
 				+ this.damage + " durability points.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
-
 	}
 
 	@Override

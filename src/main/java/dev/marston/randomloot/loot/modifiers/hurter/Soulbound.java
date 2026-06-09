@@ -6,16 +6,14 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
@@ -23,9 +21,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import java.util.List;
 
 @EventBusSubscriber(modid = RandomLoot.MODID)
-public class Soulbound implements EntityHurtModifier {
-
-	private String name;
+public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
 	public Soulbound(String name) {
 		this.name = name;
@@ -52,11 +48,6 @@ public class Soulbound implements EntityHurtModifier {
 	}
 
 	@Override
-	public String name() {
-		return this.name;
-	}
-
-	@Override
 	public String tagName() {
 		return "soulbound";
 	}
@@ -69,12 +60,6 @@ public class Soulbound implements EntityHurtModifier {
 	@Override
 	public String description() {
 		return "Grants 15% bonus damage and mining speed when wielded by the original owner.";
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	@Override

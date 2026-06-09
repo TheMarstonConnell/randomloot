@@ -5,13 +5,14 @@ import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
@@ -21,14 +22,12 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.RandomSource;
 
-public class Naturalist implements HoldModifier {
+public class Naturalist extends AbstractModifier implements HoldModifier {
 
     private static final String LAST_UPDATE = "lastUpdate";
-    private static final String LEVEL = "level";
     private static final int MAX_LEVEL = 3;
     private static final int SEARCH_RADIUS = 5;
 
-    private String name;
     private int level;
     private long lastUpdateTick;
     private RandomSource random = RandomSource.create();
@@ -88,7 +87,7 @@ public class Naturalist implements HoldModifier {
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
-        tag.putInt(LEVEL, level);
+        tag.putInt(ModifierConstants.LEVEL, level);
         tag.putLong(LAST_UPDATE, lastUpdateTick);
         return tag;
     }
@@ -96,7 +95,7 @@ public class Naturalist implements HoldModifier {
     @Override
     public Modifier fromNBT(CompoundTag tag) {
         String name = tag.getStringOr(NAME, "Naturalist");
-        int level = tag.getIntOr(LEVEL, 1);
+        int level = ModifierConstants.getLevel(tag, 1);
         long lastUpdate = tag.getLongOr(LAST_UPDATE, 0L);
         return new Naturalist(name, level, lastUpdate);
     }
@@ -109,11 +108,6 @@ public class Naturalist implements HoldModifier {
     @Override
     public boolean forTool(ToolType type) {
         return true; // Works with all tool types
-    }
-
-    @Override
-    public void writeToLore(List<Component> list, boolean shift) {
-        list.add(Modifier.makeComp(this.name(), this.color()));
     }
 
     @Override

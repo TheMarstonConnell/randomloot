@@ -2,10 +2,10 @@ package dev.marston.randomloot;
 
 import com.mojang.logging.LogUtils;
 import dev.marston.randomloot.component.ModDataComponents;
+import dev.marston.randomloot.gametest.RandomLootGameTests;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.recipes.Recipies;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.Identifier;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
@@ -44,6 +44,9 @@ public class RandomLoot
         Recipies.register(modEventBus);
         ModLootModifiers.register(modEventBus);
 
+        // In-world GameTests (only run when the gametest system is enabled, e.g. runGameTestServer).
+        RandomLootGameTests.init(modEventBus);
+
         NeoForge.EVENT_BUS.register(this);
         modEventBus.addListener(ModItems::addCreative);
 
@@ -61,7 +64,6 @@ public class RandomLoot
     public void onServerStarting(ServerStartingEvent event)
     {
         // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
     }
 
     // In some client class where the event is registered to the mod event bus
@@ -85,7 +87,6 @@ public class RandomLoot
         public static void onClientSetup(FMLClientSetupEvent event)
         {
             // Some client setup code
-            LOGGER.info("HELLO FROM CLIENT SETUP");
         }
     }
 

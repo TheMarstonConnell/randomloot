@@ -13,9 +13,11 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import net.minecraft.core.Holder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.*;
@@ -26,30 +28,43 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class TraitAdditionRecipe implements SmithingRecipe {
-	final ItemStack addition;
+	final Holder<Item> additionItem;
 	final Optional<Ingredient> template;
 	final Optional<Ingredient> base;
 	final String trait;
 	@Nullable
 	private PlacementInfo placementInfo;
 
+	// Reads {"id": <item>, "count": <int>} via Item.CODEC, which (unlike ItemStack.CODEC) does
+	// NOT require item data-components to be bound. Recipes are parsed during datapack load,
+	// before components are bound, so ItemStack.CODEC made every trait recipe fail to load with
+	// "Item ... does not have components yet" -- which left the tool unplaceable in the smithing
+	// table (no recipe contributed it to the SMITHING_BASE set). Only the item type is needed.
+	private static final Codec<Holder<Item>> ADDITION_ITEM_CODEC = RecordCodecBuilder.create(
+			i -> i.group(
+							Item.CODEC.fieldOf("id").forGetter(holder -> holder),
+							Codec.INT.optionalFieldOf("count", 1).forGetter(holder -> 1)
+					)
+					.apply(i, (item, count) -> item)
+	);
+
 	public static final MapCodec<TraitAdditionRecipe> CODEC = RecordCodecBuilder.mapCodec(
 			builder -> builder.group(
-							ItemStack.CODEC.fieldOf("item").forGetter(g -> g.addition),
+							ADDITION_ITEM_CODEC.fieldOf("item").forGetter(g -> g.additionItem),
 							Codec.STRING.fieldOf("trait").forGetter(g -> g.trait)
 					)
 					.apply(builder, TraitAdditionRecipe::new)
 	);
 	public static final StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> STREAM_CODEC = StreamCodec.composite(
-			ItemStack.STREAM_CODEC,
-			c -> c.addition,
+			Item.STREAM_CODEC,
+			c -> c.additionItem,
 			ByteBufCodecs.STRING_UTF8,
 			c -> c.trait,
 			TraitAdditionRecipe::new
 	);
 
-	public TraitAdditionRecipe(ItemStack addition, String traitIn) {
-		this.addition = addition;
+	public TraitAdditionRecipe(Holder<Item> additionItem, String traitIn) {
+		this.additionItem = additionItem;
 		this.trait = traitIn;
 		this.base = Optional.of(Ingredient.of(ModItems.TOOL.asItem()));
 		this.template= Optional.of(Ingredient.of(ModItems.MOD_SUB.asItem(), ModItems.MOD_ADD.asItem()));
@@ -62,15 +77,19 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		if (!this.addition.is(input.addition().getItem())) {
+		if (!input.addition().is(this.additionItem.value())) {
+			return false;
+		}
+
+		// An unknown/typo'd trait id (e.g. from a stale data pack) must not match, or the
+		// recipe would consume the template + addition while producing an unchanged tool.
+		Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
+		if (modToAdd == null) {
 			return false;
 		}
 
 		// Check if we're adding a modifier (not removing)
 		if (input.template().is(ModItems.MOD_ADD.asItem())) {
-			// Get the modifier being added
-			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
-
 			// If it's a biome-restricted modifier, check if the tool's biome matches
 			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
 				ItemStack tool = input.base();
@@ -150,7 +169,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 	@Override
 	public Optional<Ingredient> additionIngredient() {
-		return Optional.of(Ingredient.of(this.addition.getItem()));
+		return Optional.of(Ingredient.of(this.additionItem.value()));
 	}
 
 	@Override

@@ -2,14 +2,13 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
@@ -17,11 +16,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 
-public class Effect implements HoldModifier {
+public class Effect extends AbstractModifier implements HoldModifier {
 
-	private String name;
 	private int power;
 	private String tagname;
 	private final static String POWER = "power";
@@ -31,7 +28,7 @@ public class Effect implements HoldModifier {
 	public Effect(String name, String tagname, int power, int duration, Holder<MobEffect> effect) {
 		this.name = name;
 		this.effect = effect;
-		this.power = 0;
+		this.power = power;
 		this.tagname = tagname;
 		this.duration = duration;
 	}
@@ -90,16 +87,8 @@ public class Effect implements HoldModifier {
 	}
 
 	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-
-		list.add(comp);
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
+		return isMiningTool(type);
 	}
 
 	@Override

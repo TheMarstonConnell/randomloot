@@ -1,23 +1,15 @@
 package dev.marston.randomloot.loot;
 
-import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.BlockTags;
@@ -48,7 +40,6 @@ import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -482,13 +473,11 @@ public class LootItem extends Item  {
 		}
 
 		if (used) {
+			// Award the tool's ITEM_USED stat exactly once, server-side. awardStat also
+			// updates scoreboard objectives, unlike a bare getStats().increment().
 			if (player instanceof ServerPlayer sPlayer) {
-				StatType<Item> itemUsed = Stats.ITEM_USED;
-
-				sPlayer.getStats().increment(sPlayer, itemUsed.get(ModItems.TOOL.get()), 1);
+				sPlayer.awardStat(Stats.ITEM_USED.get(this));
 			}
-
-			player.awardStat(Stats.ITEM_USED.get(this));
 
 			return InteractionResult.SUCCESS;
 		}

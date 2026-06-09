@@ -1,9 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -11,20 +12,16 @@ import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-public class Fragile implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
+public class Fragile extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.25f; // 25% boost
-	private static final String LEVEL = "level";
 	private static final int MAX_LEVEL = 3;
 
-	private String name;
 	private int level;
 
 	public Fragile() {
@@ -81,13 +78,13 @@ public class Fragile implements EntityHurtModifier, BlockBreakModifier, StatsMod
 	public CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, name);
-		tag.putInt(LEVEL, level);
+		tag.putInt(ModifierConstants.LEVEL, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fragile(tag.getStringOr(NAME, "Fragile"), tag.getIntOr(LEVEL, 1));
+		return new Fragile(tag.getStringOr(NAME, "Fragile"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override
@@ -108,12 +105,6 @@ public class Fragile implements EntityHurtModifier, BlockBreakModifier, StatsMod
 	@Override
 	public boolean forTool(ToolType type) {
 		return true; // Works with all tool types
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		MutableComponent comp = Modifier.makeComp(this.name(), this.color());
-		list.add(comp);
 	}
 
 	private java.util.Random random = new java.util.Random();
