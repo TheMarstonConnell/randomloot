@@ -1,10 +1,13 @@
 package dev.marston.randomloot.loot;
 
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
@@ -605,29 +608,33 @@ public class LootItem extends Item  {
 
 	}
 
+	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
+	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
+	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
+	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
+	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
+
 	@Override
 	public boolean isPrimaryItemFor(ItemStack stack, Holder<Enchantment> enchantment) {
 		ToolType type = LootUtils.getToolType(stack);
-		String enchantPath = enchantment.getRegisteredName();
 
-		// Universal enchantments - all tools (Unbreaking, Mending)
-		if (enchantPath.contains("unbreaking") || enchantPath.contains("mending")) {
+		if (enchantment.is(ALL_TOOL_ENCHANTS)) {
 			return true;
 		}
 
-		// Mining enchantments - pickaxe, axe, shovel only (Efficiency, Fortune, Silk Touch)
-		if (enchantPath.contains("efficiency") || enchantPath.contains("fortune") || enchantPath.contains("silk_touch")) {
+		if (enchantment.is(MINING_ENCHANTS)) {
 			return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
 		}
 
-		// Weapon enchantments - sword and axe (Sharpness, Smite, Bane, Knockback, Fire Aspect, Looting)
-		if (enchantPath.contains("sharpness") || enchantPath.contains("smite") || enchantPath.contains("bane_of_arthropods") ||
-			enchantPath.contains("knockback") || enchantPath.contains("fire_aspect") || enchantPath.contains("looting")) {
+		if (enchantment.is(WEAPON_ENCHANTS)) {
 			return type == ToolType.SWORD || type == ToolType.AXE;
 		}
 
-		// Sword-only enchantments (Sweeping Edge)
-		if (enchantPath.contains("sweeping")) {
+		if (enchantment.is(SWORD_ENCHANTS)) {
 			return type == ToolType.SWORD;
 		}
 
