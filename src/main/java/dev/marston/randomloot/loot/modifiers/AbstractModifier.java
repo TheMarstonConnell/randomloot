@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
@@ -30,8 +31,22 @@ public abstract class AbstractModifier implements Modifier {
 	}
 
 	@Override
+	public Component displayName() {
+		String full = name();
+		if (hasDynamicName() || name == null || !full.startsWith(name)) {
+			// Custom full names (e.g. Unbreaking's maxed-out "Unbreakable") stay literal so
+			// a base-name lang entry can't mask them.
+			return Component.literal(full);
+		}
+		// Translate the base name but keep any level suffix: "Poisonous II" becomes
+		// "<translated Poisonous> II".
+		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".name", name)
+				.append(full.substring(name.length()));
+	}
+
+	@Override
 	public void writeToLore(List<Component> list, boolean shift) {
-		list.add(Modifier.makeComp(this.name(), this.color()));
+		list.add(Modifier.makeComp(this.displayName()).withStyle(ChatFormatting.getByName(this.color())));
 	}
 
 	/** Melee tools: swords and axes. */

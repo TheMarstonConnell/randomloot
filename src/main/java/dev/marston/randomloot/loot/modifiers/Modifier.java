@@ -70,6 +70,32 @@ public interface Modifier {
 
 	public String name();
 
+	/**
+	 * True for modifiers whose name is generated per instance (e.g. DirtPlace's random
+	 * "<Forger>'s Grace"). These get no lang entry and always display their stored name.
+	 */
+	default boolean hasDynamicName() {
+		return false;
+	}
+
+	/**
+	 * Translatable display name, keyed {@code modifier.randomloot.<tag>.name} with the
+	 * raw English {@link #name()} as fallback. Use this for anything player-facing.
+	 */
+	default Component displayName() {
+		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".name", name());
+	}
+
+	/**
+	 * Translatable description, keyed {@code modifier.randomloot.<tag>.description} with
+	 * {@link #description()} as fallback. Leveling traits ship no lang entry on purpose:
+	 * their descriptions bake in live power/duration values, so the dynamic English
+	 * fallback is more accurate than a frozen translation.
+	 */
+	default Component displayDescription() {
+		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".description", description());
+	}
+
 	public String color();
 
 	public Modifier clone();

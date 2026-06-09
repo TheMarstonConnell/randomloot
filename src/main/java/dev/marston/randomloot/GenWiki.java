@@ -1,6 +1,7 @@
 package dev.marston.randomloot;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.marston.randomloot.loot.NameGenerator;
@@ -477,6 +478,49 @@ public class GenWiki {
         write("", f);
     }
 
+    /**
+     * Generates assets/randomloot/lang/en_us.json from the modifier registry, so trait
+     * translation keys never drift from the code the way the hand-maintained file did.
+     *
+     * <p>Leveling traits deliberately get no description entry: their description() bakes
+     * in live power/duration values, so the dynamic English fallback in
+     * {@code Modifier#displayDescription()} is more accurate than a frozen level-0 string.
+     */
+    private static void writeLang() throws IOException {
+        Map<String, String> entries = new TreeMap<>();
+
+        entries.put("item.randomloot.tool", "Random Tool");
+        entries.put("item.randomloot.case", "Loot Case");
+        entries.put("item.randomloot.mod_add", "Trait Addition Template");
+        entries.put("item.randomloot.mod_sub", "Trait Subtraction Template");
+
+        entries.put("tooltip.randomloot.level", "Level: %s");
+        entries.put("tooltip.randomloot.xp", "XP: %s / %s");
+        entries.put("tooltip.randomloot.speed", "Speed: %s");
+        entries.put("tooltip.randomloot.damage", "Damage: %s");
+        entries.put("tooltip.randomloot.shift_hint", "[Shift for more]");
+        entries.put("tooltip.randomloot.ctrl_hint", "[Ctrl for trait info]");
+        entries.put("tooltip.randomloot.type.pickaxe", "Pickaxe");
+        entries.put("tooltip.randomloot.type.shovel", "Shovel");
+        entries.put("tooltip.randomloot.type.axe", "Axe");
+        entries.put("tooltip.randomloot.type.sword", "Sword");
+
+        for (Modifier mod : ModifierRegistry.getModifiers().values()) {
+            if (!mod.hasDynamicName()) {
+                entries.put("modifier.randomloot." + mod.tagName() + ".name", mod.name());
+            }
+            if (!mod.canLevel()) {
+                entries.put("modifier.randomloot." + mod.tagName() + ".description", mod.description());
+            }
+        }
+
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        try (FileWriter f = new FileWriter("../src/main/resources/assets/randomloot/lang/en_us.json")) {
+            gson.toJson(entries, f);
+            f.write("\n");
+        }
+    }
+
     public static void genWiki() {
 
         String isProdEnv = System.getenv("RL_PROD");
@@ -519,6 +563,9 @@ public class GenWiki {
                 writeBiomes(biomesWriter);
                 biomesWriter.close();
                 RandomLoot.LOGGER.info("Generated BIOMES.md");
+
+                writeLang();
+                RandomLoot.LOGGER.info("Generated lang/en_us.json");
 
                 RandomLoot.LOGGER.info("Wiki generation complete!");
             } catch (IOException e) {
