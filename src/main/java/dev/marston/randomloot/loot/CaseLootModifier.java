@@ -43,7 +43,16 @@ public class CaseLootModifier extends LootModifier {
 
         String path = context.getQueriedLootTableId().getPath();
 
-        if (!path.contains("chest")) {
+        // Which loot tables get injected into is configurable (default: ids containing
+        // "chest"), so packs can exclude modded tables or target different ones.
+        boolean matches = false;
+        for (String match : Config.LootTableMatches) {
+            if (path.contains(match)) {
+                matches = true;
+                break;
+            }
+        }
+        if (!matches) {
             return generatedLoot;
         }
 

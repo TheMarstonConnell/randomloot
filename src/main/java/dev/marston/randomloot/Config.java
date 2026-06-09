@@ -8,6 +8,7 @@ import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 // An example config class. This is not required, but it's a good idea to have one to keep your config organized.
@@ -23,6 +24,8 @@ public class Config
 
     private static ModConfigSpec.DoubleValue GOODNESS;
 
+    private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
+
     static final ModConfigSpec SPEC = build();
 
     public static ModConfigSpec build() {
@@ -33,6 +36,7 @@ public class Config
     public static double CaseChance;
     public static double ModChance;
     public static double Goodness;
+    public static List<? extends String> LootTableMatches = List.of("chest");
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
     private static Map<String, Boolean> ModsEnabled = new HashMap<>();
@@ -43,6 +47,9 @@ public class Config
         CASE_CHANCE = BUILDER.comment("chance to find a case in a chest.").defineInRange("caseChance", 0.25, 0.0, 1.0);
         MOD_CHANCE = BUILDER.comment("chance to find a modifier template in a chest.").defineInRange("modChance", 0.15,
                 0.0, 1.0);
+        LOOT_TABLE_MATCHES = BUILDER
+                .comment("loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
+                .defineListAllowEmpty("lootTableMatches", List.of("chest"), () -> "chest", o -> o instanceof String);
         BUILDER.pop();
 
         BUILDER.push("Modifiers Enabled");
@@ -72,6 +79,7 @@ public class Config
         CaseChance = CASE_CHANCE.get();
         ModChance = MOD_CHANCE.get();
         Goodness = GOODNESS.get();
+        LootTableMatches = LOOT_TABLE_MATCHES.get();
 
         ModsEnabled = new HashMap<String, Boolean>();
         for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {

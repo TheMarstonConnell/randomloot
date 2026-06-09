@@ -10,6 +10,7 @@ These settings control how often Random Loot items appear in structure chests.
 |--------|---------|-------|-------------|
 | `caseChance` | 0.25 | 0.0-1.0 | Chance to find a Loot Case in a chest |
 | `modChance` | 0.15 | 0.0-1.0 | Chance to find a Trait Template in a chest |
+| `lootTableMatches` | `["chest"]` | list of strings | Loot table id substrings that cases/templates can be injected into. Empty list disables injection |
 
 ## Progression
 
