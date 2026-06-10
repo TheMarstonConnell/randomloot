@@ -113,6 +113,7 @@ public class GenWiki {
         write("|--------|---------|-------|-------------|", f);
         write("| `caseChance` | 0.25 | 0.0-1.0 | Chance to find a Loot Case in a chest |", f);
         write("| `modChance` | 0.15 | 0.0-1.0 | Chance to find a Trait Template in a chest |", f);
+        write("| `lootTableMatches` | `[\"chest\"]` | list of strings | Loot table id substrings that cases/templates can be injected into. Empty list disables injection |", f);
         write("", f);
 
         write("## Progression", f);
