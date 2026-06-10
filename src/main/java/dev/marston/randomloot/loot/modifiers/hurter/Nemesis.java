@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -18,7 +19,7 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Nemesis extends AbstractModifier implements EntityHurtModifier {
+public class Nemesis extends AbstractModifier implements EntityHurtModifier, EntityKillModifier {
 	private int level;
 	private Map<String, Integer> killCounts;
 
@@ -162,7 +163,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		// Only track kills on server side
+		// Only act on server side
 		if (hurtee.level().isClientSide()) {
 			return false;
 		}
@@ -177,16 +178,18 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier {
 			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
 		}
 
-		// Track kill if the entity is dead
-		if (hurtee.getHealth() <= 0) {
-			int currentCount = killCounts.getOrDefault(entityKey, 0);
-			killCounts.put(entityKey, currentCount + 1);
-
-			// Save updated kill counts to the item
-			LootUtils.updateModifier(itemstack, this);
-		}
-
 		return false;
+	}
+
+	@Override
+	public void onKill(ItemStack itemstack, LivingEntity victim, LivingEntity killer) {
+		String entityKey = EntityType.getKey(victim.getType()).toString();
+
+		int currentCount = killCounts.getOrDefault(entityKey, 0);
+		killCounts.put(entityKey, currentCount + 1);
+
+		// Save updated kill counts to the item
+		LootUtils.updateModifier(itemstack, this);
 	}
 
 	@Override

@@ -24,6 +24,9 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -76,6 +79,7 @@ public final class RandomLootGameTests {
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
 		register(event, env, "xp_level_curve", RandomLootGameTests::xpLevelCurve);
+		register(event, env, "kill_trait_hooks", RandomLootGameTests::killTraitHooks);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 	}
@@ -144,6 +148,35 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Kill traits fire through the LivingDeathEvent dispatcher. Hailey's Wrath spawns a
+	 * bee and Nemesis records the kill on the tool's NBT. The regression was both traits
+	 * checking victim health inside hurtEnemy, which never sees indirect kills and made
+	 * Hailey's Wrath effectively dead.
+	 */
+	private static void killTraitHooks(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.SWORD);
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(zombie, player.damageSources().playerAttack(player), 1000.0f);
+
+		helper.assertTrue(zombie.isDeadOrDying(), "zombie should die to the test hit");
+		helper.assertEntityPresent(EntityType.BEE);
+
+		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
+				.filter(m -> m.tagName().equals("nemesis")).findFirst().orElse(null);
+		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
+		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
 
 		helper.succeed();
 	}
