@@ -40,6 +40,8 @@ public class ModItems {
         if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
             event.accept(TOOL);
             event.accept(CASE);
+            event.accept(MOD_ADD);
+            event.accept(MOD_SUB);
         }
     }
 }
