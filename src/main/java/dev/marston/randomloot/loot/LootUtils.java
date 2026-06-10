@@ -235,6 +235,7 @@ public class LootUtils {
 			level++;
 			levelUp(item, holder);
 			leveled = true;
+			max = getMaxXP(level);
 		}
 
 		if (leveled) {
