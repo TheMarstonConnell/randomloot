@@ -38,10 +38,10 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `critical_enabled` | [Critical](MODIFIERS.md#critical) | Always critically strikes enemy. |
 | `crowd_pleaser_enabled` | [Crowd Pleaser](MODIFIERS.md#crowd-pleaser) | Deals bonus damage based on nearby mobs of the same type |
 | `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While holding the tool, ores around you will glow. |
-| `dirt_place_enabled` | [Heartha's Grace](MODIFIERS.md#heartha's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
+| `dirt_place_enabled` | [Forger's Grace](MODIFIERS.md#forger's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
 | `early_bird_enabled` | [Early Bird](MODIFIERS.md#early-bird) | Deals 15% extra damage to full-health targets |
 | `excavator_enabled` | [Excavator](MODIFIERS.md#excavator) | Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. |
-| `executioner_enabled` | [Executioner](MODIFIERS.md#executioner) | Instantly kills mobs below 30% health |
+| `executioner_enabled` | [Executioner](MODIFIERS.md#executioner) | Instantly kills mobs below 20% health |
 | `explode_enabled` | [Explosive](MODIFIERS.md#explosive) | Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. |
 | `feasting_enabled` | [Feasting](MODIFIERS.md#feasting) | Performance scales with hunger level |
 | `fierce_enabled` | [Fierce](MODIFIERS.md#fierce) | Deals more damage as durability decreases |
@@ -50,13 +50,13 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `fire_resistance_enabled` | [Heat Resistant](MODIFIERS.md#heat-resistant) | While holding the tool, get the fire resistance I effect. |
 | `flame_thrower_enabled` | [Flame Thrower](MODIFIERS.md#flame-thrower) | Right clicking throws a fire ball. |
 | `flaming_enabled` | [Flaming](MODIFIERS.md#flaming) | Sets enemy on fire for 2 seconds. |
-| `fragile_enabled` | [Fragile](MODIFIERS.md#fragile) | 25% more damage and speed, but loses durability twice as fast |
+| `fragile_enabled` | [Fragile](MODIFIERS.md#fragile) | 25% more damage and speed, but loses durability 2.0x as fast |
 | `frozen_enabled` | [Frozen](MODIFIERS.md#frozen) | Slows enemies on hit. Creates 3 block radius of frosted ice on water. |
 | `haileys_wrath_enabled` | [Hailey's Wrath](MODIFIERS.md#hailey's-wrath) | Spawns a bee when the target is killed |
 | `hasty_enabled` | [Hasty](MODIFIERS.md#hasty) | While holding the tool, get the Haste I effect. |
 | `hunter_enabled` | [Hunter](MODIFIERS.md#hunter) | Nearby hostile mobs get the glowing effect |
 | `learning_enabled` | [Learning](MODIFIERS.md#learning) | After breaking 10 blocks as allowed by this tool, gain 3 experience points. |
-| `living_enabled` | [Living](MODIFIERS.md#living) | While holding the tool, it will randomly heal itself |
+| `living_enabled` | [Living](MODIFIERS.md#living) | While holding, 0.5% chance per tick to repair itself |
 | `lumbering_enabled` | [Lumbering](MODIFIERS.md#lumbering) | Breaking a log fells all connected logs |
 | `melting_enabled` | [Melting](MODIFIERS.md#melting) | Items dropped by blocks broken with this tool will be smelted. |
 | `munchies_enabled` | [Munchies](MODIFIERS.md#munchies) | 15% stat boost, but 10% chance to consume hunger on use |
