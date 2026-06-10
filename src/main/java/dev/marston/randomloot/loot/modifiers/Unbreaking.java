@@ -9,6 +9,10 @@ import net.minecraft.world.level.Level;
 
 public class Unbreaking extends AbstractModifier {
 
+	/** Chance to skip durability loss: 20% at level 0, +20% per level, 100% when maxed. */
+	private static final float CHANCE_PER_LEVEL = 0.2f;
+	private static final int MAX_LEVEL = 4;
+
 	int level;
 
 
@@ -67,7 +71,7 @@ public class Unbreaking extends AbstractModifier {
 	}
 
 	public boolean canLevel() {
-		return this.level < 4;
+		return this.level < MAX_LEVEL;
 	}
 
 	public void levelUp() {
@@ -75,7 +79,7 @@ public class Unbreaking extends AbstractModifier {
 	}
 
 	private float chance() {
-		return 0.2f * (float) (this.level + 1);
+		return CHANCE_PER_LEVEL * (float) (this.level + 1);
 	}
 
 	public boolean test(Level level) {
