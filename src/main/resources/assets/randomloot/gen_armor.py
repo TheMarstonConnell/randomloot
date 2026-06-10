@@ -3,11 +3,11 @@
 Item + worn-layer template art comes from the original Random Loot mod
 (https://github.com/TheMarstonConnell/randomlootmod, assets/randomloot/textures):
 sets 1-5 are gradient-mapped from the titanium set, sets 6-10 from the heavy set.
-Sets 11-15 (original hand-drawn designs) live in gen_armor_unique.py, which also
+Sets 11-15 (netherite recolors) live in gen_armor_netherite.py, which also
 owns items/armor.json — run it after this one. Run from this directory with the
 old repo checked out at OLD_REPO:
 
-    python3 gen_armor.py && python3 gen_armor_unique.py
+    python3 gen_armor.py && python3 gen_armor_netherite.py
 """
 
 import json
@@ -105,7 +105,7 @@ def main():
         }, f, indent=4)
         f.write("\n")
 
-    # items/armor.json is written by gen_armor_unique.py, which knows the full set count.
+    # items/armor.json is written by gen_armor_netherite.py, which knows the full set count.
     print(f"Generated {len(PALETTES)} sets x {len(PIECES)} pieces.")
 
 
