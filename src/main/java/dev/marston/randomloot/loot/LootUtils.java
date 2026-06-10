@@ -28,6 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.StatType;
@@ -590,7 +591,9 @@ public class LootUtils {
 
 		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(level.getRandom(), temp, level.isRaining()), nameColor);
 
-		String forger = NameGenerator.generateForger(level.getRandom(), temp);
+		// Forgers are world-constant per temperature band, not rolled per item.
+		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
+		String forger = NameGenerator.forgerForWorld(worldSeed, temp);
 
 		String name = "a machine";
 		if (player != null) {

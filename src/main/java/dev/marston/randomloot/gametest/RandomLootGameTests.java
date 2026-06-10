@@ -87,6 +87,7 @@ public final class RandomLootGameTests {
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 		register(event, env, "armor_components", RandomLootGameTests::armorComponents);
+		register(event, env, "forger_world_constant", RandomLootGameTests::forgerWorldConstant);
 		register(event, env, "armor_xp_on_damage", RandomLootGameTests::armorXpOnDamage);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", RandomLootGameTests::armorRepairable);
@@ -160,6 +161,29 @@ public final class RandomLootGameTests {
 		helper.assertTrue(wrapped != null && wrapped.assetId().isPresent()
 						&& wrapped.assetId().get().identifier().toString().equals("randomloot:set1"),
 				"texture cycling should wrap back to equipment asset randomloot:set1");
+
+		helper.succeed();
+	}
+
+	/** Every item generated in the same world (same temperature band) credits the same forger. */
+	private static void forgerWorldConstant(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		String firstForger = null;
+		for (int i = 0; i < 4; i++) {
+			ItemStack item = LootUtils.genTool(player, helper.getLevel());
+			String lore = LootUtils.getItemLore(item);
+
+			int at = lore.indexOf("forged by ");
+			helper.assertTrue(at >= 0, "item lore should credit a forger, got: " + lore);
+			String forger = lore.substring(at + "forged by ".length()).replace(".", "");
+
+			if (firstForger == null) {
+				firstForger = forger;
+			}
+			helper.assertTrue(firstForger.equals(forger),
+					"forger should be world-constant, got " + forger + " and " + firstForger);
+		}
 
 		helper.succeed();
 	}
