@@ -62,7 +62,7 @@ public class Rainy extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the tool in the rain, mine faster!";
+		return "While holding or wearing this item in the rain, mine faster!";
 	}
 
 	@Override

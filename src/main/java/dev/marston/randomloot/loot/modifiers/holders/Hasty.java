@@ -81,7 +81,7 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the tool, get the Haste " + LootUtils.roman(this.level + 1) + " effect.";
+		return "While holding or wearing this item, get the Haste " + LootUtils.roman(this.level + 1) + " effect.";
 	}
 
 	@Override

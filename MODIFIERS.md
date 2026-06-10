@@ -59,7 +59,7 @@ These effects are applied when holding the tool.
 ### Detecting
 **id:** `detecting` | **crafting:** `minecraft:spyglass` ![spyglass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spyglass.png)
 
-**Description:** While holding the tool, ores around you will glow.
+**Description:** While held or worn, ores around you will glow.
 ### Feasting
 **id:** `feasting` | **crafting:** `minecraft:golden_carrot` ![golden_carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_carrot.png)
 
@@ -71,7 +71,7 @@ These effects are applied when holding the tool.
 ### Hasty
 **id:** `hasty` | **crafting:** `minecraft:sugar` ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
 
-**Description:** While holding the tool, get the Haste I effect.
+**Description:** While holding or wearing this item, get the Haste I effect.
 ### Healing
 **id:** `regeneration` | **crafting:** `minecraft:glowstone` ![glowstone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glowstone.png)
 
@@ -87,7 +87,7 @@ These effects are applied when holding the tool.
 ### Living
 **id:** `living` | **crafting:** `minecraft:moss_block` ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
 
-**Description:** While holding, 0.5% chance per tick to repair itself
+**Description:** While held or worn, 0.5% chance per tick to repair itself
 ### Naturalist
 **id:** `naturalist` | **crafting:** `minecraft:bone_meal` ![bone_meal](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/bone_meal.png)
 
@@ -95,7 +95,7 @@ These effects are applied when holding the tool.
 ### Rainy
 **id:** `rainy` | **crafting:** `minecraft:cauldron` ![cauldron](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cauldron.png)
 
-**Description:** While holding the tool in the rain, mine faster!
+**Description:** While holding or wearing this item in the rain, mine faster!
 ### Resistant
 **id:** `resistance` | **crafting:** `minecraft:turtle_scute` ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
 
@@ -103,7 +103,7 @@ These effects are applied when holding the tool.
 ### Tomb Raider
 **id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
 
-**Description:** While holding the spawners around you will glow.
+**Description:** While held or worn, spawners around you will glow.
 ## Users
 These effects are applied when right clicking.
 ### Fire Starter

@@ -41,7 +41,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `combo_enabled` | [Dexterous](MODIFIERS.md#dexterous) | Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. |
 | `critical_enabled` | [Critical](MODIFIERS.md#critical) | Always critically strikes enemy. |
 | `crowd_pleaser_enabled` | [Crowd Pleaser](MODIFIERS.md#crowd-pleaser) | Deals bonus damage based on nearby mobs of the same type |
-| `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While holding the tool, ores around you will glow. |
+| `detecting_enabled` | [Detecting](MODIFIERS.md#detecting) | While held or worn, ores around you will glow. |
 | `dirt_place_enabled` | [Forger's Grace](MODIFIERS.md#forger's-grace) | Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. |
 | `early_bird_enabled` | [Early Bird](MODIFIERS.md#early-bird) | Deals 15% extra damage to full-health targets |
 | `excavator_enabled` | [Excavator](MODIFIERS.md#excavator) | Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. |
@@ -58,10 +58,10 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `fragile_enabled` | [Fragile](MODIFIERS.md#fragile) | 25% more damage and speed, but loses durability 2.0x as fast |
 | `frozen_enabled` | [Frozen](MODIFIERS.md#frozen) | Slows enemies on hit. Creates 3 block radius of frosted ice on water. |
 | `haileys_wrath_enabled` | [Hailey's Wrath](MODIFIERS.md#hailey's-wrath) | Spawns a bee when the target is killed |
-| `hasty_enabled` | [Hasty](MODIFIERS.md#hasty) | While holding the tool, get the Haste I effect. |
+| `hasty_enabled` | [Hasty](MODIFIERS.md#hasty) | While holding or wearing this item, get the Haste I effect. |
 | `hunter_enabled` | [Hunter](MODIFIERS.md#hunter) | Nearby hostile mobs get the glowing effect |
 | `learning_enabled` | [Learning](MODIFIERS.md#learning) | After breaking 10 blocks as allowed by this tool, gain 3 experience points. |
-| `living_enabled` | [Living](MODIFIERS.md#living) | While holding, 0.5% chance per tick to repair itself |
+| `living_enabled` | [Living](MODIFIERS.md#living) | While held or worn, 0.5% chance per tick to repair itself |
 | `lumbering_enabled` | [Lumbering](MODIFIERS.md#lumbering) | Breaking a log fells all connected logs |
 | `magnetized_enabled` | [Magnetized](MODIFIERS.md#magnetized) | While worn, nearby items are pulled toward you. |
 | `melting_enabled` | [Melting](MODIFIERS.md#melting) | Items dropped by blocks broken with this tool will be smelted. |
@@ -73,12 +73,12 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `poison_enabled` | [Poisonous](MODIFIERS.md#poisonous) | When attacking with tool, apply the poison I effect to the target for 5 seconds. |
 | `prospector_enabled` | [Prospector](MODIFIERS.md#prospector) | Mining stone has a 4% chance to discover bonus minerals. |
 | `pummeling_enabled` | [Pummeling](MODIFIERS.md#pummeling) | Slams enemies into the ground |
-| `rainy_enabled` | [Rainy](MODIFIERS.md#rainy) | While holding the tool in the rain, mine faster! |
+| `rainy_enabled` | [Rainy](MODIFIERS.md#rainy) | While holding or wearing this item in the rain, mine faster! |
 | `regeneration_enabled` | [Healing](MODIFIERS.md#healing) | While holding or wearing this item, get the regeneration I effect. |
 | `resistance_enabled` | [Resistant](MODIFIERS.md#resistant) | While holding or wearing this item, get the resistance I effect. |
 | `scorched_enabled` | [Scorched](MODIFIERS.md#scorched) | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
 | `soulbound_enabled` | [Soulbound](MODIFIERS.md#soulbound) | Grants 15% bonus damage and mining speed when wielded by the original owner. |
-| `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While holding the spawners around you will glow. |
+| `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While held or worn, spawners around you will glow. |
 | `thorny_enabled` | [Thorny](MODIFIERS.md#thorny) | Reflects 15% of damage taken back at the attacker. |
 | `torch_place_enabled` | [Spelunking](MODIFIERS.md#spelunking) | Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. |
 | `unbreaking_enabled` | [Unbreaking](MODIFIERS.md#unbreaking) | This tool has a 20% chance of not taking damage. |
