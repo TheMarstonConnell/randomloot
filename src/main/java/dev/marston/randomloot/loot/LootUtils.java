@@ -626,7 +626,7 @@ public class LootUtils {
 		return item;
 	}
 
-	public static void generateNewTrait(ItemStack stack, ToolType type, RandomSource random) {
+	public static void generateNewTrait(ItemStack stack, ToolType type, RandomSource random, long worldSeed) {
 
 		List<Modifier> mods = getModifiers(stack);
 
@@ -686,15 +686,29 @@ public class LootUtils {
 
 		int choice = random.nextInt(size);
 
-		Modifier m = allowedMods.get(choice);
+		Modifier m = allowedMods.get(choice).forWorld(worldSeed);
 
 		addModifier(stack, m);
 
 	}
 
-	public static void generateInitialTraits(ItemStack stack, ToolType type, int count, RandomSource random) {
+	public static void generateInitialTraits(ItemStack stack, ToolType type, int count, RandomSource random, long worldSeed) {
 		for (int i = 0; i < count; i++) {
-			generateNewTrait(stack, getToolType(stack), random);
+			generateNewTrait(stack, getToolType(stack), random, worldSeed);
+		}
+	}
+
+	/**
+	 * Re-resolves world-dependent traits (see {@link Modifier#forWorld}) against this
+	 * world. Called when gear leaves a smithing table, where the recipe itself has no
+	 * world access.
+	 */
+	public static void applyWorldForgers(ItemStack stack, long worldSeed) {
+		for (Modifier mod : getModifiers(stack)) {
+			Modifier resolved = mod.forWorld(worldSeed);
+			if (resolved != mod) {
+				updateModifier(stack, resolved);
+			}
 		}
 	}
 
@@ -848,7 +862,8 @@ public class LootUtils {
 			setOwnerName(lootItem, player.getDisplayName().getString());
 		}
 
-		generateInitialTraits(lootItem, m, traits, level.getRandom());
+		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
+		generateInitialTraits(lootItem, m, traits, level.getRandom(), worldSeed);
 
 		generateLore(lootItem, level, player);
 

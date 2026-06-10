@@ -56,6 +56,9 @@ public class LootArmorItem extends Item {
 		// Taking armor out of a smithing table means a trait recipe ran; crafting-table
 		// takes are the texture-change recipe, which doesn't alter traits.
 		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
+			if (player.level() instanceof ServerLevel serverLevel) {
+				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
+			}
 			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
 		}
 	}

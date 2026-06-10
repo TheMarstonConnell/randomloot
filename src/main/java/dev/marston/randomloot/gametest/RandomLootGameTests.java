@@ -10,6 +10,7 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.BlockPos;
@@ -88,6 +89,7 @@ public final class RandomLootGameTests {
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 		register(event, env, "armor_components", RandomLootGameTests::armorComponents);
 		register(event, env, "forger_world_constant", RandomLootGameTests::forgerWorldConstant);
+		register(event, env, "dirt_place_world_forger", RandomLootGameTests::dirtPlaceWorldForger);
 		register(event, env, "armor_xp_on_damage", RandomLootGameTests::armorXpOnDamage);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", RandomLootGameTests::armorRepairable);
@@ -184,6 +186,26 @@ public final class RandomLootGameTests {
 			helper.assertTrue(firstForger.equals(forger),
 					"forger should be world-constant, got " + forger + " and " + firstForger);
 		}
+
+		helper.succeed();
+	}
+
+	/** DirtPlace's "<Forger>'s Grace" name resolves to this world's temperate forger. */
+	private static void dirtPlaceWorldForger(GameTestHelper helper) {
+		long seed = helper.getLevel().getSeed();
+
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.SHOVEL);
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("dirt_place").forWorld(seed));
+
+		Modifier dirtPlace = LootUtils.getModifiers(tool).stream()
+				.filter(m -> m.tagName().equals("dirt_place")).findFirst().orElse(null);
+		helper.assertTrue(dirtPlace != null, "dirt_place trait should be on the tool");
+
+		String expected = NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace";
+		helper.assertTrue(dirtPlace.name().equals(expected),
+				"dirt_place should be named after the world's forger, got " + dirtPlace.name()
+						+ " expected " + expected);
 
 		helper.succeed();
 	}
