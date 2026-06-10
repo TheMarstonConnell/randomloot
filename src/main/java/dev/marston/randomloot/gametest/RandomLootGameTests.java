@@ -75,6 +75,7 @@ public final class RandomLootGameTests {
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
+		register(event, env, "xp_level_curve", RandomLootGameTests::xpLevelCurve);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 	}
@@ -143,6 +144,27 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A single XP dump crosses each level threshold at that level's own cost. Level 0->1
+	 * costs 500 and 1->2 costs 1000, so 1600 XP lands at exactly level 2 with 100 left
+	 * over. The regression was the loop reusing the starting level's threshold, which
+	 * turned the same 1600 XP into three 500-cost levels.
+	 */
+	private static void xpLevelCurve(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.PICKAXE);
+
+		LootUtils.addXp(tool, player, 1600);
+
+		helper.assertTrue(LootUtils.getLevel(tool) == 2,
+				"1600 XP should reach exactly level 2, got " + LootUtils.getLevel(tool));
+		helper.assertTrue(LootUtils.getXP(tool) == 100,
+				"100 XP should remain after leveling, got " + LootUtils.getXP(tool));
 
 		helper.succeed();
 	}
