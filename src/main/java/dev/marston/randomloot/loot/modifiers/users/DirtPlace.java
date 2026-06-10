@@ -68,6 +68,13 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	}
 
 	@Override
+	public boolean hasDynamicName() {
+		// Each instance is named after a randomly generated forger ("<Forger>'s Grace"),
+		// so there is no stable name to translate.
+		return true;
+	}
+
+	@Override
 	public String color() {
 		return ChatFormatting.DARK_GREEN.getName();
 	}

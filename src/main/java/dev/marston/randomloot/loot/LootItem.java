@@ -62,6 +62,12 @@ public class LootItem extends Item  {
                 default -> "Null";
             };
 		}
+
+		/** Translatable display name for tooltips, falling back to the English toString(). */
+		public Component displayName() {
+			return Component.translatableWithFallback(
+					"tooltip.randomloot.type." + name().toLowerCase(Locale.ROOT), toString());
+		}
 	}
 
 
@@ -516,7 +522,7 @@ public class LootItem extends Item  {
 		ToolType tt = LootUtils.getToolType(item);
 
 		if (show) {
-			tipList.accept(makeComp(tt.toString(), ChatFormatting.BLUE));
+			tipList.accept(Component.empty().append(tt.displayName()).withStyle(ChatFormatting.BLUE));
 		}
 
 		MutableComponent desc = makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY);
@@ -525,9 +531,10 @@ public class LootItem extends Item  {
 		if (show) {
 			newLine(tipList);
 			int itemLevel = LootUtils.getLevel(item);
-			tipList.accept(makeComp("Level: " + itemLevel, ChatFormatting.GRAY));
-			tipList.accept(makeComp("XP: " + LootUtils.getXP(item) + " / " + LootUtils.getMaxXP(itemLevel),
-					ChatFormatting.GRAY));
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.level", "Level: %s", itemLevel)
+					.withStyle(ChatFormatting.GRAY));
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.xp", "XP: %s / %s",
+					LootUtils.getXP(item), LootUtils.getMaxXP(itemLevel)).withStyle(ChatFormatting.GRAY));
 		}
 
 		newLine(tipList);
@@ -559,7 +566,7 @@ public class LootItem extends Item  {
 			}
 			if (showDescription) {
 				MutableComponent detailComp = makeComp("", ChatFormatting.GRAY);
-				detailComp.append(modifier.description());
+				detailComp.append(modifier.displayDescription());
 				tipList.accept(detailComp);
 			}
 		}
@@ -568,23 +575,21 @@ public class LootItem extends Item  {
 			newLine(tipList);
 
 			float digSpeed = LootItem.getDigSpeed(item, tt);
-			tipList.accept(makeComp(String.format("Speed: %.2f", digSpeed), ChatFormatting.GRAY));
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
+					String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
 
 			float attackDamage = LootItem.getAttackDamage(item, tt);
-			tipList.accept(makeComp(String.format("Damage: %.2f", attackDamage), ChatFormatting.GRAY));
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
+					String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
 
 		}
 
 		if (!show && !showDescription) {
 			newLine(tipList);
-			MutableComponent comp = Component.empty();
-			comp.append("[Shift for more]");
-			comp = comp.withStyle(ChatFormatting.GRAY);
-			tipList.accept(comp);
-			MutableComponent descComp = Component.empty();
-			descComp.append("[Ctrl for trait info]");
-			descComp = descComp.withStyle(ChatFormatting.GRAY);
-			tipList.accept(descComp);
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.shift_hint", "[Shift for more]")
+					.withStyle(ChatFormatting.GRAY));
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.ctrl_hint", "[Ctrl for trait info]")
+					.withStyle(ChatFormatting.GRAY));
 
 		}
 	}
