@@ -24,6 +24,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Blocks;
@@ -73,6 +74,7 @@ public final class RandomLootGameTests {
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
+		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -169,6 +171,18 @@ public final class RandomLootGameTests {
 
 		helper.assertFalse(sword.isPrimaryItemFor(efficiency), "sword must not roll efficiency at the table");
 		helper.assertTrue(pickaxe.isPrimaryItemFor(efficiency), "pickaxe should roll efficiency at the table");
+
+		helper.succeed();
+	}
+
+	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
+	private static void toolRepairable(GameTestHelper helper) {
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+
+		helper.assertTrue(tool.isValidRepairItem(new ItemStack(Items.DIAMOND)),
+				"diamond should repair Random Tools (tool_repair_materials tag)");
+		helper.assertFalse(tool.isValidRepairItem(new ItemStack(Items.STICK)),
+				"stick should not repair Random Tools");
 
 		helper.succeed();
 	}
