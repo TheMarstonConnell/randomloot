@@ -39,8 +39,8 @@ In this example, we're adding `Living` to the tool using an addition template.
 
 ![smithing table addition](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/1.21.x/.github/assets/smithing_addition.png) 
 
-### Essence & Salvaging
-Don't want a tool or armor piece you generated? Smelt it in a furnace to salvage it into Essence. Combining a Random Tool or Random Armor with Essence in a crafting grid changes the item's texture — each additional Essence cycles one texture further, so you can re-style your gear without losing any traits, levels, or stats.
+### Random Essence & Salvaging
+Don't want a tool or armor piece you generated? Smelt it in a furnace to salvage it into Random Essence. Combining a Random Tool or Random Armor with Random Essence in a crafting grid changes the item's texture — each additional Essence cycles one texture further, so you can re-style your gear without losing any traits, levels, or stats. You can also craft 9 Random Essence into a brand new Loot Case, so even bad rolls eventually pay off.
 
 ### Automation
 
