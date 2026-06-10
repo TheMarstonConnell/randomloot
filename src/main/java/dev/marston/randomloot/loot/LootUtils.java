@@ -74,7 +74,7 @@ public class LootUtils {
 	private static int SHOVEL_COUNT = 9;
 	private static int SWORD_COUNT = 50;
 	/** Number of armor texture sets; each set is one helmet/chestplate/leggings/boots look. */
-	public static final int ARMOR_SET_COUNT = 10;
+	public static final int ARMOR_SET_COUNT = 15;
 
 	public static ItemStack CloneItem(ItemStack stack) {
 		ItemStack copy = new ItemStack(stack.getItem());

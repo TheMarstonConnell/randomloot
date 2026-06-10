@@ -1,11 +1,13 @@
-"""Generates the 10 Random Armor texture sets plus their models and equipment assets.
+"""Generates armor sets 1-10 (recolors) plus their models and equipment assets.
 
 Item + worn-layer template art comes from the original Random Loot mod
 (https://github.com/TheMarstonConnell/randomlootmod, assets/randomloot/textures):
 sets 1-5 are gradient-mapped from the titanium set, sets 6-10 from the heavy set.
-Run from this directory with the old repo checked out at OLD_REPO:
+Sets 11-15 (original hand-drawn designs) live in gen_armor_unique.py, which also
+owns items/armor.json — run it after this one. Run from this directory with the
+old repo checked out at OLD_REPO:
 
-    python3 gen_armor.py
+    python3 gen_armor.py && python3 gen_armor_unique.py
 """
 
 import json
@@ -103,30 +105,7 @@ def main():
         }, f, indent=4)
         f.write("\n")
 
-    # Item definition: cosmetic float -> per-piece, per-set model.
-    entries = []
-    for piece in PIECES:
-        for i in range(len(PALETTES)):
-            entries.append({
-                "threshold": round(PIECE_OFFSET[piece] + i / 10000, 4),
-                "model": {
-                    "type": "minecraft:model",
-                    "model": f"randomloot:item/armor/{piece}/{i + 1}",
-                },
-            })
-
-    with open("items/armor.json", "w") as f:
-        json.dump({
-            "model": {
-                "type": "minecraft:range_dispatch",
-                "property": "randomloot:cosmetic",
-                "scale": 1,
-                "fallback": {"type": "minecraft:model", "model": "randomloot:item/armor"},
-                "entries": entries,
-            }
-        }, f, indent=4)
-        f.write("\n")
-
+    # items/armor.json is written by gen_armor_unique.py, which knows the full set count.
     print(f"Generated {len(PALETTES)} sets x {len(PIECES)} pieces.")
 
 
