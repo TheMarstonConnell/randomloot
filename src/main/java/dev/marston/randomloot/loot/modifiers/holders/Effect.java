@@ -47,13 +47,13 @@ public class Effect extends EffectModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the tool, get the " + I18n.get(effect.value().getDisplayName().getString()).toLowerCase() + " "
+		return "While holding or wearing this item, get the " + I18n.get(effect.value().getDisplayName().getString()).toLowerCase() + " "
 				+ LootUtils.roman(this.power + 1) + " effect.";
 	}
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
+		return isMiningTool(type) || type.isArmor();
 	}
 
 	@Override

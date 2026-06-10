@@ -64,8 +64,9 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		// Works for all tool types
-		return true;
+		// Works for all hand tools; its enforcement hook is melee-based, so it
+		// would be a dead trait on armor.
+		return !type.isArmor();
 	}
 
 	@Override

@@ -1,0 +1,14 @@
+{
+    "layers": {
+        "humanoid": [
+            {
+                "texture": "randomloot:set3"
+            }
+        ],
+        "humanoid_leggings": [
+            {
+                "texture": "randomloot:set3"
+            }
+        ]
+    }
+}

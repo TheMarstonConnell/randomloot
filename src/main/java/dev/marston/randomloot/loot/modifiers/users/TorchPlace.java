@@ -172,7 +172,8 @@ public class TorchPlace extends AbstractModifier implements UseModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return true;
+		// Right-click traits never fire from worn armor.
+		return !type.isArmor();
 	}
 
 	@Override

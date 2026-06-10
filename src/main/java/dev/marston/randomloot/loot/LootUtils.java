@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.component.ModDataComponents;
@@ -37,8 +38,13 @@ import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.world.item.equipment.EquipmentAsset;
+import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
@@ -67,9 +73,11 @@ public class LootUtils {
 	private static int AXE_COUNT = 14;
 	private static int SHOVEL_COUNT = 9;
 	private static int SWORD_COUNT = 50;
+	/** Number of armor texture sets; each set is one helmet/chestplate/leggings/boots look. */
+	public static final int ARMOR_SET_COUNT = 10;
 
 	public static ItemStack CloneItem(ItemStack stack) {
-		ItemStack copy = new ItemStack(ModItems.TOOL.asItem());
+		ItemStack copy = new ItemStack(stack.getItem());
 
 		// Preserve the tool's durability so texture/trait changes don't repair it.
 		copy.set(DataComponents.DAMAGE, stack.get(DataComponents.DAMAGE));
@@ -90,6 +98,9 @@ public class LootUtils {
 		copy.set(ModDataComponents.TOOL_MODIFIER, copyMods);
 
 		copy.set(DataComponents.CUSTOM_NAME, stack.get(DataComponents.CUSTOM_NAME));
+
+		// Armor carries its slot + worn-texture in the per-stack EQUIPPABLE component.
+		updateEquippable(copy);
 
 		return copy;
 	}
@@ -431,6 +442,27 @@ public class LootUtils {
 		cosmeticTag.putInt("texture", texture);
 
 		addTagElement(stack,"cosmetics", cosmeticTag);
+
+		// Worn armor looks come from the EQUIPPABLE asset id, which tracks the texture index.
+		updateEquippable(stack);
+	}
+
+	/**
+	 * Rebuilds the per-stack EQUIPPABLE component for armor pieces so the equipment
+	 * slot and worn texture (equipment asset {@code randomloot:setN}) match the piece
+	 * type and cosmetic texture index. No-op for hand tools.
+	 */
+	public static void updateEquippable(ItemStack stack) {
+		ToolType type = getToolType(stack);
+		if (!type.isArmor()) {
+			return;
+		}
+
+		int set = (getTextureIndex(stack) % ARMOR_SET_COUNT) + 1;
+		ResourceKey<EquipmentAsset> asset = ResourceKey.create(EquipmentAssets.ROOT_ID,
+				Identifier.fromNamespaceAndPath(RandomLoot.MODID, "set" + set));
+
+		stack.set(DataComponents.EQUIPPABLE, Equippable.builder(type.armorSlot()).setAsset(asset).build());
 	}
 
 	public static float getTexture(ItemStack stack) {
@@ -455,6 +487,18 @@ public class LootUtils {
 			break;
 		case SWORD:
 			index += 0.4f;
+			break;
+		case HELMET:
+			index += 0.5f;
+			break;
+		case CHESTPLATE:
+			index += 0.6f;
+			break;
+		case LEGGINGS:
+			index += 0.7f;
+			break;
+		case BOOTS:
+			index += 0.8f;
 			break;
 		case NULL:
 		default:
@@ -667,6 +711,12 @@ public class LootUtils {
 		case SWORD: {
 			yield SWORD_COUNT;
 		}
+		case HELMET:
+		case CHESTPLATE:
+		case LEGGINGS:
+		case BOOTS: {
+			yield ARMOR_SET_COUNT;
+		}
 		default:
 			yield 0;
 		};
@@ -693,7 +743,6 @@ public class LootUtils {
 	}
 
 	public static ItemStack genTool(Player player, Level level) {
-		ItemStack lootItem = new ItemStack(ModItems.TOOL.get());
 
 		/**
 		 * We want to be able to make the loot get better over time for players. This is
@@ -723,26 +772,40 @@ public class LootUtils {
 
 		int traits = (int) (Math.floor(goodness / 2.0f)); // how many traits the tool should be created with
 
-		LootUtils.setStats(lootItem, goodness);
-
-		int toolType = level.getRandom().nextInt(4);
-		ToolType m = switch (toolType) {
-		case 0: {
-			yield ToolType.PICKAXE;
+		ToolType m;
+		if (level.getRandom().nextFloat() < Config.ArmorChance) {
+			int armorType = level.getRandom().nextInt(4);
+			m = switch (armorType) {
+			case 0: {
+				yield ToolType.HELMET;
+			}
+			case 1: {
+				yield ToolType.CHESTPLATE;
+			}
+			case 2: {
+				yield ToolType.LEGGINGS;
+			}
+			default: {
+				yield ToolType.BOOTS;
+			}
+			};
+		} else {
+			int toolType = level.getRandom().nextInt(4);
+			m = switch (toolType) {
+			case 0: {
+				yield ToolType.PICKAXE;
+			}
+			case 1: {
+				yield ToolType.AXE;
+			}
+			case 2: {
+				yield ToolType.SHOVEL;
+			}
+			default: {
+				yield ToolType.SWORD;
+			}
+			};
 		}
-		case 1: {
-			yield ToolType.AXE;
-		}
-		case 2: {
-			yield ToolType.SHOVEL;
-		}
-		case 3: {
-			yield ToolType.SWORD;
-		}
-		default: {
-			yield ToolType.PICKAXE;
-		}
-		};
 
 		int textureCount = switch (m) {
 		case PICKAXE: {
@@ -757,9 +820,19 @@ public class LootUtils {
 		case SWORD: {
 			yield SWORD_COUNT;
 		}
+		case HELMET:
+		case CHESTPLATE:
+		case LEGGINGS:
+		case BOOTS: {
+			yield ARMOR_SET_COUNT;
+		}
 		default:
 			yield 0;
 		};
+
+		ItemStack lootItem = new ItemStack(m.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
+
+		LootUtils.setStats(lootItem, goodness);
 
 		lootItem = setToolType(lootItem, m);
 

@@ -86,7 +86,7 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
+		return isMiningTool(type) || type.isArmor();
 	}
 
 	@Override

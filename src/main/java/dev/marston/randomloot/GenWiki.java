@@ -91,6 +91,10 @@ public class GenWiki {
         write("These effects are applied when hurting enemies.", f);
         writeMods(ModifierRegistry.HURTERS, f);
 
+        write("## Wearers", f);
+        write("These effects are exclusive to armor and trigger while worn.", f);
+        writeMods(ModifierRegistry.WEARERS, f);
+
         write("## Stats", f);
         write("These effects are used to calculate stats for tools.", f);
         writeMods(ModifierRegistry.STATS, f);
@@ -124,6 +128,7 @@ public class GenWiki {
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
         write("| `goodness_rate` | 1.0 | 0.01-10.0 | Multiplier for tool improvement rate per player |", f);
+        write("| `armorChance` | 0.5 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |", f);
         write("", f);
 
         write("## Modifier Toggles", f);

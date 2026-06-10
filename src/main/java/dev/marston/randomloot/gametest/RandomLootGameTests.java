@@ -7,12 +7,14 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
+import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
@@ -26,11 +28,13 @@ import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.block.Blocks;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.loot.LootModifierManager;
@@ -82,6 +86,10 @@ public final class RandomLootGameTests {
 		register(event, env, "kill_trait_hooks", RandomLootGameTests::killTraitHooks);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
+		register(event, env, "armor_components", RandomLootGameTests::armorComponents);
+		register(event, env, "armor_xp_on_damage", RandomLootGameTests::armorXpOnDamage);
+		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
+		register(event, env, "armor_repairable", RandomLootGameTests::armorRepairable);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -107,14 +115,108 @@ public final class RandomLootGameTests {
 		helper.succeed();
 	}
 
-	/** genTool() produces a real, typed tool with positive goodness (covers the RNG/biome path). */
+	/** genTool() produces a real, typed item with positive goodness (covers the RNG/biome path). */
 	private static void genTool(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		ItemStack tool = LootUtils.genTool(player, helper.getLevel());
 
-		helper.assertTrue(tool.is(ModItems.TOOL.get()), "genTool should produce the RandomLoot tool");
-		helper.assertTrue(LootUtils.getToolType(tool) != ToolType.NULL, "generated tool should have a real tool type");
-		helper.assertTrue(LootUtils.getStats(tool) > 0f, "generated tool should have positive goodness");
+		ToolType type = LootUtils.getToolType(tool);
+		helper.assertTrue(type != ToolType.NULL, "generated item should have a real type");
+		if (type.isArmor()) {
+			helper.assertTrue(tool.is(ModItems.ARMOR.get()), "armor rolls should produce the RandomLoot armor item");
+			helper.assertTrue(tool.get(DataComponents.EQUIPPABLE) != null, "generated armor should be equippable");
+		} else {
+			helper.assertTrue(tool.is(ModItems.TOOL.get()), "tool rolls should produce the RandomLoot tool");
+		}
+		helper.assertTrue(LootUtils.getStats(tool) > 0f, "generated item should have positive goodness");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Building an armor piece wires up the per-stack EQUIPPABLE component (slot + worn
+	 * texture asset) and produces positive defense and durability.
+	 */
+	private static void armorComponents(GameTestHelper helper) {
+		ItemStack helmet = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setStats(helmet, 4.0f);
+		LootUtils.setToolType(helmet, ToolType.HELMET);
+		LootUtils.setTexture(helmet, 3);
+
+		Equippable equippable = helmet.get(DataComponents.EQUIPPABLE);
+		helper.assertTrue(equippable != null, "armor should carry an EQUIPPABLE component after setTexture");
+		helper.assertTrue(equippable.slot() == EquipmentSlot.HEAD, "helmet should equip in the head slot");
+		helper.assertTrue(equippable.assetId().isPresent()
+						&& equippable.assetId().get().identifier().toString().equals("randomloot:set4"),
+				"texture index 3 should map to equipment asset randomloot:set4");
+
+		helper.assertTrue(LootArmorItem.getDefense(helmet, ToolType.HELMET) > 0f,
+				"helmet should have positive defense");
+		helper.assertTrue(helmet.getMaxDamage() > 0, "helmet should have positive durability");
+
+		// Texture cycling wraps within the armor set count and keeps the asset in sync.
+		LootUtils.addTexture(helmet, LootUtils.ARMOR_SET_COUNT - 3);
+		Equippable wrapped = helmet.get(DataComponents.EQUIPPABLE);
+		helper.assertTrue(wrapped != null && wrapped.assetId().isPresent()
+						&& wrapped.assetId().get().identifier().toString().equals("randomloot:set1"),
+				"texture cycling should wrap back to equipment asset randomloot:set1");
+
+		helper.succeed();
+	}
+
+	/** Worn Random Armor gains XP when its wearer takes damage (the armor leveling path). */
+	private static void armorXpOnDamage(GameTestHelper helper) {
+		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
+		LootUtils.setTexture(chest, 0);
+
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
+		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
+
+		helper.hurt(zombie, zombie.damageSources().generic(), 6.0f);
+
+		ItemStack worn = zombie.getItemBySlot(EquipmentSlot.CHEST);
+		helper.assertTrue(LootUtils.getXP(worn) > 0 || LootUtils.getLevel(worn) > 0,
+				"worn armor should gain XP from its wearer taking damage");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Armor enchantment compatibility is filtered per piece via the randomloot enchantment
+	 * tags, mirroring the per-tool-type filtering.
+	 */
+	private static void armorEnchantFiltering(GameTestHelper helper) {
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> protection = enchants.getOrThrow(Enchantments.PROTECTION);
+		Holder<Enchantment> featherFalling = enchants.getOrThrow(Enchantments.FEATHER_FALLING);
+		Holder<Enchantment> respiration = enchants.getOrThrow(Enchantments.RESPIRATION);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+
+		ItemStack helmet = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(helmet, ToolType.HELMET);
+		ItemStack boots = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(boots, ToolType.BOOTS);
+
+		helper.assertTrue(helmet.supportsEnchantment(protection), "helmet should accept protection");
+		helper.assertTrue(boots.supportsEnchantment(protection), "boots should accept protection");
+		helper.assertTrue(helmet.supportsEnchantment(respiration), "helmet should accept respiration");
+		helper.assertFalse(boots.supportsEnchantment(respiration), "boots must not accept respiration");
+		helper.assertTrue(boots.supportsEnchantment(featherFalling), "boots should accept feather falling");
+		helper.assertFalse(helmet.supportsEnchantment(featherFalling), "helmet must not accept feather falling");
+		helper.assertFalse(helmet.supportsEnchantment(sharpness), "armor must not accept sharpness");
+
+		helper.succeed();
+	}
+
+	/** The anvil's material-repair path accepts items from the armor_repair_materials tag. */
+	private static void armorRepairable(GameTestHelper helper) {
+		ItemStack armor = new ItemStack(ModItems.ARMOR.get());
+
+		helper.assertTrue(armor.isValidRepairItem(new ItemStack(Items.DIAMOND)),
+				"diamond should repair Random Armor (armor_repair_materials tag)");
+		helper.assertFalse(armor.isValidRepairItem(new ItemStack(Items.STICK)),
+				"stick should not repair Random Armor");
 
 		helper.succeed();
 	}
