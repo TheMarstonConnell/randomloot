@@ -70,10 +70,12 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Trait | Required Item | Count |
 |-------|---------------|-------|
 | Absorption | `minecraft:golden_apple` | 1 |
+| Adrenaline | `minecraft:sugar` | 16 |
 | Aquatic | `minecraft:prismarine_shard` | 1 |
 | Attracting | `minecraft:iron_block` | 1 |
 | Bezerk | `minecraft:beef` | 16 |
 | Blinding | `minecraft:carrot` | 24 |
+| Bulwark | `minecraft:shield` | 1 |
 | Busted | `minecraft:cracked_stone_bricks` | 3 |
 | Chaotic | `minecraft:amethyst_shard` | 1 |
 | Charged | `minecraft:lightning_rod` | 1 |
@@ -88,6 +90,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Executioner | `minecraft:iron_sword` | 1 |
 | Explode | `minecraft:tnt` | 8 |
 | Feasting | `minecraft:golden_carrot` | 1 |
+| Featherweight | `minecraft:feather` | 16 |
 | Fierce | `minecraft:flint` | 1 |
 | Filling | `minecraft:cake` | 1 |
 | Fire place | `minecraft:flint_and_steel` | 1 |
@@ -102,6 +105,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Learning | `minecraft:book` | 12 |
 | Living | `minecraft:moss_block` | 4 |
 | Lumbering | `minecraft:stripped_oak_log` | 1 |
+| Magnetized | `minecraft:lodestone` | 1 |
 | Melting | `minecraft:lava_bucket` | 1 |
 | Munchies | `minecraft:cookie` | 1 |
 | Naturalist | `minecraft:bone_meal` | 1 |
@@ -117,6 +121,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Scorched | `minecraft:blaze_powder` | 1 |
 | Soulbound | `minecraft:nether_star` | 1 |
 | Spawner | `minecraft:mossy_cobblestone` | 12 |
+| Thorny | `minecraft:cactus` | 4 |
 | Torch place | `minecraft:torch` | 64 |
 | Unbreaking | `minecraft:obsidian` | 8 |
 | Veiny | `minecraft:diamond_pickaxe` | 1 |

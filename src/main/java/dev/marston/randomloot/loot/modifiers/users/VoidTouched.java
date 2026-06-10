@@ -92,7 +92,8 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return true; // All tools
+		// Right-click traits never fire from worn armor.
+		return !type.isArmor();
 	}
 
 	@Override

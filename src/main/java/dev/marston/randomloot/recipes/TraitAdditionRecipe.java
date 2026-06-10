@@ -9,6 +9,7 @@ import javax.annotation.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
+import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -66,14 +67,14 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	public TraitAdditionRecipe(Holder<Item> additionItem, String traitIn) {
 		this.additionItem = additionItem;
 		this.trait = traitIn;
-		this.base = Optional.of(Ingredient.of(ModItems.TOOL.asItem()));
+		this.base = Optional.of(Ingredient.of(ModItems.TOOL.asItem(), ModItems.ARMOR.asItem()));
 		this.template= Optional.of(Ingredient.of(ModItems.MOD_SUB.asItem(), ModItems.MOD_ADD.asItem()));
 	}
 
 	@Override
 	public boolean matches(SmithingRecipeInput input, Level level) {
 
-		if (!input.base().is(ModItems.TOOL.asItem())) {
+		if (!input.base().is(ModItems.TOOL.asItem()) && !input.base().is(ModItems.ARMOR.asItem())) {
 			return false;
 		}
 
@@ -85,6 +86,13 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		// recipe would consume the template + addition while producing an unchanged tool.
 		Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
 		if (modToAdd == null) {
+			return false;
+		}
+
+		// Armor only accepts traits that actually work on its piece type (no Veiny
+		// helmets); tools keep their historical anything-goes smithing freedom.
+		LootItem.ToolType baseType = LootUtils.getToolType(input.base());
+		if (baseType.isArmor() && input.template().is(ModItems.MOD_ADD.asItem()) && !modToAdd.forTool(baseType)) {
 			return false;
 		}
 

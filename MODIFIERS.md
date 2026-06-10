@@ -47,7 +47,7 @@ These effects are applied when holding the tool.
 ### Appley
 **id:** `absorption` | **crafting:** `minecraft:golden_apple` ![golden_apple](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_apple.png)
 
-**Description:** While holding the tool, get the absorption I effect.
+**Description:** While holding or wearing this item, get the absorption I effect.
 ### Aquatic
 **id:** `aquatic` | **crafting:** `minecraft:prismarine_shard` ![prismarine_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/prismarine_shard.png)
 
@@ -59,7 +59,7 @@ These effects are applied when holding the tool.
 ### Detecting
 **id:** `detecting` | **crafting:** `minecraft:spyglass` ![spyglass](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spyglass.png)
 
-**Description:** While holding the tool, ores around you will glow.
+**Description:** While held or worn, ores around you will glow.
 ### Feasting
 **id:** `feasting` | **crafting:** `minecraft:golden_carrot` ![golden_carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/golden_carrot.png)
 
@@ -67,19 +67,19 @@ These effects are applied when holding the tool.
 ### Filling
 **id:** `filling` | **crafting:** `minecraft:cake` ![cake](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cake.png)
 
-**Description:** While holding the tool, get the saturation I effect.
+**Description:** While holding or wearing this item, get the saturation I effect.
 ### Hasty
 **id:** `hasty` | **crafting:** `minecraft:sugar` ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
 
-**Description:** While holding the tool, get the Haste I effect.
+**Description:** While holding or wearing this item, get the Haste I effect.
 ### Healing
 **id:** `regeneration` | **crafting:** `minecraft:glowstone` ![glowstone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glowstone.png)
 
-**Description:** While holding the tool, get the regeneration I effect.
+**Description:** While holding or wearing this item, get the regeneration I effect.
 ### Heat Resistant
 **id:** `fire_resistance` | **crafting:** `minecraft:magma_cream` ![magma_cream](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/magma_cream.png)
 
-**Description:** While holding the tool, get the fire resistance I effect.
+**Description:** While holding or wearing this item, get the fire resistance I effect.
 ### Hunter
 **id:** `hunter` | **crafting:** `minecraft:spider_eye` ![spider_eye](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/spider_eye.png)
 
@@ -87,7 +87,7 @@ These effects are applied when holding the tool.
 ### Living
 **id:** `living` | **crafting:** `minecraft:moss_block` ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
 
-**Description:** While holding, 0.5% chance per tick to repair itself
+**Description:** While held or worn, 0.5% chance per tick to repair itself
 ### Naturalist
 **id:** `naturalist` | **crafting:** `minecraft:bone_meal` ![bone_meal](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/bone_meal.png)
 
@@ -95,15 +95,15 @@ These effects are applied when holding the tool.
 ### Rainy
 **id:** `rainy` | **crafting:** `minecraft:cauldron` ![cauldron](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cauldron.png)
 
-**Description:** While holding the tool in the rain, mine faster!
+**Description:** While holding or wearing this item in the rain, mine faster!
 ### Resistant
 **id:** `resistance` | **crafting:** `minecraft:turtle_scute` ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
 
-**Description:** While holding the tool, get the resistance I effect.
+**Description:** While holding or wearing this item, get the resistance I effect.
 ### Tomb Raider
 **id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
 
-**Description:** While holding the spawners around you will glow.
+**Description:** While held or worn, spawners around you will glow.
 ## Users
 These effects are applied when right clicking.
 ### Fire Starter
@@ -228,6 +228,28 @@ These effects are applied when hurting enemies.
 **id:** `wither` | **crafting:** `minecraft:wither_rose` ![wither_rose](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/wither_rose.png)
 
 **Description:** When attacking with tool, apply the wither I effect to the target for 3 seconds.
+## Wearers
+These effects are exclusive to armor and trigger while worn.
+### Adrenaline
+**id:** `adrenaline` | **crafting:** `minecraft:sugar` ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
+
+**Description:** Taking damage grants speed I for 5 seconds.
+### Bulwark
+**id:** `bulwark` | **crafting:** `minecraft:shield` ![shield](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/shield.png)
+
+**Description:** Has a 10% chance of halving damage taken.
+### Featherweight
+**id:** `featherweight` | **crafting:** `minecraft:feather` ![feather](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/feather.png)
+
+**Description:** Reduces fall damage by 25%.
+### Magnetized
+**id:** `magnetized` | **crafting:** `minecraft:lodestone` ![lodestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lodestone.png)
+
+**Description:** While worn, nearby items are pulled toward you.
+### Thorny
+**id:** `thorny` | **crafting:** `minecraft:cactus` ![cactus](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cactus.png)
+
+**Description:** Reflects 15% of damage taken back at the attacker.
 ## Stats
 These effects are used to calculate stats for tools.
 ### Busted

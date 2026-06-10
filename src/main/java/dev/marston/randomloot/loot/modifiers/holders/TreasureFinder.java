@@ -84,7 +84,7 @@ public class TreasureFinder extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the spawners around you will glow.";
+		return "While held or worn, spawners around you will glow.";
 	}
 
 	@Override

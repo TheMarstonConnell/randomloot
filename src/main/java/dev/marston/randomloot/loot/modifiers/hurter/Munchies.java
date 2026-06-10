@@ -93,7 +93,8 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return true; // Works with all tool types
+		// Its payoff lives in tool-only hooks, so on armor it would be a confusing no-op.
+		return !type.isArmor();
 	}
 
 	private void tryConsumeHunger(LivingEntity entity) {

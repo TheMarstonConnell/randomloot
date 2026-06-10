@@ -114,6 +114,16 @@ public interface Modifier {
 		return true;
 	}
 
+	/**
+	 * Returns the variant of this modifier for the given world, or {@code this} when the
+	 * modifier has no world-dependent state. Used by traits with world-constant flavor
+	 * (e.g. DirtPlace's "&lt;Forger&gt;'s Grace" name) so the same world always produces
+	 * the same variant.
+	 */
+	default Modifier forWorld(long worldSeed) {
+		return this;
+	}
+
 	default boolean canLevel() {
 		return false;
 	}

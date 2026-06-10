@@ -47,6 +47,35 @@ public class NameGenerator {
 		return list[random.nextInt(list.length)];
 	}
 
+	/**
+	 * The world's resident forger for a temperature band. Forgers are world-constant:
+	 * a given world always credits hot-biome gear to the same smith, while different
+	 * worlds roll different smiths. Each band salts the seed differently so one world
+	 * doesn't land on the same list index for all three bands.
+	 */
+	public static String forgerForWorld(long worldSeed, float temp) {
+		String[] list = TemperateNames;
+		long salt = 0x9E3779B97F4A7C15L;
+
+		if (temp <= 0.1f) {
+			list = ColdNames;
+			salt = 0xC2B2AE3D27D4EB4FL;
+		} else if (temp >= 1) {
+			list = HotNames;
+			salt = 0x165667B19E3779F9L;
+		}
+
+		// SplitMix64-style mix so neighboring seeds don't pick neighboring names.
+		long h = worldSeed ^ salt;
+		h ^= h >>> 30;
+		h *= 0xBF58476D1CE4E5B9L;
+		h ^= h >>> 27;
+		h *= 0x94D049BB133111EBL;
+		h ^= h >>> 31;
+
+		return list[(int) Math.floorMod(h, list.length)];
+	}
+
 	public static final String getAdj(RandomSource random, float temp, boolean raining) {
 		String[] list = TemperateAdj;
 

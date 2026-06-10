@@ -1,0 +1,8 @@
+{
+  "type": "randomloot:trait_change",
+  "item": {
+    "count": 1,
+    "id": "minecraft:shield"
+  },
+  "trait": "bulwark"
+}

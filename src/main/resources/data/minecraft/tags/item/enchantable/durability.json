@@ -1,4 +1,4 @@
 {
   "replace": false,
-  "values": ["randomloot:tool"]
+  "values": ["randomloot:tool", "randomloot:armor"]
 }

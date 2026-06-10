@@ -83,12 +83,12 @@ public class OreFinder extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding the tool, ores around you will glow.";
+		return "While held or worn, ores around you will glow.";
 	}
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
+		return isMiningTool(type) || type.isArmor();
 	}
 
 	@SubscribeEvent

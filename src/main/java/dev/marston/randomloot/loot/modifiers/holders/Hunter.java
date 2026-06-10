@@ -63,7 +63,7 @@ public class Hunter extends AbstractModifier implements HoldModifier {
 
     @Override
     public boolean forTool(ToolType type) {
-        return type.equals(ToolType.SWORD);
+        return type.equals(ToolType.SWORD) || type.isArmor();
     }
 
     @Override

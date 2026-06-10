@@ -1,0 +1,433 @@
+{
+    "model": {
+        "type": "minecraft:range_dispatch",
+        "property": "randomloot:cosmetic",
+        "scale": 1,
+        "fallback": {
+            "type": "minecraft:model",
+            "model": "randomloot:item/armor"
+        },
+        "entries": [
+            {
+                "threshold": 0.5,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/1"
+                }
+            },
+            {
+                "threshold": 0.5001,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/2"
+                }
+            },
+            {
+                "threshold": 0.5002,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/3"
+                }
+            },
+            {
+                "threshold": 0.5003,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/4"
+                }
+            },
+            {
+                "threshold": 0.5004,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/5"
+                }
+            },
+            {
+                "threshold": 0.5005,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/6"
+                }
+            },
+            {
+                "threshold": 0.5006,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/7"
+                }
+            },
+            {
+                "threshold": 0.5007,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/8"
+                }
+            },
+            {
+                "threshold": 0.5008,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/9"
+                }
+            },
+            {
+                "threshold": 0.5009,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/10"
+                }
+            },
+            {
+                "threshold": 0.501,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/11"
+                }
+            },
+            {
+                "threshold": 0.5011,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/12"
+                }
+            },
+            {
+                "threshold": 0.5012,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/13"
+                }
+            },
+            {
+                "threshold": 0.5013,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/14"
+                }
+            },
+            {
+                "threshold": 0.5014,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/15"
+                }
+            },
+            {
+                "threshold": 0.6,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/1"
+                }
+            },
+            {
+                "threshold": 0.6001,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/2"
+                }
+            },
+            {
+                "threshold": 0.6002,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/3"
+                }
+            },
+            {
+                "threshold": 0.6003,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/4"
+                }
+            },
+            {
+                "threshold": 0.6004,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/5"
+                }
+            },
+            {
+                "threshold": 0.6005,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/6"
+                }
+            },
+            {
+                "threshold": 0.6006,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/7"
+                }
+            },
+            {
+                "threshold": 0.6007,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/8"
+                }
+            },
+            {
+                "threshold": 0.6008,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/9"
+                }
+            },
+            {
+                "threshold": 0.6009,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/10"
+                }
+            },
+            {
+                "threshold": 0.601,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/11"
+                }
+            },
+            {
+                "threshold": 0.6011,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/12"
+                }
+            },
+            {
+                "threshold": 0.6012,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/13"
+                }
+            },
+            {
+                "threshold": 0.6013,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/14"
+                }
+            },
+            {
+                "threshold": 0.6014,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/15"
+                }
+            },
+            {
+                "threshold": 0.7,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/1"
+                }
+            },
+            {
+                "threshold": 0.7001,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/2"
+                }
+            },
+            {
+                "threshold": 0.7002,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/3"
+                }
+            },
+            {
+                "threshold": 0.7003,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/4"
+                }
+            },
+            {
+                "threshold": 0.7004,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/5"
+                }
+            },
+            {
+                "threshold": 0.7005,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/6"
+                }
+            },
+            {
+                "threshold": 0.7006,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/7"
+                }
+            },
+            {
+                "threshold": 0.7007,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/8"
+                }
+            },
+            {
+                "threshold": 0.7008,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/9"
+                }
+            },
+            {
+                "threshold": 0.7009,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/10"
+                }
+            },
+            {
+                "threshold": 0.701,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/11"
+                }
+            },
+            {
+                "threshold": 0.7011,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/12"
+                }
+            },
+            {
+                "threshold": 0.7012,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/13"
+                }
+            },
+            {
+                "threshold": 0.7013,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/14"
+                }
+            },
+            {
+                "threshold": 0.7014,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/15"
+                }
+            },
+            {
+                "threshold": 0.8,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/1"
+                }
+            },
+            {
+                "threshold": 0.8001,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/2"
+                }
+            },
+            {
+                "threshold": 0.8002,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/3"
+                }
+            },
+            {
+                "threshold": 0.8003,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/4"
+                }
+            },
+            {
+                "threshold": 0.8004,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/5"
+                }
+            },
+            {
+                "threshold": 0.8005,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/6"
+                }
+            },
+            {
+                "threshold": 0.8006,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/7"
+                }
+            },
+            {
+                "threshold": 0.8007,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/8"
+                }
+            },
+            {
+                "threshold": 0.8008,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/9"
+                }
+            },
+            {
+                "threshold": 0.8009,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/10"
+                }
+            },
+            {
+                "threshold": 0.801,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/11"
+                }
+            },
+            {
+                "threshold": 0.8011,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/12"
+                }
+            },
+            {
+                "threshold": 0.8012,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/13"
+                }
+            },
+            {
+                "threshold": 0.8013,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/14"
+                }
+            },
+            {
+                "threshold": 0.8014,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/15"
+                }
+            }
+        ]
+    }
+}

@@ -53,7 +53,7 @@ import java.util.function.Consumer;
 public class LootItem extends Item  {
 
 	public enum ToolType {
-		PICKAXE, SHOVEL, AXE, SWORD, NULL;
+		PICKAXE, SHOVEL, AXE, SWORD, HELMET, CHESTPLATE, LEGGINGS, BOOTS, NULL;
 
 		@Override
 		public String toString() {
@@ -62,6 +62,10 @@ public class LootItem extends Item  {
                 case SHOVEL -> "Shovel";
                 case AXE -> "Axe";
                 case SWORD -> "Sword";
+                case HELMET -> "Helmet";
+                case CHESTPLATE -> "Chestplate";
+                case LEGGINGS -> "Leggings";
+                case BOOTS -> "Boots";
                 default -> "Null";
             };
 		}
@@ -70,6 +74,22 @@ public class LootItem extends Item  {
 		public Component displayName() {
 			return Component.translatableWithFallback(
 					"tooltip.randomloot.type." + name().toLowerCase(Locale.ROOT), toString());
+		}
+
+		/** True for the four wearable piece types. */
+		public boolean isArmor() {
+			return this == HELMET || this == CHESTPLATE || this == LEGGINGS || this == BOOTS;
+		}
+
+		/** The equipment slot an armor piece occupies, or null for hand tools. */
+		public EquipmentSlot armorSlot() {
+			return switch (this) {
+				case HELMET -> EquipmentSlot.HEAD;
+				case CHESTPLATE -> EquipmentSlot.CHEST;
+				case LEGGINGS -> EquipmentSlot.LEGS;
+				case BOOTS -> EquipmentSlot.FEET;
+				default -> null;
+			};
 		}
 	}
 
@@ -85,6 +105,9 @@ public class LootItem extends Item  {
 		// crafting-table takes are the texture-change recipe, which doesn't
 		// alter traits.
 		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
+			if (player.level() instanceof ServerLevel serverLevel) {
+				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
+			}
 			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
 		}
 	}

@@ -63,6 +63,12 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	}
 
 	@Override
+	public Modifier forWorld(long worldSeed) {
+		// 0.5f lands in the temperate band, matching the random roll this replaces.
+		return new DirtPlace(NameGenerator.forgerForWorld(worldSeed, 0.5f) + "'s Grace", this.damage);
+	}
+
+	@Override
 	public String tagName() {
 		return "dirt_place";
 	}
@@ -155,7 +161,8 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return true;
+		// Right-click traits never fire from worn armor.
+		return !type.isArmor();
 	}
 
 	@Override

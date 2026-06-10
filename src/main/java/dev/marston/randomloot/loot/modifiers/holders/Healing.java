@@ -84,7 +84,7 @@ public class Healing extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public String description() {
-		return "While holding, " + String.format("%.1f", getPower() * 100) + "% chance per tick to repair itself";
+		return "While held or worn, " + String.format("%.1f", getPower() * 100) + "% chance per tick to repair itself";
 	}
 
 	@Override

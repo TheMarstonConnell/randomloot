@@ -1,6 +1,7 @@
 package dev.marston.randomloot.recipes;
 
 import com.mojang.serialization.MapCodec;
+import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -18,9 +19,14 @@ import java.util.function.Predicate;
 public class TextureChangeRecipe extends CustomRecipe {
 	private static final Item ingredient = Items.AMETHYST_SHARD;
 	private static final List<Predicate<ItemStack>> ITEM_PREDICATES = List.of(
-			stack -> stack.getItem() instanceof LootItem,
+			TextureChangeRecipe::isLootGear,
 			stack -> stack.getItem().equals(ingredient)
 	);
+
+	/** Tools and armor both support cosmetic texture cycling. */
+	private static boolean isLootGear(ItemStack stack) {
+		return stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem;
+	}
 	private static final Ingredient CHANGE_TEXTURE_INGREDIENT = Ingredient.of(ingredient);
 
 
@@ -46,7 +52,7 @@ public class TextureChangeRecipe extends CustomRecipe {
 				continue;
 			}
 
-			if (item.getItem() instanceof LootItem) {
+			if (isLootGear(item)) {
 				if (hasTool) {
 					return false;
 				}
@@ -75,7 +81,7 @@ public class TextureChangeRecipe extends CustomRecipe {
 				continue;
 			}
 
-            if (item.getItem() instanceof LootItem) {
+            if (isLootGear(item)) {
                 result = LootUtils.CloneItem(item);
 				continue;
             }
