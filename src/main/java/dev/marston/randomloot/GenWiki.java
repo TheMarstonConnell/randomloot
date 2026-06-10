@@ -484,17 +484,36 @@ public class GenWiki {
     }
 
     /**
-     * Generates assets/randomloot/lang/en_us.json from the modifier registry, so trait
+     * Regenerates assets/randomloot/lang/en_us.json from the modifier registry, so trait
      * translation keys never drift from the code the way the hand-maintained file did.
+     *
+     * <p>Existing entries the generator doesn't know about (advancements, future
+     * hand-added keys) are preserved: the generated entries are merged OVER the current
+     * file instead of replacing it. A from-scratch rewrite once silently deleted every
+     * advancement title, which then displayed as raw translation keys in game.
      *
      * <p>Leveling traits deliberately get no description entry: their description() bakes
      * in live power/duration values, so the dynamic English fallback in
      * {@code Modifier#displayDescription()} is more accurate than a frozen level-0 string.
      */
     private static void writeLang() throws IOException {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        File langFile = repoFile("src/main/resources/assets/randomloot/lang/en_us.json");
+
         Map<String, String> entries = new TreeMap<>();
 
+        // Start from the current file so hand-maintained keys survive regeneration.
+        if (langFile.isFile()) {
+            try (FileReader r = new FileReader(langFile)) {
+                JsonObject existing = gson.fromJson(r, JsonObject.class);
+                for (Map.Entry<String, JsonElement> e : existing.entrySet()) {
+                    entries.put(e.getKey(), e.getValue().getAsString());
+                }
+            }
+        }
+
         entries.put("item.randomloot.tool", "Random Tool");
+        entries.put("item.randomloot.armor", "Random Armor");
         entries.put("item.randomloot.case", "Loot Case");
         entries.put("item.randomloot.mod_add", "Trait Addition Template");
         entries.put("item.randomloot.mod_sub", "Trait Subtraction Template");
@@ -503,12 +522,18 @@ public class GenWiki {
         entries.put("tooltip.randomloot.xp", "XP: %s / %s");
         entries.put("tooltip.randomloot.speed", "Speed: %s");
         entries.put("tooltip.randomloot.damage", "Damage: %s");
+        entries.put("tooltip.randomloot.armor", "Armor: %s");
+        entries.put("tooltip.randomloot.toughness", "Toughness: %s");
         entries.put("tooltip.randomloot.shift_hint", "[Shift for more]");
         entries.put("tooltip.randomloot.ctrl_hint", "[Ctrl for trait info]");
         entries.put("tooltip.randomloot.type.pickaxe", "Pickaxe");
         entries.put("tooltip.randomloot.type.shovel", "Shovel");
         entries.put("tooltip.randomloot.type.axe", "Axe");
         entries.put("tooltip.randomloot.type.sword", "Sword");
+        entries.put("tooltip.randomloot.type.helmet", "Helmet");
+        entries.put("tooltip.randomloot.type.chestplate", "Chestplate");
+        entries.put("tooltip.randomloot.type.leggings", "Leggings");
+        entries.put("tooltip.randomloot.type.boots", "Boots");
 
         for (Modifier mod : ModifierRegistry.getModifiers().values()) {
             if (!mod.hasDynamicName()) {
@@ -519,8 +544,7 @@ public class GenWiki {
             }
         }
 
-        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-        try (FileWriter f = new FileWriter("../src/main/resources/assets/randomloot/lang/en_us.json")) {
+        try (FileWriter f = new FileWriter(langFile)) {
             gson.toJson(entries, f);
             f.write("\n");
         }
