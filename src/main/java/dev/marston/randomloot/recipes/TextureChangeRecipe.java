@@ -1,14 +1,13 @@
 package dev.marston.randomloot.recipes;
 
 import com.mojang.serialization.MapCodec;
+import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
@@ -17,17 +16,21 @@ import java.util.List;
 import java.util.function.Predicate;
 
 public class TextureChangeRecipe extends CustomRecipe {
-	private static final Item ingredient = Items.AMETHYST_SHARD;
 	private static final List<Predicate<ItemStack>> ITEM_PREDICATES = List.of(
 			TextureChangeRecipe::isLootGear,
-			stack -> stack.getItem().equals(ingredient)
+			TextureChangeRecipe::isEssence
 	);
 
 	/** Tools and armor both support cosmetic texture cycling. */
 	private static boolean isLootGear(ItemStack stack) {
 		return stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem;
 	}
-	private static final Ingredient CHANGE_TEXTURE_INGREDIENT = Ingredient.of(ingredient);
+
+	// Resolved per-call rather than in a static Ingredient so this class never
+	// touches the item registry during class load.
+	private static boolean isEssence(ItemStack stack) {
+		return stack.is(ModItems.ESSENCE.get());
+	}
 
 
 
@@ -60,13 +63,13 @@ public class TextureChangeRecipe extends CustomRecipe {
 				continue;
 			}
 
-			if (!CHANGE_TEXTURE_INGREDIENT.test(item)) {
+			if (!isEssence(item)) {
 				return false;
 			}
 		}
 
-		// Require an actual tool: matches() must not pass on shards alone, or it would
-		// shadow vanilla amethyst recipes and assemble() would return EMPTY.
+		// Require an actual tool: matches() must not pass on essence alone, or
+		// assemble() would return EMPTY.
 		return hasTool;
 	}
 
@@ -87,7 +90,7 @@ public class TextureChangeRecipe extends CustomRecipe {
             }
 
 
-			if (CHANGE_TEXTURE_INGREDIENT.test(item)) {
+			if (isEssence(item)) {
 				modCount++;
 			}
 
