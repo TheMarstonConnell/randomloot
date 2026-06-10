@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "spawned_bee": {
+      "conditions": {
+        "trait": "haileys_wrath"
+      },
+      "trigger": "randomloot:trait_used"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.beekeeper.description"
+    },
+    "icon": {
+      "id": "minecraft:bee_nest"
+    },
+    "title": {
+      "translate": "advancements.randomloot.beekeeper.title"
+    }
+  },
+  "requirements": [
+    [
+      "spawned_bee"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

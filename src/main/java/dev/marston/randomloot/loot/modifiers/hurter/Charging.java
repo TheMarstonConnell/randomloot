@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -108,6 +109,8 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 
 
 			level.addFreshEntity(lb);
+
+			ModCriteria.traitUsed(hurter, this);
 
 			this.charged = time;
 			LootUtils.updateModifier(itemstack, this);

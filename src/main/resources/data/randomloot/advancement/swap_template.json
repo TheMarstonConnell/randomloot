@@ -1,0 +1,32 @@
+{
+  "parent": "randomloot:get_template",
+  "criteria": {
+    "has_sub_template": {
+      "conditions": {
+        "items": [
+          {
+            "items": "randomloot:mod_sub"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.swap_template.description"
+    },
+    "icon": {
+      "id": "randomloot:mod_sub"
+    },
+    "title": {
+      "translate": "advancements.randomloot.swap_template.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_sub_template"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

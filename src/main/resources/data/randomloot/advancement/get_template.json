@@ -1,0 +1,32 @@
+{
+  "parent": "randomloot:root",
+  "criteria": {
+    "has_template": {
+      "conditions": {
+        "items": [
+          {
+            "items": "randomloot:mod_add"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.get_template.description"
+    },
+    "icon": {
+      "id": "randomloot:mod_add"
+    },
+    "title": {
+      "translate": "advancements.randomloot.get_template.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_template"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

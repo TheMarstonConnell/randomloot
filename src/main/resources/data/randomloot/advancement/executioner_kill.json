@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "executed": {
+      "conditions": {
+        "trait": "executioner"
+      },
+      "trigger": "randomloot:trait_used"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.executioner_kill.description"
+    },
+    "icon": {
+      "id": "minecraft:iron_axe"
+    },
+    "title": {
+      "translate": "advancements.randomloot.executioner_kill.title"
+    }
+  },
+  "requirements": [
+    [
+      "executed"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

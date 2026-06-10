@@ -1,0 +1,56 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "got_aquatic": {
+      "conditions": {
+        "trait": "aquatic"
+      },
+      "trigger": "randomloot:trait_obtained"
+    },
+    "got_scorched": {
+      "conditions": {
+        "trait": "scorched"
+      },
+      "trigger": "randomloot:trait_obtained"
+    },
+    "got_frozen": {
+      "conditions": {
+        "trait": "frozen"
+      },
+      "trigger": "randomloot:trait_obtained"
+    },
+    "got_overgrown": {
+      "conditions": {
+        "trait": "overgrown"
+      },
+      "trigger": "randomloot:trait_obtained"
+    },
+    "got_void_touched": {
+      "conditions": {
+        "trait": "void_touched"
+      },
+      "trigger": "randomloot:trait_obtained"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.biome_trait.description"
+    },
+    "icon": {
+      "id": "minecraft:map"
+    },
+    "title": {
+      "translate": "advancements.randomloot.biome_trait.title"
+    }
+  },
+  "requirements": [
+    [
+      "got_aquatic",
+      "got_scorched",
+      "got_frozen",
+      "got_overgrown",
+      "got_void_touched"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

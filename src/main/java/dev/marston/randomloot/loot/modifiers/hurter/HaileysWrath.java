@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -78,6 +79,7 @@ public class HaileysWrath extends AbstractModifier implements EntityHurtModifier
             if (bee != null) {
                 bee.setPos(hurtee.getX(), hurtee.getY(), hurtee.getZ());
                 level.addFreshEntity(bee);
+                ModCriteria.traitUsed(hurter, this);
             }
         }
 

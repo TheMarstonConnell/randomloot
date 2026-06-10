@@ -1,0 +1,56 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "got_pickaxe": {
+      "conditions": {
+        "tool_type": "pickaxe"
+      },
+      "trigger": "randomloot:case_opened"
+    },
+    "got_shovel": {
+      "conditions": {
+        "tool_type": "shovel"
+      },
+      "trigger": "randomloot:case_opened"
+    },
+    "got_axe": {
+      "conditions": {
+        "tool_type": "axe"
+      },
+      "trigger": "randomloot:case_opened"
+    },
+    "got_sword": {
+      "conditions": {
+        "tool_type": "sword"
+      },
+      "trigger": "randomloot:case_opened"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.all_tool_types.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:armor_stand"
+    },
+    "title": {
+      "translate": "advancements.randomloot.all_tool_types.title"
+    }
+  },
+  "requirements": [
+    [
+      "got_pickaxe"
+    ],
+    [
+      "got_shovel"
+    ],
+    [
+      "got_axe"
+    ],
+    [
+      "got_sword"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

@@ -22,6 +22,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -73,6 +74,7 @@ public final class RandomLootGameTests {
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
+		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 	}
@@ -141,6 +143,27 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Every shipped advancement parsed and loaded. A malformed advancement JSON (or an
+	 * unregistered criterion trigger id) is silently dropped at datapack load with only a
+	 * log line, so this is the regression net for the whole advancement tab.
+	 */
+	private static void advancementsLoad(GameTestHelper helper) {
+		ServerAdvancementManager advancements = helper.getLevel().getServer().getAdvancements();
+
+		String[] ids = { "root", "open_case", "open_cases_10", "open_cases_25", "all_tool_types",
+				"tool_level_1", "tool_level_5", "tool_level_10", "get_template", "swap_template",
+				"add_trait", "trait_count_4", "biome_trait", "void_teleport", "executioner_kill",
+				"lightning_strike", "beekeeper" };
+
+		for (String id : ids) {
+			helper.assertTrue(advancements.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id)) != null,
+					"advancement " + id + " should be loaded");
+		}
 
 		helper.succeed();
 	}

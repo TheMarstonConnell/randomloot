@@ -1,0 +1,30 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "leveled": {
+      "conditions": {
+        "level": {
+          "min": 1
+        }
+      },
+      "trigger": "randomloot:tool_leveled"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.tool_level_1.description"
+    },
+    "icon": {
+      "id": "minecraft:experience_bottle"
+    },
+    "title": {
+      "translate": "advancements.randomloot.tool_level_1.title"
+    }
+  },
+  "requirements": [
+    [
+      "leveled"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

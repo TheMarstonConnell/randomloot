@@ -1,6 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -108,6 +109,8 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
             } else {
                 hurtee.hurt(hurter.damageSources().mobAttack(hurter), Float.MAX_VALUE);
             }
+
+            ModCriteria.traitUsed(hurter, this);
             
             if (hurtee.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(

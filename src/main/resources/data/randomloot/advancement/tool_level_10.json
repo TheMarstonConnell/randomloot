@@ -1,0 +1,31 @@
+{
+  "parent": "randomloot:tool_level_5",
+  "criteria": {
+    "leveled": {
+      "conditions": {
+        "level": {
+          "min": 10
+        }
+      },
+      "trigger": "randomloot:tool_leveled"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.tool_level_10.description"
+    },
+    "frame": "challenge",
+    "icon": {
+      "id": "minecraft:nether_star"
+    },
+    "title": {
+      "translate": "advancements.randomloot.tool_level_10.title"
+    }
+  },
+  "requirements": [
+    [
+      "leveled"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

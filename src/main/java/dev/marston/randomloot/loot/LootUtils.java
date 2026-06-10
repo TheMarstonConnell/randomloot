@@ -4,6 +4,8 @@ import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.advancements.ModCriteria;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
@@ -227,10 +229,16 @@ public class LootUtils {
 
 		int max = getMaxXP(level);
 
+		boolean leveled = false;
 		while (xp >= max) {
 			xp = xp - max;
 			level++;
 			levelUp(item, holder);
+			leveled = true;
+		}
+
+		if (leveled) {
+			ModCriteria.toolLeveled(holder, level);
 		}
 
 		tag.putInt("level", level);
@@ -777,6 +785,12 @@ public class LootUtils {
 	public static boolean generateTool(ServerPlayer player, Level level) {
 
 		ItemStack lootItem = genTool(player, level);
+
+		// The ITEM_USED stat for the case is awarded after this runs, so +1
+		// counts the case being opened right now.
+		int casesOpened = player.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())) + 1;
+		ModCriteria.caseOpened(player, casesOpened, getToolType(lootItem));
+		ModCriteria.traitsObtained(player, lootItem, TraitObtainedTrigger.SOURCE_GENERATED);
 
 		boolean added = player.getInventory().add(lootItem);
 		if (!added) {

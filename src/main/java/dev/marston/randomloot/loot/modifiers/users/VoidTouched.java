@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -125,6 +126,8 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 
 			player.getItemInHand(hand).hurtAndBreak(10, player, EquipmentSlot.MAINHAND);
 			player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
+
+			ModCriteria.traitUsed(player, this);
 		}
 
 		return true;
