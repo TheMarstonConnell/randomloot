@@ -1,0 +1,35 @@
+{
+  "parent": "randomloot:salvage_gear",
+  "criteria": {
+    "crafted_case": {
+      "conditions": {
+        "recipe_id": "randomloot:case_from_essence"
+      },
+      "trigger": "minecraft:recipe_crafted"
+    },
+    "crafter_crafted_case": {
+      "conditions": {
+        "recipe_id": "randomloot:case_from_essence"
+      },
+      "trigger": "minecraft:crafter_recipe_crafted"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.craft_case.description"
+    },
+    "icon": {
+      "id": "randomloot:case"
+    },
+    "title": {
+      "translate": "advancements.randomloot.craft_case.title"
+    }
+  },
+  "requirements": [
+    [
+      "crafted_case",
+      "crafter_crafted_case"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

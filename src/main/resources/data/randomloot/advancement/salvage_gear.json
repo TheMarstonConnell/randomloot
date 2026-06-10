@@ -1,0 +1,32 @@
+{
+  "parent": "randomloot:root",
+  "criteria": {
+    "has_essence": {
+      "conditions": {
+        "items": [
+          {
+            "items": "randomloot:essence"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.salvage_gear.description"
+    },
+    "icon": {
+      "id": "randomloot:essence"
+    },
+    "title": {
+      "translate": "advancements.randomloot.salvage_gear.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_essence"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

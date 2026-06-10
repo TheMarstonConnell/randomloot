@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:smelting",
+  "category": "misc",
+  "cookingtime": 200,
+  "experience": 0.7,
+  "group": "randomloot_essence",
+  "ingredient": "randomloot:tool",
+  "result": {
+    "id": "randomloot:essence"
+  }
+}

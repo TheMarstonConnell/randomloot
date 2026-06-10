@@ -37,6 +37,9 @@ public class ModItems {
     public static DeferredItem<Item> CASE = ITEMS.registerItem("case", LootCase::new);
     public static DeferredItem<Item> MOD_ADD = ITEMS.registerItem("mod_add", p -> new ModTemplate(p, true));
     public static DeferredItem<Item> MOD_SUB = ITEMS.registerItem("mod_sub", p -> new ModTemplate(p, false));
+    // Salvage material smelted from Random Tools and Random Armor; also the
+    // crafting-grid ingredient for cycling loot gear textures.
+    public static DeferredItem<Item> ESSENCE = ITEMS.registerItem("essence", Item::new);
 
 
     public static void register(IEventBus eventBus) {
@@ -50,6 +53,7 @@ public class ModItems {
             event.accept(CASE);
             event.accept(MOD_ADD);
             event.accept(MOD_SUB);
+            event.accept(ESSENCE);
         }
     }
 }
