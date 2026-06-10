@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "struck": {
+      "conditions": {
+        "trait": "charged"
+      },
+      "trigger": "randomloot:trait_used"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.lightning_strike.description"
+    },
+    "icon": {
+      "id": "minecraft:lightning_rod"
+    },
+    "title": {
+      "translate": "advancements.randomloot.lightning_strike.title"
+    }
+  },
+  "requirements": [
+    [
+      "struck"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

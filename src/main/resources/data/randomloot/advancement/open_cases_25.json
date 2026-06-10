@@ -1,0 +1,31 @@
+{
+  "parent": "randomloot:open_cases_10",
+  "criteria": {
+    "opened_25": {
+      "conditions": {
+        "count": {
+          "min": 25
+        }
+      },
+      "trigger": "randomloot:case_opened"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.open_cases_25.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:ender_chest"
+    },
+    "title": {
+      "translate": "advancements.randomloot.open_cases_25.title"
+    }
+  },
+  "requirements": [
+    [
+      "opened_25"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

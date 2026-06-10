@@ -1,0 +1,31 @@
+{
+  "parent": "randomloot:tool_level_1",
+  "criteria": {
+    "leveled": {
+      "conditions": {
+        "level": {
+          "min": 5
+        }
+      },
+      "trigger": "randomloot:tool_leveled"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.tool_level_5.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:enchanted_book"
+    },
+    "title": {
+      "translate": "advancements.randomloot.tool_level_5.title"
+    }
+  },
+  "requirements": [
+    [
+      "leveled"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

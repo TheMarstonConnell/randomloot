@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:get_template",
+  "criteria": {
+    "smithed_trait": {
+      "conditions": {
+        "source": "crafted"
+      },
+      "trigger": "randomloot:trait_obtained"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.add_trait.description"
+    },
+    "icon": {
+      "id": "minecraft:smithing_table"
+    },
+    "title": {
+      "translate": "advancements.randomloot.add_trait.title"
+    }
+  },
+  "requirements": [
+    [
+      "smithed_trait"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

@@ -22,7 +22,11 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -73,6 +77,9 @@ public final class RandomLootGameTests {
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
+		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
+		register(event, env, "xp_level_curve", RandomLootGameTests::xpLevelCurve);
+		register(event, env, "kill_trait_hooks", RandomLootGameTests::killTraitHooks);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 	}
@@ -141,6 +148,77 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Kill traits fire through the LivingDeathEvent dispatcher. Hailey's Wrath spawns a
+	 * bee and Nemesis records the kill on the tool's NBT. The regression was both traits
+	 * checking victim health inside hurtEnemy, which never sees indirect kills and made
+	 * Hailey's Wrath effectively dead.
+	 */
+	private static void killTraitHooks(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.SWORD);
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(zombie, player.damageSources().playerAttack(player), 1000.0f);
+
+		helper.assertTrue(zombie.isDeadOrDying(), "zombie should die to the test hit");
+		helper.assertEntityPresent(EntityType.BEE);
+
+		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
+				.filter(m -> m.tagName().equals("nemesis")).findFirst().orElse(null);
+		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
+		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
+
+		helper.succeed();
+	}
+
+	/**
+	 * A single XP dump crosses each level threshold at that level's own cost. Level 0->1
+	 * costs 500 and 1->2 costs 1000, so 1600 XP lands at exactly level 2 with 100 left
+	 * over. The regression was the loop reusing the starting level's threshold, which
+	 * turned the same 1600 XP into three 500-cost levels.
+	 */
+	private static void xpLevelCurve(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.PICKAXE);
+
+		LootUtils.addXp(tool, player, 1600);
+
+		helper.assertTrue(LootUtils.getLevel(tool) == 2,
+				"1600 XP should reach exactly level 2, got " + LootUtils.getLevel(tool));
+		helper.assertTrue(LootUtils.getXP(tool) == 100,
+				"100 XP should remain after leveling, got " + LootUtils.getXP(tool));
+
+		helper.succeed();
+	}
+
+	/**
+	 * Every shipped advancement parsed and loaded. A malformed advancement JSON (or an
+	 * unregistered criterion trigger id) is silently dropped at datapack load with only a
+	 * log line, so this is the regression net for the whole advancement tab.
+	 */
+	private static void advancementsLoad(GameTestHelper helper) {
+		ServerAdvancementManager advancements = helper.getLevel().getServer().getAdvancements();
+
+		String[] ids = { "root", "open_case", "open_cases_10", "open_cases_25", "all_tool_types",
+				"tool_level_1", "tool_level_5", "tool_level_10", "get_template", "swap_template",
+				"add_trait", "trait_count_4", "biome_trait", "void_teleport", "executioner_kill",
+				"lightning_strike", "beekeeper" };
+
+		for (String id : ids) {
+			helper.assertTrue(advancements.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id)) != null,
+					"advancement " + id + " should be loaded");
+		}
 
 		helper.succeed();
 	}

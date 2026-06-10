@@ -2,6 +2,8 @@ package dev.marston.randomloot.loot;
 
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.advancements.ModCriteria;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -31,6 +33,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -73,6 +76,17 @@ public class LootItem extends Item  {
 
 	public LootItem(Properties p) {
 		super(p.stacksTo(1).durability(100));
+	}
+
+	@Override
+	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
+		super.onCraftedBy(stack, player);
+		// Taking a tool out of a smithing table means a trait recipe ran;
+		// crafting-table takes are the texture-change recipe, which doesn't
+		// alter traits.
+		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
+			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
+		}
 	}
 
 	public static float getDigSpeed(ItemStack stack, ToolType type) {

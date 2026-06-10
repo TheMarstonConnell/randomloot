@@ -1,0 +1,25 @@
+{
+  "parent": "randomloot:root",
+  "criteria": {
+    "opened_case": {
+      "trigger": "randomloot:case_opened"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.open_case.description"
+    },
+    "icon": {
+      "id": "randomloot:tool"
+    },
+    "title": {
+      "translate": "advancements.randomloot.open_case.title"
+    }
+  },
+  "requirements": [
+    [
+      "opened_case"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

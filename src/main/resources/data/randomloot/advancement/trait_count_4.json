@@ -1,0 +1,31 @@
+{
+  "parent": "randomloot:add_trait",
+  "criteria": {
+    "four_traits": {
+      "conditions": {
+        "count": {
+          "min": 4
+        }
+      },
+      "trigger": "randomloot:trait_obtained"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.trait_count_4.description"
+    },
+    "frame": "goal",
+    "icon": {
+      "id": "minecraft:beacon"
+    },
+    "title": {
+      "translate": "advancements.randomloot.trait_count_4.title"
+    }
+  },
+  "requirements": [
+    [
+      "four_traits"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

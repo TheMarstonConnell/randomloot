@@ -1,9 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
-import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -16,7 +17,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class HaileysWrath extends AbstractModifier implements EntityHurtModifier {
+public class HaileysWrath extends AbstractModifier implements EntityKillModifier {
 
     public HaileysWrath() {
         this.name = "Hailey's Wrath";
@@ -64,23 +65,19 @@ public class HaileysWrath extends AbstractModifier implements EntityHurtModifier
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        Level level = hurtee.level();
-        if (level.isClientSide()) {
-            return false;
+    public void onKill(ItemStack itemstack, LivingEntity victim, LivingEntity killer) {
+        Level level = victim.level();
+        if (!(level instanceof ServerLevel serverLevel)) {
+            return;
         }
 
-        // Check if the target is killed (health <= 0 after damage)
-        if (hurtee.getHealth() <= 0 && level instanceof ServerLevel serverLevel) {
-            // Spawn a bee at the target's location
-            BlockPos pos = hurtee.blockPosition();
-            Entity bee = EntityType.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
-            if (bee != null) {
-                bee.setPos(hurtee.getX(), hurtee.getY(), hurtee.getZ());
-                level.addFreshEntity(bee);
-            }
+        // Spawn a bee at the victim's location
+        BlockPos pos = victim.blockPosition();
+        Entity bee = EntityType.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
+        if (bee != null) {
+            bee.setPos(victim.getX(), victim.getY(), victim.getZ());
+            level.addFreshEntity(bee);
+            ModCriteria.traitUsed(killer, this);
         }
-
-        return false;
     }
 }

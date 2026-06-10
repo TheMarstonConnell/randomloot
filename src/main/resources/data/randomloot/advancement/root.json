@@ -1,0 +1,45 @@
+{
+  "criteria": {
+    "has_case": {
+      "conditions": {
+        "items": [
+          {
+            "items": "randomloot:case"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    },
+    "has_tool": {
+      "conditions": {
+        "items": [
+          {
+            "items": "randomloot:tool"
+          }
+        ]
+      },
+      "trigger": "minecraft:inventory_changed"
+    }
+  },
+  "display": {
+    "announce_to_chat": false,
+    "background": "minecraft:gui/advancements/backgrounds/adventure",
+    "description": {
+      "translate": "advancements.randomloot.root.description"
+    },
+    "icon": {
+      "id": "randomloot:case"
+    },
+    "show_toast": false,
+    "title": {
+      "translate": "advancements.randomloot.root.title"
+    }
+  },
+  "requirements": [
+    [
+      "has_case",
+      "has_tool"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

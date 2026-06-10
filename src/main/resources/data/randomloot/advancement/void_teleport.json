@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:biome_trait",
+  "criteria": {
+    "teleported": {
+      "conditions": {
+        "trait": "void_touched"
+      },
+      "trigger": "randomloot:trait_used"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.void_teleport.description"
+    },
+    "icon": {
+      "id": "minecraft:ender_pearl"
+    },
+    "title": {
+      "translate": "advancements.randomloot.void_teleport.title"
+    }
+  },
+  "requirements": [
+    [
+      "teleported"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

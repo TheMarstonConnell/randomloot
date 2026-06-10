@@ -1,0 +1,30 @@
+{
+  "parent": "randomloot:open_case",
+  "criteria": {
+    "opened_10": {
+      "conditions": {
+        "count": {
+          "min": 10
+        }
+      },
+      "trigger": "randomloot:case_opened"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.open_cases_10.description"
+    },
+    "icon": {
+      "id": "minecraft:chest"
+    },
+    "title": {
+      "translate": "advancements.randomloot.open_cases_10.title"
+    }
+  },
+  "requirements": [
+    [
+      "opened_10"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

@@ -1,6 +1,7 @@
 package dev.marston.randomloot;
 
 import com.mojang.logging.LogUtils;
+import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.gametest.RandomLootGameTests;
 import dev.marston.randomloot.items.ModItems;
@@ -40,6 +41,7 @@ public class RandomLoot
 
         ModDataComponents.register(modEventBus);
 
+        ModCriteria.register(modEventBus);
         ModItems.register(modEventBus);
         Recipies.register(modEventBus);
         ModLootModifiers.register(modEventBus);
