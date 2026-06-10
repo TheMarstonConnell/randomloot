@@ -8,6 +8,10 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.Unbreaking;
+import dev.marston.randomloot.loot.modifiers.hurter.Feasting;
+import dev.marston.randomloot.loot.modifiers.hurter.Fierce;
+import dev.marston.randomloot.loot.modifiers.hurter.Fragile;
+import dev.marston.randomloot.loot.modifiers.hurter.Munchies;
 import dev.marston.randomloot.loot.modifiers.wearers.Adrenaline;
 import dev.marston.randomloot.loot.modifiers.wearers.Bulwark;
 import dev.marston.randomloot.loot.modifiers.wearers.Featherweight;
@@ -58,6 +62,23 @@ class ArmorTraitGatingTest {
 	@Test
 	void unbreakingAppliesToArmor() {
 		assertTrue(new Unbreaking().forTool(ToolType.CHESTPLATE));
+	}
+
+	/**
+	 * These traits' payoffs (melee damage scaling, hunger conversion, durability
+	 * trade-offs) live in tool-only hooks, so on armor they'd be confusing no-ops
+	 * whose descriptions talk about dealing damage.
+	 */
+	@Test
+	void toolCombatTraitsStayOffArmor() {
+		Modifier[] toolTraits = { new Fierce(), new Fragile(), new Munchies(), new Feasting() };
+
+		for (Modifier trait : toolTraits) {
+			for (ToolType piece : new ToolType[] { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS }) {
+				assertFalse(trait.forTool(piece), trait.tagName() + " must not apply to " + piece);
+			}
+			assertTrue(trait.forTool(ToolType.SWORD), trait.tagName() + " should still apply to swords");
+		}
 	}
 
 	@Test

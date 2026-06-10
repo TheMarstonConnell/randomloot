@@ -57,7 +57,9 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 
 	@Override
 	public boolean forTool(ToolType type) {
-		return true;
+		// The damage scaling only fires from melee hooks; on armor only the hidden
+		// stats multiplier would apply, which contradicts the description.
+		return !type.isArmor();
 	}
 
 	private float getDamageMultiplier(ItemStack itemstack) {
