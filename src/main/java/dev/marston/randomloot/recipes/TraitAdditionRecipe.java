@@ -94,10 +94,11 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		// Armor only accepts traits that actually work on its piece type (no Veiny
-		// helmets); tools keep their historical anything-goes smithing freedom.
+		// Gear only accepts traits that actually work on its type (no Veiny helmets, no
+		// Thorny swords), matching the case-roll and /randomloot trait add paths. The
+		// subtraction template stays ungated so mismatched traits can always be stripped.
 		LootItem.ToolType baseType = LootUtils.getToolType(input.base());
-		if (baseType.isArmor() && input.template().is(ModItems.MOD_ADD.asItem()) && !modToAdd.forTool(baseType)) {
+		if (input.template().is(ModItems.MOD_ADD.asItem()) && !modToAdd.forTool(baseType)) {
 			return false;
 		}
 

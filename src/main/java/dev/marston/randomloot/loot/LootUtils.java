@@ -232,6 +232,10 @@ public class LootUtils {
 
 		copy.set(DataComponents.CUSTOM_NAME, stack.get(DataComponents.CUSTOM_NAME));
 
+		// Smithing and Essence-retexturing must not strip table/anvil enchantments.
+		copy.set(DataComponents.ENCHANTMENTS, stack.get(DataComponents.ENCHANTMENTS));
+		copy.set(DataComponents.REPAIR_COST, stack.get(DataComponents.REPAIR_COST));
+
 		// Armor carries its slot + worn-texture in the per-stack EQUIPPABLE component.
 		updateEquippable(copy);
 

@@ -18,11 +18,13 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.gametest.framework.GameTestInstance;
@@ -43,9 +45,11 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
@@ -112,6 +116,8 @@ public final class RandomLootGameTests {
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", RandomLootGameTests::armorRepairable);
 		register(event, env, "admin_commands", RandomLootGameTests::adminCommands);
+		register(event, env, "smithing_trait_gating", RandomLootGameTests::smithingTraitGating);
+		register(event, env, "clone_preserves_enchantments", RandomLootGameTests::clonePreservesEnchantments);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -617,6 +623,64 @@ public final class RandomLootGameTests {
 	}
 
 	/** Runs a command, converting brigadier syntax errors into test failures. */
+	/**
+	 * The smithing add-template only matches traits that work on the base gear's type
+	 * (mirrors the case-roll and command gates); the subtraction template stays ungated.
+	 */
+	private static void smithingTraitGating(GameTestHelper helper) {
+		TraitAdditionRecipe thorny = new TraitAdditionRecipe(
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), "thorny");
+		TraitAdditionRecipe critical = new TraitAdditionRecipe(
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), "critical");
+
+		ItemStack sword = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(sword, ToolType.SWORD);
+		ItemStack chestplate = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(chestplate, ToolType.CHESTPLATE);
+
+		ItemStack addTemplate = new ItemStack(ModItems.MOD_ADD.get());
+		ItemStack subTemplate = new ItemStack(ModItems.MOD_SUB.get());
+		ItemStack cactus = new ItemStack(Items.CACTUS);
+		ItemStack ghastTear = new ItemStack(Items.GHAST_TEAR);
+		Level level = helper.getLevel();
+
+		helper.assertFalse(thorny.matches(new SmithingRecipeInput(addTemplate, sword, cactus), level),
+				"armor-only trait must not smith onto a sword");
+		helper.assertTrue(thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, cactus), level),
+				"thorny should smith onto a chestplate");
+		helper.assertFalse(critical.matches(new SmithingRecipeInput(addTemplate, chestplate, ghastTear), level),
+				"weapon-only trait must not smith onto a chestplate");
+		helper.assertTrue(critical.matches(new SmithingRecipeInput(addTemplate, sword, ghastTear), level),
+				"critical should smith onto a sword");
+		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
+				"the subtraction template should still strip a mismatched trait");
+
+		helper.succeed();
+	}
+
+	/** CloneItem (smithing/retexture output) must carry over enchantments and repair cost. */
+	private static void clonePreservesEnchantments(GameTestHelper helper) {
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+
+		ItemStack sword = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(sword, ToolType.SWORD);
+		sword.enchant(sharpness, 3);
+		sword.set(DataComponents.REPAIR_COST, 5);
+		sword.set(DataComponents.DAMAGE, 7);
+
+		ItemStack clone = LootUtils.CloneItem(sword);
+
+		helper.assertTrue(clone.getEnchantments().getLevel(sharpness) == 3,
+				"clone should keep Sharpness III");
+		helper.assertTrue(clone.getOrDefault(DataComponents.REPAIR_COST, 0) == 5,
+				"clone should keep the anvil repair cost");
+		helper.assertTrue(clone.getOrDefault(DataComponents.DAMAGE, 0) == 7,
+				"clone should keep its durability damage");
+
+		helper.succeed();
+	}
+
 	private static int run(CommandDispatcher<CommandSourceStack> commands, CommandSourceStack source, String command) {
 		try {
 			return commands.execute(command, source);
