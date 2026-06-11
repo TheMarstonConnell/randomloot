@@ -770,8 +770,6 @@ public class LootUtils {
 			goodness = machineGoodness(level);
 		}
 
-		int traits = (int) (Math.floor(goodness / 2.0f)); // how many traits the tool should be created with
-
 		ToolType m;
 		if (level.getRandom().nextFloat() < Config.ArmorChance) {
 			int armorType = level.getRandom().nextInt(4);
@@ -807,11 +805,27 @@ public class LootUtils {
 			};
 		}
 
-		ItemStack lootItem = new ItemStack(m.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
+		return buildTool(player, level, pos, m, goodness);
+	}
+
+	/**
+	 * Builds a tool/armor piece of the given type and goodness: stats, biome + owner
+	 * data, name/lore, random texture, and {@code floor(goodness / 2)} starting traits.
+	 */
+	public static ItemStack buildTool(@Nullable Player player, Level level, @Nullable BlockPos pos, ToolType type,
+			float goodness) {
+
+		if (level.isClientSide()) {
+			return ItemStack.EMPTY;
+		}
+
+		int traits = (int) (Math.floor(goodness / 2.0f)); // how many traits the tool should be created with
+
+		ItemStack lootItem = new ItemStack(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
 
 		LootUtils.setStats(lootItem, goodness);
 
-		lootItem = setToolType(lootItem, m);
+		lootItem = setToolType(lootItem, type);
 
 		int textureCount = getToolMaxTextures(lootItem);
 
@@ -825,7 +839,7 @@ public class LootUtils {
 		}
 
 		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
-		generateInitialTraits(lootItem, m, traits, level.getRandom(), worldSeed);
+		generateInitialTraits(lootItem, type, traits, level.getRandom(), worldSeed);
 
 		generateLore(lootItem, level, player);
 
