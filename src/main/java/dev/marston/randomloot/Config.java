@@ -26,6 +26,8 @@ public class Config
 
     private static ModConfigSpec.DoubleValue ARMOR_CHANCE;
 
+    private static ModConfigSpec.DoubleValue DISPENSER_GOODNESS;
+
     private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
     static final ModConfigSpec SPEC = build();
@@ -39,6 +41,7 @@ public class Config
     public static double ModChance;
     public static double Goodness;
     public static double ArmorChance = 0.5;
+    public static double DispenserGoodness = 0.75;
     public static List<? extends String> LootTableMatches = List.of("chest");
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
@@ -72,6 +75,9 @@ public class Config
                 10.0);
         ARMOR_CHANCE = BUILDER.comment("chance that a loot case contains an armor piece instead of a tool.")
                 .defineInRange("armorChance", 0.5, 0.0, 1.0);
+        DISPENSER_GOODNESS = BUILDER
+                .comment("goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.")
+                .defineInRange("dispenserGoodness", 0.75, 0.0, 1.0);
         BUILDER.pop();
     }
 
@@ -85,6 +91,7 @@ public class Config
         ModChance = MOD_CHANCE.get();
         Goodness = GOODNESS.get();
         ArmorChance = ARMOR_CHANCE.get();
+        DispenserGoodness = DISPENSER_GOODNESS.get();
         LootTableMatches = LOOT_TABLE_MATCHES.get();
 
         ModsEnabled = new HashMap<String, Boolean>();

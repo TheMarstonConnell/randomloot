@@ -80,6 +80,7 @@ public final class RandomLootGameTests {
 
 		register(event, env, "modifier_roundtrip", RandomLootGameTests::modifierRoundTrip);
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
+		register(event, env, "gen_tool_dispenser", RandomLootGameTests::genToolDispenser);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
@@ -132,6 +133,23 @@ public final class RandomLootGameTests {
 			helper.assertTrue(tool.is(ModItems.TOOL.get()), "tool rolls should produce the RandomLoot tool");
 		}
 		helper.assertTrue(LootUtils.getStats(tool) > 0f, "generated item should have positive goodness");
+
+		helper.succeed();
+	}
+
+	/**
+	 * genTool() with no player (the dispenser path) records the dispense position's
+	 * biome and still rolls positive goodness off the machine curve.
+	 */
+	private static void genToolDispenser(GameTestHelper helper) {
+		ItemStack tool = LootUtils.genTool(null, helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+
+		helper.assertTrue(LootUtils.getToolType(tool) != ToolType.NULL, "dispensed item should have a real type");
+		helper.assertTrue(LootUtils.getStats(tool) > 0f, "dispensed item should have positive goodness");
+
+		String biomeKey = LootUtils.getBiomeKey(tool);
+		helper.assertTrue(!biomeKey.isEmpty() && !biomeKey.equals("unknown"),
+				"dispensed item should record the dispenser's biome, got: " + biomeKey);
 
 		helper.succeed();
 	}
