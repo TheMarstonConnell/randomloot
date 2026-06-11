@@ -78,6 +78,11 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
+		// Gear that is still rolling has no settled identity to smith against.
+		if (LootUtils.isRolling(input.base())) {
+			return false;
+		}
+
 		if (!input.addition().is(this.additionItem.value())) {
 			return false;
 		}

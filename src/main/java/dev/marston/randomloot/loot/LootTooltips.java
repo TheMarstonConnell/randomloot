@@ -3,8 +3,11 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
+import net.minecraft.util.Util;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +34,27 @@ final class LootTooltips {
 		return comp.withStyle(color);
 	}
 
+	// The enchanting table's Standard Galactic Alphabet font.
+	private static final FontDescription ROLLING_FONT =
+			new FontDescription.Resource(Identifier.fromNamespaceAndPath("minecraft", "alt"));
+
+	// Gibberish in the enchanting-table tradition; SGA only maps a-z, so letters only.
+	private static final String[] ROLLING_WORDS = { "klaatu", "berata", "niktu", "phnglui", "xyzzy", "azimuth",
+			"galvanize", "embiggen" };
+
+	/**
+	 * Display name for gear that is still rolling: rune words in the enchanting table's
+	 * font, stepped on a wall-clock interval. The name component is rebuilt every render
+	 * frame, so OBFUSCATED would re-scramble per frame and read as a blur; a fixed step
+	 * scrolls like the enchanting table instead.
+	 */
+	static Component rollingName() {
+		int word = (int) ((Util.getMillis() / 150) % ROLLING_WORDS.length);
+		return Component.literal(ROLLING_WORDS[word])
+				.withStyle(ChatFormatting.GRAY)
+				.withStyle(style -> style.withFont(ROLLING_FONT));
+	}
+
 	private static void newLine(Consumer<Component> tipList) {
 		tipList.accept(makeComp("", ChatFormatting.GRAY));
 	}
@@ -52,6 +76,13 @@ final class LootTooltips {
 	 */
 	static void appendHoverText(ItemStack item, @Nullable Level level, Consumer<Component> tipList,
 			BiConsumer<ToolType, Consumer<Component>> statsBlock) {
+
+		// Rolling gear reveals nothing: no type, lore, traits or stats until it settles.
+		if (LootUtils.isRolling(item)) {
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.rolling", "Rolling...")
+					.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+			return;
+		}
 
 		// Tooltips are only ever built with key state on the client; the level check
 		// keeps Minecraft.getInstance() unreachable on a dedicated server.

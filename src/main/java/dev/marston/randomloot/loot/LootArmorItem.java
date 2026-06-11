@@ -95,6 +95,11 @@ public class LootArmorItem extends Item {
 	@Override
 	public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
 
+		// No attributes while rolling: hides the tooltip lines until the reveal.
+		if (LootUtils.isRolling(stack)) {
+			return ItemAttributeModifiers.builder().build();
+		}
+
 		ToolType tt = LootUtils.getToolType(stack);
 		EquipmentSlot slot = tt.armorSlot();
 
@@ -139,7 +144,20 @@ public class LootArmorItem extends Item {
 	}
 
 	@Override
+	public @NotNull Component getName(@NotNull ItemStack stack) {
+		if (LootUtils.isRolling(stack)) {
+			return LootTooltips.rollingName();
+		}
+		return super.getName(stack);
+	}
+
+	@Override
 	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
+
+		// Rolling armor can't be worn (no EQUIPPABLE yet), so this runs in inventory slots.
+		if (LootUtils.tickRoll(stack, level, holder)) {
+			return;
+		}
 
 		// Hold-style traits run while the piece is actually worn in its slot.
 		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
@@ -192,6 +210,10 @@ public class LootArmorItem extends Item {
 	 */
 	@Override
 	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+		if (LootUtils.isRolling(stack)) {
+			return false;
+		}
+
 		ToolType type = LootUtils.getToolType(stack);
 
 		if (enchantment.is(ALL_ARMOR_ENCHANTS)) {

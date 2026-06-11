@@ -177,6 +177,11 @@ public class LootItem extends Item  {
 	@Override
 	public float getDestroySpeed(@NotNull ItemStack stack, @NotNull BlockState block) {
 
+		// A rolling tool hasn't been revealed yet and digs like a bare hand.
+		if (LootUtils.isRolling(stack)) {
+			return 1.0f;
+		}
+
 		ToolType type = LootUtils.getToolType(stack);
 
 		TagKey<Block> blocks = null;
@@ -224,6 +229,10 @@ public class LootItem extends Item  {
 	@Override
 	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
 
+		if (LootUtils.isRolling(stack)) {
+			return false;
+		}
+
 		ToolType type = LootUtils.getToolType(stack);
 
 		TagKey<Block> blocks = null;
@@ -245,6 +254,12 @@ public class LootItem extends Item  {
 	@Override
 	public @NotNull ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
 
+		// No attributes while rolling: hides the tooltip lines and keeps the
+		// undecided tool from working as a weapon.
+		if (LootUtils.isRolling(stack)) {
+			return ItemAttributeModifiers.builder().build();
+		}
+
 		ToolType tt = LootUtils.getToolType(stack);
 
 		float attack = getAttackDamage(stack, tt);
@@ -259,6 +274,9 @@ public class LootItem extends Item  {
 	@Override
 	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
 		if (!(stack instanceof ItemStack itemStack)) {
+			return false;
+		}
+		if (LootUtils.isRolling(itemStack)) {
 			return false;
 		}
 		ToolType type = LootUtils.getToolType(itemStack);
@@ -276,6 +294,10 @@ public class LootItem extends Item  {
 
 	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+
+		if (LootUtils.isRolling(itemstack)) {
+			return;
+		}
 
 		ToolType type = LootUtils.getToolType(itemstack);
 
@@ -328,6 +350,10 @@ public class LootItem extends Item  {
 
 	@Override
 	public boolean mineBlock(@NotNull ItemStack stack, Level level, @NotNull BlockState blockState, @NotNull BlockPos pos, @NotNull LivingEntity player) {
+		if (LootUtils.isRolling(stack)) {
+			return true;
+		}
+
 		if (!level.isClientSide() && blockState.getDestroySpeed(level, pos) != 0.0F) {
 
 			List<Modifier> mods = LootUtils.getModifiers(stack);
@@ -368,6 +394,9 @@ public class LootItem extends Item  {
 	public @NotNull InteractionResult useOn(UseOnContext ctx) {
 
 		ItemStack itemstack = ctx.getItemInHand();
+		if (LootUtils.isRolling(itemstack)) {
+			return InteractionResult.PASS;
+		}
 		ToolType type = LootUtils.getToolType(itemstack);
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
 
@@ -469,6 +498,10 @@ public class LootItem extends Item  {
 	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack toolItem = player.getItemInHand(hand);
 
+		if (LootUtils.isRolling(toolItem)) {
+			return InteractionResult.PASS;
+		}
+
 		boolean used = false;
 
 		List<Modifier> mods = LootUtils.getModifiers(toolItem);
@@ -508,7 +541,20 @@ public class LootItem extends Item  {
 	}
 
 	@Override
+	public @NotNull Component getName(@NotNull ItemStack stack) {
+		if (LootUtils.isRolling(stack)) {
+			return LootTooltips.rollingName();
+		}
+		return super.getName(stack);
+	}
+
+	@Override
 	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
+
+		// Runs in any slot, unlike the mainhand-gated trait ticking below.
+		if (LootUtils.tickRoll(stack, level, holder)) {
+			return;
+		}
 
 		// Only trigger for mainhand slot (replacing the old 'holding' boolean check)
 		if (slot == EquipmentSlot.MAINHAND) {
@@ -547,6 +593,10 @@ public class LootItem extends Item  {
 	 */
 	@Override
 	public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
+		if (LootUtils.isRolling(stack)) {
+			return false;
+		}
+
 		ToolType type = LootUtils.getToolType(stack);
 
 		if (enchantment.is(ALL_TOOL_ENCHANTS)) {

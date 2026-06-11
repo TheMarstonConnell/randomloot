@@ -133,6 +133,7 @@
   "tooltip.randomloot.ctrl_hint": "[Ctrl for trait info]",
   "tooltip.randomloot.damage": "Damage: %s",
   "tooltip.randomloot.level": "Level: %s",
+  "tooltip.randomloot.rolling": "Rolling...",
   "tooltip.randomloot.shift_hint": "[Shift for more]",
   "tooltip.randomloot.speed": "Speed: %s",
   "tooltip.randomloot.toughness": "Toughness: %s",

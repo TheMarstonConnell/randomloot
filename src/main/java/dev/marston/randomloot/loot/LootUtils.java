@@ -32,9 +32,11 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -60,6 +62,12 @@ public class LootUtils {
 
 		@Override
 		public float get(ItemStack stack, @Nullable ClientLevel level, @Nullable ItemOwner owner, int seed) {
+			if (level != null && LootUtils.isRolling(stack)) {
+				long ticksLeft = LootUtils.getRollEnd(stack) - level.getGameTime();
+				if (ticksLeft > 0) {
+					return LootUtils.rollingTexture(stack, ticksLeft, seed);
+				}
+			}
 			return LootUtils.getTexture(stack);
 		}
 
@@ -75,6 +83,131 @@ public class LootUtils {
 	private static int SWORD_COUNT = 50;
 	/** Number of armor texture sets; each set is one helmet/chestplate/leggings/boots look. */
 	public static final int ARMOR_SET_COUNT = 15;
+
+	/* ---- Case-opening roll ----
+	 * Freshly opened gear starts "rolling": the name, traits, stats and the worn-armor
+	 * component are withheld while the client spins the item's texture through every
+	 * variant, slot-machine style. The final item is fully decided at open time - the
+	 * roll only delays the reveal. State lives in the ROLLING tag: the reveal game-time
+	 * plus the stashed display name.
+	 */
+
+	public static final String ROLLING_TAG = "rolling";
+	/** How long a freshly opened item rolls before revealing itself. */
+	public static final int ROLL_TICKS = 60;
+	// Steps remaining with t ticks left = t^2 / ROLL_CURVE: one texture per tick at the
+	// start of a 60-tick roll, decelerating to ~8 ticks on the final step.
+	private static final long ROLL_CURVE = 60;
+
+	/** Every rollable type in wheel order; rolling items spin through all of them. */
+	private static final ToolType[] ROLL_WHEEL = { ToolType.PICKAXE, ToolType.SHOVEL, ToolType.AXE, ToolType.SWORD,
+			ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS };
+
+	/** Puts finished gear into the rolling state until {@code revealTime} (game time). */
+	public static void startRoll(ItemStack stack, long revealTime) {
+		CompoundTag tag = new CompoundTag();
+		tag.putLong("endTime", revealTime);
+
+		Component name = stack.get(DataComponents.CUSTOM_NAME);
+		if (name != null) {
+			tag.putString("name", name.getString());
+			TextColor color = name.getStyle().getColor();
+			tag.putString("nameColor", color != null ? color.serialize() : "#FFFFFF");
+			stack.remove(DataComponents.CUSTOM_NAME);
+		}
+
+		addTagElement(stack, ROLLING_TAG, tag);
+		// No identity yet: without EQUIPPABLE, rolling armor can't be worn either.
+		stack.remove(DataComponents.EQUIPPABLE);
+	}
+
+	public static boolean isRolling(ItemStack stack) {
+		return !getOrCreateTagElement(stack, ROLLING_TAG).isEmpty();
+	}
+
+	/** Game time at which a rolling item settles; 0 when not rolling. */
+	public static long getRollEnd(ItemStack stack) {
+		return getOrCreateTagElement(stack, ROLLING_TAG).getLongOr("endTime", 0L);
+	}
+
+	/** Reveals the finished item: restores the stashed name and the worn-armor component. */
+	public static void finishRoll(ItemStack stack) {
+		CompoundTag tag = getOrCreateTagElement(stack, ROLLING_TAG);
+		removeTagKey(stack, ROLLING_TAG);
+
+		if (tag.contains("name")) {
+			setItemName(stack, tag.getStringOr("name", ""), tag.getStringOr("nameColor", "#FFFFFF"));
+		}
+		updateEquippable(stack);
+	}
+
+	/**
+	 * Server-side driver for rolling items, called from inventoryTick. Returns true
+	 * while the roll is running (callers skip their normal tick), revealing the item
+	 * with a sound once its time is up.
+	 */
+	public static boolean tickRoll(ItemStack stack, ServerLevel level, Entity holder) {
+		if (!isRolling(stack)) {
+			return false;
+		}
+
+		long ticksLeft = getRollEnd(stack) - level.getGameTime();
+		if (ticksLeft <= 0) {
+			finishRoll(stack);
+			level.playSound(null, holder.getX(), holder.getY(), holder.getZ(), SoundEvents.PLAYER_LEVELUP,
+					SoundSource.PLAYERS, 0.8f, 1.3f);
+			return true;
+		}
+
+		// Click exactly when the client-side wheel advances a step (same curve).
+		if (rollSteps(ticksLeft) != rollSteps(ticksLeft + 1)) {
+			float pitch = 1.6f - 0.8f * ((float) ticksLeft / ROLL_TICKS);
+			level.playSound(null, holder.getX(), holder.getY(), holder.getZ(), SoundEvents.ITEM_PICKUP,
+					SoundSource.PLAYERS, 0.3f, pitch);
+		}
+		return true;
+	}
+
+	private static long rollSteps(long ticksLeft) {
+		return (ticksLeft * ticksLeft) / ROLL_CURVE;
+	}
+
+	/**
+	 * The texture shown while rolling: each step is a hash-scrambled jump across
+	 * every variant of every type (tools flash armor looks and vice versa, which is
+	 * why items/tool.json and items/armor.json carry identical entries), decelerating
+	 * via {@link #rollSteps} and settling on the real texture for the final steps.
+	 * A sequential walk would telegraph the outcome - the wheel would park on the
+	 * final texture's same-type neighbors right before the reveal.
+	 */
+	public static float rollingTexture(ItemStack stack, long ticksLeft, int seed) {
+		long step = rollSteps(ticksLeft);
+		if (step <= 0) {
+			return getTexture(stack);
+		}
+
+		int total = 0;
+		for (ToolType t : ROLL_WHEEL) {
+			total += textureCount(t);
+		}
+
+		// SplitMix64-style mix of the step and the stack's display seed, so the
+		// sequence looks random but is stable within a tick and differs per stack.
+		long h = step * 0x9E3779B97F4A7C15L + seed * 0xC2B2AE3D27D4EB4FL;
+		h ^= h >>> 27;
+		h *= 0x94D049BB133111EBL;
+		h ^= h >>> 31;
+		int shown = (int) Math.floorMod(h, total);
+
+		for (ToolType t : ROLL_WHEEL) {
+			int count = textureCount(t);
+			if (shown < count) {
+				return typeOffset(t) + shown / 10000.0f;
+			}
+			shown -= count;
+		}
+		return getTexture(stack); // unreachable: shown < total by construction
+	}
 
 	public static ItemStack CloneItem(ItemStack stack) {
 		ItemStack copy = new ItemStack(stack.getItem());
@@ -450,6 +583,11 @@ public class LootUtils {
 			return;
 		}
 
+		// Rolling gear has no identity yet; finishRoll() re-runs this at the reveal.
+		if (isRolling(stack)) {
+			return;
+		}
+
 		int set = (getTextureIndex(stack) % ARMOR_SET_COUNT) + 1;
 		ResourceKey<EquipmentAsset> asset = ResourceKey.create(EquipmentAssets.ROOT_ID,
 				Identifier.fromNamespaceAndPath(RandomLoot.MODID, "set" + set));
@@ -462,43 +600,34 @@ public class LootUtils {
 
 		int texture = cosmeticTag.getIntOr("texture", 0);
 
-		float index = ((float) texture) / 10000.0f;
+		return typeOffset(getToolType(stack)) + ((float) texture) / 10000.0f;
+	}
 
-		ToolType type = getToolType(stack);
+	/** range_dispatch offset per type; must match the entries in items/tool.json + items/armor.json. */
+	public static float typeOffset(ToolType type) {
+		return switch (type) {
+		case PICKAXE -> 0.1f;
+		case SHOVEL -> 0.2f;
+		case AXE -> 0.3f;
+		case SWORD -> 0.4f;
+		case HELMET -> 0.5f;
+		case CHESTPLATE -> 0.6f;
+		case LEGGINGS -> 0.7f;
+		case BOOTS -> 0.8f;
+		default -> 0.0f;
+		};
+	}
 
-		switch (type) {
-
-		case PICKAXE:
-			index += 0.1f;
-			break;
-		case SHOVEL:
-			index += 0.2f;
-			break;
-		case AXE:
-			index += 0.3f;
-			break;
-		case SWORD:
-			index += 0.4f;
-			break;
-		case HELMET:
-			index += 0.5f;
-			break;
-		case CHESTPLATE:
-			index += 0.6f;
-			break;
-		case LEGGINGS:
-			index += 0.7f;
-			break;
-		case BOOTS:
-			index += 0.8f;
-			break;
-		case NULL:
-		default:
-			break;
-
-		}
-
-		return index;
+	/** How many texture variants exist for the given type. */
+	public static int textureCount(ToolType type) {
+		return switch (type) {
+		case PICKAXE -> PICKAXE_COUNT;
+		case AXE -> AXE_COUNT;
+		case SHOVEL -> SHOVEL_COUNT;
+		case SWORD -> SWORD_COUNT;
+		case HELMET, CHESTPLATE, LEGGINGS, BOOTS -> ARMOR_SET_COUNT;
+		default -> 0;
+		};
 	}
 
 	public static int getTextureIndex(ItemStack stack) {
@@ -689,31 +818,7 @@ public class LootUtils {
 	}
 
 	public static int getToolMaxTextures(ItemStack stack) {
-		ToolType m = getToolType(stack);
-
-		return switch (m) {
-		case PICKAXE: {
-			yield PICKAXE_COUNT;
-		}
-		case AXE: {
-			yield AXE_COUNT;
-		}
-		case SHOVEL: {
-			yield SHOVEL_COUNT;
-		}
-		case SWORD: {
-			yield SWORD_COUNT;
-		}
-		case HELMET:
-		case CHESTPLATE:
-		case LEGGINGS:
-		case BOOTS: {
-			yield ARMOR_SET_COUNT;
-		}
-		default:
-			yield 0;
-		};
-
+		return textureCount(getToolType(stack));
 	}
 
 	public static int addToolTextures(ItemStack stack, int count) {
