@@ -6,6 +6,8 @@ Introducing Looting like you've never seen it before! Have you ever felt that Mi
 
 **Random Loot** was rewritten from the ground up with the goals of creating an easier to maintain code-base with an expandable modifier system. This branch targets **Minecraft 26.1 on NeoForge**.
 
+![case opening gif](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/randomlootgif.gif)
+
 ## Items
 This mod is built around the Loot Case, which opens into a Random Tool or a piece of Random Armor. You'll never see them called that in game since every item is randomly generated and uniquely named.
 
