@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
@@ -18,8 +17,6 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-import java.util.List;
-
 @EventBusSubscriber(modid = RandomLoot.MODID)
 public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
@@ -29,17 +26,6 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
 	public Soulbound() {
 		this.name = "Soulbound";
-	}
-
-	public Modifier clone() {
-		return new Soulbound();
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		return tag;
 	}
 
 	@Override
@@ -83,9 +69,11 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 		}
 
 		// Apply 15% bonus damage
+		if (hurtee.level().isClientSide()) {
+			return false;
+		}
 		float baseDamage = LootItem.getAttackDamage(itemstack, type);
-		float bonusDamage = baseDamage * 0.15f;
-		hurtee.hurt(hurtee.damageSources().mobAttack(hurter), bonusDamage);
+		dealBonusDamage(hurtee, hurter, baseDamage * 0.15f);
 
 		return false;
 	}
@@ -119,18 +107,9 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 			return;
 		}
 
-		// Check if the tool has Soulbound modifier
-		List<Modifier> mods = LootUtils.getModifiers(stack);
-		boolean hasSoulbound = false;
-		for (Modifier mod : mods) {
-			if (mod.tagName().equals("soulbound")) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					return;
-				}
-				hasSoulbound = true;
-				break;
-			}
-		}
+		// Check if the tool has Soulbound modifier (getModifiers filters disabled traits)
+		boolean hasSoulbound = LootUtils.getModifiers(stack).stream()
+				.anyMatch(mod -> mod.tagName().equals("soulbound"));
 
 		if (!hasSoulbound) {
 			return;

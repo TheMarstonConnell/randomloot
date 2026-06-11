@@ -2,12 +2,12 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.ChatFormatting;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -16,57 +16,42 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 
-public class Hasty extends AbstractModifier implements HoldModifier {
+public class Hasty extends LeveledModifier implements HoldModifier {
 
-	private int power;
+	/** Legacy NBT key; old items stored the haste amplifier separately, always equal to level. */
 	private final static String POWER = "power";
 
-	private int level = 0;
-
-	public Hasty(String name, int power, int level) {
+	public Hasty(String name, int level) {
 		this.name = name;
-		this.power = power;
 		this.level = level;
 	}
 
 	public Hasty() {
-		this.name = "Hasty";
-		this.power = 0;
-		this.level = 0;
+		this("Hasty", 0);
 	}
 
-	public Modifier clone() {
-		return new Hasty();
+	@Override
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 1;
 	}
 
 	@Override
 	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		tag.putInt(POWER, power);
-
-		tag.putInt(ModifierConstants.LEVEL, level);
-
+		CompoundTag tag = super.toNBT();
+		// Keep writing the legacy key so older readers still see the haste amplifier.
+		tag.putInt(POWER, level);
 		return tag;
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Hasty(tag.getStringOr(NAME, "Hasty"), tag.getIntOr(POWER, 0), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String name() {
-
-		if (this.level == 0) {
-			return this.name;
-		}
-
-		return this.name + " " + LootUtils.roman(this.level + 1);
-
+		return new Hasty(tag.getStringOr(NAME, "Hasty"),
+				ModifierConstants.getLevel(tag, tag.getIntOr(POWER, 0)));
 	}
 
 	@Override
@@ -91,21 +76,11 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 2, power, true, false);
+		// hold() runs every tick; a too-short duration makes the effect timer flicker.
+		MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 40, this.level, true, false);
 
 		if (holder instanceof LivingEntity le) {
 			le.addEffect(haste);
 		}
-
-	}
-
-	public boolean canLevel() {
-		return level == 0;
-	}
-
-	public void levelUp() {
-		this.level++;
-		this.power++;
-		return;
 	}
 }

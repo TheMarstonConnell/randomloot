@@ -15,29 +15,17 @@ import net.minecraft.world.item.ItemStack;
 
 public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 
-	private final ChatFormatting format;
-
 	public HurtEffect(String name, String tagname, int power, int duration, Holder<MobEffect> effect, ChatFormatting format) {
-		super(name, tagname, power, duration, effect);
-		this.format = format;
+		super(name, tagname, power, duration, effect, format);
 	}
 
 	public HurtEffect(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
 		this(name, tagname, 0, duration, effect, format);
 	}
 
-	public Modifier clone() {
-		return new HurtEffect(this.name, this.tagname, this.power, this.duration, this.effect, this.format);
-	}
-
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect, this.format);
-	}
-
-	@Override
-	public String color() {
-		return format.getName();
 	}
 
 	@Override

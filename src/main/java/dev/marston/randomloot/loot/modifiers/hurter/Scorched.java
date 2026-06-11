@@ -1,12 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -18,9 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 
-public class Scorched extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
-
-	private int level = 0;
+public class Scorched extends LeveledModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
 	public Scorched(String name, int level) {
 		this.name = name;
@@ -28,33 +25,22 @@ public class Scorched extends AbstractModifier implements EntityHurtModifier, Ho
 	}
 
 	public Scorched() {
-		this.name = "Scorched";
-		this.level = 0;
-	}
-
-	public Modifier clone() {
-		return new Scorched();
+		this("Scorched", 0);
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 2; // Max level 3 (0, 1, 2)
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Scorched(tag.getStringOr(NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(this.level + 1);
 	}
 
 	@Override
@@ -89,16 +75,6 @@ public class Scorched extends AbstractModifier implements EntityHurtModifier, Ho
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		if (!(holder instanceof LivingEntity living)) return;
 		living.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 60, 0, false, false));
-	}
-
-	@Override
-	public boolean canLevel() {
-		return level < 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	@Override

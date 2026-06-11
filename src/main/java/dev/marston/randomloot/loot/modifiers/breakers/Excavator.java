@@ -29,10 +29,6 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 		this.name = "Excavator";
 	}
 
-	public Modifier clone() {
-		return new Excavator();
-	}
-
 	private List<BlockPos> get3x3Positions(BlockPos center, ServerPlayer player) {
 		List<BlockPos> positions = new ArrayList<>();
 
@@ -118,13 +114,6 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 		}
 
 		return false;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		return tag;
 	}
 
 	@Override

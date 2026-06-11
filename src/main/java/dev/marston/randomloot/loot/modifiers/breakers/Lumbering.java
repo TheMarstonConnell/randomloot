@@ -47,20 +47,8 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		return tag;
-	}
-
-	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Lumbering(tag.getStringOr(NAME, "Lumbering"));
-	}
-
-	@Override
-	public Modifier clone() {
-		return new Lumbering();
 	}
 
 	@Override

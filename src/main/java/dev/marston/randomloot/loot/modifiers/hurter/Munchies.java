@@ -1,13 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import java.util.Random;
-
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
@@ -17,17 +14,12 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public class Munchies extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
+public class Munchies extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.15f; // 15% boost
-	private static final int MAX_LEVEL = 5;
-
-	private int level;
-	private Random random = new Random();
 
 	public Munchies() {
-		this.name = "Munchies";
-		this.level = 1;
+		this("Munchies", 1);
 	}
 
 	public Munchies(String name, int level) {
@@ -36,18 +28,13 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	}
 
 	@Override
-	public Modifier clone() {
-		return new Munchies();
+	protected int minLevel() {
+		return 1;
 	}
 
 	@Override
-	public boolean canLevel() {
-		return level < MAX_LEVEL;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
+	protected int maxLevel() {
+		return 5;
 	}
 
 	private float getHungerChance() {
@@ -61,14 +48,6 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	}
 
 	@Override
-	public String name() {
-		if (level == 1) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(level);
-	}
-
-	@Override
 	public String color() {
 		return ChatFormatting.YELLOW.getName();
 	}
@@ -76,14 +55,6 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	@Override
 	public String description() {
 		return "15% stat boost, but " + String.format("%.0f", getHungerChance() * 100) + "% chance to consume hunger on use";
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
 	}
 
 	@Override
@@ -99,7 +70,7 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 
 	private void tryConsumeHunger(LivingEntity entity) {
 		if (entity instanceof Player player) {
-			if (random.nextFloat() < getHungerChance()) {
+			if (player.level().getRandom().nextFloat() < getHungerChance()) {
 				int currentFood = player.getFoodData().getFoodLevel();
 				if (currentFood > 0) {
 					player.getFoodData().setFoodLevel(currentFood - 1);

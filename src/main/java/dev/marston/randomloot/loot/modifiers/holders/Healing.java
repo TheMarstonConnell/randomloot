@@ -1,10 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -16,11 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 
-public class Healing extends AbstractModifier implements HoldModifier {
-
-	private static final int MAX_LEVEL = 3;
-
-	private int level;
+public class Healing extends LeveledModifier implements HoldModifier {
 
 	public Healing(String name, int level) {
 		this.name = name;
@@ -28,22 +23,17 @@ public class Healing extends AbstractModifier implements HoldModifier {
 	}
 
 	public Healing() {
-		this.name = "Living";
-		this.level = 1;
-	}
-
-	public Modifier clone() {
-		return new Healing();
+		this("Living", 1);
 	}
 
 	@Override
-	public boolean canLevel() {
-		return level < MAX_LEVEL;
+	protected int minLevel() {
+		return 1;
 	}
 
 	@Override
-	public void levelUp() {
-		this.level++;
+	protected int maxLevel() {
+		return 3;
 	}
 
 	private float getPower() {
@@ -52,24 +42,8 @@ public class Healing extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putInt(ModifierConstants.LEVEL, level);
-		tag.putString(NAME, name);
-		return tag;
-	}
-
-	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Healing(tag.getStringOr(NAME, "Living"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public String name() {
-		if (level == 1) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(level);
 	}
 
 	@Override

@@ -3,9 +3,9 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -13,10 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 
-public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
-	private static final int MAX_LEVEL = 3;
-
-	private int level;
+public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 
 	public EarlyBird(String name, int level) {
 		this.name = name;
@@ -24,22 +21,17 @@ public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	public EarlyBird() {
-		this.name = "Early Bird";
-		this.level = 1;
-	}
-
-	public Modifier clone() {
-		return new EarlyBird();
+		this("Early Bird", 1);
 	}
 
 	@Override
-	public boolean canLevel() {
-		return level < MAX_LEVEL;
+	protected int minLevel() {
+		return 1;
 	}
 
 	@Override
-	public void levelUp() {
-		this.level++;
+	protected int maxLevel() {
+		return 3;
 	}
 
 	private float getBonusDamage() {
@@ -53,24 +45,8 @@ public class EarlyBird extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
-	}
-
-	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public String name() {
-		if (level == 1) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(level);
 	}
 
 	@Override

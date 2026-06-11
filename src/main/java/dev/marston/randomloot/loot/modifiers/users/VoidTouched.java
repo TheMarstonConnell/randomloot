@@ -2,10 +2,9 @@ package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
@@ -25,9 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 
-public class VoidTouched extends AbstractModifier implements UseModifier, BiomeRestrictedModifier {
-
-	private int level = 0;
+public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRestrictedModifier {
 
 	public VoidTouched(String name, int level) {
 		this.name = name;
@@ -35,33 +32,22 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 	}
 
 	public VoidTouched() {
-		this.name = "Void-Touched";
-		this.level = 0;
-	}
-
-	public Modifier clone() {
-		return new VoidTouched();
+		this("Void-Touched", 0);
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 2; // Max level 3 (0, 1, 2)
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new VoidTouched(tag.getStringOr(NAME, "Void-Touched"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(this.level + 1);
 	}
 
 	@Override
@@ -116,20 +102,23 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 		BlockPos targetPos = BlockPos.containing(destination);
 		BlockPos safePos = findSafeTeleportLocation(level, targetPos);
 
-		if (safePos != null) {
-			player.teleportTo(safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5);
-
-			if (level instanceof ServerLevel serverLevel) {
-				serverLevel.sendParticles(ParticleTypes.PORTAL,
-					player.getX(), player.getY() + 1, player.getZ(),
-					32, 0.5, 0.5, 0.5, 0.1);
-			}
-
-			player.getItemInHand(hand).hurtAndBreak(10, player, EquipmentSlot.MAINHAND);
-			player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
-
-			ModCriteria.traitUsed(player, this);
+		// No safe landing spot: don't consume the use or award the use stat.
+		if (safePos == null) {
+			return false;
 		}
+
+		player.teleportTo(safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5);
+
+		if (level instanceof ServerLevel serverLevel) {
+			serverLevel.sendParticles(ParticleTypes.PORTAL,
+				player.getX(), player.getY() + 1, player.getZ(),
+				32, 0.5, 0.5, 0.5, 0.1);
+		}
+
+		player.getItemInHand(hand).hurtAndBreak(10, player, EquipmentSlot.MAINHAND);
+		player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
+
+		ModCriteria.traitUsed(player, this);
 
 		return true;
 	}
@@ -151,16 +140,6 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 	@Override
 	public boolean useAnywhere() {
 		return true;
-	}
-
-	@Override
-	public boolean canLevel() {
-		return level < 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	@Override

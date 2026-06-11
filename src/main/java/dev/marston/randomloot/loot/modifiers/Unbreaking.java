@@ -1,20 +1,15 @@
 package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 
 
-public class Unbreaking extends AbstractModifier {
+public class Unbreaking extends LeveledModifier {
 
 	/** Chance to skip durability loss: 20% at level 0, +20% per level, 100% when maxed. */
 	private static final float CHANCE_PER_LEVEL = 0.2f;
-	private static final int MAX_LEVEL = 4;
-
-	int level;
-
 
 	public Unbreaking(String name, int level) {
 		this.name = name;
@@ -25,6 +20,16 @@ public class Unbreaking extends AbstractModifier {
 		this("Unbreaking", 0);
 	}
 
+	@Override
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 4;
+	}
+
 	public String tagName() {
 		return "unbreaking";
 	}
@@ -33,33 +38,16 @@ public class Unbreaking extends AbstractModifier {
 		return "This tool has a " + String.format("%.0f", chance() * 100) + "% chance of not taking damage.";
 	}
 
+	@Override
 	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-
-		if (!this.canLevel()) {
+		if (this.level > 0 && !this.canLevel()) {
 			return "Unbreakable";
 		}
-
-		return this.name + " " + LootUtils.roman(this.level + 1);
+		return super.name();
 	}
 
 	public String color() {
 		return ChatFormatting.AQUA.getName();
-	}
-
-	public Modifier clone() {
-		return new Unbreaking(this.name, this.level);
-	}
-
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-
-		return tag;
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {
@@ -68,14 +56,6 @@ public class Unbreaking extends AbstractModifier {
 
 	public boolean forTool(ToolType type) {
 		return true;
-	}
-
-	public boolean canLevel() {
-		return this.level < MAX_LEVEL;
-	}
-
-	public void levelUp() {
-		this.level++;
 	}
 
 	private float chance() {

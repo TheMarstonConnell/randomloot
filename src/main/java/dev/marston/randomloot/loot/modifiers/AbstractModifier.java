@@ -2,32 +2,36 @@ package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import net.minecraft.ChatFormatting;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 
 import java.util.List;
 
 /**
  * Base class for modifiers. Holds the universal {@code name} field and the default
- * {@code name()} / {@code writeToLore(...)} implementations shared by almost every
- * concrete modifier, so leaf classes no longer hand-copy them.
+ * {@code name()} / {@code toNBT()} / {@code writeToLore(...)} implementations shared by
+ * almost every concrete modifier, so leaf classes no longer hand-copy them.
  *
  * <p>Subclasses still provide {@link #color()}, {@link #description()}, {@link #tagName()},
- * {@link #toNBT()}/{@link #fromNBT(net.minecraft.nbt.CompoundTag)}, {@link #clone()} and
- * {@link #forTool(ToolType)}. They may override {@link #name()} (e.g. to append a roman
- * numeral when leveled) or {@link #writeToLore(List, boolean)} (for custom lore lines).
+ * {@link #fromNBT(net.minecraft.nbt.CompoundTag)} and {@link #forTool(ToolType)}. Stateful
+ * modifiers extend {@link #toNBT()} via {@code super.toNBT()}; leveled ones extend
+ * {@link LeveledModifier} instead.
  */
 public abstract class AbstractModifier implements Modifier {
 
 	protected String name;
 
-	// Re-declared abstract so Object's protected clone() does not satisfy Modifier's
-	// public clone(); every concrete modifier provides its own.
-	@Override
-	public abstract Modifier clone();
-
 	@Override
 	public String name() {
 		return name;
+	}
+
+	/** Serializes the shared {@code name} field; stateful subclasses add to this tag. */
+	@Override
+	public CompoundTag toNBT() {
+		CompoundTag tag = new CompoundTag();
+		tag.putString(NAME, name);
+		return tag;
 	}
 
 	@Override

@@ -28,20 +28,6 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 		this.name = "Bezerk";
 	}
 
-	public Modifier clone() {
-		return new Bezerk();
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		return tag;
-	}
-
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Bezerk(tag.getStringOr(NAME, "Bezerk"));

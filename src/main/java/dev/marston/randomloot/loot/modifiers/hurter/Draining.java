@@ -26,10 +26,6 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 		this.points = 2;
 	}
 
-	public Modifier clone() {
-		return new Draining();
-	}
-
 	@Override
 	public CompoundTag toNBT() {
 
@@ -80,6 +76,9 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+		if (hurtee.level().isClientSide()) {
+			return false;
+		}
 		float damage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
 		hurter.heal(damage * drain());

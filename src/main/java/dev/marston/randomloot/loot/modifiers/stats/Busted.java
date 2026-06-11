@@ -19,20 +19,6 @@ public class Busted extends AbstractModifier implements StatsModifier {
 		this.name = name;
 	}
 
-	public Modifier clone() {
-		return new Busted(this.name);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		return tag;
-	}
-
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Busted(tag.getStringOr(NAME, "Busted"));

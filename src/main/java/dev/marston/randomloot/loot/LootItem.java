@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
@@ -11,7 +10,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -116,15 +114,10 @@ public class LootItem extends Item  {
 
 		float statMod = 1.0f;
 
-		List<Modifier> mods = LootUtils.getModifiers(stack);
-
-		for (Modifier mod : mods) {
+		// getModifiers already filters out config-disabled traits.
+		for (Modifier mod : LootUtils.getModifiers(stack)) {
 			if (mod instanceof StatsModifier ehm) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					continue;
-				}
-
-                statMod *= ehm.getStats(stack);
+				statMod *= ehm.getStats(stack);
 			}
 		}
 
@@ -295,23 +288,13 @@ public class LootItem extends Item  {
 		boolean shouldSkipBreak = false;
 		for (Modifier mod : mods) {
 			if (mod instanceof EntityHurtModifier ehm) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					continue;
-				}
-
 				if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
 					shouldSkipBreak = true;
 				}
 			}
 
-			if (mod instanceof Unbreaking unbreaking) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					continue;
-				}
-
-				if (unbreaking.test(hurtee.level())) {
-					shouldSkipBreak = true;
-				}
+			if (mod instanceof Unbreaking unbreaking && unbreaking.test(hurtee.level())) {
+				shouldSkipBreak = true;
 			}
 		}
 		if (!shouldSkipBreak) {
@@ -352,22 +335,12 @@ public class LootItem extends Item  {
 			boolean shouldSkipBreak = false;
 			for (Modifier mod : mods) {
 
-				if (mod instanceof BlockBreakModifier bbm) {
-
-                    if (bbm.startBreak(stack, pos, player)) {
-						shouldSkipBreak = true;
-					}
+				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, pos, player)) {
+					shouldSkipBreak = true;
 				}
 
-				if (mod instanceof Unbreaking unbreaking) {
-					if (!Config.traitEnabled(mod.tagName())) {
-						continue;
-					}
-
-                    if (unbreaking.test(level)) {
-						shouldSkipBreak = true;
-					}
-
+				if (mod instanceof Unbreaking unbreaking && unbreaking.test(level)) {
+					shouldSkipBreak = true;
 				}
 			}
 
@@ -402,10 +375,6 @@ public class LootItem extends Item  {
 		for (Modifier mod : mods) {
 
 			if (mod instanceof UseModifier um) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					continue;
-				}
-
 				InteractionResult result = um.use(ctx);
 				if (result.consumesAction()) {
 					return result;  // Modifier consumed the action
@@ -506,14 +475,8 @@ public class LootItem extends Item  {
 
 		for (Modifier mod : mods) {
 
-			if (mod instanceof UseModifier um) {
-				if (!Config.traitEnabled(mod.tagName())) {
-					continue;
-				}
-
-                if (um.useAnywhere()) {
-					used = used || um.use(level, player, hand);
-				}
+			if (mod instanceof UseModifier um && um.useAnywhere()) {
+				used = used || um.use(level, player, hand);
 			}
 
 		}
@@ -531,104 +494,17 @@ public class LootItem extends Item  {
 		return InteractionResult.PASS;
 	}
 
-	private MutableComponent makeComp(String text, ChatFormatting color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		comp = comp.withStyle(color);
-
-		return comp;
-	}
-
-	private void newLine(Consumer<Component> tipList) {
-		tipList.accept(makeComp("", ChatFormatting.GRAY));
-	}
-
 	@Override
 	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display, Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
-		Level level = pContext.level();
-
-		// Check if shift/ctrl are held. Vanilla's InputConstants wrapper, fully qualified
-		// (like Minecraft below) so this common class never imports client-only types.
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-		boolean show = com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
-
-		boolean showDescription = com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_LCONTROL)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, com.mojang.blaze3d.platform.InputConstants.KEY_RCONTROL);
-
-		ToolType tt = LootUtils.getToolType(item);
-
-		if (show) {
-			tipList.accept(Component.empty().append(tt.displayName()).withStyle(ChatFormatting.BLUE));
-		}
-
-		MutableComponent desc = makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY);
-		tipList.accept(desc);
-
-		if (show) {
-			newLine(tipList);
-			int itemLevel = LootUtils.getLevel(item);
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.level", "Level: %s", itemLevel)
-					.withStyle(ChatFormatting.GRAY));
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.xp", "XP: %s / %s",
-					LootUtils.getXP(item), LootUtils.getMaxXP(itemLevel)).withStyle(ChatFormatting.GRAY));
-		}
-
-		newLine(tipList);
-
-		List<Modifier> mods = LootUtils.getModifiers(item);
-		mods.sort(new Comparator<Modifier>() {
-            @Override
-            public int compare(final Modifier object1, final Modifier object2) {
-                return object1.tagName().compareTo(object2.tagName());
-            }
-        });
-
-		for (Modifier modifier : mods) {
-			if (!Config.traitEnabled(modifier.tagName())) {
-				continue;
-			}
-			// Wrapper to bridge List<Component> interface to Consumer<Component>
-			List<Component> tempList = new ArrayList<>();
-			modifier.writeToLore(tempList, show);
-			tempList.forEach(tipList);
-			if (show) {
-				Component details = modifier.writeDetailsToLore(level);
-
-				if (details != null) {
-					MutableComponent detailComp = makeComp(" - ", ChatFormatting.GRAY);
-					detailComp.append(details);
-					tipList.accept(detailComp);
-				}
-			}
-			if (showDescription) {
-				MutableComponent detailComp = makeComp("", ChatFormatting.GRAY);
-				detailComp.append(modifier.displayDescription());
-				tipList.accept(detailComp);
-			}
-		}
-
-		if (show) {
-			newLine(tipList);
-
-			float digSpeed = LootItem.getDigSpeed(item, tt);
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
+		LootTooltips.appendHoverText(item, pContext.level(), tipList, (tt, tips) -> {
+			float digSpeed = getDigSpeed(item, tt);
+			tips.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
 					String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
 
-			float attackDamage = LootItem.getAttackDamage(item, tt);
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
+			float attackDamage = getAttackDamage(item, tt);
+			tips.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
 					String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
-
-		}
-
-		if (!show && !showDescription) {
-			newLine(tipList);
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.shift_hint", "[Shift for more]")
-					.withStyle(ChatFormatting.GRAY));
-			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.ctrl_hint", "[Ctrl for trait info]")
-					.withStyle(ChatFormatting.GRAY));
-
-		}
+		});
 	}
 
 	@Override

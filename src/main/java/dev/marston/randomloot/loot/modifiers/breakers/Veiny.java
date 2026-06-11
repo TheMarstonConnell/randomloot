@@ -36,10 +36,6 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 		this.power = 5.0f;
 	}
 
-	public Modifier clone() {
-		return new Veiny();
-	}
-
 	public void checkAndBreak(ItemStack itemstack, BlockPos pos, Player player, Level level, int index, Block blockType,
 			Set<BlockPos> tobreak, Set<BlockPos> visited) {
 
@@ -145,7 +141,7 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public String color() {
-		return ChatFormatting.DARK_GREEN.name();
+		return ChatFormatting.DARK_GREEN.getName();
 	}
 
 	@Override

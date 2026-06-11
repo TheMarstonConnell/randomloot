@@ -1,11 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.NameGenerator;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.UseModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
@@ -13,9 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -28,9 +22,7 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
 
-public class DirtPlace extends AbstractModifier implements UseModifier {
-	private int damage;
-	private static final String DAMAGE = "DAMAGE";
+public class DirtPlace extends PlaceOnUseModifier {
 
 	public DirtPlace(String name, int damage) {
 		this.name = name;
@@ -38,20 +30,7 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	}
 
 	public DirtPlace() {
-		this.name = NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace";
-		this.damage = 1;
-	}
-
-	public Modifier clone() {
-		return new DirtPlace();
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(DAMAGE, damage);
-		return tag;
+		this(NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace", 1);
 	}
 
 	@Override
@@ -97,7 +76,9 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 		return blockstate != null && canPlace(ctx, blockstate) ? blockstate : null;
 	}
 
-	private InteractionResult place(BlockPlaceContext ctx) {
+	@Override
+	protected InteractionResult place(UseOnContext useCtx) {
+		BlockPlaceContext ctx = new BlockPlaceContext(useCtx);
 		if (!ctx.canPlace()) {
 			return InteractionResult.FAIL;
 		}
@@ -133,45 +114,8 @@ public class DirtPlace extends AbstractModifier implements UseModifier {
 	}
 
 	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		if (!ctx.getPlayer().isCrouching()) {
-			return InteractionResult.PASS;  // Allow normal tool behaviors when not crouching
-		}
-
-		BlockPlaceContext bctx = new BlockPlaceContext(ctx);
-		InteractionResult result = place(bctx);
-
-		if (result == InteractionResult.SUCCESS) {
-			ctx.getItemInHand().hurtAndBreak(this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
-		}
-
-		return result;
-	}
-
-	@Override
 	public String description() {
 		return "Right clicking on a block while crouching with the tool in hand will place a dirt block and use "
 				+ this.damage + " durability points.";
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return !ModifierRegistry.USERS.contains(mod);
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		// Right-click traits never fire from worn armor.
-		return !type.isArmor();
-	}
-
-	@Override
-	public boolean use(Level level, Player player, InteractionHand hand) {
-		return true;
-	}
-
-	@Override
-	public boolean useAnywhere() {
-		return false;
 	}
 }

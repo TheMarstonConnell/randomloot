@@ -1,8 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.WearerHurtModifier;
@@ -15,13 +14,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Armor trait: reflects a share of incoming damage back at the attacker.
  */
-public class Thorny extends AbstractModifier implements WearerHurtModifier {
+public class Thorny extends LeveledModifier implements WearerHurtModifier {
 
 	/** Share of damage reflected: 15% at level 0, +15% per level, 75% when maxed. */
 	private static final float REFLECT_PER_LEVEL = 0.15f;
-	private static final int MAX_LEVEL = 4;
-
-	private int level;
 
 	public Thorny(String name, int level) {
 		this.name = name;
@@ -30,6 +26,16 @@ public class Thorny extends AbstractModifier implements WearerHurtModifier {
 
 	public Thorny() {
 		this("Thorny", 0);
+	}
+
+	@Override
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 4;
 	}
 
 	@Override
@@ -43,32 +49,8 @@ public class Thorny extends AbstractModifier implements WearerHurtModifier {
 	}
 
 	@Override
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-
-		return this.name + " " + LootUtils.roman(this.level + 1);
-	}
-
-	@Override
 	public String color() {
 		return ChatFormatting.DARK_GREEN.getName();
-	}
-
-	@Override
-	public Modifier clone() {
-		return new Thorny(this.name, this.level);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-
-		return tag;
 	}
 
 	@Override
@@ -79,16 +61,6 @@ public class Thorny extends AbstractModifier implements WearerHurtModifier {
 	@Override
 	public boolean forTool(ToolType type) {
 		return type.isArmor();
-	}
-
-	@Override
-	public boolean canLevel() {
-		return this.level < MAX_LEVEL;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	private float reflectShare() {

@@ -5,9 +5,9 @@ import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -22,26 +22,31 @@ import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.RandomSource;
 
-public class Naturalist extends AbstractModifier implements HoldModifier {
+public class Naturalist extends LeveledModifier implements HoldModifier {
 
     private static final String LAST_UPDATE = "lastUpdate";
-    private static final int MAX_LEVEL = 3;
     private static final int SEARCH_RADIUS = 5;
 
-    private int level;
     private long lastUpdateTick;
-    private RandomSource random = RandomSource.create();
 
     public Naturalist() {
-        this.name = "Naturalist";
-        this.level = 1;
-        this.lastUpdateTick = 0;
+        this("Naturalist", 1, 0);
     }
 
     public Naturalist(String name, int level, long lastUpdateTick) {
         this.name = name;
         this.level = level;
         this.lastUpdateTick = lastUpdateTick;
+    }
+
+    @Override
+    protected int minLevel() {
+        return 1;
+    }
+
+    @Override
+    protected int maxLevel() {
+        return 3;
     }
 
     private long getUpdateInterval() {
@@ -52,24 +57,6 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
     @Override
     public String tagName() {
         return "naturalist";
-    }
-
-    @Override
-    public String name() {
-        if (level == 1) {
-            return this.name;
-        }
-        return this.name + " " + LootUtils.roman(level);
-    }
-
-    @Override
-    public boolean canLevel() {
-        return level < MAX_LEVEL;
-    }
-
-    @Override
-    public void levelUp() {
-        this.level++;
     }
 
     @Override
@@ -85,9 +72,7 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
 
     @Override
     public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        tag.putInt(ModifierConstants.LEVEL, level);
+        CompoundTag tag = super.toNBT();
         tag.putLong(LAST_UPDATE, lastUpdateTick);
         return tag;
     }
@@ -98,11 +83,6 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
         int level = ModifierConstants.getLevel(tag, 1);
         long lastUpdate = tag.getLongOr(LAST_UPDATE, 0L);
         return new Naturalist(name, level, lastUpdate);
-    }
-
-    @Override
-    public Modifier clone() {
-        return new Naturalist();
     }
 
     @Override
@@ -124,6 +104,8 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
         if (currentTick - lastUpdateTick < getUpdateInterval()) {
             return;
         }
+
+        RandomSource random = level.getRandom();
 
         // Find all bonemealable blocks nearby
         BlockPos holderPos = holder.blockPosition();

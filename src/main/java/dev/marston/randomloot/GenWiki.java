@@ -462,21 +462,22 @@ public class GenWiki {
         if (recipeFiles != null) {
             Arrays.sort(recipeFiles);
             for (File recipeFile : recipeFiles) {
-                try {
+                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
                     String traitName = recipeFile.getName().replace("trait_", "").replace(".json", "");
-                    FileReader reader = new FileReader(recipeFile);
-                    Gson gson = new Gson();
-                    BufferedReader bufferedReader = new BufferedReader(reader);
-                    JsonObject obj = gson.fromJson(bufferedReader, JsonObject.class);
+                    JsonObject obj = new Gson().fromJson(bufferedReader, JsonObject.class);
                     JsonObject item = obj.get("item").getAsJsonObject();
                     String itemId = item.get("id").getAsString();
                     int count = 1;
                     if (item.has("count")) {
                         count = item.get("count").getAsInt();
                     }
-                    String displayName = traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
+                    // The recipe's tag name and the trait's display name can differ
+                    // (e.g. trait_necrotic.json is the "Draining" trait), so resolve
+                    // through the registry and only fall back to the filename.
+                    Modifier mod = ModifierRegistry.getModifier(traitName);
+                    String displayName = mod != null ? docName(mod)
+                            : traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
                     write("| " + displayName + " | `" + itemId + "` | " + count + " |", f);
-                    bufferedReader.close();
                 } catch (Exception e) {
                     RandomLoot.LOGGER.warn("Failed to read recipe: " + recipeFile.getName());
                 }
@@ -606,21 +607,12 @@ public class GenWiki {
 
     }
 
-    public static String readRecipe(String trait) throws FileNotFoundException {
-        FileReader reader = new FileReader(
-                repoFile("src/main/resources/data/randomloot/recipe/trait_" + trait + ".json"));
-        Gson gson = new Gson();
-        BufferedReader bufferedReader = new BufferedReader(reader);
-
-        JsonObject obj;
-        obj = gson.fromJson(bufferedReader, JsonObject.class);
-
-        JsonElement item = obj.get("item");
-
-        JsonObject itemObj = item.getAsJsonObject();
-
-        return itemObj.get("id").getAsString();
-
+    public static String readRecipe(String trait) throws IOException {
+        File recipeFile = repoFile("src/main/resources/data/randomloot/recipe/trait_" + trait + ".json");
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
+            JsonObject obj = new Gson().fromJson(bufferedReader, JsonObject.class);
+            return obj.get("item").getAsJsonObject().get("id").getAsString();
+        }
     }
 
 }

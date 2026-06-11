@@ -23,20 +23,6 @@ public class Critical extends AbstractModifier implements EntityHurtModifier {
 		this.name = "Critical";
 	}
 
-	public Modifier clone() {
-		return new Critical();
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		return tag;
-	}
-
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Critical(tag.getStringOr(NAME, "Critical"));

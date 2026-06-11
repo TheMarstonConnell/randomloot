@@ -2,11 +2,10 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
@@ -17,16 +16,12 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-public class Fragile extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
+public class Fragile extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
 	private static final float STAT_BOOST = 0.25f; // 25% boost
-	private static final int MAX_LEVEL = 3;
-
-	private int level;
 
 	public Fragile() {
-		this.name = "Fragile";
-		this.level = 1;
+		this("Fragile", 1);
 	}
 
 	public Fragile(String name, int level) {
@@ -35,16 +30,18 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 	}
 
 	@Override
-	public String tagName() {
-		return "fragile";
+	protected int minLevel() {
+		return 1;
 	}
 
 	@Override
-	public String name() {
-		if (level == 1) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(level);
+	protected int maxLevel() {
+		return 3;
+	}
+
+	@Override
+	public String tagName() {
+		return "fragile";
 	}
 
 	@Override
@@ -67,19 +64,11 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 		}
 	}
 
-	private boolean shouldTakeExtraDamage(java.util.Random random) {
-		float mult = getDurabilityMultiplier();
-		// mult - 1.0 = chance of taking extra 1 durability
-		// e.g., 2.0 -> always take 1 extra, 1.6 -> 60% chance, 1.25 -> 25% chance
-		return random.nextFloat() < (mult - 1.0f);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
+	/** Chance-based extra durability cost: 2.0x -> always, 1.6x -> 60%, 1.25x -> 25%. */
+	private void tryExtraDamage(ItemStack itemstack, ServerPlayer player) {
+		if (player.level().getRandom().nextFloat() < (getDurabilityMultiplier() - 1.0f)) {
+			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+		}
 	}
 
 	@Override
@@ -88,27 +77,10 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 	}
 
 	@Override
-	public Modifier clone() {
-		return new Fragile();
-	}
-
-	@Override
-	public boolean canLevel() {
-		return level < MAX_LEVEL;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
-	}
-
-	@Override
 	public boolean forTool(ToolType type) {
 		// Its payoff lives in tool-only hooks, so on armor it would be a confusing no-op.
 		return !type.isArmor();
 	}
-
-	private java.util.Random random = new java.util.Random();
 
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
@@ -116,9 +88,8 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 			return false;
 		}
 
-		// Extra durability loss based on level (probability-based for fractional multipliers)
-		if (hurter instanceof ServerPlayer player && shouldTakeExtraDamage(random)) {
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+		if (hurter instanceof ServerPlayer player) {
+			tryExtraDamage(itemstack, player);
 		}
 
 		return false;
@@ -130,9 +101,8 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 			return false;
 		}
 
-		// Extra durability loss on block break based on level
-		if (player instanceof ServerPlayer serverPlayer && shouldTakeExtraDamage(random)) {
-			itemstack.hurtAndBreak(1, serverPlayer, EquipmentSlot.MAINHAND);
+		if (player instanceof ServerPlayer serverPlayer) {
+			tryExtraDamage(itemstack, serverPlayer);
 		}
 
 		return false;

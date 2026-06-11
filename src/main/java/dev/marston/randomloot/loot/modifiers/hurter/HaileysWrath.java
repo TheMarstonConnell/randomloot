@@ -43,20 +43,8 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new HaileysWrath(tag.getStringOr(NAME, "Hailey's Wrath"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new HaileysWrath();
     }
 
     @Override

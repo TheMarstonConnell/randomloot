@@ -35,10 +35,6 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 		this.points = 3;
 	}
 
-	public Modifier clone() {
-		return new Learning();
-	}
-
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity entity) {
 

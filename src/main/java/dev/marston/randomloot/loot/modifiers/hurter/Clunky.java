@@ -44,20 +44,8 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new Clunky(tag.getStringOr(NAME, "Clunky"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new Clunky();
     }
 
     @Override

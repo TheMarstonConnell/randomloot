@@ -24,18 +24,6 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 	}
 
 	@Override
-	public Modifier clone() {
-		return new Fierce(this.name);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		return tag;
-	}
-
-	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Fierce(tag.getStringOr(NAME, "Fierce"));
 	}

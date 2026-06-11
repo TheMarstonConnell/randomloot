@@ -98,8 +98,6 @@ public interface Modifier {
 
 	public String color();
 
-	public Modifier clone();
-
 	public CompoundTag toNBT();
 
 	public Modifier fromNBT(CompoundTag tag);

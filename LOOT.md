@@ -70,10 +70,10 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 
 | Trait | Required Item | Count |
 |-------|---------------|-------|
-| Absorption | `minecraft:golden_apple` | 1 |
+| Appley | `minecraft:golden_apple` | 1 |
 | Adrenaline | `minecraft:sugar` | 16 |
 | Aquatic | `minecraft:prismarine_shard` | 1 |
-| Attracting | `minecraft:iron_block` | 1 |
+| Magnetic | `minecraft:iron_block` | 1 |
 | Bezerk | `minecraft:beef` | 16 |
 | Blinding | `minecraft:carrot` | 24 |
 | Bulwark | `minecraft:shield` | 1 |
@@ -81,26 +81,26 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Chaotic | `minecraft:amethyst_shard` | 1 |
 | Charged | `minecraft:lightning_rod` | 1 |
 | Clunky | `minecraft:iron_chain` | 1 |
-| Combo | `minecraft:chorus_fruit` | 1 |
+| Dexterous | `minecraft:chorus_fruit` | 1 |
 | Critical | `minecraft:ghast_tear` | 1 |
-| Crowd pleaser | `minecraft:firework_star` | 1 |
+| Crowd Pleaser | `minecraft:firework_star` | 1 |
 | Detecting | `minecraft:spyglass` | 1 |
-| Dirt place | `minecraft:dirt` | 64 |
-| Early bird | `minecraft:sunflower` | 1 |
+| Forger's Grace | `minecraft:dirt` | 64 |
+| Early Bird | `minecraft:sunflower` | 1 |
 | Excavator | `minecraft:piston` | 1 |
 | Executioner | `minecraft:iron_sword` | 1 |
-| Explode | `minecraft:tnt` | 8 |
+| Explosive | `minecraft:tnt` | 8 |
 | Feasting | `minecraft:golden_carrot` | 1 |
 | Featherweight | `minecraft:feather` | 16 |
 | Fierce | `minecraft:flint` | 1 |
 | Filling | `minecraft:cake` | 1 |
-| Fire place | `minecraft:flint_and_steel` | 1 |
-| Fire resistance | `minecraft:magma_cream` | 1 |
-| Flame thrower | `minecraft:fire_charge` | 12 |
+| Fire Starter | `minecraft:flint_and_steel` | 1 |
+| Heat Resistant | `minecraft:magma_cream` | 1 |
+| Flame Thrower | `minecraft:fire_charge` | 12 |
 | Flaming | `minecraft:blaze_rod` | 1 |
 | Fragile | `minecraft:glass` | 1 |
 | Frozen | `minecraft:packed_ice` | 1 |
-| Haileys wrath | `minecraft:honeycomb` | 1 |
+| Hailey's Wrath | `minecraft:honeycomb` | 1 |
 | Hasty | `minecraft:sugar` | 16 |
 | Hunter | `minecraft:spider_eye` | 1 |
 | Learning | `minecraft:book` | 12 |
@@ -113,19 +113,19 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Necrotic | `minecraft:wither_skeleton_skull` | 1 |
 | Nemesis | `minecraft:ender_eye` | 1 |
 | Overgrown | `minecraft:vine` | 1 |
-| Poison | `minecraft:poisonous_potato` | 4 |
+| Poisonous | `minecraft:poisonous_potato` | 4 |
 | Prospector | `minecraft:raw_gold` | 1 |
 | Pummeling | `minecraft:anvil` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |
-| Regeneration | `minecraft:glowstone` | 8 |
-| Resistance | `minecraft:turtle_scute` | 5 |
+| Healing | `minecraft:glowstone` | 8 |
+| Resistant | `minecraft:turtle_scute` | 5 |
 | Scorched | `minecraft:blaze_powder` | 1 |
 | Soulbound | `minecraft:nether_star` | 1 |
-| Spawner | `minecraft:mossy_cobblestone` | 12 |
+| Tomb Raider | `minecraft:mossy_cobblestone` | 12 |
 | Thorny | `minecraft:cactus` | 4 |
-| Torch place | `minecraft:torch` | 64 |
+| Spelunking | `minecraft:torch` | 64 |
 | Unbreaking | `minecraft:obsidian` | 8 |
 | Veiny | `minecraft:diamond_pickaxe` | 1 |
-| Void touched | `minecraft:ender_pearl` | 1 |
-| Wither | `minecraft:wither_rose` | 1 |
+| Void-Touched | `minecraft:ender_pearl` | 1 |
+| Withering | `minecraft:wither_rose` | 1 |
 
