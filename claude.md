@@ -170,6 +170,13 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 - Use `/give @p randomloot:mod_add` for addition template
 - Use `/give @p randomloot:mod_sub` for subtraction template
 
+### Admin commands (`commands/ModCommands.java`, gamemaster-gated)
+- `/randomloot give <type>` - spawn a base (0 goodness, no traits) tool/armor piece of the given type
+- `/randomloot trait add <trait>` - add a trait to the held gear (levels it if present; enforces forTool, biome restrictions, compatibility, and config gating)
+- `/randomloot trait remove <trait>` - remove a trait from the held gear (works on config-disabled traits too)
+- `/randomloot xp <amount>` - add XP to the held gear
+- 26.1 gotcha: command permission gating is `Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)` (PermissionCheck/PermissionSet), not the old `source.hasPermission(int)`
+
 ## Key Files
 - `gradle.properties` - Version configuration, mod metadata
 - `src/main/resources/META-INF/neoforge.mods.toml` - Mod manifest

@@ -3,6 +3,10 @@ package dev.marston.randomloot.gametest;
 import java.util.List;
 import java.util.function.Consumer;
 
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -14,6 +18,7 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
@@ -28,6 +33,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerAdvancementManager;
+import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
@@ -104,6 +110,7 @@ public final class RandomLootGameTests {
 		register(event, env, "armor_xp_on_damage", RandomLootGameTests::armorXpOnDamage);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", RandomLootGameTests::armorRepairable);
+		register(event, env, "admin_commands", RandomLootGameTests::adminCommands);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -498,6 +505,80 @@ public final class RandomLootGameTests {
 
 	private static boolean hasTrait(ItemStack tool, String tagName) {
 		return LootUtils.getModifiers(tool).stream().anyMatch(m -> m.tagName().equals(tagName));
+	}
+
+	/** The /randomloot admin commands: give, trait add/remove (with gating), and xp. */
+	private static void adminCommands(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
+		CommandDispatcher<CommandSourceStack> commands = helper.getLevel().getServer().getCommands().getDispatcher();
+
+		helper.assertTrue(run(commands, source, "randomloot give sword") == 1, "give should succeed");
+		ItemStack given = ItemStack.EMPTY;
+		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+			if (player.getInventory().getItem(i).is(ModItems.TOOL.get())) {
+				given = player.getInventory().getItem(i);
+				break;
+			}
+		}
+		helper.assertTrue(!given.isEmpty(), "give should put a tool in the player's inventory");
+		helper.assertTrue(LootUtils.getToolType(given) == ToolType.SWORD, "give should respect the requested type");
+		helper.assertTrue(LootUtils.getStats(given) == 0f, "given tool should have 0 goodness");
+		helper.assertTrue(LootUtils.getModifiers(given).isEmpty(), "given tool should start with no traits");
+
+		player.setItemInHand(InteractionHand.MAIN_HAND, given);
+
+		helper.assertTrue(run(commands, source, "randomloot trait add critical") == 1, "trait add should succeed");
+		helper.assertTrue(hasTrait(player.getMainHandItem(), "critical"), "trait add should apply the trait");
+
+		// Biome gating: Void-Touched is End-only and this tool was forged in the test level.
+		helper.assertTrue(run(commands, source, "randomloot trait add void_touched") == 0,
+				"biome-restricted trait should be rejected");
+		helper.assertFalse(hasTrait(player.getMainHandItem(), "void_touched"),
+				"rejected trait must not land on the tool");
+
+		// Tool gating: Thorny is armor-only.
+		helper.assertTrue(run(commands, source, "randomloot trait add thorny") == 0,
+				"armor-only trait should be rejected on a sword");
+
+		helper.assertTrue(run(commands, source, "randomloot trait remove critical") == 1,
+				"trait remove should succeed");
+		helper.assertFalse(hasTrait(player.getMainHandItem(), "critical"), "trait remove should strip the trait");
+
+		// Tab-completion for `trait add` only offers traits the command would accept.
+		ParseResults<CommandSourceStack> parse = commands.parse("randomloot trait add ", source);
+		List<String> suggested = commands.getCompletionSuggestions(parse).join().getList().stream()
+				.map(Suggestion::getText).toList();
+		helper.assertTrue(suggested.contains("critical"), "addable trait should be suggested");
+		helper.assertFalse(suggested.contains("thorny"), "armor-only trait must not be suggested for a sword");
+		helper.assertFalse(suggested.contains("void_touched"),
+				"biome-restricted trait must not be suggested outside its biome");
+
+		helper.assertTrue(run(commands, source, "randomloot xp 500") == 1, "xp should succeed");
+		helper.assertTrue(LootUtils.getLevel(player.getMainHandItem()) == 1, "500 XP should level the tool to 1");
+
+		// The whole tree is gamemaster-gated, so an unprivileged source can't even see it.
+		CommandSourceStack noPerms = player.createCommandSourceStack()
+				.withMaximumPermission(PermissionSet.NO_PERMISSIONS);
+		boolean denied;
+		try {
+			commands.execute("randomloot xp 1", noPerms);
+			denied = false;
+		} catch (CommandSyntaxException e) {
+			denied = true;
+		}
+		helper.assertTrue(denied, "command should require gamemaster permissions");
+
+		helper.succeed();
+	}
+
+	/** Runs a command, converting brigadier syntax errors into test failures. */
+	private static int run(CommandDispatcher<CommandSourceStack> commands, CommandSourceStack source, String command) {
+		try {
+			return commands.execute(command, source);
+		} catch (CommandSyntaxException e) {
+			throw new IllegalStateException("command failed to parse: " + command, e);
+		}
 	}
 
 	/** A code-defined test instance: holds its body directly instead of a TEST_FUNCTION key. */
