@@ -51,6 +51,17 @@ Don't want a tool or armor piece you generated? Smelt it in a furnace to salvage
 
 You can place cases in dispensers to be opened automatically. Dispensed gear rolls at a fraction of the goodness of the most progressed online player (75% by default, configurable via `dispenserGoodness`), and records the dispenser's real biome and dimension just like a player opening the case there. Opening cases with a dispenser does not advance anyone's progression, so it can't be used to farm better loot.
 
+## Commands
+
+Operators (permission level 2, the same as `/give`) get a `/randomloot` command tree for spawning and editing gear directly:
+
+| Command | What it does |
+|---------|--------------|
+| `/randomloot give <type>` | Spawns a fresh, trait-less tool or armor piece of the given type (`pickaxe`, `shovel`, `axe`, `sword`, `helmet`, `chestplate`, `leggings`, `boots`) into your inventory at base stats. |
+| `/randomloot trait add <trait>` | Adds a trait to the gear in your main hand, or levels it up if the gear already has it. The same rules as smithing apply (piece type, biome restrictions, trait compatibility), and tab-completion only offers traits your held item can actually take. |
+| `/randomloot trait remove <trait>` | Removes a trait from the gear in your main hand. Tab-completion lists the traits currently on the item. |
+| `/randomloot xp <amount>` | Adds XP to the gear in your main hand, leveling it up along the way. |
+
 ## Documentation
 
 - [Modifier List](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/MODIFIERS.md) - All available modifiers and recipes

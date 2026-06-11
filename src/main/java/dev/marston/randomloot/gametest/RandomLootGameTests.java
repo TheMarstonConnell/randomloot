@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
@@ -514,6 +516,15 @@ public final class RandomLootGameTests {
 		helper.assertTrue(run(commands, source, "randomloot trait remove critical") == 1,
 				"trait remove should succeed");
 		helper.assertFalse(hasTrait(player.getMainHandItem(), "critical"), "trait remove should strip the trait");
+
+		// Tab-completion for `trait add` only offers traits the command would accept.
+		ParseResults<CommandSourceStack> parse = commands.parse("randomloot trait add ", source);
+		List<String> suggested = commands.getCompletionSuggestions(parse).join().getList().stream()
+				.map(Suggestion::getText).toList();
+		helper.assertTrue(suggested.contains("critical"), "addable trait should be suggested");
+		helper.assertFalse(suggested.contains("thorny"), "armor-only trait must not be suggested for a sword");
+		helper.assertFalse(suggested.contains("void_touched"),
+				"biome-restricted trait must not be suggested outside its biome");
 
 		helper.assertTrue(run(commands, source, "randomloot xp 500") == 1, "xp should succeed");
 		helper.assertTrue(LootUtils.getLevel(player.getMainHandItem()) == 1, "500 XP should level the tool to 1");

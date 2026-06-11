@@ -41,8 +41,18 @@ import java.util.stream.Stream;
 @EventBusSubscriber(modid = RandomLoot.MODID)
 public class ModCommands {
 
-	private static final SuggestionProvider<CommandSourceStack> ALL_TRAITS = (ctx, builder) -> SharedSuggestionProvider
-			.suggest(ModifierRegistry.getModifiers().keySet(), builder);
+	private static final SuggestionProvider<CommandSourceStack> ADDABLE_TRAITS = (ctx, builder) -> {
+		ServerPlayer player = ctx.getSource().getPlayer();
+		if (player == null) {
+			return builder.buildFuture();
+		}
+		ItemStack held = heldGear(player);
+		if (held.isEmpty()) {
+			return builder.buildFuture();
+		}
+		return SharedSuggestionProvider.suggest(ModifierRegistry.getModifiers().values().stream()
+				.filter(mod -> addBlocker(held, mod) == null).map(Modifier::tagName), builder);
+	};
 
 	private static final SuggestionProvider<CommandSourceStack> HELD_TRAITS = (ctx, builder) -> {
 		ServerPlayer player = ctx.getSource().getPlayer();
@@ -69,7 +79,7 @@ public class ModCommands {
 				.then(Commands.literal("trait")
 						.then(Commands.literal("add")
 								.then(Commands.argument("trait", StringArgumentType.word())
-										.suggests(ALL_TRAITS)
+										.suggests(ADDABLE_TRAITS)
 										.executes(ctx -> addTrait(ctx.getSource(),
 												StringArgumentType.getString(ctx, "trait")))))
 						.then(Commands.literal("remove")
@@ -123,6 +133,48 @@ public class ModCommands {
 		return held;
 	}
 
+	private static boolean hasTrait(ItemStack held, String tagName) {
+		return LootUtils.getModifiers(held).stream().anyMatch(m -> m.tagName().equals(tagName));
+	}
+
+	/**
+	 * Why {@code mod} can't be added to {@code held}, or {@code null} when it can. Shared
+	 * by the add executor and its tab-completion so the suggestions never offer a trait
+	 * the command would refuse.
+	 */
+	private static Component addBlocker(ItemStack held, Modifier mod) {
+		if (!Config.traitEnabled(mod.tagName())) {
+			return Component.literal("Trait is disabled in the config: " + mod.tagName());
+		}
+
+		ToolType type = LootUtils.getToolType(held);
+		if (!mod.forTool(type)) {
+			return Component.empty().append(mod.displayName()).append(" cannot be applied to a ")
+					.append(type.displayName()).append(".");
+		}
+
+		if (mod instanceof BiomeRestrictedModifier biomeRestricted
+				&& !biomeRestricted.canSpawnInBiome(LootUtils.getBiomeKey(held), LootUtils.getBiomeTemperature(held),
+						LootUtils.getDimension(held))) {
+			return Component.empty().append(mod.displayName())
+					.append(" cannot be applied to gear from this gear's biome.");
+		}
+
+		for (Modifier existing : LootUtils.getModifiers(held)) {
+			if (existing.tagName().equals(mod.tagName())) {
+				if (!existing.canLevel()) {
+					return Component.empty().append("This gear already has ").append(mod.displayName())
+							.append(" and it cannot level up.");
+				}
+			} else if (!existing.compatible(mod)) {
+				return Component.empty().append(mod.displayName()).append(" is incompatible with ")
+						.append(existing.displayName()).append(".");
+			}
+		}
+
+		return null;
+	}
+
 	private static int addTrait(CommandSourceStack source, String traitName) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 
@@ -138,41 +190,13 @@ public class ModCommands {
 			return 0;
 		}
 
-		if (!Config.traitEnabled(mod.tagName())) {
-			source.sendFailure(Component.literal("Trait is disabled in the config: " + traitName));
+		Component blocker = addBlocker(held, mod);
+		if (blocker != null) {
+			source.sendFailure(blocker);
 			return 0;
 		}
 
-		ToolType type = LootUtils.getToolType(held);
-		if (!mod.forTool(type)) {
-			source.sendFailure(Component.empty().append(mod.displayName()).append(" cannot be applied to a ")
-					.append(type.displayName()).append("."));
-			return 0;
-		}
-
-		if (mod instanceof BiomeRestrictedModifier biomeRestricted
-				&& !biomeRestricted.canSpawnInBiome(LootUtils.getBiomeKey(held), LootUtils.getBiomeTemperature(held),
-						LootUtils.getDimension(held))) {
-			source.sendFailure(Component.empty().append(mod.displayName())
-					.append(" cannot be applied to gear from this gear's biome."));
-			return 0;
-		}
-
-		boolean leveling = false;
-		for (Modifier existing : LootUtils.getModifiers(held)) {
-			if (existing.tagName().equals(mod.tagName())) {
-				if (!existing.canLevel()) {
-					source.sendFailure(Component.empty().append("This gear already has ")
-							.append(mod.displayName()).append(" and it cannot level up."));
-					return 0;
-				}
-				leveling = true;
-			} else if (!existing.compatible(mod)) {
-				source.sendFailure(Component.empty().append(mod.displayName()).append(" is incompatible with ")
-						.append(existing.displayName()).append("."));
-				return 0;
-			}
-		}
+		boolean leveling = hasTrait(held, mod.tagName());
 
 		LootUtils.addModifier(held, mod.forWorld(source.getLevel().getSeed()));
 
