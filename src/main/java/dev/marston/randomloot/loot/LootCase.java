@@ -73,6 +73,10 @@ public class LootCase extends Item {
 
 		if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
 			ItemStack tool = LootUtils.generateTool(sPlayer, level);
+			// The gear is fully decided here; the roll only delays the reveal while the
+			// texture wheel spins. Dispensed gear (initDispenser above) skips the roll:
+			// item entities never inventory-tick, so they could not settle on the ground.
+			LootUtils.startRoll(tool, level.getGameTime() + LootUtils.ROLL_TICKS);
 			if (consumeCase) {
 				// The case stacks to 1, so the new tool takes its slot directly
 				// instead of landing in the first free inventory slot.

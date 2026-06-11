@@ -31,6 +31,12 @@ final class LootTooltips {
 		return comp.withStyle(color);
 	}
 
+	/** Display name for gear that is still rolling; obfuscated to scramble like the wheel. */
+	static Component rollingName() {
+		return Component.translatableWithFallback("item.randomloot.rolling", "???")
+				.withStyle(ChatFormatting.GRAY, ChatFormatting.OBFUSCATED);
+	}
+
 	private static void newLine(Consumer<Component> tipList) {
 		tipList.accept(makeComp("", ChatFormatting.GRAY));
 	}
@@ -52,6 +58,13 @@ final class LootTooltips {
 	 */
 	static void appendHoverText(ItemStack item, @Nullable Level level, Consumer<Component> tipList,
 			BiConsumer<ToolType, Consumer<Component>> statsBlock) {
+
+		// Rolling gear reveals nothing: no type, lore, traits or stats until it settles.
+		if (LootUtils.isRolling(item)) {
+			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.rolling", "Rolling...")
+					.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+			return;
+		}
 
 		// Tooltips are only ever built with key state on the client; the level check
 		// keeps Minecraft.getInstance() unreachable on a dedicated server.

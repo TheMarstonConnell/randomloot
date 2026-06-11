@@ -12,8 +12,8 @@ Source textures are extracted from the Minecraft client jar:
         'assets/minecraft/textures/entity/equipment/humanoid/netherite.png' \
         'assets/minecraft/textures/entity/equipment/humanoid_leggings/netherite.png'
 
-Also (re)writes items/armor.json for ALL sets (recolor sets 1-10 from
-gen_armor.py plus these). Run from this directory: python3 gen_armor_netherite.py
+items/armor.json (and items/tool.json) are written by gen.py - run it after
+this script. Run from this directory: python3 gen_armor_netherite.py
 """
 
 import json
@@ -24,7 +24,6 @@ SRC = "/tmp/nethsrc/assets/minecraft/textures"
 
 TOTAL_SETS = 15
 PIECES = ["helmet", "chestplate", "leggings", "boots"]
-PIECE_OFFSET = {"helmet": 0.5, "chestplate": 0.6, "leggings": 0.7, "boots": 0.8}
 
 # (set number, name, shadow RGB, highlight RGB) - dark, premium ramps so the
 # netherite feel survives; distinct from the brighter palettes of sets 1-10.
@@ -81,31 +80,6 @@ def write_set_assets(n):
             f.write("\n")
 
 
-def write_item_definition():
-    entries = []
-    for piece in PIECES:
-        for i in range(TOTAL_SETS):
-            entries.append({
-                "threshold": round(PIECE_OFFSET[piece] + i / 10000, 4),
-                "model": {
-                    "type": "minecraft:model",
-                    "model": f"randomloot:item/armor/{piece}/{i + 1}",
-                },
-            })
-
-    with open("items/armor.json", "w") as f:
-        json.dump({
-            "model": {
-                "type": "minecraft:range_dispatch",
-                "property": "randomloot:cosmetic",
-                "scale": 1,
-                "fallback": {"type": "minecraft:model", "model": "randomloot:item/armor"},
-                "entries": entries,
-            }
-        }, f, indent=4)
-        f.write("\n")
-
-
 def main():
     for n, name, shadow, highlight in PALETTES:
         for piece in PIECES:
@@ -119,8 +93,7 @@ def main():
 
         write_set_assets(n)
 
-    write_item_definition()
-    print(f"Generated netherite-based sets 11-15; items/armor.json covers {TOTAL_SETS} sets.")
+    print(f"Generated netherite-based sets 11-15 of {TOTAL_SETS}; now run gen.py for the item definitions.")
 
 
 if __name__ == "__main__":

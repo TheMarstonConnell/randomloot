@@ -97,6 +97,7 @@ public final class RandomLootGameTests {
 		register(event, env, "gen_tool_dispenser", RandomLootGameTests::genToolDispenser);
 		register(event, env, "dispenser_opens_case", RandomLootGameTests::dispenserOpensCase);
 		register(event, env, "case_opens_into_hand", RandomLootGameTests::caseOpensIntoHand);
+		register(event, env, "case_roll_reveal", RandomLootGameTests::caseRollReveal);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
@@ -224,6 +225,49 @@ public final class RandomLootGameTests {
 				"opening a case should put the generated gear in the hand that held it, got: " + held);
 
 		helper.succeed();
+	}
+
+	/**
+	 * Case-opened gear starts in the rolling state - no name, no worn-armor component,
+	 * no attributes - and reveals all three once the roll's game time elapses. The
+	 * tick driver is exercised directly because gametest mock players don't reliably
+	 * tick their inventories.
+	 */
+	private static void caseRollReveal(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.getAbilities().instabuild = false;
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.CASE.get()));
+
+		ModItems.CASE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+
+		ItemStack held = player.getMainHandItem();
+		helper.assertTrue(LootUtils.isRolling(held), "freshly opened gear should be rolling");
+		helper.assertTrue(held.get(DataComponents.CUSTOM_NAME) == null, "rolling gear should hide its name");
+		helper.assertTrue(held.get(DataComponents.EQUIPPABLE) == null, "rolling gear should not be equippable");
+		helper.assertTrue(held.getItem().getDefaultAttributeModifiers(held).modifiers().isEmpty(),
+				"rolling gear should grant no attributes");
+		helper.assertTrue(LootUtils.getRollEnd(held) == helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS,
+				"the roll should end ROLL_TICKS after opening");
+
+		helper.onEachTick(() -> {
+			ItemStack inHand = player.getMainHandItem();
+			if (LootUtils.isRolling(inHand)) {
+				LootUtils.tickRoll(inHand, helper.getLevel(), player);
+			}
+		});
+
+		helper.succeedWhen(() -> {
+			ItemStack inHand = player.getMainHandItem();
+			helper.assertFalse(LootUtils.isRolling(inHand), "the roll should finish");
+			helper.assertTrue(inHand.get(DataComponents.CUSTOM_NAME) != null,
+					"revealed gear should get its name back");
+			if (LootUtils.getToolType(inHand).isArmor()) {
+				helper.assertTrue(inHand.get(DataComponents.EQUIPPABLE) != null,
+						"revealed armor should become equippable");
+			}
+			helper.assertFalse(held.getItem().getDefaultAttributeModifiers(inHand).modifiers().isEmpty(),
+					"revealed gear should grant attributes again");
+		});
 	}
 
 	/**
