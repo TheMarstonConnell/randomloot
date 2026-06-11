@@ -67,19 +67,27 @@ public class LootCase extends Item {
 	@Override
 	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack lootCase = player.getItemInHand(hand);
+		boolean consumeCase = !player.getAbilities().instabuild;
 
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
 		if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-			LootUtils.generateTool(sPlayer, level); // generate tool and give it to the player
+			ItemStack tool = LootUtils.generateTool(sPlayer, level);
+			if (consumeCase) {
+				// The case stacks to 1, so the new tool takes its slot directly
+				// instead of landing in the first free inventory slot.
+				player.setItemInHand(hand, tool);
+			} else if (!player.getInventory().add(tool)) {
+				// Creative keeps the case in hand, so the tool goes to the inventory.
+				player.drop(tool, false);
+			}
+		} else if (consumeCase) {
+			lootCase.shrink(1); // client prediction; the server replaces the stack above
 		}
 
 		// Awards the single ITEM_USED stat for the case. genTool() reads this exact
 		// stat to size the loot "goodness" curve, so it must only be counted once.
 		player.awardStat(Stats.ITEM_USED.get(this));
-		if (!player.getAbilities().instabuild) {
-			lootCase.shrink(1);
-		}
 
 		return InteractionResult.SUCCESS;
 	}

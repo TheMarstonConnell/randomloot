@@ -34,6 +34,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -89,6 +90,7 @@ public final class RandomLootGameTests {
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "gen_tool_dispenser", RandomLootGameTests::genToolDispenser);
 		register(event, env, "dispenser_opens_case", RandomLootGameTests::dispenserOpensCase);
+		register(event, env, "case_opens_into_hand", RandomLootGameTests::caseOpensIntoHand);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
@@ -189,6 +191,32 @@ public final class RandomLootGameTests {
 							e -> e.getItem().is(ModItems.TOOL.get()) || e.getItem().is(ModItems.ARMOR.get())),
 					"dispenser should eject generated loot gear");
 		});
+	}
+
+	/**
+	 * Opening a Loot Case puts the generated gear in the hand that held the case,
+	 * even when every other inventory slot is full. The regression was the tool
+	 * being added to the first free inventory slot instead of the freed hand slot.
+	 */
+	private static void caseOpensIntoHand(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		// The mock player is hardwired to creative; the in-hand replacement only
+		// happens in survival, where the case is actually consumed.
+		player.getAbilities().instabuild = false;
+
+		Inventory inv = player.getInventory();
+		for (int i = 0; i < inv.getContainerSize(); i++) {
+			inv.setItem(i, new ItemStack(Items.STONE, 64));
+		}
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.CASE.get()));
+
+		ModItems.CASE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+
+		ItemStack held = player.getMainHandItem();
+		helper.assertTrue(held.is(ModItems.TOOL.get()) || held.is(ModItems.ARMOR.get()),
+				"opening a case should put the generated gear in the hand that held it, got: " + held);
+
+		helper.succeed();
 	}
 
 	/**
