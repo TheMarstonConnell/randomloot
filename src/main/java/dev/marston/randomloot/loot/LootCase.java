@@ -27,7 +27,7 @@ public class LootCase extends Item {
 				Direction direction = source.state().getValue(DispenserBlock.FACING);
 				Position position = DispenserBlock.getDispensePosition(source);
 
-				ItemStack tool = LootUtils.genTool(null, source.level()); // generate tool and give it to the player
+				ItemStack tool = LootUtils.genTool(null, source.level(), source.pos());
 
 				spawnTool(source.level(), tool, 6, direction, position);
 

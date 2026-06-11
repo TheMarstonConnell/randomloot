@@ -28,6 +28,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -516,11 +517,11 @@ public class LootUtils {
         return cosmeticTag.getIntOr("texture", 0);
 	}
 
-	private static void storeBiomeData(ItemStack lootItem, Level level, Player player) {
+	private static void storeBiomeData(ItemStack lootItem, Level level, @Nullable BlockPos pos) {
 		float temp = 0.7f;
 
-		if (player != null) {
-			Holder<Biome> biome = level.getBiome(player.blockPosition());
+		if (pos != null) {
+			Holder<Biome> biome = level.getBiome(pos);
 			Biome b = biome.value();
 			temp = b.getBaseTemperature();
 		}
@@ -528,8 +529,8 @@ public class LootUtils {
 		setBiomeTemperature(lootItem, temp);
 
 		// Store biome key for modifier filtering
-		if (player != null) {
-			Holder<Biome> biomeHolder = level.getBiome(player.blockPosition());
+		if (pos != null) {
+			Holder<Biome> biomeHolder = level.getBiome(pos);
 
 			// Get biome key from registry
 			String biomeKey = "unknown";
@@ -581,12 +582,10 @@ public class LootUtils {
 		String nameColor = "#50ab4b";
 		float temp = getBiomeTemperature(lootItem); // Get stored temperature
 
-		if (player != null) {
-			if (level.dimension().equals(Level.NETHER)) {
-				nameColor = "#FF8C19";
-			} else if (level.dimension().equals(Level.END)) {
-				nameColor = "#C419FF";
-			}
+		if (level.dimension().equals(Level.NETHER)) {
+			nameColor = "#FF8C19";
+		} else if (level.dimension().equals(Level.END)) {
+			nameColor = "#C419FF";
 		}
 
 		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(level.getRandom(), temp, level.isRaining()), nameColor);
@@ -760,6 +759,10 @@ public class LootUtils {
 	}
 
 	public static ItemStack genTool(Player player, Level level) {
+		return genTool(player, level, player != null ? player.blockPosition() : null);
+	}
+
+	public static ItemStack genTool(Player player, Level level, @Nullable BlockPos pos) {
 
 		/**
 		 * We want to be able to make the loot get better over time for players. This is
@@ -773,19 +776,20 @@ public class LootUtils {
 		 * their old tools in favor of these new ones since they're comparable AND these
 		 * new ones have a clean XP slate so they can level faster again.
 		 */
-		int count = 0;
 		if (level.isClientSide()) {
 			return ItemStack.EMPTY;
 		}
 
+		float goodness;
 		if (player != null) {
 			ServerPlayer sPlayer = (ServerPlayer) player;
 			StatType<Item> itemUsed = Stats.ITEM_USED;
-			count = sPlayer.getStats().getValue(itemUsed.get(ModItems.CASE.get()));
-		}
-
-		float goodness = (float) (Math.sqrt(count + 1) * Config.Goodness); // keeping track of items stats through a
+			int count = sPlayer.getStats().getValue(itemUsed.get(ModItems.CASE.get()));
+			goodness = (float) (Math.sqrt(count + 1) * Config.Goodness); // keeping track of items stats through a
 																			// "goodness" curve
+		} else {
+			goodness = machineGoodness(level);
+		}
 
 		int traits = (int) (Math.floor(goodness / 2.0f)); // how many traits the tool should be created with
 
@@ -854,7 +858,7 @@ public class LootUtils {
 		lootItem = setToolType(lootItem, m);
 
 		// Store biome data BEFORE generating traits (so biome-restricted modifiers work)
-		storeBiomeData(lootItem, level, player);
+		storeBiomeData(lootItem, level, pos);
 
 		// Store owner data for Soulbound modifier
 		if (player != null) {
@@ -872,6 +876,22 @@ public class LootUtils {
 		}
 
 		return lootItem;
+	}
+
+	/**
+	 * Goodness for caseless openers (dispensers). There is no opener stat to read,
+	 * so ride the curve of the most progressed online player, scaled down by
+	 * config. Deliberately awards no stats: dispensers must not farm progression.
+	 */
+	private static float machineGoodness(Level level) {
+		int best = 0;
+		MinecraftServer server = level.getServer();
+		if (server != null) {
+			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
+				best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
+			}
+		}
+		return (float) (Math.sqrt(best + 1) * Config.Goodness * Config.DispenserGoodness);
 	}
 
 	public static boolean generateTool(ServerPlayer player, Level level) {

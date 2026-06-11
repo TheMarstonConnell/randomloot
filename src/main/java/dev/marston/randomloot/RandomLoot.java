@@ -5,6 +5,7 @@ import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.gametest.RandomLootGameTests;
 import dev.marston.randomloot.items.ModItems;
+import dev.marston.randomloot.loot.LootCase;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.recipes.Recipies;
 import net.minecraft.resources.Identifier;
@@ -59,6 +60,8 @@ public class RandomLoot
 
     private void commonSetup(final FMLCommonSetupEvent event)
     {
+        // Dispenser behavior registration is not thread-safe; defer off the parallel mod-loading pool.
+        event.enqueueWork(LootCase::initDispenser);
     }
 
     // You can use SubscribeEvent and let the Event Bus discover methods to call

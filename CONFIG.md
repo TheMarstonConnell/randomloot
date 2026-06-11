@@ -20,6 +20,7 @@ These settings affect how tools improve over time.
 |--------|---------|-------|-------------|
 | `goodness_rate` | 1.0 | 0.01-10.0 | Multiplier for tool improvement rate per player |
 | `armorChance` | 0.5 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |
+| `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |
 
 ## Modifier Toggles
 
