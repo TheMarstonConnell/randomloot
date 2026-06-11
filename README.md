@@ -10,39 +10,39 @@ Introducing Looting like you've never seen it before! Have you ever felt that Mi
 This mod is built around the Loot Case, which opens into a Random Tool or a piece of Random Armor. You'll never see them called that in game since every item is randomly generated and uniquely named.
 
 ### Loot Case
-You can find cases in any chest that generated in a structure of some kind (ex: dungeons, mineshafts, buried treasure). By default there is a 25% chance that a structure chest contains a case (configurable, see the [Configuration Guide](CONFIG.md)). Right-clicking with this case generates a new tool or armor piece and removes the case from your inventory.
+You can find cases in any chest that generated in a structure of some kind (ex: dungeons, mineshafts, buried treasure). By default there is a 25% chance that a structure chest contains a case (configurable, see the [Configuration Guide](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/CONFIG.md)). Right-clicking with this case generates a new tool or armor piece and removes the case from your inventory.
 
-![case in inventory](.github/assets/case_in_inv.png)
+![case in inventory](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/case_in_inv.png)
 
 ### Random Tool
 Random Tools look like a variety of tool types and can be one of: pickaxes, shovels, axes, swords. These tools all generate with random traits. For every tool you generate by opening a case, the tool you generate will come with better stats and more traits.
 
-![tools in inventory](.github/assets/tools.png)
+![tools in inventory](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/tools.png)
 
-![tools with information](.github/assets/info.png)
+![tools with information](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/info.png)
 
 Holding Shift while hovering over tools will give you an expanded view on details about the tool and current status of traits.
-![tools with shift information](.github/assets/shift_info.png)
+![tools with shift information](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/shift_info.png)
 
 Holding Control (command on a mac) while hovering over tools will give you a description of every trait currently applied to the tool.
-![tools with control information](.github/assets/expanded_info.png)
+![tools with control information](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/expanded_info.png)
 
 ### Random Armor
-Loot Cases can also contain Random Armor — helmets, chestplates, leggings, and boots. By default a case has a 50% chance to hold an armor piece instead of a tool (configurable). Armor generates with its own pool of traits and follows the same progression, naming, and tooltip rules as tools.
+Loot Cases can also contain Random Armor — helmets, chestplates, leggings, and boots. By default a case has a 15% chance to hold an armor piece instead of a tool (configurable). Armor generates with its own pool of traits and follows the same progression, naming, and tooltip rules as tools.
 
-Both tools and armor are enchantable and can be repaired in an anvil with a configurable repair material (default: diamond) — see the [Loot & Crafting guide](LOOT.md) for details.
+Both tools and armor are enchantable and can be repaired in an anvil with a configurable repair material (default: diamond) — see the [Loot & Crafting guide](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/LOOT.md) for details.
 
 #### Tool Modifiers
-For a complete list of modifiers check out the [modifier list](MODIFIERS.md).
+For a complete list of modifiers check out the [modifier list](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/MODIFIERS.md).
 
 ### Trait Addition/Subtraction Template
-Trait Addition/Subtraction Templates are items that allow you to add and remove traits from your tools. To do this, place either an addition template or subtraction template inside a Smithing Table, to add or remove a trait. Then place in your tool and the corresponding item listed in the [Modifiers](MODIFIERS.md) list. Then You can preview what will happen to your tool.
+Trait Addition/Subtraction Templates are items that allow you to add and remove traits from your tools. To do this, place either an addition template or subtraction template inside a Smithing Table, to add or remove a trait. Then place in your tool and the corresponding item listed in the [Modifiers](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/MODIFIERS.md) list. Then You can preview what will happen to your tool.
 
 You can find Trait Addition Templates in dungeon chests similarly to loot cases (15% chance by default). To get Subtraction Templates, right click with an addition template in your hand. They can be swapped back and forth as many times as you'd like but once you use them they're gone.
 
 In this example, we're adding `Living` to the tool using an addition template.
 
-![smithing table addition](.github/assets/smithing_addition.png)
+![smithing table addition](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/smithing_addition.png)
 
 ### Random Essence & Salvaging
 Don't want a tool or armor piece you generated? Smelt it in a furnace to salvage it into Random Essence. Combining a Random Tool or Random Armor with Random Essence in a crafting grid changes the item's texture — each additional Essence cycles one texture further, so you can re-style your gear without losing any traits, levels, or stats. You can also craft 9 Random Essence into a brand new Loot Case, so even bad rolls eventually pay off.
@@ -53,12 +53,12 @@ You can place cases in dispensers to be opened automatically. Dispensed gear rol
 
 ## Documentation
 
-- [Modifier List](MODIFIERS.md) - All available modifiers and recipes
-- [Biome-Specific Traits](BIOMES.md) - Traits tied to specific biomes
-- [Configuration Guide](CONFIG.md) - Server/modpack configuration options
-- [Tool Progression](PROGRESSION.md) - Leveling, stats, and advancement
-- [Name Generation](NAMES.md) - How tool names are created
-- [Loot & Crafting](LOOT.md) - Where to find items and crafting guide
+- [Modifier List](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/MODIFIERS.md) - All available modifiers and recipes
+- [Biome-Specific Traits](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/BIOMES.md) - Traits tied to specific biomes
+- [Configuration Guide](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/CONFIG.md) - Server/modpack configuration options
+- [Tool Progression](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/PROGRESSION.md) - Leveling, stats, and advancement
+- [Name Generation](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/NAMES.md) - How tool names are created
+- [Loot & Crafting](https://github.com/TheMarstonConnell/randomloot/blob/26.1.x/LOOT.md) - Where to find items and crafting guide
 
 ## Another Rewrite?
 The jump from 1.12 to 1.16 was one of the biggest changes to Forge & the Minecraft codebase making a complete rewrite of the mod very welcome. However, the 1.16 to 1.20 was again, a massive change and I was overall dissatisfied with the 1.16 version of the mods codebase and sloppy planning. As such, 1.20 was a complete rewrite of Random Loot to make the mod feel more cohesive and less janky. That rewrite is the codebase that lives on today, now running on NeoForge for modern Minecraft versions.
