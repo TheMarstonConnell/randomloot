@@ -1,5 +1,6 @@
 package dev.marston.randomloot.gametest;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import com.mojang.serialization.MapCodec;
@@ -14,6 +15,7 @@ import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
@@ -31,12 +33,17 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DispenserBlock;
+import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.neoforge.common.loot.LootModifierManager;
 import net.neoforged.neoforge.resource.NeoForgeReloadListeners;
@@ -81,6 +88,7 @@ public final class RandomLootGameTests {
 		register(event, env, "modifier_roundtrip", RandomLootGameTests::modifierRoundTrip);
 		register(event, env, "gen_tool", RandomLootGameTests::genTool);
 		register(event, env, "gen_tool_dispenser", RandomLootGameTests::genToolDispenser);
+		register(event, env, "dispenser_opens_case", RandomLootGameTests::dispenserOpensCase);
 		register(event, env, "break_block", RandomLootGameTests::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
@@ -152,6 +160,35 @@ public final class RandomLootGameTests {
 				"dispensed item should record the dispenser's biome, got: " + biomeKey);
 
 		helper.succeed();
+	}
+
+	/**
+	 * A redstone-fired dispenser consumes a Loot Case and ejects generated gear instead
+	 * of the case itself. The regression was initDispenser() never being called, which
+	 * left the vanilla item-eject behavior in place.
+	 */
+	private static void dispenserOpensCase(GameTestHelper helper) {
+		BlockPos dispenserPos = new BlockPos(1, 1, 1);
+		helper.setBlock(dispenserPos,
+				Blocks.DISPENSER.defaultBlockState().setValue(DispenserBlock.FACING, Direction.UP));
+
+		DispenserBlockEntity dispenser = (DispenserBlockEntity) helper.getLevel()
+				.getBlockEntity(helper.absolutePos(dispenserPos));
+		dispenser.setItem(0, new ItemStack(ModItems.CASE.get()));
+
+		helper.setBlock(new BlockPos(0, 1, 1), Blocks.REDSTONE_BLOCK);
+
+		helper.succeedWhen(() -> {
+			Vec3 center = Vec3.atCenterOf(helper.absolutePos(dispenserPos));
+			List<ItemEntity> items = helper.getLevel().getEntitiesOfClass(ItemEntity.class,
+					new AABB(center, center).inflate(8.0));
+			helper.assertFalse(items.stream().anyMatch(e -> e.getItem().is(ModItems.CASE.get())),
+					"dispenser should consume the case, not eject it");
+			helper.assertTrue(
+					items.stream().anyMatch(
+							e -> e.getItem().is(ModItems.TOOL.get()) || e.getItem().is(ModItems.ARMOR.get())),
+					"dispenser should eject generated loot gear");
+		});
 	}
 
 	/**
