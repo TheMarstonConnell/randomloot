@@ -65,7 +65,7 @@ public class LootUtils {
 			if (level != null && LootUtils.isRolling(stack)) {
 				long ticksLeft = LootUtils.getRollEnd(stack) - level.getGameTime();
 				if (ticksLeft > 0) {
-					return LootUtils.rollingTexture(stack, ticksLeft);
+					return LootUtils.rollingTexture(stack, ticksLeft, seed);
 				}
 			}
 			return LootUtils.getTexture(stack);
@@ -173,27 +173,31 @@ public class LootUtils {
 	}
 
 	/**
-	 * The texture shown while rolling: walks backward from the final texture so the
-	 * wheel lands exactly on it at reveal time, decelerating via {@link #rollSteps}.
-	 * Spins through every variant of every type - tools flash armor looks and vice
-	 * versa, which is why items/tool.json and items/armor.json carry identical entries.
+	 * The texture shown while rolling: each step is a hash-scrambled jump across
+	 * every variant of every type (tools flash armor looks and vice versa, which is
+	 * why items/tool.json and items/armor.json carry identical entries), decelerating
+	 * via {@link #rollSteps} and settling on the real texture for the final steps.
+	 * A sequential walk would telegraph the outcome - the wheel would park on the
+	 * final texture's same-type neighbors right before the reveal.
 	 */
-	public static float rollingTexture(ItemStack stack, long ticksLeft) {
-		ToolType type = getToolType(stack);
-		if (type == ToolType.NULL) {
+	public static float rollingTexture(ItemStack stack, long ticksLeft, int seed) {
+		long step = rollSteps(ticksLeft);
+		if (step <= 0) {
 			return getTexture(stack);
 		}
 
 		int total = 0;
-		int finalFlat = 0;
 		for (ToolType t : ROLL_WHEEL) {
-			if (t == type) {
-				finalFlat = total + getTextureIndex(stack);
-			}
 			total += textureCount(t);
 		}
 
-		int shown = Math.floorMod(finalFlat - (int) (rollSteps(ticksLeft) % total), total);
+		// SplitMix64-style mix of the step and the stack's display seed, so the
+		// sequence looks random but is stable within a tick and differs per stack.
+		long h = step * 0x9E3779B97F4A7C15L + seed * 0xC2B2AE3D27D4EB4FL;
+		h ^= h >>> 27;
+		h *= 0x94D049BB133111EBL;
+		h ^= h >>> 31;
+		int shown = (int) Math.floorMod(h, total);
 
 		for (ToolType t : ROLL_WHEEL) {
 			int count = textureCount(t);
