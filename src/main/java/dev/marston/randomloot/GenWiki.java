@@ -406,9 +406,10 @@ public class GenWiki {
         write("### Dispenser Automation", f);
         write("", f);
         write("Loot Cases can be placed in **Dispensers** for automated opening:", f);
-        write("- The dispenser will open the case and eject a tool", f);
-        write("- **Note:** Tools created by dispensers don't benefit from player progression", f);
-        write("- Dispenser tools will always have base stats (as if 0 cases opened)", f);
+        write("- The dispenser will open the case and eject the generated item", f);
+        write("- Dispensed gear rolls at a fraction of the goodness of the most progressed online player (default 75%, configurable via `dispenserGoodness` in [CONFIG.md](CONFIG.md))", f);
+        write("- The dispenser's own biome and dimension are recorded on the item, so biome-restricted traits can roll", f);
+        write("- **Note:** Opening cases with a dispenser does not advance player progression", f);
         write("", f);
 
         write("## Repairing Tools", f);

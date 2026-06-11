@@ -26,9 +26,10 @@ The tool's quality depends on how many cases you've opened - see [PROGRESSION.md
 ### Dispenser Automation
 
 Loot Cases can be placed in **Dispensers** for automated opening:
-- The dispenser will open the case and eject a tool
-- **Note:** Tools created by dispensers don't benefit from player progression
-- Dispenser tools will always have base stats (as if 0 cases opened)
+- The dispenser will open the case and eject the generated item
+- Dispensed gear rolls at a fraction of the goodness of the most progressed online player (default 75%, configurable via `dispenserGoodness` in [CONFIG.md](CONFIG.md))
+- The dispenser's own biome and dimension are recorded on the item, so biome-restricted traits can roll
+- **Note:** Opening cases with a dispenser does not advance player progression
 
 ## Repairing Tools
 
