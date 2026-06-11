@@ -40,7 +40,7 @@ public class Config
     public static double CaseChance;
     public static double ModChance;
     public static double Goodness;
-    public static double ArmorChance = 0.5;
+    public static double ArmorChance = 0.15;
     public static double DispenserGoodness = 0.75;
     public static List<? extends String> LootTableMatches = List.of("chest");
 
@@ -74,7 +74,7 @@ public class Config
         GOODNESS = BUILDER.comment("rate of tool improvement per player").defineInRange("goodness_rate", 1.0, 0.01,
                 10.0);
         ARMOR_CHANCE = BUILDER.comment("chance that a loot case contains an armor piece instead of a tool.")
-                .defineInRange("armorChance", 0.5, 0.0, 1.0);
+                .defineInRange("armorChance", 0.15, 0.0, 1.0);
         DISPENSER_GOODNESS = BUILDER
                 .comment("goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.")
                 .defineInRange("dispenserGoodness", 0.75, 0.0, 1.0);

@@ -128,7 +128,7 @@ public class GenWiki {
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
         write("| `goodness_rate` | 1.0 | 0.01-10.0 | Multiplier for tool improvement rate per player |", f);
-        write("| `armorChance` | 0.5 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |", f);
+        write("| `armorChance` | 0.15 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |", f);
         write("| `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |", f);
         write("", f);
 
@@ -406,9 +406,10 @@ public class GenWiki {
         write("### Dispenser Automation", f);
         write("", f);
         write("Loot Cases can be placed in **Dispensers** for automated opening:", f);
-        write("- The dispenser will open the case and eject a tool", f);
-        write("- **Note:** Tools created by dispensers don't benefit from player progression", f);
-        write("- Dispenser tools will always have base stats (as if 0 cases opened)", f);
+        write("- The dispenser will open the case and eject the generated item", f);
+        write("- Dispensed gear rolls at a fraction of the goodness of the most progressed online player (default 75%, configurable via `dispenserGoodness` in [CONFIG.md](CONFIG.md))", f);
+        write("- The dispenser's own biome and dimension are recorded on the item, so biome-restricted traits can roll", f);
+        write("- **Note:** Opening cases with a dispenser does not advance player progression", f);
         write("", f);
 
         write("## Repairing Tools", f);
