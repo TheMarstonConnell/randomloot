@@ -48,20 +48,6 @@ public class Magnetized extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public Modifier clone() {
-		return new Magnetized(this.name);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		return tag;
-	}
-
-	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Magnetized(tag.getStringOr(NAME, "Magnetized"));
 	}

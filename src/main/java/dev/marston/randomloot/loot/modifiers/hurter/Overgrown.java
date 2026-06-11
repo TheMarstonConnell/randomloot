@@ -1,12 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -19,9 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 
-public class Overgrown extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
-
-	private int level = 0;
+public class Overgrown extends LeveledModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 
 	public Overgrown(String name, int level) {
 		this.name = name;
@@ -29,33 +26,22 @@ public class Overgrown extends AbstractModifier implements EntityHurtModifier, H
 	}
 
 	public Overgrown() {
-		this.name = "Overgrown";
-		this.level = 0;
-	}
-
-	public Modifier clone() {
-		return new Overgrown();
+		this("Overgrown", 0);
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 2; // Max level 3 (0, 1, 2)
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(this.level + 1);
 	}
 
 	@Override
@@ -89,8 +75,11 @@ public class Overgrown extends AbstractModifier implements EntityHurtModifier, H
 							  type == EntityType.BEE;
 
 		if (isArthropod) {
+			if (hurtee.level().isClientSide()) {
+				return false;
+			}
 			float bonusDamage = 2.5f + (this.level * 2.5f);
-			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
+			dealBonusDamage(hurtee, hurter, bonusDamage);
 			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, this.level));
 		}
 
@@ -103,16 +92,6 @@ public class Overgrown extends AbstractModifier implements EntityHurtModifier, H
 		if (living.hasEffect(MobEffects.POISON)) {
 			living.removeEffect(MobEffects.POISON);
 		}
-	}
-
-	@Override
-	public boolean canLevel() {
-		return level < 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	@Override

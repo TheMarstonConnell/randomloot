@@ -2,9 +2,9 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -30,13 +30,11 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-public class Prospector extends AbstractModifier implements BlockBreakModifier {
+public class Prospector extends LeveledModifier implements BlockBreakModifier {
 
-	private int level;
 	private int totalFinds;
 
 	private static final String TOTAL_FINDS = "totalFinds";
-	private static final int MAX_LEVEL = 10;
 	private static final float BASE_CHANCE = 0.03f;
 	private static final float CHANCE_PER_LEVEL = 0.01f;
 
@@ -51,13 +49,17 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	public Prospector() {
-		this.name = "Prospector";
-		this.level = 1;
-		this.totalFinds = 0;
+		this("Prospector", 1, 0);
 	}
 
-	public Modifier clone() {
-		return new Prospector();
+	@Override
+	protected int minLevel() {
+		return 1;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 10;
 	}
 
 	private boolean isStoneBlock(BlockState state) {
@@ -113,9 +115,7 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
+		CompoundTag tag = super.toNBT();
 		tag.putInt(TOTAL_FINDS, totalFinds);
 		return tag;
 	}
@@ -126,14 +126,6 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 				tag.getStringOr(NAME, "Prospector"),
 				ModifierConstants.getLevel(tag, 1),
 				tag.getIntOr(TOTAL_FINDS, 0));
-	}
-
-	@Override
-	public String name() {
-		if (level == 1) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(level);
 	}
 
 	@Override
@@ -163,15 +155,5 @@ public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	@Override
 	public boolean forTool(ToolType type) {
 		return type.equals(ToolType.PICKAXE);
-	}
-
-	@Override
-	public boolean canLevel() {
-		return this.level < MAX_LEVEL;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 }

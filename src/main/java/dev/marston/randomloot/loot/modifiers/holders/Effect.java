@@ -6,7 +6,6 @@ import dev.marston.randomloot.loot.modifiers.EffectModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.resources.language.I18n;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
@@ -18,36 +17,25 @@ import net.minecraft.world.level.Level;
 
 public class Effect extends EffectModifier implements HoldModifier {
 
-	public Effect(String name, String tagname, int power, int duration, Holder<MobEffect> effect) {
-		super(name, tagname, power, duration, effect);
+	public Effect(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
+			ChatFormatting format) {
+		super(name, tagname, power, duration, effect, format);
 	}
 
-	public Effect(String name, String tagname, int duration, Holder<MobEffect> effect) {
-		this(name, tagname, 0, duration, effect);
-	}
-
-	public Modifier clone() {
-		return new Effect(this.name, this.tagname, this.power, this.duration, this.effect);
+	public Effect(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+		this(name, tagname, 0, duration, effect, format);
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect);
-	}
-
-	@Override
-	public String color() {
-		int color = effect.value().getColor();
-		ChatFormatting format = ChatFormatting.getById(color);
-		if (format == null) {
-			return ChatFormatting.LIGHT_PURPLE.getName();
-		}
-		return format.getName();
+		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration,
+				this.effect, this.format);
 	}
 
 	@Override
 	public String description() {
-		return "While holding or wearing this item, get the " + I18n.get(effect.value().getDisplayName().getString()).toLowerCase() + " "
+		return "While holding or wearing this item, get the "
+				+ effect.value().getDisplayName().getString().toLowerCase() + " "
 				+ LootUtils.roman(this.power + 1) + " effect.";
 	}
 

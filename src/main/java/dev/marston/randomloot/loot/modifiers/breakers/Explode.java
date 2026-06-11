@@ -28,14 +28,13 @@ public class Explode extends AbstractModifier implements BlockBreakModifier {
 		this.power = 4.0f;
 	}
 
-	public Modifier clone() {
-		return new Explode();
-	}
-
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
 
 		Level l = player.level();
+		if (l.isClientSide()) {
+			return false;
+		}
 
 		l.explode(player, Explosion.getDefaultDamageSource(l, player), null, pos.getX(), pos.getY() + 0.5, pos.getZ(), power, false, ExplosionInteraction.TNT);
 

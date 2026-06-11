@@ -31,18 +31,10 @@ public class FireBall extends AbstractModifier implements UseModifier {
 		this.damage = 20;
 	}
 
-	public Modifier clone() {
-		return new FireBall();
-	}
-
 	@Override
 	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
+		CompoundTag tag = super.toNBT();
 		tag.putInt(DAMAGE, damage);
-
 		return tag;
 	}
 

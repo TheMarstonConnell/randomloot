@@ -2,10 +2,10 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -17,9 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 
-public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRestrictedModifier {
-
-	private int level = 0;
+public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestrictedModifier {
 
 	public Aquatic(String name, int level) {
 		this.name = name;
@@ -27,33 +25,22 @@ public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRest
 	}
 
 	public Aquatic() {
-		this.name = "Aquatic";
-		this.level = 0;
-	}
-
-	public Modifier clone() {
-		return new Aquatic();
+		this("Aquatic", 0);
 	}
 
 	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-		return tag;
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 2; // Max level 3 (0, 1, 2)
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Aquatic(tag.getStringOr(NAME, "Aquatic"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-		return this.name + " " + LootUtils.roman(this.level + 1);
 	}
 
 	@Override
@@ -87,16 +74,6 @@ public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRest
 		if (living.isUnderWater()) {
 			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, this.level + 1, true, false));
 		}
-	}
-
-	@Override
-	public boolean canLevel() {
-		return level < 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	@Override

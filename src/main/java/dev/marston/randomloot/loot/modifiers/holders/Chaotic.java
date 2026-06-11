@@ -65,11 +65,6 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     }
 
     @Override
-    public Modifier clone() {
-        return new Chaotic();
-    }
-
-    @Override
     public boolean forTool(ToolType type) {
         return true; // Works with all tool types
     }
@@ -134,13 +129,12 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
 
         float currentState = getCurrentState(hurtee.level());
 
-        // Apply damage modifier based on current state
-        if (currentState != 0) {
+        // Apply damage modifier based on current state. dealBonusDamage ignores
+        // non-positive amounts, so negative fluctuations simply add no bonus
+        // (a negative hurt() would heal the target).
+        if (currentState > 0) {
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-            float bonusDamage = baseDamage * currentState;
-            // Reset invulnerability to apply bonus damage
-            hurtee.invulnerableTime = 0;
-            hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
+            dealBonusDamage(hurtee, hurter, baseDamage * currentState);
         }
 
         return false;

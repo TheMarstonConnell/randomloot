@@ -47,20 +47,8 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new Feasting(tag.getStringOr(NAME, "Feasting"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new Feasting();
     }
 
     @Override

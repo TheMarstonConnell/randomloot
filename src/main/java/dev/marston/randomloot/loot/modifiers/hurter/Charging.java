@@ -35,10 +35,6 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 		this.charged = 0;
 	}
 
-	public Modifier clone() {
-		return new Charging();
-	}
-
 	@Override
 	public CompoundTag toNBT() {
 

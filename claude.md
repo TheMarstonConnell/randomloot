@@ -260,13 +260,19 @@ git worktree list
 ## Adding New Modifiers
 1. **Create a git worktree first** (see above section)
 2. Create class in appropriate `modifiers/` subdirectory
-3. **`extends AbstractModifier`** and implement the relevant interface(s) (`BlockBreakModifier`, `HoldModifier`, `EntityHurtModifier`, …). The base provides the shared `name` field and default `name()` / `writeToLore()`; only override `name()` when the trait is leveled. Use `isWeapon(type)` / `isMiningTool(type)` for `forTool(...)`.
+3. **`extends AbstractModifier`** (or `LeveledModifier` if it levels, `PlaceOnUseModifier`/`BlockHighlighter` for those families) and implement the relevant interface(s) (`BlockBreakModifier`, `HoldModifier`, `EntityHurtModifier`, …). The base provides the shared `name` field and default `name()` / `writeToLore()` / `toNBT()`; do NOT write a `clone()` (the interface no longer has one — registry prototypes are the factories via `fromNBT`). Use `isWeapon(type)` / `isMiningTool(type)` for `forTool(...)`.
 4. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
 5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
 6. Add to config in `Config.java` if toggleable
 
 ### Shared modifier infrastructure
-- **`AbstractModifier`** (`loot/modifiers/`) — base for every modifier; holds `name` + default `name()`/`writeToLore()` and the `isWeapon`/`isMiningTool` tool-group helpers.
+- **`AbstractModifier`** (`loot/modifiers/`) — base for every modifier; holds `name` + default `name()`/`writeToLore()`/`toNBT()` (name-only; stateful classes extend via `super.toNBT()`) and the `isWeapon`/`isMiningTool` tool-group helpers.
+- **`LeveledModifier`** (`loot/modifiers/`) — base for smithing-leveled traits; holds `level`, the roman-numeral `name()` (first upgrade displays "II"), `canLevel()`/`levelUp()` and LEVEL serialization. Subclasses supply `minLevel()` (0 or 1) + `maxLevel()` and read the level back in `fromNBT` via `ModifierConstants.getLevel`.
+- **`PlaceOnUseModifier`** (`loot/modifiers/users/`) — base for crouch-right-click placement traits (DirtPlace/TorchPlace/FirePlace); owns the crouch gate, DAMAGE NBT and the on-SUCCESS durability charge; subclasses implement `place(UseOnContext)`.
+- **`BlockHighlighter`** (`loot/modifiers/holders/`) — base for glowing-marker finder traits (OreFinder/TreasureFinder); owns the throttled 20³ block scan and shulker marker spawn/lifecycle/cleanup; subclasses implement `isTarget(Block)`.
+- **`EffectModifier`** — also holds the trait's `ChatFormatting` color; pass it in the constructor (see the `Effect`/`HurtEffect` registrations in `ModifierRegistry`).
+- **`LootTooltips`** (`loot/`) — shared `appendHoverText` body for `LootItem`/`LootArmorItem`; only the shift-expanded stats block differs, passed as a lambda.
+- **`LootUtils.getModifiers`** already filters config-disabled traits — never re-check `Config.traitEnabled` on its results.
 - **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `invulnerableTime` (otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
 - **`LootUtils.breakBlockAsPlayer(stack, pos, player, level, state)`** — breaks a block as the player (drops + stats) and returns whether it was actually destroyed; only spend durability when it returns `true`.
 - **Leveled traits** persist their level under `ModifierConstants.LEVEL` (`"trait_level"`); classes migrated from the old `"level"` key read both for back-compat.

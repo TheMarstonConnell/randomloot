@@ -12,14 +12,12 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier {
 
-    private static final String NAME = "name";
     private static final double SEARCH_RADIUS = 10.0;
     private static final float BONUS_PER_MOB = 0.05f; // 5% per mob
     private static final float MAX_BONUS = 0.50f; // 50% max bonus
@@ -48,20 +46,8 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new CrowdPleaser(tag.getStringOr(NAME, "Crowd Pleaser"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new CrowdPleaser();
     }
 
     @Override
@@ -98,17 +84,7 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
             // Calculate bonus damage
             float bonusPercent = Math.min(nearbyCount * BONUS_PER_MOB, MAX_BONUS);
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-            float bonusDamage = baseDamage * bonusPercent;
-            
-            // Reset invulnerability frames so bonus damage applies
-            hurtee.invulnerableTime = 0;
-            
-            // Apply bonus damage
-            if (hurter instanceof Player player) {
-                hurtee.hurt(hurter.damageSources().playerAttack(player), bonusDamage);
-            } else {
-                hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
-            }
+            dealBonusDamage(hurtee, hurter, baseDamage * bonusPercent);
         }
 
         return false;

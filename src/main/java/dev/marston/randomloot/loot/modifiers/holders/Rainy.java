@@ -16,38 +16,17 @@ import net.minecraft.world.level.Level;
 
 public class Rainy extends AbstractModifier implements HoldModifier {
 
-	private float power;
-	private final static String POWER = "power";
-
-	public Rainy(String name, float power) {
+	public Rainy(String name) {
 		this.name = name;
-		this.power = power;
 	}
 
 	public Rainy() {
-		this.name = "Rainy";
-		this.power = 4.0f;
-	}
-
-	public Modifier clone() {
-		return new Rainy();
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putFloat(POWER, power);
-
-		tag.putString(NAME, name);
-
-		return tag;
+		this("Rainy");
 	}
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Rainy(tag.getStringOr(NAME, "Rainy"), tag.getFloatOr(POWER, 4.0f));
+		return new Rainy(tag.getStringOr(NAME, "Rainy"));
 	}
 
 	@Override
@@ -73,7 +52,8 @@ public class Rainy extends AbstractModifier implements HoldModifier {
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		if (level.isRainingAt(holder.blockPosition())) {
-			MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 3, 2, false, false);
+			// hold() runs every tick; a too-short duration makes the effect timer flicker.
+			MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 40, 2, false, false);
 
 			if (holder instanceof LivingEntity le) {
 				le.addEffect(haste);

@@ -15,8 +15,6 @@ import net.minecraft.world.phys.Vec3;
 
 public class Pummeling extends AbstractModifier implements EntityHurtModifier {
 
-    private static final String NAME = "name";
-
     public Pummeling() {
         this.name = "Pummeling";
     }
@@ -41,20 +39,8 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new Pummeling(tag.getStringOr(NAME, "Pummeling"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new Pummeling();
     }
 
     @Override

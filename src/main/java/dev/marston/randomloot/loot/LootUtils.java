@@ -383,59 +383,51 @@ public class LootUtils {
         return statTag.getFloatOr("goodness", 0f);
 	}
 
+	/** Applies {@code edit} to the stack's {@code tagName} element and writes it back. */
+	private static void editTag(ItemStack stack, String tagName, java.util.function.Consumer<CompoundTag> edit) {
+		CompoundTag tag = getOrCreateTagElement(stack, tagName);
+		edit.accept(tag);
+		addTagElement(stack, tagName, tag);
+	}
+
 	public static void setBiomeTemperature(ItemStack stack, float temperature) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		infoTag.putFloat("biomeTemp", temperature);
-		addTagElement(stack, "info", infoTag);
+		editTag(stack, "info", tag -> tag.putFloat("biomeTemp", temperature));
 	}
 
 	public static float getBiomeTemperature(ItemStack stack) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		return infoTag.getFloatOr("biomeTemp", 0.7f);
+		return getOrCreateTagElement(stack, "info").getFloatOr("biomeTemp", 0.7f);
 	}
 
 	public static void setBiomeKey(ItemStack stack, String biomeKey) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		infoTag.putString("biomeKey", biomeKey);
-		addTagElement(stack, "info", infoTag);
+		editTag(stack, "info", tag -> tag.putString("biomeKey", biomeKey));
 	}
 
 	public static String getBiomeKey(ItemStack stack) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		return infoTag.getStringOr("biomeKey", "");
+		return getOrCreateTagElement(stack, "info").getStringOr("biomeKey", "");
 	}
 
 	public static void setDimension(ItemStack stack, String dimension) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		infoTag.putString("dimension", dimension);
-		addTagElement(stack, "info", infoTag);
+		editTag(stack, "info", tag -> tag.putString("dimension", dimension));
 	}
 
 	public static String getDimension(ItemStack stack) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		return infoTag.getStringOr("dimension", "minecraft:overworld");
+		return getOrCreateTagElement(stack, "info").getStringOr("dimension", "minecraft:overworld");
 	}
 
 	public static void setOwnerUUID(ItemStack stack, String uuid) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		infoTag.putString("ownerUUID", uuid);
-		addTagElement(stack, "info", infoTag);
+		editTag(stack, "info", tag -> tag.putString("ownerUUID", uuid));
 	}
 
 	public static String getOwnerUUID(ItemStack stack) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		return infoTag.getStringOr("ownerUUID", "");
+		return getOrCreateTagElement(stack, "info").getStringOr("ownerUUID", "");
 	}
 
 	public static void setOwnerName(ItemStack stack, String name) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		infoTag.putString("ownerName", name);
-		addTagElement(stack, "info", infoTag);
+		editTag(stack, "info", tag -> tag.putString("ownerName", name));
 	}
 
 	public static String getOwnerName(ItemStack stack) {
-		CompoundTag infoTag = getOrCreateTagElement(stack, "info");
-		return infoTag.getStringOr("ownerName", "");
+		return getOrCreateTagElement(stack, "info").getStringOr("ownerName", "");
 	}
 
 	public static void setTexture(ItemStack stack, int texture) {
@@ -518,44 +510,31 @@ public class LootUtils {
 	}
 
 	private static void storeBiomeData(ItemStack lootItem, Level level, @Nullable BlockPos pos) {
-		float temp = 0.7f;
-
-		if (pos != null) {
-			Holder<Biome> biome = level.getBiome(pos);
-			Biome b = biome.value();
-			temp = b.getBaseTemperature();
+		if (pos == null) {
+			setBiomeTemperature(lootItem, 0.7f);
+			return;
 		}
 
-		setBiomeTemperature(lootItem, temp);
+		Holder<Biome> biomeHolder = level.getBiome(pos);
+		setBiomeTemperature(lootItem, biomeHolder.value().getBaseTemperature());
 
 		// Store biome key for modifier filtering
-		if (pos != null) {
-			Holder<Biome> biomeHolder = level.getBiome(pos);
-
-			// Get biome key from registry
-			String biomeKey = "unknown";
+		String biomeKey = "unknown";
+		if (biomeHolder.unwrapKey().isPresent()) {
+			biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
+		} else {
+			// Fallback: search registry for this biome
 			Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
-
-			// Try unwrapKey first
-			if (biomeHolder.unwrapKey().isPresent()) {
-				biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
-			} else {
-				// Fallback: search registry for this biome
-				Biome biome = biomeHolder.value();
-				for (var entry : biomeRegistry.entrySet()) {
-					if (entry.getValue() == biome) {
-						biomeKey = entry.getKey().identifier().toString();
-						break;
-					}
+			for (var entry : biomeRegistry.entrySet()) {
+				if (entry.getValue() == biomeHolder.value()) {
+					biomeKey = entry.getKey().identifier().toString();
+					break;
 				}
 			}
-
-			setBiomeKey(lootItem, biomeKey);
-
-			// Store dimension
-			String dim = level.dimension().identifier().toString();
-			setDimension(lootItem, dim);
 		}
+
+		setBiomeKey(lootItem, biomeKey);
+		setDimension(lootItem, level.dimension().identifier().toString());
 	}
 
 	private static String biomeKeyToReadableName(String biomeKey) {
@@ -828,34 +807,13 @@ public class LootUtils {
 			};
 		}
 
-		int textureCount = switch (m) {
-		case PICKAXE: {
-			yield PICKAXE_COUNT;
-		}
-		case AXE: {
-			yield AXE_COUNT;
-		}
-		case SHOVEL: {
-			yield SHOVEL_COUNT;
-		}
-		case SWORD: {
-			yield SWORD_COUNT;
-		}
-		case HELMET:
-		case CHESTPLATE:
-		case LEGGINGS:
-		case BOOTS: {
-			yield ARMOR_SET_COUNT;
-		}
-		default:
-			yield 0;
-		};
-
 		ItemStack lootItem = new ItemStack(m.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
 
 		LootUtils.setStats(lootItem, goodness);
 
 		lootItem = setToolType(lootItem, m);
+
+		int textureCount = getToolMaxTextures(lootItem);
 
 		// Store biome data BEFORE generating traits (so biome-restricted modifiers work)
 		storeBiomeData(lootItem, level, pos);
@@ -915,64 +873,21 @@ public class LootUtils {
 		return true;
 	}
 
+	private static final int[] ROMAN_VALUES = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
+	private static final String[] ROMAN_SYMBOLS = { "M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV",
+			"I" };
+
 	public static String roman(int input) {
 		if (input < 1 || input > 3999)
 			return "Invalid Roman Number Value";
 		StringBuilder s = new StringBuilder();
-		while (input >= 1000) {
-			s.append("M");
-			input -= 1000;
-		}
-		while (input >= 900) {
-			s.append("CM");
-			input -= 900;
-		}
-		while (input >= 500) {
-			s.append("D");
-			input -= 500;
-		}
-		while (input >= 400) {
-			s.append("CD");
-			input -= 400;
-		}
-		while (input >= 100) {
-			s.append("C");
-			input -= 100;
-		}
-		while (input >= 90) {
-			s.append("XC");
-			input -= 90;
-		}
-		while (input >= 50) {
-			s.append("L");
-			input -= 50;
-		}
-		while (input >= 40) {
-			s.append("XL");
-			input -= 40;
-		}
-		while (input >= 10) {
-			s.append("X");
-			input -= 10;
-		}
-		while (input >= 9) {
-			s.append("IX");
-			input -= 9;
-		}
-		while (input >= 5) {
-			s.append("V");
-			input -= 5;
-		}
-		while (input >= 4) {
-			s.append("IV");
-			input -= 4;
-		}
-		while (input >= 1) {
-			s.append("I");
-			input -= 1;
+		for (int i = 0; i < ROMAN_VALUES.length; i++) {
+			while (input >= ROMAN_VALUES[i]) {
+				s.append(ROMAN_SYMBOLS[i]);
+				input -= ROMAN_VALUES[i];
+			}
 		}
 		return s.toString();
-
 	}
 
 }

@@ -33,10 +33,6 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 		this.charged = 0;
 	}
 
-	public Modifier clone() {
-		return new Combo();
-	}
-
 	@Override
 	public CompoundTag toNBT() {
 

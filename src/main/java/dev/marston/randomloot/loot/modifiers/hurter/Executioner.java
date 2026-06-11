@@ -3,10 +3,9 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.particles.ParticleTypes;
@@ -15,18 +14,12 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
-public class Executioner extends AbstractModifier implements EntityHurtModifier {
-
-    private static final int MAX_LEVEL = 5;
-
-    private int level;
+public class Executioner extends LeveledModifier implements EntityHurtModifier {
 
     public Executioner() {
-        this.name = "Executioner";
-        this.level = 1;
+        this("Executioner", 1);
     }
 
     public Executioner(String name, int level) {
@@ -35,18 +28,13 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
     }
 
     @Override
-    public Modifier clone() {
-        return new Executioner();
+    protected int minLevel() {
+        return 1;
     }
 
     @Override
-    public boolean canLevel() {
-        return level < MAX_LEVEL;
-    }
-
-    @Override
-    public void levelUp() {
-        this.level++;
+    protected int maxLevel() {
+        return 5;
     }
 
     private float getHealthThreshold() {
@@ -60,14 +48,6 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
     }
 
     @Override
-    public String name() {
-        if (level == 1) {
-            return this.name;
-        }
-        return this.name + " " + LootUtils.roman(level);
-    }
-
-    @Override
     public String color() {
         return ChatFormatting.DARK_RED.getName();
     }
@@ -75,14 +55,6 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
     @Override
     public String description() {
         return "Instantly kills mobs below " + String.format("%.0f", getHealthThreshold() * 100) + "% health";
-    }
-
-    @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        tag.putInt(ModifierConstants.LEVEL, level);
-        return tag;
     }
 
     @Override
@@ -102,23 +74,19 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
         }
 
         float healthPercent = hurtee.getHealth() / hurtee.getMaxHealth();
-        
+
         if (healthPercent <= getHealthThreshold()) {
-            if (hurter instanceof Player player) {
-                hurtee.hurt(hurter.damageSources().playerAttack(player), Float.MAX_VALUE);
-            } else {
-                hurtee.hurt(hurter.damageSources().mobAttack(hurter), Float.MAX_VALUE);
-            }
+            dealBonusDamage(hurtee, hurter, Float.MAX_VALUE);
 
             ModCriteria.traitUsed(hurter, this);
-            
+
             if (hurtee.level() instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(
                     ParticleTypes.CRIT,
                     hurtee.getX(), hurtee.getY() + hurtee.getBbHeight() / 2, hurtee.getZ(),
                     20, 0.5, 0.5, 0.5, 0.1
                 );
-                
+
                 serverLevel.playSound(
                     null, hurtee.getX(), hurtee.getY(), hurtee.getZ(),
                     SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS,

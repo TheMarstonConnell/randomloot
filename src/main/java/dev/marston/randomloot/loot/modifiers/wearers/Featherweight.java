@@ -1,8 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.WearerHurtModifier;
@@ -16,13 +15,10 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Boots trait: softens fall damage, removing it entirely when maxed.
  */
-public class Featherweight extends AbstractModifier implements WearerHurtModifier {
+public class Featherweight extends LeveledModifier implements WearerHurtModifier {
 
 	/** Fall damage reduction: 25% at level 0, +25% per level, 100% when maxed. */
 	private static final float REDUCTION_PER_LEVEL = 0.25f;
-	private static final int MAX_LEVEL = 3;
-
-	private int level;
 
 	public Featherweight(String name, int level) {
 		this.name = name;
@@ -31,6 +27,16 @@ public class Featherweight extends AbstractModifier implements WearerHurtModifie
 
 	public Featherweight() {
 		this("Featherweight", 0);
+	}
+
+	@Override
+	protected int minLevel() {
+		return 0;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 3;
 	}
 
 	@Override
@@ -45,35 +51,15 @@ public class Featherweight extends AbstractModifier implements WearerHurtModifie
 
 	@Override
 	public String name() {
-		if (this.level == 0) {
-			return this.name;
-		}
-
-		if (!this.canLevel()) {
+		if (this.level > 0 && !this.canLevel()) {
 			return "Weightless";
 		}
-
-		return this.name + " " + LootUtils.roman(this.level + 1);
+		return super.name();
 	}
 
 	@Override
 	public String color() {
 		return ChatFormatting.WHITE.getName();
-	}
-
-	@Override
-	public Modifier clone() {
-		return new Featherweight(this.name, this.level);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
-
-		return tag;
 	}
 
 	@Override
@@ -84,16 +70,6 @@ public class Featherweight extends AbstractModifier implements WearerHurtModifie
 	@Override
 	public boolean forTool(ToolType type) {
 		return type == ToolType.BOOTS;
-	}
-
-	@Override
-	public boolean canLevel() {
-		return this.level < MAX_LEVEL;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 
 	private float reduction() {

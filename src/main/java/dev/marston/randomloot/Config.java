@@ -37,9 +37,11 @@ public class Config
         return BUILDER.build();
     }
 
-    public static double CaseChance;
-    public static double ModChance;
-    public static double Goodness;
+    // Field initializers mirror the spec defaults below so reads that land before the
+    // first ModConfigEvent.Loading (e.g. early world gen) see sane values, not 0.0.
+    public static double CaseChance = 0.25;
+    public static double ModChance = 0.15;
+    public static double Goodness = 1.0;
     public static double ArmorChance = 0.15;
     public static double DispenserGoodness = 0.75;
     public static List<? extends String> LootTableMatches = List.of("chest");

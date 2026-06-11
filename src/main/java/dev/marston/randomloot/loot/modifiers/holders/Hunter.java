@@ -18,7 +18,6 @@ import net.minecraft.world.phys.AABB;
 
 public class Hunter extends AbstractModifier implements HoldModifier {
 
-    private static final String NAME = "name";
     private static final double SEARCH_RADIUS = 10.0;
 
     public Hunter() {
@@ -45,20 +44,8 @@ public class Hunter extends AbstractModifier implements HoldModifier {
     }
 
     @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        return tag;
-    }
-
-    @Override
     public Modifier fromNBT(CompoundTag tag) {
         return new Hunter(tag.getStringOr(NAME, "Hunter"));
-    }
-
-    @Override
-    public Modifier clone() {
-        return new Hunter();
     }
 
     @Override

@@ -31,10 +31,6 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 		this.name = "Melting";
 	}
 
-	public Modifier clone() {
-		return new Melting();
-	}
-
 	@Override
 	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
 
@@ -106,16 +102,6 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 		});
 
 		return false;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-
-		return tag;
 	}
 
 	@Override

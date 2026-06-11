@@ -29,10 +29,6 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 		this.points = BASE_SECONDS;
 	}
 
-	public Modifier clone() {
-		return new Fire();
-	}
-
 	@Override
 	public CompoundTag toNBT() {
 

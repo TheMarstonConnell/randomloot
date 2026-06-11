@@ -3,10 +3,10 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
+import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -19,8 +19,7 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Nemesis extends AbstractModifier implements EntityHurtModifier, EntityKillModifier {
-	private int level;
+public class Nemesis extends LeveledModifier implements EntityHurtModifier, EntityKillModifier {
 	private Map<String, Integer> killCounts;
 
 	private static final String KILL_COUNTS = "killCounts";
@@ -32,21 +31,22 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 	}
 
 	public Nemesis() {
-		this.name = "Nemesis";
-		this.level = 1;
-		this.killCounts = new HashMap<>();
+		this("Nemesis", 1, new HashMap<>());
 	}
 
-	public Modifier clone() {
-		return new Nemesis();
+	@Override
+	protected int minLevel() {
+		return 1;
+	}
+
+	@Override
+	protected int maxLevel() {
+		return 3;
 	}
 
 	@Override
 	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(ModifierConstants.LEVEL, level);
+		CompoundTag tag = super.toNBT();
 
 		CompoundTag killCountsTag = new CompoundTag();
 		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
@@ -69,14 +69,6 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 		}
 
 		return new Nemesis(name, level, killCounts);
-	}
-
-	@Override
-	public String name() {
-		if (level == 1) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(level - 1);
 	}
 
 	@Override
@@ -174,8 +166,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 		// Apply bonus damage if attacking most-killed type
 		if (mostKilled != null && mostKilled.equals(entityKey)) {
 			float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-			float bonusDamage = baseDamage * bonusDamagePercent();
-			hurtee.hurt(hurter.damageSources().mobAttack(hurter), bonusDamage);
+			dealBonusDamage(hurtee, hurter, baseDamage * bonusDamagePercent());
 		}
 
 		return false;
@@ -190,15 +181,5 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 
 		// Save updated kill counts to the item
 		LootUtils.updateModifier(itemstack, this);
-	}
-
-	@Override
-	public boolean canLevel() {
-		return this.level < 3;
-	}
-
-	@Override
-	public void levelUp() {
-		this.level++;
 	}
 }
