@@ -35,10 +35,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
@@ -852,7 +850,11 @@ public class LootUtils {
 		return (float) (Math.sqrt(best + 1) * Config.Goodness * Config.DispenserGoodness);
 	}
 
-	public static boolean generateTool(ServerPlayer player, Level level) {
+	/**
+	 * Generates a tool for the player and fires the case-opened criteria. The
+	 * caller decides where the item goes (hand slot, inventory, ...).
+	 */
+	public static ItemStack generateTool(ServerPlayer player, Level level) {
 
 		ItemStack lootItem = genTool(player, level);
 
@@ -862,15 +864,7 @@ public class LootUtils {
 		ModCriteria.caseOpened(player, casesOpened, getToolType(lootItem));
 		ModCriteria.traitsObtained(player, lootItem, TraitObtainedTrigger.SOURCE_GENERATED);
 
-		boolean added = player.getInventory().add(lootItem);
-		if (!added) {
-			ItemEntity dropItem = new ItemEntity(EntityType.ITEM, level);
-			dropItem.setItem(lootItem);
-			dropItem.setPos(player.position());
-
-			level.addFreshEntity(dropItem);
-		}
-		return true;
+		return lootItem;
 	}
 
 	private static final int[] ROMAN_VALUES = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };
