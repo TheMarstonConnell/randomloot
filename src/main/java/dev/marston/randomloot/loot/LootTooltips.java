@@ -45,11 +45,11 @@ final class LootTooltips {
 	/**
 	 * Display name for gear that is still rolling: rune words in the enchanting table's
 	 * font, stepped on a wall-clock interval. The name component is rebuilt every render
-	 * frame, so OBFUSCATED would re-scramble per frame and read as a blur; a ~0.6s step
+	 * frame, so OBFUSCATED would re-scramble per frame and read as a blur; a fixed step
 	 * scrolls like the enchanting table instead.
 	 */
 	static Component rollingName() {
-		int word = (int) ((Util.getMillis() / 600) % ROLLING_WORDS.length);
+		int word = (int) ((Util.getMillis() / 150) % ROLLING_WORDS.length);
 		return Component.literal(ROLLING_WORDS[word])
 				.withStyle(ChatFormatting.GRAY)
 				.withStyle(style -> style.withFont(ROLLING_FONT));
