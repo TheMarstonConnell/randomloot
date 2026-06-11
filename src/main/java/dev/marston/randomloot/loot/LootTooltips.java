@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
+import net.minecraft.util.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
@@ -37,14 +38,20 @@ final class LootTooltips {
 	private static final FontDescription ROLLING_FONT =
 			new FontDescription.Resource(Identifier.fromNamespaceAndPath("minecraft", "alt"));
 
+	// Gibberish in the enchanting-table tradition; SGA only maps a-z, so letters only.
+	private static final String[] ROLLING_WORDS = { "klaatu", "berata", "niktu", "phnglui", "xyzzy", "azimuth",
+			"galvanize", "embiggen" };
+
 	/**
-	 * Display name for gear that is still rolling: obfuscated so it scrambles like the
-	 * wheel, in the enchanting table's rune font so the scramble stays runes instead of
-	 * drawing from the default font's full glyph range.
+	 * Display name for gear that is still rolling: rune words in the enchanting table's
+	 * font, stepped on a wall-clock interval. The name component is rebuilt every render
+	 * frame, so OBFUSCATED would re-scramble per frame and read as a blur; a ~0.6s step
+	 * scrolls like the enchanting table instead.
 	 */
 	static Component rollingName() {
-		return Component.translatableWithFallback("item.randomloot.rolling", "rolling")
-				.withStyle(ChatFormatting.GRAY, ChatFormatting.OBFUSCATED)
+		int word = (int) ((Util.getMillis() / 600) % ROLLING_WORDS.length);
+		return Component.literal(ROLLING_WORDS[word])
+				.withStyle(ChatFormatting.GRAY)
 				.withStyle(style -> style.withFont(ROLLING_FONT));
 	}
 
