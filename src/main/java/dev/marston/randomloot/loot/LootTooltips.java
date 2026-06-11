@@ -4,7 +4,9 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -31,10 +33,19 @@ final class LootTooltips {
 		return comp.withStyle(color);
 	}
 
-	/** Display name for gear that is still rolling; obfuscated to scramble like the wheel. */
+	// The enchanting table's Standard Galactic Alphabet font.
+	private static final FontDescription ROLLING_FONT =
+			new FontDescription.Resource(Identifier.fromNamespaceAndPath("minecraft", "alt"));
+
+	/**
+	 * Display name for gear that is still rolling: obfuscated so it scrambles like the
+	 * wheel, in the enchanting table's rune font so the scramble stays runes instead of
+	 * drawing from the default font's full glyph range.
+	 */
 	static Component rollingName() {
-		return Component.translatableWithFallback("item.randomloot.rolling", "???")
-				.withStyle(ChatFormatting.GRAY, ChatFormatting.OBFUSCATED);
+		return Component.translatableWithFallback("item.randomloot.rolling", "rolling")
+				.withStyle(ChatFormatting.GRAY, ChatFormatting.OBFUSCATED)
+				.withStyle(style -> style.withFont(ROLLING_FONT));
 	}
 
 	private static void newLine(Consumer<Component> tipList) {
