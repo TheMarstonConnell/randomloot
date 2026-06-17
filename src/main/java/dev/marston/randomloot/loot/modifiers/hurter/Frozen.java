@@ -54,8 +54,8 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.AQUA.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.AQUA;
 	}
 
 	@Override

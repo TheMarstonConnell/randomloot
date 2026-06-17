@@ -48,8 +48,8 @@ public class Executioner extends LeveledModifier implements EntityHurtModifier {
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.DARK_RED.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.DARK_RED;
     }
 
     @Override

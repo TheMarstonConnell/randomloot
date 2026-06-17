@@ -52,8 +52,8 @@ public class Adrenaline extends LeveledModifier implements WearerHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.RED.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.RED;
 	}
 
 	@Override

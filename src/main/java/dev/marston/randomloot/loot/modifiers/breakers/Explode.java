@@ -4,6 +4,7 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
@@ -64,8 +65,8 @@ public class Explode extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return "red";
+	public ChatFormatting color() {
+		return ChatFormatting.RED;
 	}
 
 	@Override

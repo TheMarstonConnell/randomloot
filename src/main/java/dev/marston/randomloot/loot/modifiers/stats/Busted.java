@@ -30,9 +30,9 @@ public class Busted extends AbstractModifier implements StatsModifier {
 	}
 
 	@Override
-	public String color() {
+	public ChatFormatting color() {
 
-		return ChatFormatting.LIGHT_PURPLE.getName();
+		return ChatFormatting.LIGHT_PURPLE;
 
 	}
 

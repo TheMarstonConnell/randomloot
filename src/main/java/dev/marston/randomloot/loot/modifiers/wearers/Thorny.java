@@ -49,8 +49,8 @@ public class Thorny extends LeveledModifier implements WearerHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_GREEN.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_GREEN;
 	}
 
 	@Override

@@ -40,8 +40,8 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.DARK_PURPLE.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.DARK_PURPLE;
     }
 
     @Override

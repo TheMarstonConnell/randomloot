@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -33,8 +34,8 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.GOLD.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.GOLD;
     }
 
     @Override
@@ -61,7 +62,7 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
 
         // Spawn a bee at the victim's location
         BlockPos pos = victim.blockPosition();
-        Entity bee = EntityType.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
+        Entity bee = EntityTypes.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
         if (bee != null) {
             bee.setPos(victim.getX(), victim.getY(), victim.getZ());
             level.addFreshEntity(bee);

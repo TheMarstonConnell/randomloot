@@ -27,8 +27,8 @@ public class OreFinder extends BlockHighlighter {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.WHITE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.WHITE;
 	}
 
 	@Override

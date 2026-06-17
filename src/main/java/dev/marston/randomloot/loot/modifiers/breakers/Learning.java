@@ -78,8 +78,8 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return "green";
+	public ChatFormatting color() {
+		return ChatFormatting.GREEN;
 	}
 
 	@Override

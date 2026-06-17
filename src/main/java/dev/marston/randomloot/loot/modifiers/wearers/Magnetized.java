@@ -43,8 +43,8 @@ public class Magnetized extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.LIGHT_PURPLE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.LIGHT_PURPLE;
 	}
 
 	@Override

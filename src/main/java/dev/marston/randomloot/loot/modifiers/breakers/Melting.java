@@ -4,17 +4,20 @@ import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 
 import java.util.Collection;
 import java.util.List;
@@ -41,7 +44,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 		}
 
 		ServerLevel serverLevel = (ServerLevel) level;
-		AABB box = new AABB(pos.east().south().below().getCenter(), pos.west().north().above().getCenter());
+		AABB box = new AABB(Vec3.atCenterOf(pos.east().south().below()), Vec3.atCenterOf(pos.west().north().above()));
 
 		// Schedule execution after a short delay to allow block drops to spawn
 		// Then submit to server thread for thread-safe execution
@@ -50,7 +53,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 			List<Entity> items = level.getEntities(null, box);
 
 			for (Entity entity : items) {
-				if (entity.getType() != EntityType.ITEM) {
+				if (entity.getType() != EntityTypes.ITEM) {
 					continue;
 				}
 
@@ -115,8 +118,8 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return "red";
+	public ChatFormatting color() {
+		return ChatFormatting.RED;
 	}
 
 	@Override

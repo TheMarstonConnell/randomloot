@@ -4,7 +4,7 @@
 
 Introducing Looting like you've never seen it before! Have you ever felt that Minecraft didn't have enough tools and weapons to make you happy? Are you dissatisfied with the low amount of character each tool has? Ever wanted your tools to get better as you use them? Yes?!? Well then this is the mod for you!
 
-**Random Loot** was rewritten from the ground up with the goals of creating an easier to maintain code-base with an expandable modifier system. This branch targets **Minecraft 26.1 on NeoForge**.
+**Random Loot** was rewritten from the ground up with the goals of creating an easier to maintain code-base with an expandable modifier system. This branch targets **Minecraft 26.2 on NeoForge**.
 
 ![case opening gif](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.1.x/.github/assets/randomlootgif.gif)
 

@@ -49,8 +49,8 @@ public class Scorched extends LeveledModifier implements EntityHurtModifier, Hol
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.GOLD.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.GOLD;
 	}
 
 	@Override

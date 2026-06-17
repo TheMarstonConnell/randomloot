@@ -58,8 +58,8 @@ public class Featherweight extends LeveledModifier implements WearerHurtModifier
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.WHITE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.WHITE;
 	}
 
 	@Override

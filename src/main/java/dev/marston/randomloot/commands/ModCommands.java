@@ -19,6 +19,7 @@ import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -114,7 +115,7 @@ public class ModCommands {
 		Component name = stack.getDisplayName();
 
 		if (!player.getInventory().add(stack)) {
-			ItemEntity dropItem = new ItemEntity(EntityType.ITEM, player.level());
+			ItemEntity dropItem = new ItemEntity(EntityTypes.ITEM, player.level());
 			dropItem.setItem(stack);
 			dropItem.setPos(player.position());
 			player.level().addFreshEntity(dropItem);

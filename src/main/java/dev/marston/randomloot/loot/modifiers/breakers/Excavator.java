@@ -127,8 +127,8 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.GREEN.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.GREEN;
 	}
 
 	@Override

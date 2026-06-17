@@ -49,8 +49,8 @@ public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestr
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.AQUA.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.AQUA;
 	}
 
 	@Override

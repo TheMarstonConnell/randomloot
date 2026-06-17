@@ -134,8 +134,8 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.GOLD.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.GOLD;
 	}
 
 	@Override

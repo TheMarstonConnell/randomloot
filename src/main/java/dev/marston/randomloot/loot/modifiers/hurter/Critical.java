@@ -34,8 +34,8 @@ public class Critical extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.GOLD.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.GOLD;
 	}
 
 	@Override

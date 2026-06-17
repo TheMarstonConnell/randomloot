@@ -39,8 +39,8 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_PURPLE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_PURPLE;
 	}
 
 	@Override

@@ -55,8 +55,8 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.YELLOW.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.YELLOW;
 	}
 
 	@Override

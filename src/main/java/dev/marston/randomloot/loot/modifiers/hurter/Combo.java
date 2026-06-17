@@ -55,8 +55,8 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.YELLOW.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.YELLOW;
 	}
 
 	@Override

@@ -34,8 +34,8 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.RED.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.RED;
 	}
 
 	@Override

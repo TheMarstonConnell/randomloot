@@ -34,8 +34,8 @@ public class Hunter extends AbstractModifier implements HoldModifier {
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.DARK_RED.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.DARK_RED;
     }
 
     @Override
