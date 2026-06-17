@@ -73,7 +73,10 @@ public final class ArmorDispatcher {
 			return;
 		}
 
-		float damage = event.getNewDamage();
+		// LivingDamageEvent.Post renamed getNewDamage() -> getInflictedDamage() during
+		// the 26.1.2 beta cycle; calling the old name crashes with NoSuchMethodError on
+		// NeoForge 26.1.2.76. (Pre still has getNewDamage(), so onLivingDamagePre is fine.)
+		float damage = event.getInflictedDamage();
 		if (damage <= 0.0f) {
 			return;
 		}
