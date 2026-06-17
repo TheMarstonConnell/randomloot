@@ -37,8 +37,8 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_GREEN.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_GREEN;
 	}
 
 	@Override

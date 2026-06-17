@@ -34,8 +34,8 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.DARK_GRAY.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.DARK_GRAY;
     }
 
     @Override

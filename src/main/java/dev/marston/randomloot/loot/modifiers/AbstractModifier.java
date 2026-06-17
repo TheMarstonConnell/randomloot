@@ -50,7 +50,7 @@ public abstract class AbstractModifier implements Modifier {
 
 	@Override
 	public void writeToLore(List<Component> list, boolean shift) {
-		list.add(Modifier.makeComp(this.displayName()).withStyle(ChatFormatting.getByName(this.color())));
+		list.add(Modifier.makeComp(this.displayName()).withStyle(this.color()));
 	}
 
 	/** Melee tools: swords and axes. */

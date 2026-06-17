@@ -13,6 +13,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -50,8 +51,8 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.GREEN.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.GREEN;
 	}
 
 	@Override
@@ -68,11 +69,11 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		EntityType<?> type = hurtee.getType();
-		boolean isArthropod = type == EntityType.SPIDER ||
-							  type == EntityType.CAVE_SPIDER ||
-							  type == EntityType.SILVERFISH ||
-							  type == EntityType.ENDERMITE ||
-							  type == EntityType.BEE;
+		boolean isArthropod = type == EntityTypes.SPIDER ||
+							  type == EntityTypes.CAVE_SPIDER ||
+							  type == EntityTypes.SILVERFISH ||
+							  type == EntityTypes.ENDERMITE ||
+							  type == EntityTypes.BEE;
 
 		if (isArthropod) {
 			if (hurtee.level().isClientSide()) {

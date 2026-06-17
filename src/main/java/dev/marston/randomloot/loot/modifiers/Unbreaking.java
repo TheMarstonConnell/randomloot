@@ -46,8 +46,8 @@ public class Unbreaking extends LeveledModifier {
 		return super.name();
 	}
 
-	public String color() {
-		return ChatFormatting.AQUA.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.AQUA;
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {

@@ -48,8 +48,8 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.YELLOW.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.YELLOW;
 	}
 
 	@Override

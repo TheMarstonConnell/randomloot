@@ -13,6 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -57,8 +58,8 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.YELLOW.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.YELLOW;
 	}
 
 	@Override
@@ -97,7 +98,7 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 		long time = level.getGameTime();
 
 		if (ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
-			LightningBolt lb = new LightningBolt(EntityType.LIGHTNING_BOLT, level);
+			LightningBolt lb = new LightningBolt(EntityTypes.LIGHTNING_BOLT, level);
 			lb.setPos(hurtee.position());
 			if (hurter instanceof ServerPlayer) {
 				lb.setCause((ServerPlayer) hurter);

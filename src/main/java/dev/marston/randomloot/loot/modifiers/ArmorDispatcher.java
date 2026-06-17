@@ -73,7 +73,7 @@ public final class ArmorDispatcher {
 			return;
 		}
 
-		float damage = event.getNewDamage();
+		float damage = event.getInflictedDamage();
 		if (damage <= 0.0f) {
 			return;
 		}

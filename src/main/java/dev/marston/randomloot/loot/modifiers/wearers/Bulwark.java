@@ -50,8 +50,8 @@ public class Bulwark extends LeveledModifier implements WearerHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_AQUA.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_AQUA;
 	}
 
 	@Override

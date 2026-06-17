@@ -45,8 +45,8 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.WHITE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.WHITE;
 	}
 
 	@Override

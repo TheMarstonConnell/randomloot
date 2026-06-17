@@ -56,8 +56,8 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.RED.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.RED;
 	}
 
 	@Override

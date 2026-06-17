@@ -39,6 +39,7 @@ import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -356,7 +357,7 @@ public final class RandomLootGameTests {
 		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
 		LootUtils.setTexture(chest, 0);
 
-		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
 
 		helper.hurt(zombie, zombie.damageSources().generic(), 6.0f);
@@ -454,11 +455,11 @@ public final class RandomLootGameTests {
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
-		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		helper.hurt(zombie, player.damageSources().playerAttack(player), 1000.0f);
 
 		helper.assertTrue(zombie.isDeadOrDying(), "zombie should die to the test hit");
-		helper.assertEntityPresent(EntityType.BEE);
+		helper.assertEntityPresent(EntityTypes.BEE);
 
 		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
 				.filter(m -> m.tagName().equals("nemesis")).findFirst().orElse(null);

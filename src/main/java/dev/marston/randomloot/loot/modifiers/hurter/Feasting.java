@@ -37,8 +37,8 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.GOLD.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.GOLD;
     }
 
     @Override

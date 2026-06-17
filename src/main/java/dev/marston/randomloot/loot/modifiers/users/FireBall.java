@@ -49,8 +49,8 @@ public class FireBall extends AbstractModifier implements UseModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_RED.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_RED;
 	}
 
 	@Override

@@ -23,14 +23,6 @@ public interface Modifier {
 		return comp;
 	}
 
-	public static MutableComponent makeComp(String text, String color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		comp = comp.withStyle(ChatFormatting.getByName(color));
-
-		return comp;
-	}
-
 	public static MutableComponent makeComp(Component compIn) {
 		MutableComponent comp = Component.empty();
 		comp.append(compIn);
@@ -96,7 +88,7 @@ public interface Modifier {
 		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".description", description());
 	}
 
-	public String color();
+	public ChatFormatting color();
 
 	public CompoundTag toNBT();
 

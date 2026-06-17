@@ -29,8 +29,8 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.DARK_RED.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.DARK_RED;
     }
 
     @Override

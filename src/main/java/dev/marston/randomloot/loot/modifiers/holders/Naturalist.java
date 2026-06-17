@@ -60,8 +60,8 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
     }
 
     @Override
-    public String color() {
-        return ChatFormatting.GREEN.getName();
+    public ChatFormatting color() {
+        return ChatFormatting.GREEN;
     }
 
     @Override

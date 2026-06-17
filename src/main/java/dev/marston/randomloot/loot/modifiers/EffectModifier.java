@@ -55,8 +55,8 @@ public abstract class EffectModifier extends AbstractModifier {
 	}
 
 	@Override
-	public String color() {
-		return format.getName();
+	public ChatFormatting color() {
+		return format;
 	}
 
 	@Override

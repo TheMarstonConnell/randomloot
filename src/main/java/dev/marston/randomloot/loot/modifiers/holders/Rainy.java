@@ -35,8 +35,8 @@ public class Rainy extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.BLUE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.BLUE;
 	}
 
 	@Override

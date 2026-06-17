@@ -56,8 +56,8 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.DARK_PURPLE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.DARK_PURPLE;
 	}
 
 	@Override

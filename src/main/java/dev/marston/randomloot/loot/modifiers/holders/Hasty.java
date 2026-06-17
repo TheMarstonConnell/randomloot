@@ -60,8 +60,8 @@ public class Hasty extends LeveledModifier implements HoldModifier {
 	}
 
 	@Override
-	public String color() {
-		return ChatFormatting.BLUE.getName();
+	public ChatFormatting color() {
+		return ChatFormatting.BLUE;
 	}
 
 	@Override
