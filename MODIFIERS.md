@@ -53,7 +53,7 @@ These effects are applied when holding the tool.
 
 **Description:** Grants water breathing and Haste II when underwater.
 ### Catalyst
-**id:** `catalyst` | **crafting:** `n/a` ![n/a](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/n/a.png)
+**id:** `catalyst` | **crafting:** `minecraft:cinnabar` ![cinnabar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cinnabar.png)
 
 **Description:** While held or worn, your beneficial status effects last up to 2x longer.
 ### Clunky
@@ -105,7 +105,7 @@ These effects are applied when holding the tool.
 
 **Description:** While holding or wearing this item, get the resistance I effect.
 ### Stench
-**id:** `stench` | **crafting:** `n/a` ![n/a](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/n/a.png)
+**id:** `stench` | **crafting:** `minecraft:sulfur` ![sulfur](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sulfur.png)
 
 **Description:** Hostile mobs within 6 blocks are afflicted with Slowness and Weakness.
 ### Tomb Raider

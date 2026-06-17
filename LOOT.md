@@ -78,6 +78,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Blinding | `minecraft:carrot` | 24 |
 | Bulwark | `minecraft:shield` | 1 |
 | Busted | `minecraft:cracked_stone_bricks` | 3 |
+| Catalyst | `minecraft:cinnabar` | 4 |
 | Chaotic | `minecraft:amethyst_shard` | 1 |
 | Charged | `minecraft:lightning_rod` | 1 |
 | Clunky | `minecraft:iron_chain` | 1 |
@@ -122,6 +123,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Scorched | `minecraft:blaze_powder` | 1 |
 | Soulbound | `minecraft:nether_star` | 1 |
 | Tomb Raider | `minecraft:mossy_cobblestone` | 12 |
+| Stench | `minecraft:sulfur` | 4 |
 | Thorny | `minecraft:cactus` | 4 |
 | Spelunking | `minecraft:torch` | 64 |
 | Unbreaking | `minecraft:obsidian` | 8 |
