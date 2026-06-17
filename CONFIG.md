@@ -36,6 +36,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `blinding_enabled` | [Blinding](MODIFIERS.md#blinding) | When attacking with tool, apply the blindness I effect to the target for 4 seconds. |
 | `bulwark_enabled` | [Bulwark](MODIFIERS.md#bulwark) | Has a 10% chance of halving damage taken. |
 | `busted_enabled` | [Busted](MODIFIERS.md#busted) | Dig speed is increased as tool durability drops. |
+| `catalyst_enabled` | [Catalyst](MODIFIERS.md#catalyst) | While held or worn, your beneficial status effects last up to 2x longer. |
 | `chaotic_enabled` | [Chaotic](MODIFIERS.md#chaotic) | Stats randomly fluctuate every 5 seconds |
 | `charged_enabled` | [Charged](MODIFIERS.md#charged) | After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. |
 | `clunky_enabled` | [Clunky](MODIFIERS.md#clunky) | Applies slowness to holder but extra knockback on hit |
@@ -80,6 +81,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `scorched_enabled` | [Scorched](MODIFIERS.md#scorched) | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
 | `soulbound_enabled` | [Soulbound](MODIFIERS.md#soulbound) | Grants 15% bonus damage and mining speed when wielded by the original owner. |
 | `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While held or worn, spawners around you will glow. |
+| `stench_enabled` | [Stench](MODIFIERS.md#stench) | Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. |
 | `thorny_enabled` | [Thorny](MODIFIERS.md#thorny) | Reflects 15% of damage taken back at the attacker. |
 | `torch_place_enabled` | [Spelunking](MODIFIERS.md#spelunking) | Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. |
 | `unbreaking_enabled` | [Unbreaking](MODIFIERS.md#unbreaking) | This tool has a 20% chance of not taking damage. |

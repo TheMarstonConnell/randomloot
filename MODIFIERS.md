@@ -52,6 +52,10 @@ These effects are applied when holding the tool.
 **id:** `aquatic` | **crafting:** `minecraft:prismarine_shard` ![prismarine_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/prismarine_shard.png)
 
 **Description:** Grants water breathing and Haste II when underwater.
+### Catalyst
+**id:** `catalyst` | **crafting:** `minecraft:cinnabar` ![cinnabar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cinnabar.png)
+
+**Description:** While held or worn, your beneficial status effects last up to 2x longer.
 ### Clunky
 **id:** `clunky` | **crafting:** `minecraft:iron_chain` ![iron_chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_chain.png)
 
@@ -100,6 +104,10 @@ These effects are applied when holding the tool.
 **id:** `resistance` | **crafting:** `minecraft:turtle_scute` ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
 
 **Description:** While holding or wearing this item, get the resistance I effect.
+### Stench
+**id:** `stench` | **crafting:** `minecraft:sulfur` ![sulfur](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sulfur.png)
+
+**Description:** Hostile mobs within 6 blocks are afflicted with Slowness and Weakness.
 ### Tomb Raider
 **id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
 
