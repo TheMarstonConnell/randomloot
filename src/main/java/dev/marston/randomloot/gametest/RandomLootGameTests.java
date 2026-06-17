@@ -113,6 +113,7 @@ public final class RandomLootGameTests {
 		register(event, env, "kill_trait_hooks", RandomLootGameTests::killTraitHooks);
 		register(event, env, "catalyst_extends_effects", RandomLootGameTests::catalystExtendsEffects);
 		register(event, env, "stench_debuffs_mobs", RandomLootGameTests::stenchDebuffsMobs);
+		register(event, env, "new_trait_recipes_load", RandomLootGameTests::newTraitRecipesLoad);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 		register(event, env, "armor_components", RandomLootGameTests::armorComponents);
@@ -503,6 +504,35 @@ public final class RandomLootGameTests {
 		helper.assertTrue(poison != null && poison.getDuration() == 100,
 				"catalyst must not touch the harmful poison effect, got "
 						+ (poison == null ? "none" : poison.getDuration()));
+
+		helper.succeed();
+	}
+
+	/**
+	 * The cinnabar/sulfur trait recipes load with valid ingredient ids. A bad item id makes
+	 * the whole recipe fail to parse at datapack load and drop out of the recipe set (which
+	 * is exactly what left them as "n/a" in the wiki), so presence here proves both the JSON
+	 * and the {@code minecraft:cinnabar}/{@code minecraft:sulfur} ids resolve.
+	 */
+	private static void newTraitRecipesLoad(GameTestHelper helper) {
+		var recipes = helper.getLevel().recipeAccess().getRecipes();
+
+		record Expected(String trait, Identifier ingredient) {
+		}
+		Expected[] expected = {
+				new Expected("catalyst", Identifier.withDefaultNamespace("cinnabar")),
+				new Expected("stench", Identifier.withDefaultNamespace("sulfur")),
+		};
+
+		for (Expected e : expected) {
+			helper.assertTrue(BuiltInRegistries.ITEM.containsKey(e.ingredient()),
+					"ingredient item should exist: " + e.ingredient());
+
+			Identifier recipeId = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + e.trait());
+			boolean present = recipes.stream().anyMatch(
+					h -> h.id().identifier().equals(recipeId) && h.value() instanceof TraitAdditionRecipe);
+			helper.assertTrue(present, "trait recipe should load: " + recipeId);
+		}
 
 		helper.succeed();
 	}
