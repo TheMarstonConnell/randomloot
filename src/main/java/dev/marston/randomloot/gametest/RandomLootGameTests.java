@@ -16,6 +16,7 @@ import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -38,6 +39,8 @@ import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -108,6 +111,8 @@ public final class RandomLootGameTests {
 		register(event, env, "advancements_load", RandomLootGameTests::advancementsLoad);
 		register(event, env, "xp_level_curve", RandomLootGameTests::xpLevelCurve);
 		register(event, env, "kill_trait_hooks", RandomLootGameTests::killTraitHooks);
+		register(event, env, "catalyst_extends_effects", RandomLootGameTests::catalystExtendsEffects);
+		register(event, env, "stench_debuffs_mobs", RandomLootGameTests::stenchDebuffsMobs);
 		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
 		register(event, env, "tool_repairable", RandomLootGameTests::toolRepairable);
 		register(event, env, "armor_components", RandomLootGameTests::armorComponents);
@@ -466,6 +471,58 @@ public final class RandomLootGameTests {
 		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
 		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
 		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
+
+		helper.succeed();
+	}
+
+	/**
+	 * Catalyst (cinnabar) slows the decay of beneficial effects and leaves harmful ones
+	 * alone. Driving hold() many times without vanilla's per-tick decrement lets the
+	 * beneficial duration climb past its start while the harmful one stays put -- exercising
+	 * both the refund and the MobEffectCategory.BENEFICIAL filter.
+	 */
+	private static void catalystExtendsEffects(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		player.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 0, false, false));
+		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
+
+		HoldModifier catalyst = (HoldModifier) ModifierRegistry.getModifier("catalyst");
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.SWORD);
+
+		for (int i = 0; i < 200; i++) {
+			catalyst.hold(tool, helper.getLevel(), player);
+		}
+
+		MobEffectInstance speed = player.getEffect(MobEffects.SPEED);
+		MobEffectInstance poison = player.getEffect(MobEffects.POISON);
+		helper.assertTrue(speed != null && speed.getDuration() > 100,
+				"catalyst should extend the beneficial speed effect, got "
+						+ (speed == null ? "none" : speed.getDuration()));
+		helper.assertTrue(poison != null && poison.getDuration() == 100,
+				"catalyst must not touch the harmful poison effect, got "
+						+ (poison == null ? "none" : poison.getDuration()));
+
+		helper.succeed();
+	}
+
+	/** Stench (sulfur) afflicts hostile mobs inside its radius with Slowness and Weakness. */
+	private static void stenchDebuffsMobs(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		// Stand the holder on the zombie so it's well within the aura radius.
+		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
+
+		HoldModifier stench = (HoldModifier) ModifierRegistry.getModifier("stench");
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, ToolType.SWORD);
+
+		stench.hold(tool, helper.getLevel(), player);
+
+		helper.assertTrue(zombie.hasEffect(MobEffects.SLOWNESS), "stench should slow nearby hostiles");
+		helper.assertTrue(zombie.hasEffect(MobEffects.WEAKNESS), "stench should weaken nearby hostiles");
 
 		helper.succeed();
 	}
