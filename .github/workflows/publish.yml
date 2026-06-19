@@ -32,9 +32,13 @@ jobs:
           run: |
             MC_VERSION=$(grep -E '^minecraft_version=' gradle.properties | cut -d= -f2 | tr -d '[:space:]')
             MC_MAJOR=$(echo "$MC_VERSION" | cut -d. -f1,2)
+            # CurseForge labels the initial release of a minor line without the trailing .0
+            # (e.g. 26.2.0 -> 26.2, like 1.20 not 1.20.0), so strip it for the CurseForge tag.
+            if [[ "$MC_VERSION" == *.0 ]]; then CF_VERSION="$MC_MAJOR"; else CF_VERSION="$MC_VERSION"; fi
             echo "MC_VERSION=$MC_VERSION" >> $GITHUB_OUTPUT
             echo "MC_MAJOR=$MC_MAJOR" >> $GITHUB_OUTPUT
-            echo "Publishing for Minecraft $MC_VERSION (CurseForge category Minecraft $MC_MAJOR)"
+            echo "CF_VERSION=$CF_VERSION" >> $GITHUB_OUTPUT
+            echo "Publishing for Minecraft $MC_VERSION (CurseForge category Minecraft $MC_MAJOR, version $CF_VERSION)"
         - name: Declare Commit Variables
           id: is_pre_release
           shell: bash
@@ -71,7 +75,7 @@ jobs:
           with:
             file_path: "build/libs/${{ steps.file_name.outputs.FILE_NAME }}"
             game_endpoint: "minecraft"
-            game_versions: "Minecraft ${{ steps.mc_version.outputs.MC_MAJOR }}:${{ steps.mc_version.outputs.MC_VERSION }},Java 25,NeoForge"
+            game_versions: "Minecraft ${{ steps.mc_version.outputs.MC_MAJOR }}:${{ steps.mc_version.outputs.CF_VERSION }},Java 25,NeoForge"
             token: "${{ secrets.CurseForge }}"
             project_id: "301631"
             display_name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }}"
