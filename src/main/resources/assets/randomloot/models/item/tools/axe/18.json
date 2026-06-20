@@ -1,0 +1,1512 @@
+{
+    "__comment": "Ported from Cosmic-Armory horizon_breaker.json (model designed by milomaz1)",
+    "textures": {
+        "war_axe": "randomloot:item/axe18"
+    },
+    "elements": [
+        {
+            "__comment": "Box2",
+            "from": [
+                3.2,
+                1.6,
+                8
+            ],
+            "to": [
+                5.6,
+                2.4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        3.2,
+                        13.6,
+                        5.6,
+                        14.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        3.2,
+                        14.4,
+                        5.6,
+                        13.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        5.6,
+                        13.6,
+                        3.2,
+                        14.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        3.2,
+                        13.6,
+                        5.6,
+                        14.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        3.2,
+                        13.6,
+                        4,
+                        14.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        5.6,
+                        14.4,
+                        4.8,
+                        13.6
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box3",
+            "from": [
+                3.2,
+                0.8,
+                8
+            ],
+            "to": [
+                4.8,
+                1.6,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        3.2,
+                        14.4,
+                        4.8,
+                        15.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        3.2,
+                        15.2,
+                        4.8,
+                        14.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        4.8,
+                        14.4,
+                        3.2,
+                        15.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        3.2,
+                        14.4,
+                        4.8,
+                        15.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        3.2,
+                        14.4,
+                        4,
+                        15.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        4.8,
+                        15.2,
+                        4,
+                        14.4
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box4",
+            "from": [
+                4,
+                8,
+                8
+            ],
+            "to": [
+                11.2,
+                11.2,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        4,
+                        7.2,
+                        11.2,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        4,
+                        5.6,
+                        11.2,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        11.2,
+                        4.8,
+                        4,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        4,
+                        4.8,
+                        11.2,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        4,
+                        4.8,
+                        4.8,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        11.2,
+                        8,
+                        10.4,
+                        4.8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box5",
+            "from": [
+                4,
+                2.4,
+                8
+            ],
+            "to": [
+                6.4,
+                3.2,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        4,
+                        12.8,
+                        6.4,
+                        13.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        4,
+                        13.6,
+                        6.4,
+                        12.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        6.4,
+                        12.8,
+                        4,
+                        13.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        4,
+                        12.8,
+                        6.4,
+                        13.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        4,
+                        12.8,
+                        4.8,
+                        13.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        6.4,
+                        13.6,
+                        5.6,
+                        12.8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box6",
+            "from": [
+                4.8,
+                11.2,
+                8
+            ],
+            "to": [
+                11.2,
+                12.8,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        4.8,
+                        4,
+                        11.2,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        4.8,
+                        4,
+                        11.2,
+                        3.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        11.2,
+                        3.2,
+                        4.8,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        4.8,
+                        3.2,
+                        11.2,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        4.8,
+                        3.2,
+                        5.6,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        11.2,
+                        4.8,
+                        10.4,
+                        3.2
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box7",
+            "from": [
+                4.8,
+                7.2,
+                8
+            ],
+            "to": [
+                6.4,
+                8,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        4.8,
+                        8,
+                        6.4,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        4.8,
+                        8.8,
+                        6.4,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        6.4,
+                        8,
+                        4.8,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        4.8,
+                        8,
+                        6.4,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        4.8,
+                        8,
+                        5.6,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        6.4,
+                        8.8,
+                        5.6,
+                        8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box8",
+            "from": [
+                4.8,
+                3.2,
+                8
+            ],
+            "to": [
+                7.2,
+                4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        4.8,
+                        12,
+                        7.2,
+                        12.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        4.8,
+                        12.8,
+                        7.2,
+                        12
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        7.2,
+                        12,
+                        4.8,
+                        12.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        4.8,
+                        12,
+                        7.2,
+                        12.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        4.8,
+                        12,
+                        5.6,
+                        12.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        7.2,
+                        12.8,
+                        6.4,
+                        12
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box9",
+            "from": [
+                5.6,
+                12.8,
+                8
+            ],
+            "to": [
+                12,
+                13.6,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        5.6,
+                        2.4,
+                        12,
+                        3.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        5.6,
+                        3.2,
+                        12,
+                        2.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        12,
+                        2.4,
+                        5.6,
+                        3.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        5.6,
+                        2.4,
+                        12,
+                        3.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        5.6,
+                        2.4,
+                        6.4,
+                        3.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        12,
+                        3.2,
+                        11.2,
+                        2.4
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box10",
+            "from": [
+                5.6,
+                4,
+                8
+            ],
+            "to": [
+                8,
+                4.8,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        5.6,
+                        11.2,
+                        8,
+                        12
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        5.6,
+                        12,
+                        8,
+                        11.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        8,
+                        11.2,
+                        5.6,
+                        12
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        5.6,
+                        11.2,
+                        8,
+                        12
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        5.6,
+                        11.2,
+                        6.4,
+                        12
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        8,
+                        12,
+                        7.2,
+                        11.2
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box11",
+            "from": [
+                6.4,
+                13.6,
+                8
+            ],
+            "to": [
+                12,
+                14.4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        6.4,
+                        1.599999,
+                        12,
+                        2.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        6.4,
+                        2.400001,
+                        12,
+                        1.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        12,
+                        1.6,
+                        6.4,
+                        2.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        6.4,
+                        1.6,
+                        12,
+                        2.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        6.4,
+                        1.6,
+                        7.2,
+                        2.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        12,
+                        2.4,
+                        11.2,
+                        1.6
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box12",
+            "from": [
+                6.4,
+                4.8,
+                8
+            ],
+            "to": [
+                8.799999,
+                5.6,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        6.4,
+                        10.4,
+                        8.8,
+                        11.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        6.4,
+                        11.2,
+                        8.8,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        8.8,
+                        10.4,
+                        6.4,
+                        11.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        6.4,
+                        10.4,
+                        8.8,
+                        11.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        6.4,
+                        10.4,
+                        7.2,
+                        11.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        8.8,
+                        11.2,
+                        8,
+                        10.4
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box13",
+            "from": [
+                7.2,
+                5.6,
+                8
+            ],
+            "to": [
+                9.6,
+                6.4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        7.2,
+                        9.6,
+                        9.6,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        7.2,
+                        10.4,
+                        9.6,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        9.6,
+                        9.6,
+                        7.2,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        7.2,
+                        9.6,
+                        9.6,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        7.2,
+                        9.6,
+                        8,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        9.6,
+                        10.4,
+                        8.8,
+                        9.6
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box14",
+            "from": [
+                8,
+                14.4,
+                8
+            ],
+            "to": [
+                11.2,
+                15.2,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        8,
+                        0.8000002,
+                        11.2,
+                        1.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        8,
+                        1.6,
+                        11.2,
+                        0.8000002
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        11.2,
+                        0.8000002,
+                        8,
+                        1.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        8,
+                        0.8000002,
+                        11.2,
+                        1.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        8,
+                        0.8000002,
+                        8.8,
+                        1.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        11.2,
+                        1.6,
+                        10.4,
+                        0.8000002
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box15",
+            "from": [
+                8,
+                6.4,
+                8
+            ],
+            "to": [
+                12.8,
+                7.2,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        8,
+                        8.799999,
+                        12.8,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        8,
+                        9.6,
+                        12.8,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        12.8,
+                        8.8,
+                        8,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        8,
+                        8.8,
+                        12.8,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        8,
+                        8.8,
+                        8.8,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        12.8,
+                        9.6,
+                        12,
+                        8.8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box16",
+            "from": [
+                8.8,
+                7.2,
+                8
+            ],
+            "to": [
+                13.6,
+                8,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        8.8,
+                        8,
+                        13.6,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        8.8,
+                        8.8,
+                        13.6,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        13.6,
+                        8,
+                        8.8,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        8.8,
+                        8,
+                        13.6,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        8.8,
+                        8,
+                        9.6,
+                        8.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        13.6,
+                        8.8,
+                        12.8,
+                        8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box17",
+            "from": [
+                10.4,
+                5.6,
+                8
+            ],
+            "to": [
+                12,
+                6.4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        10.4,
+                        9.6,
+                        12,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        10.4,
+                        10.4,
+                        12,
+                        9.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        12,
+                        9.6,
+                        10.4,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        10.4,
+                        9.6,
+                        12,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        10.4,
+                        9.6,
+                        11.2,
+                        10.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        12,
+                        10.4,
+                        11.2,
+                        9.6
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box18",
+            "from": [
+                11.2,
+                9.599999,
+                8
+            ],
+            "to": [
+                13.6,
+                10.4,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        11.2,
+                        5.599999,
+                        13.6,
+                        6.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        11.2,
+                        6.400001,
+                        13.6,
+                        5.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        13.6,
+                        5.6,
+                        11.2,
+                        6.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        11.2,
+                        5.6,
+                        13.6,
+                        6.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        11.2,
+                        5.6,
+                        12,
+                        6.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        13.6,
+                        6.4,
+                        12.8,
+                        5.6
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box19",
+            "from": [
+                11.2,
+                8,
+                8
+            ],
+            "to": [
+                12.8,
+                9.6,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        11.2,
+                        7.2,
+                        12.8,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        11.2,
+                        7.2,
+                        12.8,
+                        6.4
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        12.8,
+                        6.4,
+                        11.2,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        11.2,
+                        6.4,
+                        12.8,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        11.2,
+                        6.4,
+                        12,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        12.8,
+                        8,
+                        12,
+                        6.4
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box20",
+            "from": [
+                12,
+                10.4,
+                8
+            ],
+            "to": [
+                13.6,
+                11.2,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        12,
+                        4.8,
+                        13.6,
+                        5.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        12,
+                        5.6,
+                        13.6,
+                        4.8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        13.6,
+                        4.8,
+                        12,
+                        5.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        12,
+                        4.8,
+                        13.6,
+                        5.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        12,
+                        4.8,
+                        12.8,
+                        5.6
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        13.6,
+                        5.6,
+                        12.8,
+                        4.8
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        },
+        {
+            "__comment": "Box21",
+            "from": [
+                12.8,
+                8,
+                8
+            ],
+            "to": [
+                13.6,
+                8.8,
+                9
+            ],
+            "faces": {
+                "down": {
+                    "uv": [
+                        12.8,
+                        7.2,
+                        13.6,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "up": {
+                    "uv": [
+                        12.8,
+                        8,
+                        13.6,
+                        7.2
+                    ],
+                    "texture": "#war_axe"
+                },
+                "north": {
+                    "uv": [
+                        13.6,
+                        7.2,
+                        12.8,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "south": {
+                    "uv": [
+                        12.8,
+                        7.2,
+                        13.6,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "west": {
+                    "uv": [
+                        12.8,
+                        7.2,
+                        13.6,
+                        8
+                    ],
+                    "texture": "#war_axe"
+                },
+                "east": {
+                    "uv": [
+                        13.6,
+                        8,
+                        12.8,
+                        7.2
+                    ],
+                    "texture": "#war_axe",
+                    "rotation": 180
+                }
+            }
+        }
+    ],
+    "display": {
+        "thirdperson_righthand": {
+            "rotation": [
+                -52,
+                -91,
+                0
+            ],
+            "translation": [
+                0,
+                4.8695,
+                -1.391
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [
+                -52,
+                90,
+                0
+            ],
+            "translation": [
+                -1.391,
+                4.8695,
+                -1.391
+            ],
+            "scale": [
+                1.5,
+                1.5,
+                1.5
+            ]
+        },
+        "firstperson_righthand": {
+            "rotation": [
+                -50,
+                -89,
+                0
+            ],
+            "translation": [
+                0,
+                6.9565,
+                0
+            ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [
+                -50,
+                83,
+                0
+            ],
+            "translation": [
+                0,
+                6.9565,
+                0
+            ]
+        },
+        "head": {
+            "rotation": [
+                180,
+                180,
+                -34
+            ],
+            "translation": [
+                7.6521,
+                11.13,
+                0
+            ]
+        },
+        "ground": {
+            "translation": [
+                0,
+                6.9565,
+                0
+            ]
+        },
+        "fixed": {
+            "rotation": [
+                0,
+                180,
+                0
+            ]
+        },
+        "gui": {
+            "rotation": [
+                0,
+                0,
+                0
+            ],
+            "translation": [
+                0,
+                0,
+                0
+            ],
+            "scale": [
+                1,
+                1,
+                1
+            ]
+        }
+    },
+    "gui_light": "front"
+}
