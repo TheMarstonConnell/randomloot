@@ -77,12 +77,12 @@ public class LootUtils {
 		}
 	}
 
-	private static int PICKAXE_COUNT = 18;
-	private static int AXE_COUNT = 14;
-	private static int SHOVEL_COUNT = 9;
-	private static int SWORD_COUNT = 50;
+	private static int PICKAXE_COUNT = 22;
+	private static int AXE_COUNT = 18;
+	private static int SHOVEL_COUNT = 12;
+	private static int SWORD_COUNT = 53;
 	/** Number of armor texture sets; each set is one helmet/chestplate/leggings/boots look. */
-	public static final int ARMOR_SET_COUNT = 15;
+	public static final int ARMOR_SET_COUNT = 19;
 
 	/* ---- Case-opening roll ----
 	 * Freshly opened gear starts "rolling": the name, traits, stats and the worn-armor

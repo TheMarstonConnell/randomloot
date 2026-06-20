@@ -135,6 +135,34 @@
                 }
             },
             {
+                "threshold": 0.1018,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/pickaxe/19"
+                }
+            },
+            {
+                "threshold": 0.1019,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/pickaxe/20"
+                }
+            },
+            {
+                "threshold": 0.102,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/pickaxe/21"
+                }
+            },
+            {
+                "threshold": 0.1021,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/pickaxe/22"
+                }
+            },
+            {
                 "threshold": 0.2,
                 "model": {
                     "type": "minecraft:model",
@@ -195,6 +223,27 @@
                 "model": {
                     "type": "minecraft:model",
                     "model": "randomloot:item/tools/shovel/9"
+                }
+            },
+            {
+                "threshold": 0.2009,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/shovel/10"
+                }
+            },
+            {
+                "threshold": 0.201,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/shovel/11"
+                }
+            },
+            {
+                "threshold": 0.2011,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/shovel/12"
                 }
             },
             {
@@ -293,6 +342,34 @@
                 "model": {
                     "type": "minecraft:model",
                     "model": "randomloot:item/tools/axe/14"
+                }
+            },
+            {
+                "threshold": 0.3014,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/axe/15"
+                }
+            },
+            {
+                "threshold": 0.3015,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/axe/16"
+                }
+            },
+            {
+                "threshold": 0.3016,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/axe/17"
+                }
+            },
+            {
+                "threshold": 0.3017,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/axe/18"
                 }
             },
             {
@@ -646,6 +723,27 @@
                 }
             },
             {
+                "threshold": 0.405,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/sword/51"
+                }
+            },
+            {
+                "threshold": 0.4051,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/sword/52"
+                }
+            },
+            {
+                "threshold": 0.4052,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/tools/sword/53"
+                }
+            },
+            {
                 "threshold": 0.5,
                 "model": {
                     "type": "minecraft:model",
@@ -748,6 +846,34 @@
                 "model": {
                     "type": "minecraft:model",
                     "model": "randomloot:item/armor/helmet/15"
+                }
+            },
+            {
+                "threshold": 0.5015,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/16"
+                }
+            },
+            {
+                "threshold": 0.5016,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/17"
+                }
+            },
+            {
+                "threshold": 0.5017,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/18"
+                }
+            },
+            {
+                "threshold": 0.5018,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/helmet/19"
                 }
             },
             {
@@ -856,6 +982,34 @@
                 }
             },
             {
+                "threshold": 0.6015,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/16"
+                }
+            },
+            {
+                "threshold": 0.6016,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/17"
+                }
+            },
+            {
+                "threshold": 0.6017,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/18"
+                }
+            },
+            {
+                "threshold": 0.6018,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/chestplate/19"
+                }
+            },
+            {
                 "threshold": 0.7,
                 "model": {
                     "type": "minecraft:model",
@@ -961,6 +1115,34 @@
                 }
             },
             {
+                "threshold": 0.7015,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/16"
+                }
+            },
+            {
+                "threshold": 0.7016,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/17"
+                }
+            },
+            {
+                "threshold": 0.7017,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/18"
+                }
+            },
+            {
+                "threshold": 0.7018,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/leggings/19"
+                }
+            },
+            {
                 "threshold": 0.8,
                 "model": {
                     "type": "minecraft:model",
@@ -1063,6 +1245,34 @@
                 "model": {
                     "type": "minecraft:model",
                     "model": "randomloot:item/armor/boots/15"
+                }
+            },
+            {
+                "threshold": 0.8015,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/16"
+                }
+            },
+            {
+                "threshold": 0.8016,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/17"
+                }
+            },
+            {
+                "threshold": 0.8017,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/18"
+                }
+            },
+            {
+                "threshold": 0.8018,
+                "model": {
+                    "type": "minecraft:model",
+                    "model": "randomloot:item/armor/boots/19"
                 }
             }
         ]
