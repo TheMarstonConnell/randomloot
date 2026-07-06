@@ -163,15 +163,10 @@ function bundleTexture(alt: string, name: string): string | null {
 function rewriteImages(text: string, sourceFile: string): string {
   const out: string[] = [];
   for (let line of text.split("\n")) {
-    // Crafting-item sprites from the minecraft-api CDN -> in-game item icons
-    // on their own line (MarkMeDown renders block images, not inline ones).
-    const icons: string[] = [];
+    // Crafting-item sprites from the minecraft-api CDN -> inline item icons.
     line = line.replace(
-      /\s*!\[([^\]]*)\]\(https:\/\/raw\.githubusercontent\.com\/anish-shanbhag\/minecraft-api\/[^)]*\/items\/([a-z0-9_]+)\.png\)/g,
-      (_whole, alt, item) => {
-        icons.push(`![${alt}](item:minecraft:${item})`);
-        return "";
-      },
+      /!\[([^\]]*)\]\(https:\/\/raw\.githubusercontent\.com\/anish-shanbhag\/minecraft-api\/[^)]*\/items\/([a-z0-9_]+)\.png\)/g,
+      (_whole, alt, item) => `![${alt}](item:minecraft:${item})`,
     );
     // README screenshots exist locally in .github/assets: bundle them as
     // textures and reference those instead of the remote URL.
@@ -191,8 +186,7 @@ function rewriteImages(text: string, sourceFile: string): string {
       warn(`${sourceFile}: dropped remote image '${alt}' (${url})`);
       return "";
     });
-    if (line.trim() !== "" || icons.length === 0) out.push(line);
-    for (const icon of icons) out.push("", icon);
+    out.push(line);
   }
   // Collapse the 3+ blank lines that dropped images can leave behind.
   return out.join("\n").replace(/\n{3,}/g, "\n\n");
