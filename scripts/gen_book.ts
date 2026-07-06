@@ -23,7 +23,7 @@ const TEX_MAX_WIDTH = 640; // downscale bundled screenshots to keep the jar smal
 const DISPLAY_MAX = { w: 200, h: 115 }; // fit MarkMeDown's 208x128 page
 
 const SECTIONS = [
-  { file: "LOOT.md", id: "loot", title: "Loot & Crafting", icon: "randomloot:case", index: 1 },
+  { file: "LOOT.md", id: "loot", title: "Loot & Crafting", icon: "randomloot:mod_add", index: 1 },
   { file: "MODIFIERS.md", id: "modifiers", title: "Modifiers", icon: "minecraft:smithing_table", index: 2, split: true },
   { file: "BIOMES.md", id: "biomes", title: "Biome Traits", icon: "minecraft:prismarine_shard", index: 3 },
   { file: "PROGRESSION.md", id: "progression", title: "Progression", icon: "minecraft:experience_bottle", index: 4 },

@@ -1,6 +1,6 @@
 ---
 title: Loot & Crafting
-icon: "randomloot:case"
+icon: "randomloot:mod_add"
 index: 1
 ---
 This document explains where to find Random Loot items and how to craft with them.
