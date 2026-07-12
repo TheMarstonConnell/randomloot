@@ -1,21 +1,24 @@
 package dev.marston.randomloot.recipes;
 
-import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.*;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
 import java.util.function.Supplier;
 
 public final class Recipies {
-	public static final DeferredRegister<RecipeSerializer<?>> RECIPE_SERIALIZERS = DeferredRegister.create(Registries.RECIPE_SERIALIZER, RandomLoot.MODID);
-	public static final Supplier<RecipeSerializer<TextureChangeRecipe>> TEXTURE_CHANGE_SHAPELESS = RECIPE_SERIALIZERS.register("texture_change_recipe", () -> new RecipeSerializer<>(TextureChangeRecipe.CODEC, TextureChangeRecipe.STREAM_CODEC));
 
-	public static final Supplier<RecipeSerializer<TraitAdditionRecipe>> TRAIT_ADDITION_RECIPE = RECIPE_SERIALIZERS.register("trait_change", () -> new RecipeSerializer<>(TraitAdditionRecipe.CODEC, TraitAdditionRecipe.STREAM_CODEC));
+	@SuppressWarnings("unchecked")
+	public static final Supplier<RecipeSerializer<TextureChangeRecipe>> TEXTURE_CHANGE_SHAPELESS =
+			(Supplier<RecipeSerializer<TextureChangeRecipe>>) (Supplier<?>) Services.REG.register(Registries.RECIPE_SERIALIZER,
+					"texture_change_recipe", () -> new RecipeSerializer<>(TextureChangeRecipe.CODEC, TextureChangeRecipe.STREAM_CODEC));
 
-	public static void register(IEventBus eventBus) {
-		RECIPE_SERIALIZERS.register(eventBus);
+	@SuppressWarnings("unchecked")
+	public static final Supplier<RecipeSerializer<TraitAdditionRecipe>> TRAIT_ADDITION_RECIPE =
+			(Supplier<RecipeSerializer<TraitAdditionRecipe>>) (Supplier<?>) Services.REG.register(Registries.RECIPE_SERIALIZER,
+					"trait_change", () -> new RecipeSerializer<>(TraitAdditionRecipe.CODEC, TraitAdditionRecipe.STREAM_CODEC));
+
+	/** Classloads the class so the serializer registrations above run. */
+	public static void init() {
 	}
-
 }

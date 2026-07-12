@@ -22,9 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import com.mojang.brigadier.CommandDispatcher;
 
 import java.util.Locale;
 import java.util.stream.Stream;
@@ -39,7 +37,6 @@ import java.util.stream.Stream;
  * /randomloot xp &lt;amount&gt;          - add XP to the held gear
  * </pre>
  */
-@EventBusSubscriber(modid = RandomLoot.MODID)
 public class ModCommands {
 
 	private static final SuggestionProvider<CommandSourceStack> ADDABLE_TRAITS = (ctx, builder) -> {
@@ -69,9 +66,9 @@ public class ModCommands {
 			.suggest(Stream.of(ToolType.values()).filter(t -> t != ToolType.NULL)
 					.map(t -> t.name().toLowerCase(Locale.ROOT)), builder);
 
-	@SubscribeEvent
-	public static void registerCommands(RegisterCommandsEvent event) {
-		event.getDispatcher().register(Commands.literal("randomloot")
+	/** Registers /randomloot; called from each loader's command-registration hook. */
+	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
+		dispatcher.register(Commands.literal("randomloot")
 				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.then(Commands.literal("give")
 						.then(Commands.argument("type", StringArgumentType.word())
@@ -128,7 +125,7 @@ public class ModCommands {
 	/** The held Random Loot tool/armor piece, or EMPTY if the main hand holds anything else. */
 	private static ItemStack heldGear(ServerPlayer player) {
 		ItemStack held = player.getMainHandItem();
-		if (!held.is(ModItems.TOOL.asItem()) && !held.is(ModItems.ARMOR.asItem())) {
+		if (!held.is(ModItems.TOOL.get()) && !held.is(ModItems.ARMOR.get())) {
 			return ItemStack.EMPTY;
 		}
 		return held;

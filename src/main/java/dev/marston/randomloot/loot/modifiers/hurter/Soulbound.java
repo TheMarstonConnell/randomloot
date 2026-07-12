@@ -13,11 +13,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
-@EventBusSubscriber(modid = RandomLoot.MODID)
 public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
 	public Soulbound(String name) {
@@ -95,16 +91,15 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	/**
-	 * Event handler for mining speed bonus when player is the original owner.
+	 * Mining speed bonus when the player is the original owner. Called from each
+	 * loader's break-speed hook; returns the adjusted speed.
 	 */
-	@SubscribeEvent
-	public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-		Player player = event.getEntity();
+	public static float modifyBreakSpeed(Player player, float currentSpeed) {
 		ItemStack stack = player.getMainHandItem();
 
 		// Check if holding a LootItem
 		if (!stack.is(ModItems.TOOL.get())) {
-			return;
+			return currentSpeed;
 		}
 
 		// Check if the tool has Soulbound modifier (getModifiers filters disabled traits)
@@ -112,16 +107,15 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 				.anyMatch(mod -> mod.tagName().equals("soulbound"));
 
 		if (!hasSoulbound) {
-			return;
+			return currentSpeed;
 		}
 
 		// Check if player is the original owner
 		if (!isOwner(stack, player)) {
-			return;
+			return currentSpeed;
 		}
 
 		// Apply 15% mining speed bonus
-		float currentSpeed = event.getNewSpeed();
-		event.setNewSpeed(currentSpeed * 1.15f);
+		return currentSpeed * 1.15f;
 	}
 }

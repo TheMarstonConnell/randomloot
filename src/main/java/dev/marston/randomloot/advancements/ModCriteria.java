@@ -9,8 +9,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import dev.marston.randomloot.platform.Services;
 
 import java.util.List;
 import java.util.Locale;
@@ -22,23 +21,25 @@ import java.util.function.Supplier;
  */
 public final class ModCriteria {
 
-	public static final DeferredRegister<CriterionTrigger<?>> TRIGGERS = DeferredRegister
-			.create(Registries.TRIGGER_TYPE, RandomLoot.MODID);
-
-	public static final Supplier<CaseOpenedTrigger> CASE_OPENED = TRIGGERS.register("case_opened",
+	public static final Supplier<CaseOpenedTrigger> CASE_OPENED = registerTrigger("case_opened",
 			CaseOpenedTrigger::new);
-	public static final Supplier<ToolLeveledTrigger> TOOL_LEVELED = TRIGGERS.register("tool_leveled",
+	public static final Supplier<ToolLeveledTrigger> TOOL_LEVELED = registerTrigger("tool_leveled",
 			ToolLeveledTrigger::new);
-	public static final Supplier<TraitObtainedTrigger> TRAIT_OBTAINED = TRIGGERS.register("trait_obtained",
+	public static final Supplier<TraitObtainedTrigger> TRAIT_OBTAINED = registerTrigger("trait_obtained",
 			TraitObtainedTrigger::new);
-	public static final Supplier<TraitUsedTrigger> TRAIT_USED = TRIGGERS.register("trait_used",
+	public static final Supplier<TraitUsedTrigger> TRAIT_USED = registerTrigger("trait_used",
 			TraitUsedTrigger::new);
+
+	@SuppressWarnings("unchecked")
+	private static <T extends CriterionTrigger<?>> Supplier<T> registerTrigger(String name, Supplier<T> factory) {
+		return (Supplier<T>) Services.REG.register(Registries.TRIGGER_TYPE, name, (Supplier<CriterionTrigger<?>>) factory);
+	}
 
 	private ModCriteria() {
 	}
 
-	public static void register(IEventBus eventBus) {
-		TRIGGERS.register(eventBus);
+	/** Classloads the class so the trigger registrations above run. */
+	public static void init() {
 	}
 
 	public static void caseOpened(ServerPlayer player, int count, ToolType type) {

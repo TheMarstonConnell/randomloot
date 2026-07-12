@@ -67,14 +67,14 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	public TraitAdditionRecipe(Holder<Item> additionItem, String traitIn) {
 		this.additionItem = additionItem;
 		this.trait = traitIn;
-		this.base = Optional.of(Ingredient.of(ModItems.TOOL.asItem(), ModItems.ARMOR.asItem()));
-		this.template= Optional.of(Ingredient.of(ModItems.MOD_SUB.asItem(), ModItems.MOD_ADD.asItem()));
+		this.base = Optional.of(Ingredient.of(ModItems.TOOL.get(), ModItems.ARMOR.get()));
+		this.template= Optional.of(Ingredient.of(ModItems.MOD_SUB.get(), ModItems.MOD_ADD.get()));
 	}
 
 	@Override
 	public boolean matches(SmithingRecipeInput input, Level level) {
 
-		if (!input.base().is(ModItems.TOOL.asItem()) && !input.base().is(ModItems.ARMOR.asItem())) {
+		if (!input.base().is(ModItems.TOOL.get()) && !input.base().is(ModItems.ARMOR.get())) {
 			return false;
 		}
 
@@ -98,12 +98,12 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		// Thorny swords), matching the case-roll and /randomloot trait add paths. The
 		// subtraction template stays ungated so mismatched traits can always be stripped.
 		LootItem.ToolType baseType = LootUtils.getToolType(input.base());
-		if (input.template().is(ModItems.MOD_ADD.asItem()) && !modToAdd.forTool(baseType)) {
+		if (input.template().is(ModItems.MOD_ADD.get()) && !modToAdd.forTool(baseType)) {
 			return false;
 		}
 
 		// Check if we're adding a modifier (not removing)
-		if (input.template().is(ModItems.MOD_ADD.asItem())) {
+		if (input.template().is(ModItems.MOD_ADD.get())) {
 			// If it's a biome-restricted modifier, check if the tool's biome matches
 			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
 				ItemStack tool = input.base();
@@ -143,9 +143,9 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 				return stack;
 			}
 
-			if (template.is(ModItems.MOD_ADD.asItem())) {
+			if (template.is(ModItems.MOD_ADD.get())) {
 				LootUtils.addModifier(stack, modToAdd);
-			} else if (template.is(ModItems.MOD_SUB.asItem())) {
+			} else if (template.is(ModItems.MOD_SUB.get())) {
 				LootUtils.removeModifier(stack, modToAdd);
 			}
 

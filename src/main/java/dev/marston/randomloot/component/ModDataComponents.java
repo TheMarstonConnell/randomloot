@@ -1,29 +1,20 @@
 package dev.marston.randomloot.component;
 
-import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.registries.Registries;
-import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredRegister;
 
-import java.util.function.UnaryOperator;
+import java.util.function.Supplier;
 
 
 public class ModDataComponents {
-    public static final DeferredRegister<DataComponentType<?>> DATA_COMPONENT_TYPES =
-            DeferredRegister.createDataComponents(Registries.DATA_COMPONENT_TYPE, RandomLoot.MODID);
 
-    public static final DeferredHolder<DataComponentType<?>, DataComponentType<ToolModifier>> TOOL_MODIFIER = register("tool_mod",
-            builder -> builder.persistent(ToolModifier.CODEC));
+    @SuppressWarnings("unchecked")
+    public static final Supplier<DataComponentType<ToolModifier>> TOOL_MODIFIER =
+            (Supplier<DataComponentType<ToolModifier>>) (Supplier<?>) Services.REG.register(Registries.DATA_COMPONENT_TYPE,
+                    "tool_mod", () -> DataComponentType.<ToolModifier>builder().persistent(ToolModifier.CODEC).build());
 
-    private static <T>DeferredHolder<DataComponentType<?>, DataComponentType<T>> register(String name,
-                                                                                          UnaryOperator<DataComponentType.Builder<T>> builderOperator) {
-        return DATA_COMPONENT_TYPES.register(name, () -> builderOperator.apply(DataComponentType.builder()).build());
-    }
-
-
-    public static void register(IEventBus eventBus) {
-        DATA_COMPONENT_TYPES.register(eventBus);
+    /** Classloads the class so the component registration above runs. */
+    public static void init() {
     }
 }

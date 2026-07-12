@@ -15,10 +15,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.phys.AABB;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.event.server.ServerStoppingEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -27,9 +23,10 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Base for "finder" traits that highlight target blocks by spawning short-lived
  * invisible glowing shulkers inside them (OreFinder, TreasureFinder). Owns the block
  * scan, the marker spawn/dedup and the shared marker lifecycle; subclasses only say
- * which blocks to highlight via {@link #isTarget(Block)}.
+ * which blocks to highlight via {@link #isTarget(Block)}. The marker lifecycle
+ * hooks ({@link #onServerStopping()}, {@link #onServerTick()}) are called from each
+ * loader's event shim.
  */
-@EventBusSubscriber(modid = RandomLoot.MODID)
 public abstract class BlockHighlighter extends AbstractModifier implements HoldModifier {
 
 	/** Half-extent of the cube scanned around the holder. */
@@ -50,8 +47,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	/** True for blocks this trait should highlight. */
 	protected abstract boolean isTarget(Block block);
 
-	@SubscribeEvent
-	public static void serverStop(ServerStoppingEvent event) {
+	public static void onServerStopping() {
 		for (Shulker shulker : shulkers) {
 			kill(shulker);
 		}
@@ -59,8 +55,8 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 		timings.clear();
 	}
 
-	@SubscribeEvent
-	public static void tickEvent(ServerTickEvent.Post event) {
+	/** Post-server-tick marker lifecycle sweep. */
+	public static void onServerTick() {
 		time = (time + 1) % CLEANUP_INTERVAL;
 		if (time != 0) {
 			return;

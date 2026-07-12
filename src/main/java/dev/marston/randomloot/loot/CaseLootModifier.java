@@ -57,9 +57,9 @@ public class CaseLootModifier extends LootModifier {
         }
 
         double chance;
-        if (item == ModItems.CASE.asItem()) {
+        if (item == ModItems.CASE.get()) {
             chance = Config.CaseChance;
-        } else if (item == ModItems.MOD_ADD.asItem()) {
+        } else if (item == ModItems.MOD_ADD.get()) {
             chance = Config.ModChance;
         } else {
             return generatedLoot;

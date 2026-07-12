@@ -40,8 +40,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
-import net.neoforged.neoforge.common.ItemAbilities;
-import net.neoforged.neoforge.common.ItemAbility;
+import dev.marston.randomloot.platform.Services;
+import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 
@@ -271,23 +271,20 @@ public class LootItem extends Item  {
 						EquipmentSlotGroup.MAINHAND).build();
 	}
 
-	@Override
-	public boolean canPerformAction(ItemInstance stack, ItemAbility itemAbility) {
-		if (!(stack instanceof ItemStack itemStack)) {
-			return false;
-		}
+	/** Loader-neutral form of NeoForge's canPerformAction; loader subclasses hook it into their APIs. */
+	public boolean canPerform(ItemStack itemStack, ToolAction action) {
 		if (LootUtils.isRolling(itemStack)) {
 			return false;
 		}
 		ToolType type = LootUtils.getToolType(itemStack);
 
 		if (type == ToolType.AXE) {
-			return itemAbility == ItemAbilities.AXE_STRIP ||
-				   itemAbility == ItemAbilities.AXE_SCRAPE ||
-				   itemAbility == ItemAbilities.AXE_WAX_OFF;
+			return action == ToolAction.AXE_STRIP ||
+				   action == ToolAction.AXE_SCRAPE ||
+				   action == ToolAction.AXE_WAX_OFF;
 		}
 		if (type == ToolType.SHOVEL) {
-			return itemAbility == ItemAbilities.SHOVEL_FLATTEN;
+			return action == ToolAction.SHOVEL_FLATTEN;
 		}
 		return false;
 	}
@@ -434,7 +431,7 @@ public class LootItem extends Item  {
 		ItemStack stack = ctx.getItemInHand();
 
 		// Try stripping logs
-		BlockState stripped = state.getToolModifiedState(ctx, ItemAbilities.AXE_STRIP, false);
+		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
 		if (stripped != null) {
 			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
@@ -446,7 +443,7 @@ public class LootItem extends Item  {
 		}
 
 		// Try scraping oxidation
-		BlockState scraped = state.getToolModifiedState(ctx, ItemAbilities.AXE_SCRAPE, false);
+		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
 		if (scraped != null) {
 			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
@@ -458,7 +455,7 @@ public class LootItem extends Item  {
 		}
 
 		// Try removing wax
-		BlockState unwaxed = state.getToolModifiedState(ctx, ItemAbilities.AXE_WAX_OFF, false);
+		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
 		if (unwaxed != null) {
 			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
@@ -480,7 +477,7 @@ public class LootItem extends Item  {
 
 		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
 
-		BlockState flattened = level.getBlockState(pos).getToolModifiedState(ctx, ItemAbilities.SHOVEL_FLATTEN, false);
+		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
 		if (flattened != null) {
 			Player player = ctx.getPlayer();
 			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
