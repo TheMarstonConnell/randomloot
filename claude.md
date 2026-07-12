@@ -3,18 +3,31 @@
 > **Claude: Whenever you discover something important during development (API quirks, patterns, gotchas, or useful snippets), automatically add it to this file so you'll remember it in future sessions.**
 
 ## Overview
-An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. Built for NeoForge.
+An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. **Multiloader**: one shared codebase (`common/`) shipping both a NeoForge jar and a Fabric jar.
 
 ## Current Version
-- **Minecraft**: 26.1.2
-- **NeoForge**: 26.1.2.68-beta
-- **ModDevGradle**: 2.0.141
-- **Gradle**: 9.1.0 (wrapper) — required for Java 25
+- **Minecraft**: 26.2 (fabric/NeoForm artifacts use `26.2`; NeoForge builds are `26.2.0.x`)
+- **NeoForge**: 26.2.0.11-beta · **ModDevGradle**: 2.0.141
+- **Fabric**: loader 0.19.3, fabric-api 0.152.1+26.2, fabric-loom 1.16.3
+- **Forge Config API Port**: 26.2.1 (NeoForge config API on Fabric; bundled jar-in-jar)
+- **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.16 requires ≥9.4
 - **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. `26.1.2.68-beta` = Minecraft `26.1.2`, NeoForge build `68`. Parchment is no longer used: 26.1 ships deobfuscated with official Mojang parameter names.
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.11-beta` = MC `26.2`, build `11`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+
+## Multiloader Architecture
+- `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
+- `neoforge/`, `fabric/` — loader projects compile the **common sources** into their jars (`commonJava`/`commonResources` configurations from `build-logic/`), so each shipped jar is self-contained.
+- **Platform seam** (`dev.marston.randomloot.platform`): `Services.PLATFORM`/`Services.REG` resolved via Java `ServiceLoader` (bindings in each loader's `META-INF/services/`). `RegHelper` = registration (NeoForge: DeferredRegisters attached in the mod ctor; Fabric: immediate `Registry.register`). `IPlatformHelper` = item factories (NeoForge subclasses add `canPerformAction`/`supportsEnchantment`/`isCombineRepairable` extension overrides), `getToolModifiedState` (strip/scrape/wax/flatten), `canHarvestBlock`, `tooltipLevel`.
+- **Event seam**: dispatchers in common are plain static methods (`KillDispatcher.onLivingDeath`, `ArmorDispatcher.onLivingDamagePre/Post/onArmorHurt`, `Soulbound.modifyBreakSpeed`, `BlockHighlighter.onServerTick/onServerStopping`, `ModCommands.register`, `Config.onLoad`). NeoForge shim: `neoforge/.../NeoForgeEvents` (+`NeoForgeClientEvents`). Fabric shim: `RandomLootFabric` (Fabric API events) + 3 mixins for hooks Fabric lacks (`PlayerMixin` break speed, `LivingEntityMixin` pre-damage armor traits, `ItemStackMixin` armor durability skip).
+- **Derived data components**: per-stack attributes (attack / armor+toughness) and MAX_DAMAGE are vanilla components rebuilt by `LootUtils.refreshDerivedComponents(stack)` — called from every mutator (setStats/setToolType/add/remove/updateModifier/addXp/startRoll/finishRoll); `migrateDerivedComponents` in inventoryTick upgrades pre-component items. They replaced NeoForge's dynamic `getDefaultAttributeModifiers`/`getMaxDamage` item overrides — never reintroduce loader-only dynamic item methods for stats.
+- **Loot injection**: NeoForge = GLM (`CaseLootModifier` + `data/randomloot/loot_modifiers/`, lives in `neoforge/`); Fabric = `LootTableEvents.MODIFY` pools in `RandomLootFabric` (chances baked at datapack load; `/reload` picks up config changes).
+- **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
+- **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
+- **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration), `AxeItem.STRIPPABLES`, `ShovelItem.FLATTENABLES`.
+- **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (26 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (24 tests incl. loot-injection test).
 
 ## Useful Links
 - [NeoForge Versions](https://projects.neoforged.net/neoforged/neoforge) - Find latest NeoForge versions
@@ -37,24 +50,25 @@ rm -rf ~/.gradle/caches/neoformruntime
 
 ## Project Structure
 ```
-src/main/java/dev/marston/randomloot/
-├── RandomLoot.java          # Main mod class
-├── Config.java              # Mod configuration
-├── GenWiki.java             # Wiki generation utility
-├── ModLootModifiers.java    # Loot table modifiers
-├── component/               # Data components
-├── items/                   # Custom items (Tool, Case, Templates)
-├── loot/                    # Core loot system
-│   ├── LootItem.java        # Main tool item class
-│   ├── LootUtils.java       # Utility functions
-│   ├── LootCase.java        # Loot case item
-│   └── modifiers/           # Trait/modifier system
-│       ├── breakers/        # Block breaking traits
-│       ├── holders/         # Held item traits
-│       ├── hurters/         # Combat traits
-│       ├── stats/           # Stat modifiers
-│       └── users/           # Right-click traits
-└── recipes/                 # Custom recipes
+build-logic/                     # Gradle convention plugins (multiloader-common / multiloader-loader)
+common/src/main/java/dev/marston/randomloot/
+├── RandomLoot.java              # Loader-neutral core: MODID, LOGGER, init(), commonSetup()
+├── Config.java                  # ModConfigSpec config (FCAP stub makes this common)
+├── GenWiki.java                 # Wiki generation utility
+├── platform/                    # Services, IPlatformHelper, RegHelper, ToolAction
+├── component/                   # Data components
+├── items/                       # ModItems (registers via Services.REG/PLATFORM)
+├── gametest/GameTestBodies.java # Shared gametest bodies (both loaders run them)
+├── commands/  advancements/     # Plain-method dispatch, loader shims call in
+├── loot/                        # Core loot system + modifiers/ (breakers, holders, hurters, stats, users)
+└── recipes/                     # Custom recipes
+common/src/main/resources/       # All assets + data (loader-agnostic)
+neoforge/src/main/java/…/neoforge/   # @Mod entry, event shims, reg helper, item subclasses
+neoforge/src/main/java/…/{ModLootModifiers,loot/CaseLootModifier,gametest/RandomLootGameTests}.java
+neoforge/src/main/resources/     # neoforge.mods.toml, META-INF/services, data/randomloot/loot_modifiers
+neoforge/src/test/                # JUnit unit tests (ModDevGradle unitTest)
+fabric/src/main/java/…/fabric/   # ModInitializer, client init, reg/platform helpers, mixins, gametests
+fabric/src/main/resources/       # fabric.mod.json, mixins json, accesswidener, META-INF/services
 ```
 
 ## Key Systems
@@ -112,11 +126,16 @@ public class MyBiomeModifier implements EntityHurtModifier, BiomeRestrictedModif
 
 ## Build Commands
 ```bash
-./gradlew runClient          # Run client
-./gradlew runServer          # Run server
-./gradlew build              # Build mod jar
-./gradlew downloadAssets     # Download MC assets
+./gradlew build                        # Build both loader jars (+ runs neoforge unit tests)
+./gradlew :neoforge:runClient          # NeoForge client
+./gradlew :neoforge:runServer          # NeoForge server
+./gradlew :neoforge:runGameTestServer  # NeoForge in-world gametests (headless)
+./gradlew :neoforge:test               # JUnit unit tests
+./gradlew :fabric:runClient            # Fabric client
+./gradlew :fabric:runServer            # Fabric server
+./gradlew :fabric:runGametest          # Fabric in-world gametests (headless, -Dfabric-api.gametest)
 ```
+Jars land in `neoforge/build/libs/` and `fabric/build/libs/` (FCAP nested in the fabric jar).
 
 ## Migration Notes (1.21.4 → 1.21.11)
 
@@ -265,8 +284,10 @@ git worktree list
 - Clear separation between stable code and work-in-progress
 
 ## Adding New Modifiers
+> **Multiloader rule:** modifiers live entirely in `common/` and must only use vanilla + common APIs. If a new trait needs a game event, add a plain static method to the relevant dispatcher in common and wire it in BOTH loader shims (`NeoForgeEvents` + `RandomLootFabric`/a fabric mixin). If it changes stats/durability inputs, make sure the path runs through a `LootUtils` mutator so `refreshDerivedComponents` fires.
+
 1. **Create a git worktree first** (see above section)
-2. Create class in appropriate `modifiers/` subdirectory
+2. Create class in appropriate `modifiers/` subdirectory (under `common/src/main/java/...`)
 3. **`extends AbstractModifier`** (or `LeveledModifier` if it levels, `PlaceOnUseModifier`/`BlockHighlighter` for those families) and implement the relevant interface(s) (`BlockBreakModifier`, `HoldModifier`, `EntityHurtModifier`, …). The base provides the shared `name` field and default `name()` / `writeToLore()` / `toNBT()`; do NOT write a `clone()` (the interface no longer has one — registry prototypes are the factories via `fromNBT`). Use `isWeapon(type)` / `isMiningTool(type)` for `forTool(...)`.
 4. Register in `ModifierRegistry.java` (add to both the static field AND the appropriate Set like `HURTERS`)
 5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
