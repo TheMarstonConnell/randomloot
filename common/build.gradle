@@ -1,0 +1,50 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    // Compile the common project against vanilla Minecraft only (NeoForm), no loader APIs.
+    neoFormVersion = neo_form_version
+}
+
+dependencies {
+    // Compile stub for NeoForge's ModConfigSpec so Config.java can live in common.
+    // At runtime NeoForge provides it natively and Fabric gets it from Forge Config API Port.
+    compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forge_config_api_port_version}"
+}
+
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+
+// Tag every variant so the loader projects' compileOnly dependency on :common resolves unambiguously.
+def loaderAttribute = Attribute.of('dev.marston.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
+    configurations.named(variant) {
+        attributes {
+            attribute(loaderAttribute, 'common')
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
+        configurations.named(variant) {
+            attributes {
+                attribute(loaderAttribute, 'common')
+            }
+        }
+    }
+}

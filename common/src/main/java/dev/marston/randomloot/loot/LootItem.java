@@ -1,0 +1,620 @@
+package dev.marston.randomloot.loot;
+
+import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.advancements.ModCriteria;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
+import dev.marston.randomloot.loot.modifiers.*;
+import net.minecraft.ChatFormatting;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.Identifier;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.stats.Stats;
+import net.minecraft.core.Holder;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.enchantment.Enchantment;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.EquipmentSlotGroup;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemInstance;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.gameevent.GameEvent;
+import net.minecraft.server.level.ServerLevel;
+import dev.marston.randomloot.platform.Services;
+import dev.marston.randomloot.platform.ToolAction;
+import net.minecraft.world.item.component.TooltipDisplay;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.*;
+import java.util.function.Consumer;
+
+public class LootItem extends Item  {
+
+	public enum ToolType {
+		PICKAXE, SHOVEL, AXE, SWORD, HELMET, CHESTPLATE, LEGGINGS, BOOTS, NULL;
+
+		@Override
+		public String toString() {
+            return switch (this) {
+                case PICKAXE -> "Pickaxe";
+                case SHOVEL -> "Shovel";
+                case AXE -> "Axe";
+                case SWORD -> "Sword";
+                case HELMET -> "Helmet";
+                case CHESTPLATE -> "Chestplate";
+                case LEGGINGS -> "Leggings";
+                case BOOTS -> "Boots";
+                default -> "Null";
+            };
+		}
+
+		/** Translatable display name for tooltips, falling back to the English toString(). */
+		public Component displayName() {
+			return Component.translatableWithFallback(
+					"tooltip.randomloot.type." + name().toLowerCase(Locale.ROOT), toString());
+		}
+
+		/** True for the four wearable piece types. */
+		public boolean isArmor() {
+			return this == HELMET || this == CHESTPLATE || this == LEGGINGS || this == BOOTS;
+		}
+
+		/** The equipment slot an armor piece occupies, or null for hand tools. */
+		public EquipmentSlot armorSlot() {
+			return switch (this) {
+				case HELMET -> EquipmentSlot.HEAD;
+				case CHESTPLATE -> EquipmentSlot.CHEST;
+				case LEGGINGS -> EquipmentSlot.LEGS;
+				case BOOTS -> EquipmentSlot.FEET;
+				default -> null;
+			};
+		}
+	}
+
+
+	public LootItem(Properties p) {
+		super(p.stacksTo(1).durability(100));
+	}
+
+	@Override
+	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
+		super.onCraftedBy(stack, player);
+		// Taking a tool out of a smithing table means a trait recipe ran;
+		// crafting-table takes are the texture-change recipe, which doesn't
+		// alter traits.
+		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
+			if (player.level() instanceof ServerLevel serverLevel) {
+				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
+			}
+			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
+		}
+	}
+
+	public static float getDigSpeed(ItemStack stack, ToolType type) {
+
+		float statMod = 1.0f;
+
+		// getModifiers already filters out config-disabled traits.
+		for (Modifier mod : LootUtils.getModifiers(stack)) {
+			if (mod instanceof StatsModifier ehm) {
+				statMod *= ehm.getStats(stack);
+			}
+		}
+
+		if (type.equals(ToolType.SWORD)) {
+			return 1.0f;
+		}
+
+		float speed = (LootUtils.getStats(stack) / 2.0f) + 6.0f;
+		return speed * statMod;
+	}
+
+	public static float getAttackSpeed(ItemStack stack, ToolType type) {
+
+		float speed = 0.0f;
+
+		switch (type) {
+		case PICKAXE:
+			speed = -2.8F;
+			break;
+		case AXE:
+			speed = -3.0F;
+			break;
+		case SHOVEL:
+			speed = -3.0F;
+			break;
+		case SWORD:
+			speed = -2.4F;
+			break;
+		default:
+			break;
+		}
+
+		return speed;
+	}
+
+	public static float getAttackDamage(ItemStack stack, ToolType type) {
+
+		float damage = (LootUtils.getStats(stack)) + 1.0f;
+
+		switch (type) {
+		case PICKAXE:
+			damage = damage * 0.5f;
+			break;
+		case AXE:
+			damage = damage * 1.2f;
+			break;
+		case SHOVEL:
+			damage = damage * 0.6f;
+			break;
+		default:
+			break;
+		}
+
+		return damage;
+	}
+
+	@Override
+	public float getDestroySpeed(@NotNull ItemStack stack, @NotNull BlockState block) {
+
+		// A rolling tool hasn't been revealed yet and digs like a bare hand.
+		if (LootUtils.isRolling(stack)) {
+			return 1.0f;
+		}
+
+		ToolType type = LootUtils.getToolType(stack);
+
+		TagKey<Block> blocks = null;
+
+		if (type == ToolType.PICKAXE) {
+			blocks = BlockTags.MINEABLE_WITH_PICKAXE;
+		} else if (type == ToolType.AXE) {
+			blocks = BlockTags.MINEABLE_WITH_AXE;
+		} else if (type == ToolType.SHOVEL) {
+			blocks = BlockTags.MINEABLE_WITH_SHOVEL;
+		} else if (type == ToolType.SWORD) {
+			Block blockType = block.getBlock();
+
+			// Cobwebs - instant break (vanilla sword behavior)
+			if (blockType == Blocks.COBWEB) {
+				return 15.0f;
+			}
+
+			// Bamboo - instant break (vanilla sword behavior)
+			if (blockType == Blocks.BAMBOO || blockType == Blocks.BAMBOO_SAPLING) {
+				return 100.0f;
+			}
+
+			// Leaves - faster than fists (vanilla sword behavior)
+			if (block.is(BlockTags.LEAVES)) {
+				return 1.5f;
+			}
+
+			return 1.0f;
+		} else {
+			return 1.0f;
+		}
+
+		return block.is(blocks) ? getDigSpeed(stack, type) : 1.0F;
+	}
+
+
+	@Override
+	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
+
+		if (LootUtils.isRolling(stack)) {
+			return false;
+		}
+
+		ToolType type = LootUtils.getToolType(stack);
+
+		TagKey<Block> blocks = null;
+
+		if (type == ToolType.PICKAXE) {
+			blocks = BlockTags.MINEABLE_WITH_PICKAXE;
+		} else if (type == ToolType.SHOVEL) {
+			blocks = BlockTags.MINEABLE_WITH_SHOVEL;
+		} else if (type == ToolType.AXE) {
+			blocks = BlockTags.MINEABLE_WITH_AXE;
+		} else {
+			return false;
+		}
+
+		return state.is(blocks);
+	}
+
+
+	/**
+	 * The stack's attack attributes, derived from its stats. Stored on the
+	 * stack as the vanilla ATTRIBUTE_MODIFIERS component by
+	 * {@link LootUtils#refreshDerivedComponents} whenever the inputs change.
+	 */
+	public static ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
+
+		// No attributes while rolling: hides the tooltip lines and keeps the
+		// undecided tool from working as a weapon.
+		if (LootUtils.isRolling(stack)) {
+			return ItemAttributeModifiers.builder().build();
+		}
+
+		ToolType tt = LootUtils.getToolType(stack);
+
+		float attack = getAttackDamage(stack, tt);
+		float speed = getAttackSpeed(stack, tt);
+
+		return ItemAttributeModifiers.builder().add(
+				Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, attack, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
+				.add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, speed, AttributeModifier.Operation.ADD_VALUE),
+						EquipmentSlotGroup.MAINHAND).build();
+	}
+
+	/** Loader-neutral form of NeoForge's canPerformAction; loader subclasses hook it into their APIs. */
+	public boolean canPerform(ItemStack itemStack, ToolAction action) {
+		if (LootUtils.isRolling(itemStack)) {
+			return false;
+		}
+		ToolType type = LootUtils.getToolType(itemStack);
+
+		if (type == ToolType.AXE) {
+			return action == ToolAction.AXE_STRIP ||
+				   action == ToolAction.AXE_SCRAPE ||
+				   action == ToolAction.AXE_WAX_OFF;
+		}
+		if (type == ToolType.SHOVEL) {
+			return action == ToolAction.SHOVEL_FLATTEN;
+		}
+		return false;
+	}
+
+	@Override
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+
+		if (LootUtils.isRolling(itemstack)) {
+			return;
+		}
+
+		ToolType type = LootUtils.getToolType(itemstack);
+
+		if (type == ToolType.AXE || type == ToolType.SWORD) {
+			LootUtils.addXp(itemstack, hurter, 1);
+		}
+
+		List<Modifier> mods = LootUtils.getModifiers(itemstack);
+
+		boolean shouldSkipBreak = false;
+		for (Modifier mod : mods) {
+			if (mod instanceof EntityHurtModifier ehm) {
+				if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
+					shouldSkipBreak = true;
+				}
+			}
+
+			if (mod instanceof Unbreaking unbreaking && unbreaking.test(hurtee.level())) {
+				shouldSkipBreak = true;
+			}
+		}
+		if (!shouldSkipBreak) {
+			itemstack.hurtAndBreak(1, hurter, EquipmentSlot.MAINHAND);
+		}
+	}
+
+//	@Override
+//	public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
+//
+//		if (enchantment.category.equals(EnchantmentCategory.BREAKABLE)) { // all these items are breakable so we can
+//																			// enchant them first!
+//			return true;
+//		}
+//
+//		ToolType type = LootUtils.getToolType(stack);
+//		if (enchantment.category.equals(EnchantmentCategory.DIGGER)) {
+//			if (type == ToolType.AXE || type == ToolType.SHOVEL || type == ToolType.PICKAXE) {
+//				return true;
+//			}
+//		}
+//
+//		if (enchantment.category.equals(EnchantmentCategory.WEAPON)) {
+//			if (type == ToolType.AXE || type == ToolType.SWORD) {
+//				return true;
+//			}
+//		}
+//
+//		return enchantment.category.canEnchant(stack.getItem());
+//	}
+
+	@Override
+	public boolean mineBlock(@NotNull ItemStack stack, Level level, @NotNull BlockState blockState, @NotNull BlockPos pos, @NotNull LivingEntity player) {
+		if (LootUtils.isRolling(stack)) {
+			return true;
+		}
+
+		if (!level.isClientSide() && blockState.getDestroySpeed(level, pos) != 0.0F) {
+
+			List<Modifier> mods = LootUtils.getModifiers(stack);
+
+			boolean shouldSkipBreak = false;
+			for (Modifier mod : mods) {
+
+				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, pos, player)) {
+					shouldSkipBreak = true;
+				}
+
+				if (mod instanceof Unbreaking unbreaking && unbreaking.test(level)) {
+					shouldSkipBreak = true;
+				}
+			}
+
+			if (!shouldSkipBreak) {
+				stack.hurtAndBreak(1, player,EquipmentSlot.MAINHAND);
+			}
+
+			LootUtils.addXp(stack, player, 1);
+
+		}
+
+		return true;
+	}
+
+
+
+	/** Durability derived from stats; stored as the vanilla MAX_DAMAGE component. */
+	public static int computeMaxDamage(ItemStack stack) {
+		float stats = (LootUtils.getStats(stack) + 10.0f) * 80.0f;
+
+		return (int) stats;
+	}
+
+	@Override
+	public @NotNull InteractionResult useOn(UseOnContext ctx) {
+
+		ItemStack itemstack = ctx.getItemInHand();
+		if (LootUtils.isRolling(itemstack)) {
+			return InteractionResult.PASS;
+		}
+		ToolType type = LootUtils.getToolType(itemstack);
+		List<Modifier> mods = LootUtils.getModifiers(itemstack);
+
+		// First, try UseModifier abilities
+		for (Modifier mod : mods) {
+
+			if (mod instanceof UseModifier um) {
+				InteractionResult result = um.use(ctx);
+				if (result.consumesAction()) {
+					return result;  // Modifier consumed the action
+				}
+			}
+
+		}
+
+		// No modifier consumed - try vanilla tool behaviors
+		if (type == ToolType.AXE) {
+			InteractionResult result = tryAxeActions(ctx);
+			if (result.consumesAction()) return result;
+		}
+
+		if (type == ToolType.SHOVEL) {
+			InteractionResult result = tryShovelFlatten(ctx);
+			if (result.consumesAction()) return result;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+	private InteractionResult tryAxeActions(UseOnContext ctx) {
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+		BlockState state = level.getBlockState(pos);
+		Player player = ctx.getPlayer();
+		ItemStack stack = ctx.getItemInHand();
+
+		// Try stripping logs
+		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
+		if (stripped != null) {
+			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, stripped, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		// Try scraping oxidation
+		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
+		if (scraped != null) {
+			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, scraped, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		// Try removing wax
+		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
+		if (unwaxed != null) {
+			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, unwaxed, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
+				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+	private InteractionResult tryShovelFlatten(UseOnContext ctx) {
+		if (ctx.getClickedFace() != Direction.UP) return InteractionResult.PASS;
+
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+
+		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
+
+		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
+		if (flattened != null) {
+			Player player = ctx.getPlayer();
+			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
+			if (!level.isClientSide()) {
+				level.setBlock(pos, flattened, 11);
+				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
+				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			}
+			return InteractionResult.SUCCESS;
+		}
+		return InteractionResult.PASS;
+	}
+
+	@Override
+	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+		ItemStack toolItem = player.getItemInHand(hand);
+
+		if (LootUtils.isRolling(toolItem)) {
+			return InteractionResult.PASS;
+		}
+
+		boolean used = false;
+
+		List<Modifier> mods = LootUtils.getModifiers(toolItem);
+
+		for (Modifier mod : mods) {
+
+			if (mod instanceof UseModifier um && um.useAnywhere()) {
+				used = used || um.use(level, player, hand);
+			}
+
+		}
+
+		if (used) {
+			// Award the tool's ITEM_USED stat exactly once, server-side. awardStat also
+			// updates scoreboard objectives, unlike a bare getStats().increment().
+			if (player instanceof ServerPlayer sPlayer) {
+				sPlayer.awardStat(Stats.ITEM_USED.get(this));
+			}
+
+			return InteractionResult.SUCCESS;
+		}
+
+		return InteractionResult.PASS;
+	}
+
+	@Override
+	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display, Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
+		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList, (tt, tips) -> {
+			float digSpeed = getDigSpeed(item, tt);
+			tips.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
+					String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
+
+			float attackDamage = getAttackDamage(item, tt);
+			tips.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
+					String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
+		});
+	}
+
+	@Override
+	public @NotNull Component getName(@NotNull ItemStack stack) {
+		if (LootUtils.isRolling(stack)) {
+			return LootTooltips.rollingName();
+		}
+		return super.getName(stack);
+	}
+
+	@Override
+	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
+
+		// Migrates items from before attributes/durability moved to data
+		// components (they were dynamic NeoForge item-method overrides).
+		LootUtils.migrateDerivedComponents(stack);
+
+		// Runs in any slot, unlike the mainhand-gated trait ticking below.
+		if (LootUtils.tickRoll(stack, level, holder)) {
+			return;
+		}
+
+		// Only trigger for mainhand slot (replacing the old 'holding' boolean check)
+		if (slot == EquipmentSlot.MAINHAND) {
+
+			List<Modifier> mods = LootUtils.getModifiers(stack);
+
+			for (Modifier mod : mods) {
+
+				if (mod instanceof HoldModifier hodlMod) {
+
+                    hodlMod.hold(stack, level, holder);
+				}
+
+			}
+		}
+
+	}
+
+	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
+	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
+	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
+	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
+	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
+			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
+
+	/**
+	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:
+	 * the enchanting table consults isPrimaryItemFor, but the anvil/book path checks
+	 * supportsEnchantment, whose default just reads the enchantment's supported-items tag.
+	 * Since the single tool item sits in every minecraft:enchantable/* tag (it covers all
+	 * four tool types), that default let an efficiency book land on a sword. The default
+	 * isPrimaryItemFor delegates here, so the table stays filtered too.
+	 */
+	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
+		if (LootUtils.isRolling(stack)) {
+			return false;
+		}
+
+		ToolType type = LootUtils.getToolType(stack);
+
+		if (enchantment.is(ALL_TOOL_ENCHANTS)) {
+			return true;
+		}
+
+		if (enchantment.is(MINING_ENCHANTS)) {
+			return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
+		}
+
+		if (enchantment.is(WEAPON_ENCHANTS)) {
+			return type == ToolType.SWORD || type == ToolType.AXE;
+		}
+
+		if (enchantment.is(SWORD_ENCHANTS)) {
+			return type == ToolType.SWORD;
+		}
+
+		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
+		// supported-items definition; null = defer to the loader's default check.
+		return null;
+	}
+
+}
