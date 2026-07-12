@@ -56,13 +56,19 @@ jobs:
           uses: gradle/gradle-build-action@bd5760595778326ba7f1441bcf7e88b49de61a25 # v2.6.0
           with:
             arguments: build
+        - name: Stage mod jars
+          run: |
+            mkdir -p dist
+            find neoforge/build/libs fabric/build/libs -name '*.jar' ! -name '*-sources.jar' -exec cp {} dist/ \;
+            ls -la dist/
         - name: Release
           uses: softprops/action-gh-release@v1
           with:
             prerelease: ${{ steps.is_pre_release.outputs.IS_PRE_RELEASE }}
-            files: "build/libs/*.jar"
-        
-        - name: Publish to CurseForge & Modrinth
+            files: "dist/*.jar"
+
+        # One version entry per loader so CurseForge/Modrinth tag them correctly.
+        - name: Publish NeoForge jar to CurseForge & Modrinth
           uses: Kir-Antipov/mc-publish@v3.3
           with:
             modrinth-id: bM2Gf75C
@@ -70,9 +76,26 @@ jobs:
             curseforge-id: "301631"
             curseforge-token: ${{ secrets.CurseForge }}
             changelog: "# Change Log\n\nClick [here](https://github.com/TheMarstonConnell/randomloot/releases/tag/v${{ steps.get_version.outputs.VERSION }}) for full list of changes."
-            files: build/libs/*.jar
-            name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }}"
+            files: dist/*-neoforge-*.jar
+            name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (NeoForge)"
+            version: "${{ steps.get_version.outputs.VERSION }}+neoforge"
             version-type: ${{ steps.release_type.outputs.RELEASE_TYPE }}
             game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
             loaders: neoforge
+            java: 25
+
+        - name: Publish Fabric jar to CurseForge & Modrinth
+          uses: Kir-Antipov/mc-publish@v3.3
+          with:
+            modrinth-id: bM2Gf75C
+            modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+            curseforge-id: "301631"
+            curseforge-token: ${{ secrets.CurseForge }}
+            changelog: "# Change Log\n\nClick [here](https://github.com/TheMarstonConnell/randomloot/releases/tag/v${{ steps.get_version.outputs.VERSION }}) for full list of changes."
+            files: dist/*-fabric-*.jar
+            name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (Fabric)"
+            version: "${{ steps.get_version.outputs.VERSION }}+fabric"
+            version-type: ${{ steps.release_type.outputs.RELEASE_TYPE }}
+            game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
+            loaders: fabric
             java: 25
