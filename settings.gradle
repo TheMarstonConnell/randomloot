@@ -26,3 +26,4 @@ rootProject.name = 'randomloot'
 includeBuild('build-logic')
 include('common')
 include('neoforge')
+include('fabric')

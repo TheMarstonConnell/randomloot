@@ -5,7 +5,7 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import java.util.List;
 import java.util.Optional;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
