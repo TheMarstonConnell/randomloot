@@ -1,0 +1,108 @@
+package dev.marston.randomloot;
+
+import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import net.neoforged.neoforge.common.ModConfigSpec;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+/**
+ * Mod configuration, built on NeoForge's ModConfigSpec. On Fabric the same
+ * spec API is provided by Forge Config API Port, so this class stays in
+ * common; each loader registers {@link #SPEC} and wires its config-loaded
+ * event to {@link #onLoad()}.
+ */
+public class Config
+{
+    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+
+    private static ModConfigSpec.DoubleValue CASE_CHANCE;
+
+    private static ModConfigSpec.DoubleValue MOD_CHANCE;
+
+    private static ModConfigSpec.DoubleValue GOODNESS;
+
+    private static ModConfigSpec.DoubleValue ARMOR_CHANCE;
+
+    private static ModConfigSpec.DoubleValue DISPENSER_GOODNESS;
+
+    private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
+
+    public static final ModConfigSpec SPEC = build();
+
+    public static ModConfigSpec build() {
+        init();
+        return BUILDER.build();
+    }
+
+    // Field initializers mirror the spec defaults below so reads that land before the
+    // first ModConfigEvent.Loading (e.g. early world gen) see sane values, not 0.0.
+    public static double CaseChance = 0.25;
+    public static double ModChance = 0.15;
+    public static double Goodness = 1.0;
+    public static double ArmorChance = 0.15;
+    public static double DispenserGoodness = 0.75;
+    public static List<? extends String> LootTableMatches = List.of("chest");
+
+    private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
+    private static Map<String, Boolean> ModsEnabled = new HashMap<>();
+
+    public static void init() {
+
+        BUILDER.push("Loot Chances");
+        CASE_CHANCE = BUILDER.comment("chance to find a case in a chest.").defineInRange("caseChance", 0.25, 0.0, 1.0);
+        MOD_CHANCE = BUILDER.comment("chance to find a modifier template in a chest.").defineInRange("modChance", 0.15,
+                0.0, 1.0);
+        LOOT_TABLE_MATCHES = BUILDER
+                .comment("loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
+                .defineListAllowEmpty("lootTableMatches", List.of("chest"), () -> "chest", o -> o instanceof String);
+        BUILDER.pop();
+
+        BUILDER.push("Modifiers Enabled");
+        MODIFIERS_ENABLED = new HashMap<String, ModConfigSpec.BooleanValue>();
+
+        for (Map.Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
+            String key = entry.getKey();
+            Modifier mod = entry.getValue();
+
+            MODIFIERS_ENABLED.put(key,
+                    BUILDER.comment("should the " + mod.name() + " trait be enabled").define(key + "_enabled", true));
+        }
+        BUILDER.pop();
+
+        BUILDER.push("Misc");
+        GOODNESS = BUILDER.comment("rate of tool improvement per player").defineInRange("goodness_rate", 1.0, 0.01,
+                10.0);
+        ARMOR_CHANCE = BUILDER.comment("chance that a loot case contains an armor piece instead of a tool.")
+                .defineInRange("armorChance", 0.15, 0.0, 1.0);
+        DISPENSER_GOODNESS = BUILDER
+                .comment("goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.")
+                .defineInRange("dispenserGoodness", 0.75, 0.0, 1.0);
+        BUILDER.pop();
+    }
+
+    public static boolean traitEnabled(String tagName) {
+        return ModsEnabled.getOrDefault(tagName, true);
+    }
+
+    /** Pulls spec values into the plain static fields; called from each loader's config-loaded event. */
+    public static void onLoad() {
+        CaseChance = CASE_CHANCE.get();
+        ModChance = MOD_CHANCE.get();
+        Goodness = GOODNESS.get();
+        ArmorChance = ARMOR_CHANCE.get();
+        DispenserGoodness = DISPENSER_GOODNESS.get();
+        LootTableMatches = LOOT_TABLE_MATCHES.get();
+
+        ModsEnabled = new HashMap<String, Boolean>();
+        for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {
+            String key = entry.getKey();
+            ModConfigSpec.BooleanValue val = entry.getValue();
+
+            ModsEnabled.put(key, val.get());
+        }
+
+    }
+}

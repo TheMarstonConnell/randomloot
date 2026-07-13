@@ -1,0 +1,32 @@
+plugins {
+    id 'multiloader-common'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    // Compile the common project against vanilla Minecraft only (NeoForm), no loader APIs.
+    neoFormVersion = neo_form_version
+}
+
+dependencies {
+    // Compile stub for NeoForge's ModConfigSpec so Config.java can live in common.
+    // At runtime NeoForge provides it natively and Fabric gets it from Forge Config API Port.
+    compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forge_config_api_port_version}"
+}
+
+configurations {
+    commonJava {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+    commonResources {
+        canBeResolved = false
+        canBeConsumed = true
+    }
+}
+
+artifacts {
+    commonJava sourceSets.main.java.sourceDirectories.singleFile
+    commonResources sourceSets.main.resources.sourceDirectories.singleFile
+}
+

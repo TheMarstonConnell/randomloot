@@ -1,0 +1,46 @@
+# Replaces CodeQL "default setup": its Java autobuild runs on a Java 17 JVM,
+# which can't even configure this Gradle build (fabric-loom needs JVM 21+).
+# build-mode: none analyzes the Java sources without building at all.
+
+name: "CodeQL"
+
+on:
+  push:
+    branches: [ "main", "*.x" ]
+  pull_request:
+    branches: [ "main", "*.x" ]
+  schedule:
+    - cron: '30 5 * * 1'
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      packages: read
+      actions: read
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: actions
+            build-mode: none
+          - language: java-kotlin
+            build-mode: none
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

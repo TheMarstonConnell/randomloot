@@ -1,0 +1,40 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.fabricmc.fabric-loom'
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    implementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    implementation "net.fabricmc.fabric-api:fabric-api:${fabric_version}"
+
+    // NeoForge's config API (ModConfigSpec + TOML loading) on Fabric.
+    implementation "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
+    include "fuzs.forgeconfigapiport:forgeconfigapiport-fabric:${forge_config_api_port_version}"
+}
+
+loom {
+    accessWidenerPath = file('src/main/resources/randomloot.accesswidener')
+    runs {
+        client {
+            client()
+            setConfigName('Fabric Client')
+            ideConfigGenerated(true)
+            runDir('runs/client')
+        }
+        server {
+            server()
+            setConfigName('Fabric Server')
+            ideConfigGenerated(true)
+            runDir('runs/server')
+        }
+        gametest {
+            server()
+            setConfigName('Fabric GameTest Server')
+            runDir('runs/gametest')
+            // Fabric API's gametest hook: runs all registered gametests, then exits.
+            vmArg '-Dfabric-api.gametest'
+        }
+    }
+}
+

@@ -1,0 +1,59 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev'
+}
+
+neoForge {
+    version = neo_version
+
+    runs {
+        configureEach {
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            systemProperty 'neoforge.enabledGameTestNamespaces', mod_id
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+        client {
+            client()
+            // Disable the narrator
+            systemProperty 'narrator.enabled', 'false'
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        gameTestServer {
+            type = "gameTestServer"
+        }
+        data {
+            clientData()
+            programArguments.addAll '--mod', mod_id, '--all', '--output', file('src/generated/resources/').getAbsolutePath(), '--existing', file('src/main/resources/').getAbsolutePath()
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+
+    // Enable ModDevGradle's JUnit support so unit tests can load Minecraft + mod classes.
+    unitTest {
+        enable()
+        testedMod = mods.named(mod_id)
+    }
+}
+
+sourceSets.main.resources { srcDir 'src/generated/resources' }
+
+dependencies {
+    // Unit tests (JUnit 5). Run with `./gradlew :neoforge:test`.
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
