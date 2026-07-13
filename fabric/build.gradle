@@ -38,20 +38,3 @@ loom {
     }
 }
 
-def loaderAttribute = Attribute.of('dev.marston.loader', String)
-['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
-    configurations.named(variant) {
-        attributes {
-            attribute(loaderAttribute, 'fabric')
-        }
-    }
-}
-sourceSets.configureEach {
-    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
-        configurations.named(variant) {
-            attributes {
-                attribute(loaderAttribute, 'fabric')
-            }
-        }
-    }
-}

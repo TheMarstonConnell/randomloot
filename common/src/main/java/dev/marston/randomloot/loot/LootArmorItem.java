@@ -163,15 +163,16 @@ public class LootArmorItem extends Item {
 			return;
 		}
 
-		// Hold-style traits run while the piece is actually worn in its slot.
+		// Hold-style traits run while the piece is actually worn in its slot. The
+		// hasTagElement guard skips the per-tick trait deserialization for
+		// trait-less pieces.
 		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
-		if (equippable == null || slot != equippable.slot()) {
+		if (equippable == null || slot != equippable.slot()
+				|| !LootUtils.hasTagElement(stack, Modifier.MODTAG)) {
 			return;
 		}
 
-		List<Modifier> mods = LootUtils.getModifiers(stack);
-
-		for (Modifier mod : mods) {
+		for (Modifier mod : LootUtils.getModifiers(stack)) {
 
 			if (mod instanceof HoldModifier holdMod) {
 

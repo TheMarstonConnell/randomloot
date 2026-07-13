@@ -21,6 +21,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -45,6 +46,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.EquipmentAsset;
 import net.minecraft.world.item.equipment.EquipmentAssets;
@@ -125,7 +127,29 @@ public class LootUtils {
 	}
 
 	public static boolean isRolling(ItemStack stack) {
-		return !getOrCreateTagElement(stack, ROLLING_TAG).isEmpty();
+		return hasTagElement(stack, ROLLING_TAG);
+	}
+
+	/** True for the mod's gear items (tools and armor). */
+	public static boolean isLootGear(ItemStack stack) {
+		return stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem;
+	}
+
+	/**
+	 * The mod's per-type/per-piece enchant gate for either gear item, or null when
+	 * the stack isn't loot gear / the enchant isn't in a randomloot group tag -
+	 * callers fall back to the loader's default check. Single dispatch point for
+	 * Fabric's ALLOW_ENCHANTING event and NeoForge's supportsEnchantment overrides.
+	 */
+	@Nullable
+	public static Boolean gearEnchantGate(ItemStack stack, Holder<Enchantment> enchantment) {
+		if (stack.getItem() instanceof LootArmorItem armor) {
+			return armor.supportsEnchantmentCommon(stack, enchantment);
+		}
+		if (stack.getItem() instanceof LootItem tool) {
+			return tool.supportsEnchantmentCommon(stack, enchantment);
+		}
+		return null;
 	}
 
 	/** Game time at which a rolling item settles; 0 when not rolling. */
@@ -168,11 +192,13 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		boolean stamped = stack.getComponentsPatch().entrySet().stream()
-				.anyMatch(entry -> entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS);
-		if (!stamped) {
-			refreshDerivedComponents(stack);
+		// Plain loop: this runs from inventoryTick for every loot item, every tick.
+		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
+			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
+				return;
+			}
 		}
+		refreshDerivedComponents(stack);
 	}
 
 	/**
@@ -347,6 +373,35 @@ public class LootUtils {
 		return item;
 	}
 	
+	/**
+	 * Allocation-free presence check for a non-empty tag element; prefer this over
+	 * {@code !getOrCreateTagElement(...).isEmpty()} on per-tick/per-frame paths.
+	 */
+	public static boolean hasTagElement(ItemStack stack, String tagName) {
+		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
+		if (mods == null) {
+			return false;
+		}
+		CompoundTag tag = mods.getTags().get(tagName);
+		return tag != null && !tag.isEmpty();
+	}
+
+	/**
+	 * Cheap "does this stack carry an enabled trait" check - a key lookup on the raw
+	 * component, without deserializing the whole modifier list like getModifiers does.
+	 */
+	public static boolean hasEnabledModifier(ItemStack stack, String tagName) {
+		if (!Config.traitEnabled(tagName)) {
+			return false;
+		}
+		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
+		if (mods == null) {
+			return false;
+		}
+		CompoundTag all = mods.getTags().get(Modifier.MODTAG);
+		return all != null && all.contains(tagName);
+	}
+
 	public static CompoundTag getOrCreateTagElement(ItemStack stack, String tagName) {
 
 		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());

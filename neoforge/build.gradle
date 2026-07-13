@@ -57,20 +57,3 @@ tasks.named('test', Test) {
     useJUnitPlatform()
 }
 
-def loaderAttribute = Attribute.of('dev.marston.loader', String)
-['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
-    configurations.named(variant) {
-        attributes {
-            attribute(loaderAttribute, 'neoforge')
-        }
-    }
-}
-sourceSets.configureEach {
-    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
-        configurations.named(variant) {
-            attributes {
-                attribute(loaderAttribute, 'neoforge')
-            }
-        }
-    }
-}

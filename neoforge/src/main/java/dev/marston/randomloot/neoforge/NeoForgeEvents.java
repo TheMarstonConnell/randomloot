@@ -4,6 +4,7 @@ import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.commands.ModCommands;
 import dev.marston.randomloot.items.ModItems;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.KillDispatcher;
 import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.event.AnvilUpdateEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
@@ -68,15 +70,10 @@ public final class NeoForgeEvents {
      * AnvilMenuMixin.
      */
     @SubscribeEvent
-    public static void onAnvilUpdate(net.neoforged.neoforge.event.AnvilUpdateEvent event) {
-        if (isLootGear(event.getLeft()) && isLootGear(event.getRight())) {
+    public static void onAnvilUpdate(AnvilUpdateEvent event) {
+        if (LootUtils.isLootGear(event.getLeft()) && LootUtils.isLootGear(event.getRight())) {
             event.setCanceled(true);
         }
-    }
-
-    private static boolean isLootGear(net.minecraft.world.item.ItemStack stack) {
-        return stack.getItem() instanceof dev.marston.randomloot.loot.LootItem
-                || stack.getItem() instanceof dev.marston.randomloot.loot.LootArmorItem;
     }
 
     @SubscribeEvent

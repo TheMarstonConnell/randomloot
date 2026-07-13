@@ -1,18 +1,14 @@
 package dev.marston.randomloot.fabric;
 
+import dev.marston.randomloot.Config;
 import dev.marston.randomloot.gametest.GameTestBodies;
-import dev.marston.randomloot.items.ModItems;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.resources.Identifier;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.LootTable;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 
-import java.util.List;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import net.minecraft.gametest.framework.GameTestHelper;
+
 
 /**
  * Fabric registration for the shared gametest bodies in {@link GameTestBodies}.
@@ -203,14 +199,14 @@ public class RandomLootFabricGameTests {
      */
     @GameTest(maxTicks = MAX_TICKS)
     public void configLoads(GameTestHelper helper) {
-        java.nio.file.Path config = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir()
+        Path config = FabricLoader.getInstance().getConfigDir()
                 .resolve("randomloot-common.toml");
-        helper.assertTrue(java.nio.file.Files.exists(config),
+        helper.assertTrue(Files.exists(config),
                 "FCAP should generate randomloot-common.toml, looked at " + config);
 
-        helper.assertTrue(dev.marston.randomloot.Config.CaseChance > 0.0 && dev.marston.randomloot.Config.CaseChance <= 1.0,
-                "caseChance should be loaded and sane, got " + dev.marston.randomloot.Config.CaseChance);
-        helper.assertTrue(dev.marston.randomloot.Config.traitEnabled("thorny"),
+        helper.assertTrue(Config.CaseChance > 0.0 && Config.CaseChance <= 1.0,
+                "caseChance should be loaded and sane, got " + Config.CaseChance);
+        helper.assertTrue(Config.traitEnabled("thorny"),
                 "traits should default to enabled");
 
         helper.succeed();

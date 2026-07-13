@@ -28,14 +28,23 @@ public class ModItems {
     public static final TagKey<Item> ARMOR_REPAIR_MATERIALS = TagKey.create(Registries.ITEM,
             Identifier.fromNamespaceAndPath(RandomLoot.MODID, "armor_repair_materials"));
 
-    public static Supplier<Item> TOOL = Services.REG.registerItem("tool", p -> Services.PLATFORM.createLootItem(p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>())).enchantable(15).repairable(TOOL_REPAIR_MATERIALS)));
-    public static Supplier<Item> ARMOR = Services.REG.registerItem("armor", p -> Services.PLATFORM.createLootArmorItem(p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>())).enchantable(15).repairable(ARMOR_REPAIR_MATERIALS)));
+    public static Supplier<Item> TOOL = Services.REG.registerItem("tool",
+            p -> Services.PLATFORM.createLootItem(gearProps(p, TOOL_REPAIR_MATERIALS)));
+    public static Supplier<Item> ARMOR = Services.REG.registerItem("armor",
+            p -> Services.PLATFORM.createLootArmorItem(gearProps(p, ARMOR_REPAIR_MATERIALS)));
     public static Supplier<Item> CASE = Services.REG.registerItem("case", LootCase::new);
     public static Supplier<Item> MOD_ADD = Services.REG.registerItem("mod_add", p -> new ModTemplate(p, true));
     public static Supplier<Item> MOD_SUB = Services.REG.registerItem("mod_sub", p -> new ModTemplate(p, false));
     // Salvage material smelted from Random Tools and Random Armor; also the
     // crafting-grid ingredient for cycling loot gear textures.
     public static Supplier<Item> ESSENCE = Services.REG.registerItem("essence", Item::new);
+
+    /** Shared properties for both gear items: empty trait component, enchantable, tag-repairable. */
+    private static Item.Properties gearProps(Item.Properties p, TagKey<Item> repairMaterials) {
+        return p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>()))
+                .enchantable(15)
+                .repairable(repairMaterials);
+    }
 
     /** Classloads the class so the item registrations above run. */
     public static void init() {

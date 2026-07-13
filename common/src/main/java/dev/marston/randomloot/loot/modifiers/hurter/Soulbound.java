@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
@@ -97,16 +96,9 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 	public static float modifyBreakSpeed(Player player, float currentSpeed) {
 		ItemStack stack = player.getMainHandItem();
 
-		// Check if holding a LootItem
-		if (!stack.is(ModItems.TOOL.get())) {
-			return currentSpeed;
-		}
-
-		// Check if the tool has Soulbound modifier (getModifiers filters disabled traits)
-		boolean hasSoulbound = LootUtils.getModifiers(stack).stream()
-				.anyMatch(mod -> mod.tagName().equals("soulbound"));
-
-		if (!hasSoulbound) {
+		// This runs on every destroy-speed query while mining, so use the cheap
+		// key-presence check instead of deserializing the whole modifier list.
+		if (!stack.is(ModItems.TOOL.get()) || !LootUtils.hasEnabledModifier(stack, "soulbound")) {
 			return currentSpeed;
 		}
 

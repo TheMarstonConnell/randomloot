@@ -1,6 +1,7 @@
 package dev.marston.randomloot.gametest;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.ParseResults;
@@ -10,6 +11,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
+import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
@@ -28,6 +30,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerPlayer;
@@ -42,15 +45,26 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.gamerules.GameRules;
+import net.minecraft.world.level.storage.loot.LootParams;
+import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -65,8 +79,7 @@ public final class GameTestBodies {
 
 	/** Adding then removing a trait round-trips through the tool's data component (the smithing core). */
 	public static void modifierRoundTrip(GameTestHelper helper) {
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SWORD);
+		ItemStack tool = newTool(ToolType.SWORD);
 
 		Modifier critical = ModifierRegistry.getModifier("critical");
 		LootUtils.addModifier(tool, critical);
@@ -274,8 +287,7 @@ public final class GameTestBodies {
 	public static void dirtPlaceWorldForger(GameTestHelper helper) {
 		long seed = helper.getLevel().getSeed();
 
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SHOVEL);
+		ItemStack tool = newTool(ToolType.SHOVEL);
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("dirt_place").forWorld(seed));
 
 		Modifier dirtPlace = LootUtils.getModifiers(tool).stream()
@@ -299,17 +311,14 @@ public final class GameTestBodies {
 	public static void thornyReflectsForPlayer(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
 
-		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
-		LootUtils.setTexture(chest, 0);
+		ItemStack chest = newArmor(ToolType.CHESTPLATE);
 		LootUtils.addModifier(chest, ModifierRegistry.getModifier("thorny"));
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
 		// A player attacker: mob damage scales with difficulty and zeroes out on the
 		// gametest server's Peaceful setting before it ever reaches the armor hooks.
 		// PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer.
-		helper.getLevel().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP, true,
-				helper.getLevel().getServer());
+		enablePvp(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
 		float attackerHealth = attacker.getHealth();
 		float wearerHealth = player.getHealth();
@@ -337,6 +346,26 @@ public final class GameTestBodies {
 		return player;
 	}
 
+	/** A fresh Random Tool of the given type. */
+	private static ItemStack newTool(ToolType type) {
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(tool, type);
+		return tool;
+	}
+
+	/** A fresh Random Armor piece of the given type (first texture set). */
+	private static ItemStack newArmor(ToolType type) {
+		ItemStack piece = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(piece, type);
+		LootUtils.setTexture(piece, 0);
+		return piece;
+	}
+
+	/** PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer. */
+	private static void enablePvp(GameTestHelper helper) {
+		helper.getLevel().getGameRules().set(GameRules.PVP, true, helper.getLevel().getServer());
+	}
+
 	/** An armor piece of the given type wearing the given trait leveled to its max. */
 	private static ItemStack maxedTraitArmor(ToolType type, String trait) {
 		ItemStack piece = new ItemStack(ModItems.ARMOR.get());
@@ -351,7 +380,7 @@ public final class GameTestBodies {
 	}
 
 	/** Hurts the wearer once with full effect: no i-frames, health reset so they never die. */
-	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, net.minecraft.world.damagesource.DamageSource source, float damage) {
+	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, DamageSource source, float damage) {
 		wearer.setHealth(wearer.getMaxHealth());
 		wearer.invulnerableTime = 0;
 		helper.hurt(wearer, source, damage);
@@ -384,7 +413,7 @@ public final class GameTestBodies {
 		helper.assertFalse(
 				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
 				"inventoryTick should stamp attributes onto a pre-component item");
-		helper.assertTrue(tool.getMaxDamage() == dev.marston.randomloot.loot.LootItem.computeMaxDamage(tool),
+		helper.assertTrue(tool.getMaxDamage() == LootItem.computeMaxDamage(tool),
 				"inventoryTick should stamp the stats-derived max damage, got " + tool.getMaxDamage());
 
 		helper.succeed();
@@ -396,9 +425,7 @@ public final class GameTestBodies {
 		traited.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
 
 		ServerPlayer plain = mockVulnerablePlayer(helper);
-		ItemStack plainBoots = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(plainBoots, ToolType.BOOTS);
-		LootUtils.setTexture(plainBoots, 0);
+		ItemStack plainBoots = newArmor(ToolType.BOOTS);
 		plain.setItemSlot(EquipmentSlot.FEET, plainBoots);
 
 		freshHit(helper, plain, plain.damageSources().fall(), 6.0f);
@@ -415,9 +442,7 @@ public final class GameTestBodies {
 	/** Adrenaline grants a speed burst when the wearer is hit. */
 	public static void adrenalineGrantsSpeed(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
-		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
-		LootUtils.setTexture(chest, 0);
+		ItemStack chest = newArmor(ToolType.CHESTPLATE);
 		LootUtils.addModifier(chest, ModifierRegistry.getModifier("adrenaline"));
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
@@ -453,15 +478,12 @@ public final class GameTestBodies {
 
 	/** Unbreaking (maxed = 100%) skips all armor durability loss from soaked hits. */
 	public static void unbreakingSkipsArmorDurability(GameTestHelper helper) {
-		helper.getLevel().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP, true,
-				helper.getLevel().getServer());
+		enablePvp(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
 
 		// Control: plain armor must lose durability on this path, or the assert below is vacuous.
 		ServerPlayer plain = mockVulnerablePlayer(helper);
-		ItemStack plainChest = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(plainChest, ToolType.CHESTPLATE);
-		LootUtils.setTexture(plainChest, 0);
+		ItemStack plainChest = newArmor(ToolType.CHESTPLATE);
 		plain.setItemSlot(EquipmentSlot.CHEST, plainChest);
 		for (int i = 0; i < 5; i++) {
 			freshHit(helper, plain, plain.damageSources().playerAttack(attacker), 8.0f);
@@ -485,8 +507,7 @@ public final class GameTestBodies {
 	public static void soulboundOwnerMinesFaster(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-		ItemStack pick = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(pick, ToolType.PICKAXE);
+		ItemStack pick = newTool(ToolType.PICKAXE);
 		LootUtils.addModifier(pick, ModifierRegistry.getModifier("soulbound"));
 		LootUtils.setOwnerUUID(pick, player.getStringUUID());
 		player.setItemInHand(InteractionHand.MAIN_HAND, pick);
@@ -512,10 +533,8 @@ public final class GameTestBodies {
 		Holder<Enchantment> efficiency = enchants.getOrThrow(Enchantments.EFFICIENCY);
 		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
 
-		ItemStack sword = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(sword, ToolType.SWORD);
-		ItemStack pickaxe = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(pickaxe, ToolType.PICKAXE);
+		ItemStack sword = newTool(ToolType.SWORD);
+		ItemStack pickaxe = newTool(ToolType.PICKAXE);
 
 		// Regression net: the table path needs the item in the enchant's primary_items
 		// tag (sharpness: #minecraft:enchantable/melee_weapon since 26.x), on top of the
@@ -529,25 +548,24 @@ public final class GameTestBodies {
 	}
 
 	private static boolean tableOffers(ItemStack stack, Holder<Enchantment> wanted, Holder<Enchantment> other) {
-		return net.minecraft.world.item.enchantment.EnchantmentHelper
-				.getAvailableEnchantmentResults(30, stack, java.util.stream.Stream.of(wanted, other)).stream()
+		return EnchantmentHelper
+				.getAvailableEnchantmentResults(30, stack, Stream.of(wanted, other)).stream()
 				.anyMatch(instance -> instance.enchantment() == wanted);
 	}
 
 	/** A Random Axe strips logs (preserving the axis), scrapes and un-waxes copper. */
 	public static void axeToolActions(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack axe = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(axe, ToolType.AXE);
+		ItemStack axe = newTool(ToolType.AXE);
 		player.setItemInHand(InteractionHand.MAIN_HAND, axe);
 
 		BlockPos logPos = new BlockPos(1, 1, 1);
 		helper.setBlock(logPos, Blocks.OAK_LOG.defaultBlockState()
-				.setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, Direction.Axis.X));
+				.setValue(RotatedPillarBlock.AXIS, Direction.Axis.X));
 		useOnBlock(helper, player, logPos);
 		helper.assertBlockPresent(Blocks.STRIPPED_OAK_LOG, logPos);
 		helper.assertTrue(helper.getBlockState(logPos)
-						.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) == Direction.Axis.X,
+						.getValue(RotatedPillarBlock.AXIS) == Direction.Axis.X,
 				"stripping should preserve the log's axis");
 
 		BlockPos copperPos = new BlockPos(2, 1, 1);
@@ -566,8 +584,7 @@ public final class GameTestBodies {
 	/** A Random Shovel flattens grass into dirt path. */
 	public static void shovelFlattens(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack shovel = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(shovel, ToolType.SHOVEL);
+		ItemStack shovel = newTool(ToolType.SHOVEL);
 		player.setItemInHand(InteractionHand.MAIN_HAND, shovel);
 
 		BlockPos grassPos = new BlockPos(1, 1, 1);
@@ -580,8 +597,8 @@ public final class GameTestBodies {
 
 	private static void useOnBlock(GameTestHelper helper, ServerPlayer player, BlockPos relative) {
 		BlockPos absolute = helper.absolutePos(relative);
-		var hit = new net.minecraft.world.phys.BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
-		player.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(player,
+		var hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+		player.getMainHandItem().useOn(new UseOnContext(player,
 				InteractionHand.MAIN_HAND, hit));
 	}
 
@@ -593,8 +610,8 @@ public final class GameTestBodies {
 	 */
 	public static void anvilCannotCombineLootGear(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		var menu = new net.minecraft.world.inventory.AnvilMenu(1, player.getInventory(),
-				net.minecraft.world.inventory.ContainerLevelAccess.create(helper.getLevel(),
+		var menu = new AnvilMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(),
 						helper.absolutePos(BlockPos.ZERO)));
 
 		// Damaged left + enchanted right: without the block, vanilla's combine path
@@ -602,11 +619,9 @@ public final class GameTestBodies {
 		// would yield nothing anyway, making the assert vacuous).
 		var sharpness = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
 				.getOrThrow(Enchantments.SHARPNESS);
-		ItemStack left = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(left, ToolType.SWORD);
+		ItemStack left = newTool(ToolType.SWORD);
 		left.set(DataComponents.DAMAGE, 50);
-		ItemStack right = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(right, ToolType.SWORD);
+		ItemStack right = newTool(ToolType.SWORD);
 		right.enchant(sharpness, 1);
 
 		menu.getSlot(0).set(left);
@@ -616,8 +631,7 @@ public final class GameTestBodies {
 				"combining two Random Tools in an anvil must yield nothing, got " + menu.getSlot(2).getItem());
 
 		// Control: the tag-driven material repair path must still work.
-		ItemStack damaged = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(damaged, ToolType.SWORD);
+		ItemStack damaged = newTool(ToolType.SWORD);
 		damaged.set(DataComponents.DAMAGE, 50);
 		menu.getSlot(0).set(damaged);
 		menu.getSlot(1).set(new ItemStack(Items.DIAMOND));
@@ -635,14 +649,14 @@ public final class GameTestBodies {
 	 * probability ~1e-25.
 	 */
 	public static void lootInjectionAddsCases(GameTestHelper helper) {
-		var key = net.minecraft.resources.ResourceKey.create(Registries.LOOT_TABLE,
+		var key = ResourceKey.create(Registries.LOOT_TABLE,
 				Identifier.withDefaultNamespace("chests/simple_dungeon"));
 		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		helper.assertTrue(table != net.minecraft.world.level.storage.loot.LootTable.EMPTY,
+		helper.assertTrue(table != LootTable.EMPTY,
 				"simple_dungeon loot table should exist");
 
-		var params = new net.minecraft.world.level.storage.loot.LootParams.Builder(helper.getLevel())
-				.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
+		var params = new LootParams.Builder(helper.getLevel())
+				.create(LootContextParamSets.EMPTY);
 
 		boolean found = false;
 		for (int i = 0; i < 200 && !found; i++) {
@@ -656,9 +670,7 @@ public final class GameTestBodies {
 
 	/** Worn Random Armor gains XP when its wearer takes damage (the armor leveling path). */
 	public static void armorXpOnDamage(GameTestHelper helper) {
-		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
-		LootUtils.setTexture(chest, 0);
+		ItemStack chest = newArmor(ToolType.CHESTPLATE);
 
 		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
@@ -691,8 +703,7 @@ public final class GameTestBodies {
 		helper.setBlock(relative, Blocks.DIRT);
 
 		BlockPos absolute = helper.absolutePos(relative);
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SHOVEL);
+		ItemStack tool = newTool(ToolType.SHOVEL);
 
 		boolean destroyed = LootUtils.breakBlockAsPlayer(tool, absolute, player, helper.getLevel(),
 				helper.getLevel().getBlockState(absolute));
@@ -711,8 +722,7 @@ public final class GameTestBodies {
 	 */
 	public static void killTraitHooks(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SWORD);
+		ItemStack tool = newTool(ToolType.SWORD);
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
@@ -745,8 +755,7 @@ public final class GameTestBodies {
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
 		HoldModifier catalyst = (HoldModifier) ModifierRegistry.getModifier("catalyst");
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SWORD);
+		ItemStack tool = newTool(ToolType.SWORD);
 
 		for (int i = 0; i < 200; i++) {
 			catalyst.hold(tool, helper.getLevel(), player);
@@ -802,8 +811,7 @@ public final class GameTestBodies {
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
 		HoldModifier stench = (HoldModifier) ModifierRegistry.getModifier("stench");
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.SWORD);
+		ItemStack tool = newTool(ToolType.SWORD);
 
 		stench.hold(tool, helper.getLevel(), player);
 
@@ -821,8 +829,7 @@ public final class GameTestBodies {
 	 */
 	public static void xpLevelCurve(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(tool, ToolType.PICKAXE);
+		ItemStack tool = newTool(ToolType.PICKAXE);
 
 		LootUtils.addXp(tool, player, 1600);
 
@@ -946,10 +953,8 @@ public final class GameTestBodies {
 		TraitAdditionRecipe critical = new TraitAdditionRecipe(
 				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), "critical");
 
-		ItemStack sword = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(sword, ToolType.SWORD);
-		ItemStack chestplate = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(chestplate, ToolType.CHESTPLATE);
+		ItemStack sword = newTool(ToolType.SWORD);
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
 
 		ItemStack addTemplate = new ItemStack(ModItems.MOD_ADD.get());
 		ItemStack subTemplate = new ItemStack(ModItems.MOD_SUB.get());
@@ -976,8 +981,7 @@ public final class GameTestBodies {
 		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
 
-		ItemStack sword = new ItemStack(ModItems.TOOL.get());
-		LootUtils.setToolType(sword, ToolType.SWORD);
+		ItemStack sword = newTool(ToolType.SWORD);
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);

@@ -2,8 +2,6 @@ package dev.marston.randomloot.loot;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import dev.marston.randomloot.Config;
-import dev.marston.randomloot.items.ModItems;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
@@ -41,27 +39,14 @@ public class CaseLootModifier extends LootModifier {
     protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot,
                                                           LootContext context) {
 
-        String path = context.getQueriedLootTableId().getPath();
-
-        // Which loot tables get injected into is configurable (default: ids containing
-        // "chest"), so packs can exclude modded tables or target different ones.
-        boolean matches = false;
-        for (String match : Config.LootTableMatches) {
-            if (path.contains(match)) {
-                matches = true;
-                break;
-            }
-        }
-        if (!matches) {
+        // Table matching and per-item chances are the common LootInjection policy;
+        // this modifier is just NeoForge's delivery mechanism for it.
+        if (!LootInjection.matchesTable(context.getQueriedLootTableId().getPath())) {
             return generatedLoot;
         }
 
-        double chance;
-        if (item == ModItems.CASE.get()) {
-            chance = Config.CaseChance;
-        } else if (item == ModItems.MOD_ADD.get()) {
-            chance = Config.ModChance;
-        } else {
+        double chance = LootInjection.chanceFor(item);
+        if (chance < 0) {
             return generatedLoot;
         }
 

@@ -23,8 +23,7 @@ public class TextureChangeRecipe extends CustomRecipe {
 
 	/** Tools and armor both support cosmetic texture cycling - once they've settled. */
 	private static boolean isLootGear(ItemStack stack) {
-		return (stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem)
-				&& !LootUtils.isRolling(stack);
+		return LootUtils.isLootGear(stack) && !LootUtils.isRolling(stack);
 	}
 
 	// Resolved per-call rather than in a static Ingredient so this class never

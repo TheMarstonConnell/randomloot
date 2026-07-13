@@ -25,12 +25,12 @@ public class FabricRegHelper implements RegHelper {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> Supplier<T> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<T> value) {
+    public <T, R extends T> Supplier<R> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<R> value) {
         Registry<T> target = (Registry<T>) BuiltInRegistries.REGISTRY.getValue(registry.identifier());
         if (target == null) {
             throw new IllegalArgumentException("Unknown registry " + registry);
         }
-        T registered = Registry.register(target, Identifier.fromNamespaceAndPath(RandomLoot.MODID, name), value.get());
+        R registered = Registry.register(target, Identifier.fromNamespaceAndPath(RandomLoot.MODID, name), value.get());
         return () -> registered;
     }
 }

@@ -36,7 +36,7 @@ public class NeoForgeRegHelper implements RegHelper {
     }
 
     @Override
-    public <T> Supplier<T> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<T> value) {
+    public <T, R extends T> Supplier<R> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<R> value) {
         return registerFor(registry).register(name, value);
     }
 

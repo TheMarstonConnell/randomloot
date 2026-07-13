@@ -1,10 +1,8 @@
 package dev.marston.randomloot.advancements;
 
-import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.advancements.triggers.CriterionTrigger;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,19 +19,14 @@ import java.util.function.Supplier;
  */
 public final class ModCriteria {
 
-	public static final Supplier<CaseOpenedTrigger> CASE_OPENED = registerTrigger("case_opened",
-			CaseOpenedTrigger::new);
-	public static final Supplier<ToolLeveledTrigger> TOOL_LEVELED = registerTrigger("tool_leveled",
-			ToolLeveledTrigger::new);
-	public static final Supplier<TraitObtainedTrigger> TRAIT_OBTAINED = registerTrigger("trait_obtained",
-			TraitObtainedTrigger::new);
-	public static final Supplier<TraitUsedTrigger> TRAIT_USED = registerTrigger("trait_used",
-			TraitUsedTrigger::new);
-
-	@SuppressWarnings("unchecked")
-	private static <T extends CriterionTrigger<?>> Supplier<T> registerTrigger(String name, Supplier<T> factory) {
-		return (Supplier<T>) Services.REG.register(Registries.TRIGGER_TYPE, name, (Supplier<CriterionTrigger<?>>) factory);
-	}
+	public static final Supplier<CaseOpenedTrigger> CASE_OPENED = Services.REG
+			.register(Registries.TRIGGER_TYPE, "case_opened", CaseOpenedTrigger::new);
+	public static final Supplier<ToolLeveledTrigger> TOOL_LEVELED = Services.REG
+			.register(Registries.TRIGGER_TYPE, "tool_leveled", ToolLeveledTrigger::new);
+	public static final Supplier<TraitObtainedTrigger> TRAIT_OBTAINED = Services.REG
+			.register(Registries.TRIGGER_TYPE, "trait_obtained", TraitObtainedTrigger::new);
+	public static final Supplier<TraitUsedTrigger> TRAIT_USED = Services.REG
+			.register(Registries.TRIGGER_TYPE, "trait_used", TraitUsedTrigger::new);
 
 	private ModCriteria() {
 	}

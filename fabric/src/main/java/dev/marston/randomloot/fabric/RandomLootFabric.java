@@ -4,8 +4,8 @@ import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.commands.ModCommands;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootArmorItem;
-import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.loot.LootInjection;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.KillDispatcher;
 import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
@@ -22,11 +22,12 @@ import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.neoforged.fml.config.ModConfig;
+
+import static net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem;
 
 public class RandomLootFabric implements ModInitializer {
 
@@ -70,38 +71,23 @@ public class RandomLootFabric implements ModInitializer {
 
         // Per-type/per-piece enchantment gating (NeoForge does this via supportsEnchantment overrides).
         EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> {
-            Boolean allowed = null;
-            if (target.getItem() instanceof LootArmorItem armor) {
-                allowed = armor.supportsEnchantmentCommon(target, enchantment);
-            } else if (target.getItem() instanceof LootItem tool) {
-                allowed = tool.supportsEnchantmentCommon(target, enchantment);
-            }
+            Boolean allowed = LootUtils.gearEnchantGate(target, enchantment);
             return allowed == null ? TriState.DEFAULT : TriState.of(allowed);
         });
 
-        // Loot injection (NeoForge does this via the case_item global loot modifier).
+        // Loot injection: the LootInjection policy is common; pools are Fabric's
+        // delivery mechanism (NeoForge uses the case_item global loot modifier).
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
-            String path = key.identifier().getPath();
-
-            boolean matches = false;
-            for (String match : Config.LootTableMatches) {
-                if (path.contains(match)) {
-                    matches = true;
-                    break;
-                }
-            }
-            if (!matches) {
+            if (!LootInjection.matchesTable(key.identifier().getPath())) {
                 return;
             }
 
-            tableBuilder.withPool(LootPool.lootPool()
-                    .setRolls(ConstantValue.exactly(1.0f))
-                    .when(LootItemRandomChanceCondition.randomChance((float) Config.CaseChance))
-                    .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.CASE.get())));
-            tableBuilder.withPool(LootPool.lootPool()
-                    .setRolls(ConstantValue.exactly(1.0f))
-                    .when(LootItemRandomChanceCondition.randomChance((float) Config.ModChance))
-                    .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.MOD_ADD.get())));
+            for (LootInjection.Entry entry : LootInjection.entries()) {
+                tableBuilder.withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1.0f))
+                        .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
+                        .add(lootTableItem(entry.item())));
+            }
         });
     }
 }

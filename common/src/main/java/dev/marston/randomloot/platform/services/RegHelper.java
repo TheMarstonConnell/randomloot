@@ -18,5 +18,10 @@ public interface RegHelper {
     /** Registers an item, letting the loader wire up the item id on the Properties. */
     Supplier<Item> registerItem(String name, Function<Item.Properties, Item> factory);
 
-    <T> Supplier<T> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<T> value);
+    /**
+     * Registers into any registry. R is the concrete element type so callers of
+     * wildcarded registries (RecipeSerializer&lt;?&gt;, DataComponentType&lt;?&gt;, ...)
+     * get back a typed supplier without casts.
+     */
+    <T, R extends T> Supplier<R> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<R> value);
 }

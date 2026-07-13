@@ -30,21 +30,3 @@ artifacts {
     commonResources sourceSets.main.resources.sourceDirectories.singleFile
 }
 
-// Tag every variant so the loader projects' compileOnly dependency on :common resolves unambiguously.
-def loaderAttribute = Attribute.of('dev.marston.loader', String)
-['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
-    configurations.named(variant) {
-        attributes {
-            attribute(loaderAttribute, 'common')
-        }
-    }
-}
-sourceSets.configureEach {
-    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
-        configurations.named(variant) {
-            attributes {
-                attribute(loaderAttribute, 'common')
-            }
-        }
-    }
-}

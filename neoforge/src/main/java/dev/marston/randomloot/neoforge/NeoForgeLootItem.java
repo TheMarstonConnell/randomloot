@@ -32,11 +32,7 @@ public class NeoForgeLootItem extends LootItem {
             return false;
         }
 
-        for (ToolAction action : ToolAction.values()) {
-            if (NeoForgePlatformHelper.toItemAbility(action) == itemAbility) {
-                return canPerform(itemStack, action);
-            }
-        }
-        return false;
+        ToolAction action = NeoForgePlatformHelper.fromItemAbility(itemAbility);
+        return action != null && canPerform(itemStack, action);
     }
 }

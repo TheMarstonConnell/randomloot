@@ -28,7 +28,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemInstance;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
@@ -554,12 +553,12 @@ public class LootItem extends Item  {
 			return;
 		}
 
-		// Only trigger for mainhand slot (replacing the old 'holding' boolean check)
-		if (slot == EquipmentSlot.MAINHAND) {
+		// Only trigger for mainhand slot (replacing the old 'holding' boolean check).
+		// The hasTagElement guard skips the per-tick trait deserialization for
+		// trait-less tools.
+		if (slot == EquipmentSlot.MAINHAND && LootUtils.hasTagElement(stack, Modifier.MODTAG)) {
 
-			List<Modifier> mods = LootUtils.getModifiers(stack);
-
-			for (Modifier mod : mods) {
+			for (Modifier mod : LootUtils.getModifiers(stack)) {
 
 				if (mod instanceof HoldModifier hodlMod) {
 

@@ -61,6 +61,27 @@ tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
 }
 
+// Tag every variant with which loader this project targets (the value is just the
+// project name: common/neoforge/fabric) so the loader projects' compileOnly
+// dependency on :common resolves unambiguously.
+def loaderAttribute = Attribute.of('dev.marston.loader', String)
+['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->
+    configurations.named(variant) {
+        attributes {
+            attribute(loaderAttribute, project.name)
+        }
+    }
+}
+sourceSets.configureEach {
+    [it.compileClasspathConfigurationName, it.runtimeClasspathConfigurationName].each { variant ->
+        configurations.named(variant) {
+            attributes {
+                attribute(loaderAttribute, project.name)
+            }
+        }
+    }
+}
+
 publishing {
     publications {
         register('mavenJava', MavenPublication) {

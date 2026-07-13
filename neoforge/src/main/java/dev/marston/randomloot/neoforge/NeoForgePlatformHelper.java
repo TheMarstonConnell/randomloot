@@ -12,6 +12,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.common.ItemAbilities;
 import net.neoforged.neoforge.common.ItemAbility;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.IdentityHashMap;
+import java.util.Map;
 
 public class NeoForgePlatformHelper implements IPlatformHelper {
 
@@ -47,6 +51,19 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
             case AXE_WAX_OFF -> ItemAbilities.AXE_WAX_OFF;
             case SHOVEL_FLATTEN -> ItemAbilities.SHOVEL_FLATTEN;
         };
+    }
+
+    private static final Map<ItemAbility, ToolAction> BY_ABILITY = new IdentityHashMap<>();
+    static {
+        for (ToolAction action : ToolAction.values()) {
+            BY_ABILITY.put(toItemAbility(action), action);
+        }
+    }
+
+    /** The ToolAction behind a NeoForge ItemAbility, or null for abilities the mod doesn't model. */
+    @Nullable
+    static ToolAction fromItemAbility(ItemAbility ability) {
+        return BY_ABILITY.get(ability);
     }
 
     @Override

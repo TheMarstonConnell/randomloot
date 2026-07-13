@@ -1,7 +1,6 @@
 package dev.marston.randomloot.fabric.mixin;
 
-import dev.marston.randomloot.loot.LootArmorItem;
-import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,12 +23,8 @@ public abstract class AnvilMenuMixin {
         ItemStack left = self.getSlot(0).getItem();
         ItemStack right = self.getSlot(1).getItem();
 
-        if (isLootGear(left) && isLootGear(right)) {
+        if (LootUtils.isLootGear(left) && LootUtils.isLootGear(right)) {
             self.getSlot(2).set(ItemStack.EMPTY);
         }
-    }
-
-    private static boolean isLootGear(ItemStack stack) {
-        return stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem;
     }
 }
