@@ -183,6 +183,10 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 - `ItemStackTemplate` is the new immutable stack for data/recipe contexts; `ItemStack.CODEC`/`STREAM_CODEC` still exist and work for recipe deserialization (registries are loaded by recipe-load time).
 
 ## Testing
+
+> **Gametest gotcha — damaging a mock player** (26.x): `makeMockServerPlayerInLevel()` players are effectively invulnerable until you (1) set `abilities.instabuild/invulnerable = false`, (2) mark their fake connection loaded — `player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket())` — because `ServerPlayer.isInvulnerableTo` returns true until `hasClientLoaded()`. Mob damage also difficulty-scales to 0 on the gametest server's Peaceful setting, and player-vs-player damage needs the `pvp` **game rule** (moved to `GameRules.PVP` in 26.x) enabled. See `GameTestBodies.mockVulnerablePlayer` + `thornyReflectsForPlayer`.
+
+> **Fabric mixin gotcha**: never inject into a `LivingEntity` method that `Player`/`ServerPlayer` overrides (e.g. `actuallyHurt`) — the injection silently won't run for players. Wrap the call sites in the caller (`hurtServer`) with MixinExtras `@WrapOperation` instead, which catches the virtual dispatch.
 - Use `/give @p randomloot:case` to get a loot case
 - Right-click case to generate random tool
 - Modifier templates can add/remove traits via smithing table
