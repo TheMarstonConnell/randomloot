@@ -54,6 +54,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void deterministicRollLifecycles(GameTestHelper helper) {
+        GameTestBodies.deterministicRollLifecycles(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void breakBlock(GameTestHelper helper) {
         GameTestBodies.breakBlock(helper);
     }
@@ -131,6 +136,11 @@ public class RandomLootFabricGameTests {
     @GameTest(maxTicks = MAX_TICKS)
     public void smithingTraitGating(GameTestHelper helper) {
         GameTestBodies.smithingTraitGating(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingCraftSequence(GameTestHelper helper) {
+        GameTestBodies.smithingCraftSequence(helper);
     }
 
     @GameTest(maxTicks = MAX_TICKS)

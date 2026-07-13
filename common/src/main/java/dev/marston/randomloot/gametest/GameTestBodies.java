@@ -15,7 +15,6 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
-import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -44,17 +43,20 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.stats.Stats;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
+import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerLevelAccess;
-import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -162,9 +164,7 @@ public final class GameTestBodies {
 	 */
 	public static void caseOpensIntoHand(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		// The mock player is hardwired to creative; the in-hand replacement only
-		// happens in survival, where the case is actually consumed.
-		player.getAbilities().instabuild = false;
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 
 		Inventory inv = player.getInventory();
 		for (int i = 0; i < inv.getContainerSize(); i++) {
@@ -172,11 +172,14 @@ public final class GameTestBodies {
 		}
 		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.CASE.get()));
 
-		ModItems.CASE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
 
 		ItemStack held = player.getMainHandItem();
 		helper.assertTrue(held.is(ModItems.TOOL.get()) || held.is(ModItems.ARMOR.get()),
 				"opening a case should put the generated gear in the hand that held it, got: " + held);
+		helper.assertTrue(player.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())) == 1,
+				"opening one case through the server interaction path should award exactly one use stat");
+		assertAdvancementDone(helper, player, "open_case");
 
 		helper.succeed();
 	}
@@ -184,15 +187,15 @@ public final class GameTestBodies {
 	/**
 	 * Case-opened gear starts in the rolling state - no name, no worn-armor component,
 	 * no attributes - and reveals all three once the roll's game time elapses. The
-	 * tick driver is exercised directly because gametest mock players don't reliably
-	 * tick their inventories.
+	 * production inventoryTick entry point is driven manually because gametest mock
+	 * players don't reliably tick their inventories.
 	 */
 	public static void caseRollReveal(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		player.getAbilities().instabuild = false;
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.CASE.get()));
 
-		ModItems.CASE.get().use(helper.getLevel(), player, InteractionHand.MAIN_HAND);
+		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
 
 		ItemStack held = player.getMainHandItem();
 		helper.assertTrue(LootUtils.isRolling(held), "freshly opened gear should be rolling");
@@ -206,7 +209,7 @@ public final class GameTestBodies {
 		helper.onEachTick(() -> {
 			ItemStack inHand = player.getMainHandItem();
 			if (LootUtils.isRolling(inHand)) {
-				LootUtils.tickRoll(inHand, helper.getLevel(), player);
+				inHand.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
 			}
 		});
 
@@ -221,6 +224,53 @@ public final class GameTestBodies {
 			}
 			helper.assertFalse(heldAttributes(inHand).modifiers().isEmpty(),
 					"revealed gear should grant attributes again");
+		});
+	}
+
+	/** Both item implementations reveal through their production inventoryTick lifecycle. */
+	public static void deterministicRollLifecycles(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack sword = LootUtils.buildTool(player, helper.getLevel(), player.blockPosition(),
+				ToolType.SWORD, 4.0f);
+		ItemStack chestplate = LootUtils.buildTool(player, helper.getLevel(), player.blockPosition(),
+				ToolType.CHESTPLATE, 4.0f);
+
+		helper.assertTrue(sword.get(DataComponents.CUSTOM_NAME) != null,
+				"the deterministic tool fixture should start named");
+		helper.assertTrue(chestplate.get(DataComponents.CUSTOM_NAME) != null,
+				"the deterministic armor fixture should start named");
+
+		long revealTime = helper.getLevel().getGameTime() + 5;
+		LootUtils.startRoll(sword, revealTime);
+		LootUtils.startRoll(chestplate, revealTime);
+		player.setItemInHand(InteractionHand.MAIN_HAND, sword);
+		player.setItemInHand(InteractionHand.OFF_HAND, chestplate);
+
+		helper.assertTrue(heldAttributes(sword).modifiers().isEmpty(),
+				"rolling tool should have no attributes");
+		helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) == null,
+				"rolling armor should not be equippable");
+		helper.assertTrue(heldAttributes(chestplate).modifiers().isEmpty(),
+				"rolling armor should have no attributes");
+
+		helper.onEachTick(() -> {
+			sword.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
+			chestplate.inventoryTick(helper.getLevel(), player, EquipmentSlot.OFFHAND);
+		});
+
+		helper.succeedWhen(() -> {
+			helper.assertFalse(LootUtils.isRolling(sword), "tool roll should finish through inventoryTick");
+			helper.assertFalse(LootUtils.isRolling(chestplate), "armor roll should finish through inventoryTick");
+			helper.assertTrue(sword.get(DataComponents.CUSTOM_NAME) != null,
+					"revealed tool should restore its name");
+			helper.assertFalse(heldAttributes(sword).modifiers().isEmpty(),
+					"revealed tool should restore attributes");
+			helper.assertTrue(chestplate.get(DataComponents.CUSTOM_NAME) != null,
+					"revealed armor should restore its name");
+			helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) != null,
+					"revealed armor should restore its equippable component");
+			helper.assertFalse(heldAttributes(chestplate).modifiers().isEmpty(),
+					"revealed armor should restore attributes");
 		});
 	}
 
@@ -598,8 +648,8 @@ public final class GameTestBodies {
 	private static void useOnBlock(GameTestHelper helper, ServerPlayer player, BlockPos relative) {
 		BlockPos absolute = helper.absolutePos(relative);
 		var hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
-		player.getMainHandItem().useOn(new UseOnContext(player,
-				InteractionHand.MAIN_HAND, hit));
+		player.gameMode.useItemOn(player, helper.getLevel(), player.getMainHandItem(),
+				InteractionHand.MAIN_HAND, hit);
 	}
 
 	/**
@@ -696,20 +746,27 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/** breakBlockAsPlayer destroys a harvestable block and reports success. */
+	/** A survival player mines with Random Loot gear through the real server game-mode path. */
 	public static void breakBlock(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		BlockPos relative = new BlockPos(1, 1, 1);
 		helper.setBlock(relative, Blocks.DIRT);
 
 		BlockPos absolute = helper.absolutePos(relative);
 		ItemStack tool = newTool(ToolType.SHOVEL);
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		int damageBefore = tool.getDamageValue();
+		int xpBefore = LootUtils.getXP(tool);
 
-		boolean destroyed = LootUtils.breakBlockAsPlayer(tool, absolute, player, helper.getLevel(),
-				helper.getLevel().getBlockState(absolute));
+		boolean destroyed = player.gameMode.destroyBlock(absolute);
 
-		helper.assertTrue(destroyed, "breakBlockAsPlayer should destroy a harvestable block");
+		helper.assertTrue(destroyed, "the server player game mode should destroy a harvestable block");
 		helper.assertBlockNotPresent(Blocks.DIRT, relative);
+		helper.assertTrue(LootUtils.getXP(tool) == xpBefore + 1,
+				"a real mined block should award one tool XP");
+		helper.assertTrue(tool.getDamageValue() == damageBefore + 1,
+				"a real mined block should consume one durability");
 
 		helper.succeed();
 	}
@@ -722,15 +779,23 @@ public final class GameTestBodies {
 	 */
 	public static void killTraitHooks(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		ItemStack tool = newTool(ToolType.SWORD);
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		int damageBefore = tool.getDamageValue();
+		int xpBefore = LootUtils.getXP(tool);
 
 		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-		helper.hurt(zombie, player.damageSources().playerAttack(player), 1000.0f);
+		zombie.setHealth(0.1f);
+		player.attack(zombie);
 
-		helper.assertTrue(zombie.isDeadOrDying(), "zombie should die to the test hit");
+		helper.assertTrue(zombie.isDeadOrDying(), "zombie should die to the player's attack");
+		helper.assertTrue(LootUtils.getXP(tool) == xpBefore + 1,
+				"a real weapon hit should award one tool XP");
+		helper.assertTrue(tool.getDamageValue() == damageBefore + 1,
+				"a real weapon hit should consume one durability");
 		helper.assertEntityPresent(EntityTypes.BEE);
 
 		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
@@ -738,15 +803,16 @@ public final class GameTestBodies {
 		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
 		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
 		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
+		assertAdvancementDone(helper, player, "beekeeper");
 
 		helper.succeed();
 	}
 
 	/**
 	 * Catalyst (cinnabar) slows the decay of beneficial effects and leaves harmful ones
-	 * alone. Driving hold() many times without vanilla's per-tick decrement lets the
-	 * beneficial duration climb past its start while the harmful one stays put -- exercising
-	 * both the refund and the MobEffectCategory.BENEFICIAL filter.
+	 * alone. Driving the held tool's inventoryTick many times without vanilla's per-tick
+	 * decrement lets the beneficial duration climb past its start while the harmful one
+	 * stays put -- exercising both the holder dispatch and beneficial-effect filter.
 	 */
 	public static void catalystExtendsEffects(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -754,11 +820,12 @@ public final class GameTestBodies {
 		player.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 0, false, false));
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
-		HoldModifier catalyst = (HoldModifier) ModifierRegistry.getModifier("catalyst");
 		ItemStack tool = newTool(ToolType.SWORD);
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("catalyst"));
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		for (int i = 0; i < 200; i++) {
-			catalyst.hold(tool, helper.getLevel(), player);
+			tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
 		}
 
 		MobEffectInstance speed = player.getEffect(MobEffects.SPEED);
@@ -810,10 +877,11 @@ public final class GameTestBodies {
 		// Stand the holder on the zombie so it's well within the aura radius.
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
-		HoldModifier stench = (HoldModifier) ModifierRegistry.getModifier("stench");
 		ItemStack tool = newTool(ToolType.SWORD);
+		LootUtils.addModifier(tool, ModifierRegistry.getModifier("stench"));
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
-		stench.hold(tool, helper.getLevel(), player);
+		tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
 
 		helper.assertTrue(zombie.hasEffect(MobEffects.SLOWNESS), "stench should slow nearby hostiles");
 		helper.assertTrue(zombie.hasEffect(MobEffects.WEAKNESS), "stench should weaken nearby hostiles");
@@ -837,6 +905,7 @@ public final class GameTestBodies {
 				"1600 XP should reach exactly level 2, got " + LootUtils.getLevel(tool));
 		helper.assertTrue(LootUtils.getXP(tool) == 100,
 				"100 XP should remain after leveling, got " + LootUtils.getXP(tool));
+		assertAdvancementDone(helper, player, "tool_level_1");
 
 		helper.succeed();
 	}
@@ -849,7 +918,8 @@ public final class GameTestBodies {
 	public static void advancementsLoad(GameTestHelper helper) {
 		ServerAdvancementManager advancements = helper.getLevel().getServer().getAdvancements();
 
-		String[] ids = { "root", "open_case", "open_cases_10", "open_cases_25", "all_tool_types",
+		String[] ids = { "root", "salvage_gear", "craft_case", "open_case", "open_cases_10",
+				"open_cases_25", "all_tool_types",
 				"tool_level_1", "tool_level_5", "tool_level_10", "get_template", "swap_template",
 				"add_trait", "trait_count_4", "biome_trait", "void_teleport", "executioner_kill",
 				"lightning_strike", "beekeeper" };
@@ -860,6 +930,14 @@ public final class GameTestBodies {
 		}
 
 		helper.succeed();
+	}
+
+	private static void assertAdvancementDone(GameTestHelper helper, ServerPlayer player, String id) {
+		var advancement = helper.getLevel().getServer().getAdvancements()
+				.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id));
+		helper.assertTrue(advancement != null, "advancement should be loaded: " + id);
+		helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
+				"gameplay sequence should complete advancement: " + id);
 	}
 
 	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
@@ -972,6 +1050,50 @@ public final class GameTestBodies {
 				"critical should smith onto a sword");
 		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
+
+		helper.succeed();
+	}
+
+	/** A real SmithingMenu resolves the datapack recipe, crafts it, and runs the take-result hooks. */
+	public static void smithingCraftSequence(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		BlockPos tablePos = new BlockPos(1, 1, 1);
+		helper.setBlock(tablePos, Blocks.SMITHING_TABLE);
+
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+		ItemStack sword = LootUtils.buildTool(player, helper.getLevel(), helper.absolutePos(tablePos),
+				ToolType.SWORD, 0.0f);
+		sword.enchant(sharpness, 3);
+		sword.set(DataComponents.REPAIR_COST, 5);
+		sword.set(DataComponents.DAMAGE, 7);
+
+		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
+		player.containerMenu = menu;
+		menu.getSlot(SmithingMenu.TEMPLATE_SLOT).set(new ItemStack(ModItems.MOD_ADD.get()));
+		menu.getSlot(SmithingMenu.BASE_SLOT).set(sword);
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.GHAST_TEAR));
+
+		ItemStack preview = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem();
+		helper.assertFalse(preview.isEmpty(), "the loaded critical recipe should produce a smithing result");
+		helper.assertTrue(hasTrait(preview, "critical"), "the smithing preview should contain critical");
+
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+		ItemStack crafted = menu.getCarried();
+		helper.assertFalse(crafted.isEmpty(), "taking the smithing result should put it on the cursor");
+		helper.assertTrue(hasTrait(crafted, "critical"), "the taken result should contain critical");
+		helper.assertTrue(crafted.getEnchantments().getLevel(sharpness) == 3,
+				"smithing should preserve Sharpness III");
+		helper.assertTrue(crafted.getOrDefault(DataComponents.REPAIR_COST, 0) == 5,
+				"smithing should preserve the anvil repair cost");
+		helper.assertTrue(crafted.getOrDefault(DataComponents.DAMAGE, 0) == 7,
+				"smithing should preserve durability damage");
+		helper.assertTrue(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem().isEmpty()
+					&& menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty()
+					&& menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().isEmpty(),
+				"taking the result should consume all three smithing inputs");
+		assertAdvancementDone(helper, player, "add_trait");
 
 		helper.succeed();
 	}

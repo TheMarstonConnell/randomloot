@@ -73,6 +73,7 @@ public final class RandomLootGameTests {
 		register(event, env, "dispenser_opens_case", GameTestBodies::dispenserOpensCase);
 		register(event, env, "case_opens_into_hand", GameTestBodies::caseOpensIntoHand);
 		register(event, env, "case_roll_reveal", GameTestBodies::caseRollReveal);
+		register(event, env, "deterministic_roll_lifecycles", GameTestBodies::deterministicRollLifecycles);
 		register(event, env, "break_block", GameTestBodies::breakBlock);
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", GameTestBodies::advancementsLoad);
@@ -103,6 +104,7 @@ public final class RandomLootGameTests {
 		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
 		register(event, env, "admin_commands", GameTestBodies::adminCommands);
 		register(event, env, "smithing_trait_gating", GameTestBodies::smithingTraitGating);
+		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
 	}
 
