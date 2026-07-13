@@ -4,6 +4,7 @@
     "package": "dev.marston.randomloot.fabric.mixin",
     "compatibilityLevel": "JAVA_25",
     "mixins": [
+        "AnvilMenuMixin",
         "ItemStackMixin",
         "LivingEntityMixin",
         "PlayerMixin"

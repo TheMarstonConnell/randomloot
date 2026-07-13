@@ -192,6 +192,11 @@ public class RandomLootFabricGameTests {
         GameTestBodies.shovelFlattens(helper);
     }
 
+    @GameTest(maxTicks = MAX_TICKS)
+    public void anvilCannotCombineLootGear(GameTestHelper helper) {
+        GameTestBodies.anvilCannotCombineLootGear(helper);
+    }
+
     /**
      * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
      * NeoForge writes, and its values reached the Config fields.

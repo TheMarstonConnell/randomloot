@@ -61,6 +61,24 @@ public final class NeoForgeEvents {
         event.setNewSpeed(Soulbound.modifyBreakSpeed(event.getEntity(), event.getNewSpeed()));
     }
 
+    /**
+     * Blocks anvil-combining two Random Loot items entirely. isCombineRepairable=false
+     * only stops the durability-merge branch; the enchant-transfer branch would still
+     * produce a result and destroy the right item's identity. Fabric mirrors this in
+     * AnvilMenuMixin.
+     */
+    @SubscribeEvent
+    public static void onAnvilUpdate(net.neoforged.neoforge.event.AnvilUpdateEvent event) {
+        if (isLootGear(event.getLeft()) && isLootGear(event.getRight())) {
+            event.setCanceled(true);
+        }
+    }
+
+    private static boolean isLootGear(net.minecraft.world.item.ItemStack stack) {
+        return stack.getItem() instanceof dev.marston.randomloot.loot.LootItem
+                || stack.getItem() instanceof dev.marston.randomloot.loot.LootArmorItem;
+    }
+
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
         BlockHighlighter.onServerTick();

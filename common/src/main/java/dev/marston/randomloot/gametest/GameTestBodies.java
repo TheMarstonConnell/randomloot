@@ -586,6 +586,49 @@ public final class GameTestBodies {
 	}
 
 	/**
+	 * The anvil must refuse to combine two Random Loot items (each is unique;
+	 * combining destroys the right item's identity and is a cheap repair loop) -
+	 * NeoForge via isCombineRepairable=false, Fabric via AnvilMenuMixin - while
+	 * the material-repair path (diamond) keeps working.
+	 */
+	public static void anvilCannotCombineLootGear(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		var menu = new net.minecraft.world.inventory.AnvilMenu(1, player.getInventory(),
+				net.minecraft.world.inventory.ContainerLevelAccess.create(helper.getLevel(),
+						helper.absolutePos(BlockPos.ZERO)));
+
+		// Damaged left + enchanted right: without the block, vanilla's combine path
+		// definitely produces a repaired, enchant-merged result (two pristine tools
+		// would yield nothing anyway, making the assert vacuous).
+		var sharpness = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT)
+				.getOrThrow(Enchantments.SHARPNESS);
+		ItemStack left = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(left, ToolType.SWORD);
+		left.set(DataComponents.DAMAGE, 50);
+		ItemStack right = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(right, ToolType.SWORD);
+		right.enchant(sharpness, 1);
+
+		menu.getSlot(0).set(left);
+		menu.getSlot(1).set(right);
+		menu.createResult();
+		helper.assertTrue(menu.getSlot(2).getItem().isEmpty(),
+				"combining two Random Tools in an anvil must yield nothing, got " + menu.getSlot(2).getItem());
+
+		// Control: the tag-driven material repair path must still work.
+		ItemStack damaged = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(damaged, ToolType.SWORD);
+		damaged.set(DataComponents.DAMAGE, 50);
+		menu.getSlot(0).set(damaged);
+		menu.getSlot(1).set(new ItemStack(Items.DIAMOND));
+		menu.createResult();
+		helper.assertFalse(menu.getSlot(2).getItem().isEmpty(),
+				"diamond material repair should still produce an anvil result");
+
+		helper.succeed();
+	}
+
+	/**
 	 * Chest-type loot tables actually produce cases/templates at the configured
 	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
 	 * LootTableEvents.MODIFY pools. 200 rolls at the default 25% miss with
