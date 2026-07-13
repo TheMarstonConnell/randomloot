@@ -413,6 +413,13 @@ Key wiring:
   `modifier.forTool(pieceType)` (tools keep their historical anything-goes behavior).
 - **Enchants**: armor item sits in all `minecraft:enchantable/*_armor` tags; per-piece filtering in
   `LootArmorItem.supportsEnchantment` via `data/randomloot/tags/enchantment/{all_armor,helmets,chestplates,leggings,boots}.json`.
+- **Enchantable-tag gotcha (26.x)**: vanilla dropped `enchantable/sword` and added
+  `melee_weapon` (the `primary_items` gate for sharpness/smite/bane/fire_aspect — controls the
+  enchanting TABLE, while `supported_items` alone covers the anvil), `sweeping`, `vanishing`,
+  `equippable`, `lunge` (spears; not joined). When bumping MC versions, diff our
+  `data/minecraft/tags/item/enchantable/` against the vanilla jar's — a missing primary tag
+  silently removes enchants from the table only, which tests missed for a whole version. The
+  `enchanting_table_filters_by_type` gametest is the regression net.
 - **Repair**: anvil material repair via `data/randomloot/tags/item/armor_repair_materials.json` (diamond).
 
 Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` (and

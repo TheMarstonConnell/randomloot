@@ -337,6 +337,280 @@ public final class GameTestBodies {
 		return player;
 	}
 
+	/** An armor piece of the given type wearing the given trait leveled to its max. */
+	private static ItemStack maxedTraitArmor(ToolType type, String trait) {
+		ItemStack piece = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(piece, type);
+		LootUtils.setTexture(piece, 0);
+		Modifier mod = ModifierRegistry.getModifier(trait);
+		// First add lands at the base level; every repeat levels it up until maxed.
+		for (int i = 0; i < 16; i++) {
+			LootUtils.addModifier(piece, mod);
+		}
+		return piece;
+	}
+
+	/** Hurts the wearer once with full effect: no i-frames, health reset so they never die. */
+	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, net.minecraft.world.damagesource.DamageSource source, float damage) {
+		wearer.setHealth(wearer.getMaxHealth());
+		wearer.invulnerableTime = 0;
+		helper.hurt(wearer, source, damage);
+	}
+
+	/**
+	 * Items from before the multiloader port have no ATTRIBUTE_MODIFIERS /
+	 * MAX_DAMAGE component patch (attributes were dynamic NeoForge item-method
+	 * overrides); inventoryTick must stamp them on first contact.
+	 */
+	public static void migrationRestoresDerivedComponents(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		// Build an "old" item by writing the raw tags directly, bypassing the
+		// LootUtils mutators (which would refresh the components immediately).
+		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		var info = LootUtils.getOrCreateTagElement(tool, "info");
+		info.putString("type", ToolType.SWORD.name());
+		LootUtils.addTagElement(tool, "info", info);
+		var stats = LootUtils.getOrCreateTagElement(tool, "itemStats");
+		stats.putFloat("goodness", 5.0f);
+		LootUtils.addTagElement(tool, "itemStats", stats);
+
+		helper.assertTrue(
+				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
+				"pre-migration item should have no stamped attributes");
+
+		tool.getItem().inventoryTick(tool, helper.getLevel(), player, EquipmentSlot.MAINHAND);
+
+		helper.assertFalse(
+				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
+				"inventoryTick should stamp attributes onto a pre-component item");
+		helper.assertTrue(tool.getMaxDamage() == dev.marston.randomloot.loot.LootItem.computeMaxDamage(tool),
+				"inventoryTick should stamp the stats-derived max damage, got " + tool.getMaxDamage());
+
+		helper.succeed();
+	}
+
+	/** Featherweight (maxed = 100%) cancels fall damage for a player wearer. */
+	public static void featherweightSoftensFallDamage(GameTestHelper helper) {
+		ServerPlayer traited = mockVulnerablePlayer(helper);
+		traited.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+
+		ServerPlayer plain = mockVulnerablePlayer(helper);
+		ItemStack plainBoots = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(plainBoots, ToolType.BOOTS);
+		LootUtils.setTexture(plainBoots, 0);
+		plain.setItemSlot(EquipmentSlot.FEET, plainBoots);
+
+		freshHit(helper, plain, plain.damageSources().fall(), 6.0f);
+		helper.assertTrue(plain.getHealth() < plain.getMaxHealth(),
+				"control wearer should take fall damage");
+
+		freshHit(helper, traited, traited.damageSources().fall(), 6.0f);
+		helper.assertTrue(traited.getHealth() == traited.getMaxHealth(),
+				"maxed featherweight should cancel fall damage, health " + traited.getHealth());
+
+		helper.succeed();
+	}
+
+	/** Adrenaline grants a speed burst when the wearer is hit. */
+	public static void adrenalineGrantsSpeed(GameTestHelper helper) {
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
+		LootUtils.setTexture(chest, 0);
+		LootUtils.addModifier(chest, ModifierRegistry.getModifier("adrenaline"));
+		player.setItemSlot(EquipmentSlot.CHEST, chest);
+
+		helper.assertFalse(player.hasEffect(MobEffects.SPEED), "no speed before the hit");
+		freshHit(helper, player, player.damageSources().generic(), 4.0f);
+		helper.assertTrue(player.hasEffect(MobEffects.SPEED), "adrenaline should grant speed on hit");
+
+		helper.succeed();
+	}
+
+	/** Bulwark (maxed = 50% chance to halve a hit) measurably reduces damage over many hits. */
+	public static void bulwarkBlocksSomeHits(GameTestHelper helper) {
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		player.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "bulwark"));
+
+		int hits = 60;
+		float perHit = 4.0f;
+		float taken = 0.0f;
+		for (int i = 0; i < hits; i++) {
+			freshHit(helper, player, player.damageSources().generic(), perHit);
+			taken += player.getMaxHealth() - player.getHealth();
+		}
+
+		// Expected factor 0.75 of raw damage; 0.92 leaves ~4 sigma of headroom, and
+		// the floor catches a hook that suddenly zeroes everything.
+		helper.assertTrue(taken < hits * perHit * 0.92f,
+				"maxed bulwark should halve ~50% of hits, took " + taken + "/" + hits * perHit);
+		helper.assertTrue(taken > hits * perHit * 0.4f,
+				"bulwark should not block more than half of all damage, took " + taken);
+
+		helper.succeed();
+	}
+
+	/** Unbreaking (maxed = 100%) skips all armor durability loss from soaked hits. */
+	public static void unbreakingSkipsArmorDurability(GameTestHelper helper) {
+		helper.getLevel().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP, true,
+				helper.getLevel().getServer());
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
+
+		// Control: plain armor must lose durability on this path, or the assert below is vacuous.
+		ServerPlayer plain = mockVulnerablePlayer(helper);
+		ItemStack plainChest = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(plainChest, ToolType.CHESTPLATE);
+		LootUtils.setTexture(plainChest, 0);
+		plain.setItemSlot(EquipmentSlot.CHEST, plainChest);
+		for (int i = 0; i < 5; i++) {
+			freshHit(helper, plain, plain.damageSources().playerAttack(attacker), 8.0f);
+		}
+		helper.assertTrue(plain.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() > 0,
+				"control armor should lose durability from soaked hits");
+
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		player.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "unbreaking"));
+		for (int i = 0; i < 5; i++) {
+			freshHit(helper, player, player.damageSources().playerAttack(attacker), 8.0f);
+		}
+		helper.assertTrue(player.getItemBySlot(EquipmentSlot.CHEST).getDamageValue() == 0,
+				"maxed unbreaking should skip all armor durability loss, lost "
+						+ player.getItemBySlot(EquipmentSlot.CHEST).getDamageValue());
+
+		helper.succeed();
+	}
+
+	/** Soulbound gives its original owner a mining speed bonus (break-speed hook on both loaders). */
+	public static void soulboundOwnerMinesFaster(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		ItemStack pick = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(pick, ToolType.PICKAXE);
+		LootUtils.addModifier(pick, ModifierRegistry.getModifier("soulbound"));
+		LootUtils.setOwnerUUID(pick, player.getStringUUID());
+		player.setItemInHand(InteractionHand.MAIN_HAND, pick);
+
+		float owned = player.getDestroySpeed(Blocks.STONE.defaultBlockState());
+
+		LootUtils.setOwnerUUID(pick, "00000000-0000-0000-0000-000000000000");
+		float unowned = player.getDestroySpeed(Blocks.STONE.defaultBlockState());
+
+		helper.assertTrue(owned > unowned,
+				"soulbound should mine faster for its owner: owned=" + owned + " unowned=" + unowned);
+
+		helper.succeed();
+	}
+
+	/**
+	 * The enchanting-table candidate list is filtered per tool type. This exercises the
+	 * loader wiring end to end: NeoForge's supportsEnchantment item extension vs
+	 * Fabric's EnchantmentEvents.ALLOW_ENCHANTING hook into EnchantmentHelper.
+	 */
+	public static void enchantingTableFiltersByType(GameTestHelper helper) {
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> efficiency = enchants.getOrThrow(Enchantments.EFFICIENCY);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+
+		ItemStack sword = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(sword, ToolType.SWORD);
+		ItemStack pickaxe = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(pickaxe, ToolType.PICKAXE);
+
+		// Regression net: the table path needs the item in the enchant's primary_items
+		// tag (sharpness: #minecraft:enchantable/melee_weapon since 26.x), on top of the
+		// per-type filtering.
+		helper.assertTrue(tableOffers(sword, sharpness, efficiency), "sword should roll sharpness at the table");
+		helper.assertFalse(tableOffers(sword, efficiency, sharpness), "sword must not roll efficiency at the table");
+		helper.assertTrue(tableOffers(pickaxe, efficiency, sharpness), "pickaxe should roll efficiency at the table");
+		helper.assertFalse(tableOffers(pickaxe, sharpness, efficiency), "pickaxe must not roll sharpness at the table");
+
+		helper.succeed();
+	}
+
+	private static boolean tableOffers(ItemStack stack, Holder<Enchantment> wanted, Holder<Enchantment> other) {
+		return net.minecraft.world.item.enchantment.EnchantmentHelper
+				.getAvailableEnchantmentResults(30, stack, java.util.stream.Stream.of(wanted, other)).stream()
+				.anyMatch(instance -> instance.enchantment() == wanted);
+	}
+
+	/** A Random Axe strips logs (preserving the axis), scrapes and un-waxes copper. */
+	public static void axeToolActions(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack axe = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(axe, ToolType.AXE);
+		player.setItemInHand(InteractionHand.MAIN_HAND, axe);
+
+		BlockPos logPos = new BlockPos(1, 1, 1);
+		helper.setBlock(logPos, Blocks.OAK_LOG.defaultBlockState()
+				.setValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS, Direction.Axis.X));
+		useOnBlock(helper, player, logPos);
+		helper.assertBlockPresent(Blocks.STRIPPED_OAK_LOG, logPos);
+		helper.assertTrue(helper.getBlockState(logPos)
+						.getValue(net.minecraft.world.level.block.RotatedPillarBlock.AXIS) == Direction.Axis.X,
+				"stripping should preserve the log's axis");
+
+		BlockPos copperPos = new BlockPos(2, 1, 1);
+		helper.setBlock(copperPos, Blocks.COPPER_BLOCK.weathering().oxidized());
+		useOnBlock(helper, player, copperPos);
+		helper.assertBlockPresent(Blocks.COPPER_BLOCK.weathering().weathered(), copperPos);
+
+		BlockPos waxedPos = new BlockPos(3, 1, 1);
+		helper.setBlock(waxedPos, Blocks.COPPER_BLOCK.waxed().unaffected());
+		useOnBlock(helper, player, waxedPos);
+		helper.assertBlockPresent(Blocks.COPPER_BLOCK.weathering().unaffected(), waxedPos);
+
+		helper.succeed();
+	}
+
+	/** A Random Shovel flattens grass into dirt path. */
+	public static void shovelFlattens(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack shovel = new ItemStack(ModItems.TOOL.get());
+		LootUtils.setToolType(shovel, ToolType.SHOVEL);
+		player.setItemInHand(InteractionHand.MAIN_HAND, shovel);
+
+		BlockPos grassPos = new BlockPos(1, 1, 1);
+		helper.setBlock(grassPos, Blocks.GRASS_BLOCK);
+		useOnBlock(helper, player, grassPos);
+		helper.assertBlockPresent(Blocks.DIRT_PATH, grassPos);
+
+		helper.succeed();
+	}
+
+	private static void useOnBlock(GameTestHelper helper, ServerPlayer player, BlockPos relative) {
+		BlockPos absolute = helper.absolutePos(relative);
+		var hit = new net.minecraft.world.phys.BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+		player.getMainHandItem().useOn(new net.minecraft.world.item.context.UseOnContext(player,
+				InteractionHand.MAIN_HAND, hit));
+	}
+
+	/**
+	 * Chest-type loot tables actually produce cases/templates at the configured
+	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
+	 * LootTableEvents.MODIFY pools. 200 rolls at the default 25% miss with
+	 * probability ~1e-25.
+	 */
+	public static void lootInjectionAddsCases(GameTestHelper helper) {
+		var key = net.minecraft.resources.ResourceKey.create(Registries.LOOT_TABLE,
+				Identifier.withDefaultNamespace("chests/simple_dungeon"));
+		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+		helper.assertTrue(table != net.minecraft.world.level.storage.loot.LootTable.EMPTY,
+				"simple_dungeon loot table should exist");
+
+		var params = new net.minecraft.world.level.storage.loot.LootParams.Builder(helper.getLevel())
+				.create(net.minecraft.world.level.storage.loot.parameters.LootContextParamSets.EMPTY);
+
+		boolean found = false;
+		for (int i = 0; i < 200 && !found; i++) {
+			found = table.getRandomItems(params).stream()
+					.anyMatch(s -> s.is(ModItems.CASE.get()) || s.is(ModItems.MOD_ADD.get()));
+		}
+		helper.assertTrue(found, "chest loot should contain injected cases/templates");
+
+		helper.succeed();
+	}
+
 	/** Worn Random Armor gains XP when its wearer takes damage (the armor leveling path). */
 	public static void armorXpOnDamage(GameTestHelper helper) {
 		ItemStack chest = new ItemStack(ModItems.ARMOR.get());

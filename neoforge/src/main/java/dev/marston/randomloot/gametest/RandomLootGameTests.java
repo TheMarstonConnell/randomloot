@@ -88,6 +88,16 @@ public final class RandomLootGameTests {
 		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
 		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
 		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
+		register(event, env, "migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents);
+		register(event, env, "featherweight_softens_fall_damage", GameTestBodies::featherweightSoftensFallDamage);
+		register(event, env, "adrenaline_grants_speed", GameTestBodies::adrenalineGrantsSpeed);
+		register(event, env, "bulwark_blocks_some_hits", GameTestBodies::bulwarkBlocksSomeHits);
+		register(event, env, "unbreaking_skips_armor_durability", GameTestBodies::unbreakingSkipsArmorDurability);
+		register(event, env, "soulbound_owner_mines_faster", GameTestBodies::soulboundOwnerMinesFaster);
+		register(event, env, "enchanting_table_filters_by_type", GameTestBodies::enchantingTableFiltersByType);
+		register(event, env, "axe_tool_actions", GameTestBodies::axeToolActions);
+		register(event, env, "shovel_flattens", GameTestBodies::shovelFlattens);
+		register(event, env, "loot_injection_adds_cases", GameTestBodies::lootInjectionAddsCases);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
 		register(event, env, "admin_commands", GameTestBodies::adminCommands);

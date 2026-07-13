@@ -142,29 +142,71 @@ public class RandomLootFabricGameTests {
         GameTestBodies.clonePreservesEnchantments(helper);
     }
 
+    @GameTest(maxTicks = MAX_TICKS)
+    public void lootInjectionAddsCases(GameTestHelper helper) {
+        GameTestBodies.lootInjectionAddsCases(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void migrationRestoresDerivedComponents(GameTestHelper helper) {
+        GameTestBodies.migrationRestoresDerivedComponents(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void featherweightSoftensFallDamage(GameTestHelper helper) {
+        GameTestBodies.featherweightSoftensFallDamage(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void adrenalineGrantsSpeed(GameTestHelper helper) {
+        GameTestBodies.adrenalineGrantsSpeed(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void bulwarkBlocksSomeHits(GameTestHelper helper) {
+        GameTestBodies.bulwarkBlocksSomeHits(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void unbreakingSkipsArmorDurability(GameTestHelper helper) {
+        GameTestBodies.unbreakingSkipsArmorDurability(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void soulboundOwnerMinesFaster(GameTestHelper helper) {
+        GameTestBodies.soulboundOwnerMinesFaster(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void enchantingTableFiltersByType(GameTestHelper helper) {
+        GameTestBodies.enchantingTableFiltersByType(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void axeToolActions(GameTestHelper helper) {
+        GameTestBodies.axeToolActions(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void shovelFlattens(GameTestHelper helper) {
+        GameTestBodies.shovelFlattens(helper);
+    }
+
     /**
-     * Fabric-only: LootTableEvents.MODIFY injected the case/template pools into
-     * chest tables (the Fabric replacement for the NeoForge global loot modifier).
-     * With the default 25% case chance, 200 rolls without a single case has
-     * probability ~1e-25, so this is deterministic in practice.
+     * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
+     * NeoForge writes, and its values reached the Config fields.
      */
     @GameTest(maxTicks = MAX_TICKS)
-    public void lootInjectionLoads(GameTestHelper helper) {
-        ResourceKey<LootTable> key = ResourceKey.create(Registries.LOOT_TABLE,
-                Identifier.withDefaultNamespace("chests/simple_dungeon"));
-        LootTable table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-        helper.assertTrue(table != LootTable.EMPTY, "simple_dungeon loot table should exist");
+    public void configLoads(GameTestHelper helper) {
+        java.nio.file.Path config = net.fabricmc.loader.api.FabricLoader.getInstance().getConfigDir()
+                .resolve("randomloot-common.toml");
+        helper.assertTrue(java.nio.file.Files.exists(config),
+                "FCAP should generate randomloot-common.toml, looked at " + config);
 
-        LootParams params = new LootParams.Builder(helper.getLevel())
-                .create(LootContextParamSets.EMPTY);
-
-        boolean caseFound = false;
-        for (int i = 0; i < 200 && !caseFound; i++) {
-            List<ItemStack> loot = table.getRandomItems(params);
-            caseFound = loot.stream()
-                    .anyMatch(s -> s.is(ModItems.CASE.get()) || s.is(ModItems.MOD_ADD.get()));
-        }
-        helper.assertTrue(caseFound, "chest loot should contain injected cases/templates");
+        helper.assertTrue(dev.marston.randomloot.Config.CaseChance > 0.0 && dev.marston.randomloot.Config.CaseChance <= 1.0,
+                "caseChance should be loaded and sane, got " + dev.marston.randomloot.Config.CaseChance);
+        helper.assertTrue(dev.marston.randomloot.Config.traitEnabled("thorny"),
+                "traits should default to enabled");
 
         helper.succeed();
     }
