@@ -118,6 +118,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void thornyReflectsForPlayer(GameTestHelper helper) {
+        GameTestBodies.thornyReflectsForPlayer(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void armorRepairable(GameTestHelper helper) {
         GameTestBodies.armorRepairable(helper);
     }

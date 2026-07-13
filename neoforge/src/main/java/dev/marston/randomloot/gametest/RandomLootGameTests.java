@@ -87,6 +87,7 @@ public final class RandomLootGameTests {
 		register(event, env, "forger_world_constant", GameTestBodies::forgerWorldConstant);
 		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
 		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
+		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
 		register(event, env, "admin_commands", GameTestBodies::adminCommands);

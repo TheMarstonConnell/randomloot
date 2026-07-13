@@ -26,6 +26,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.permissions.PermissionSet;
@@ -287,6 +288,53 @@ public final class GameTestBodies {
 						+ " expected " + expected);
 
 		helper.succeed();
+	}
+
+	/**
+	 * Wearer-hurt traits fire when a PLAYER takes damage. Regression: on Fabric the
+	 * armor-trait hook was a mixin into LivingEntity.actuallyHurt, which Player
+	 * overrides - so Thorny (and every WearerHurtModifier) silently did nothing for
+	 * players while passing the zombie-based tests.
+	 */
+	public static void thornyReflectsForPlayer(GameTestHelper helper) {
+		ServerPlayer player = mockVulnerablePlayer(helper);
+
+		ItemStack chest = new ItemStack(ModItems.ARMOR.get());
+		LootUtils.setToolType(chest, ToolType.CHESTPLATE);
+		LootUtils.setTexture(chest, 0);
+		LootUtils.addModifier(chest, ModifierRegistry.getModifier("thorny"));
+		player.setItemSlot(EquipmentSlot.CHEST, chest);
+
+		// A player attacker: mob damage scales with difficulty and zeroes out on the
+		// gametest server's Peaceful setting before it ever reaches the armor hooks.
+		// PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer.
+		helper.getLevel().getGameRules().set(net.minecraft.world.level.gamerules.GameRules.PVP, true,
+				helper.getLevel().getServer());
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
+		float attackerHealth = attacker.getHealth();
+		float wearerHealth = player.getHealth();
+
+		helper.hurt(player, player.damageSources().playerAttack(attacker), 6.0f);
+
+		helper.assertTrue(player.getHealth() < wearerHealth, "the wearer should take damage");
+		helper.assertTrue(attacker.getHealth() < attackerHealth,
+				"thorny should reflect damage back at the attacker when the wearer is a player");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A mock player that can actually be hurt: survival-ish abilities, and its
+	 * fake connection acknowledged as loaded - ServerPlayer.isInvulnerableTo
+	 * returns true until hasClientLoaded(), which a mock connection never
+	 * reaches on its own.
+	 */
+	private static ServerPlayer mockVulnerablePlayer(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.getAbilities().instabuild = false;
+		player.getAbilities().invulnerable = false;
+		player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
+		return player;
 	}
 
 	/** Worn Random Armor gains XP when its wearer takes damage (the armor leveling path). */

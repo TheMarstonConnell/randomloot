@@ -5,6 +5,7 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.platform.ToolAction;
 import dev.marston.randomloot.platform.services.IPlatformHelper;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -46,9 +47,17 @@ public class FabricPlatformHelper implements IPlatformHelper {
         BlockState state = ctx.getLevel().getBlockState(ctx.getClickedPos());
         Block block = state.getBlock();
 
-        // Vanilla conversion maps (AxeItem/ShovelItem expose them to us via access widener).
+        // Vanilla conversion maps (AxeItem/ShovelItem expose them to us via access
+        // widener). Fabric API's content registries feed the same maps
+        // (StrippableBlockRegistry/FlattenableBlockRegistry/OxidizableBlocksRegistry),
+        // so modded blocks registered the standard Fabric way work here too.
         return switch (action) {
             case AXE_STRIP -> {
+                // Transformer-based registrations live outside the vanilla map.
+                BlockState custom = StrippableBlockRegistry.getStrippedBlockState(state);
+                if (custom != null) {
+                    yield custom;
+                }
                 Block stripped = AxeItem.STRIPPABLES.get(block);
                 yield stripped == null ? null : stripped.withPropertiesOf(state);
             }
