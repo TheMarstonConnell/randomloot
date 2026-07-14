@@ -1,7 +1,9 @@
 package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootArmorItem;
+import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -45,6 +47,26 @@ public final class ArmorDispatcher {
 		return worn == null ? List.of() : worn;
 	}
 
+	/**
+	 * The entity's held Random Loot tools (main and off hand). Wearer-hurt traits
+	 * such as Riposte live on weapons, so a hit to the wielder must reach the held
+	 * tool, not only worn armor. Lazily allocated for the same reason as
+	 * {@link #wornLootArmor}.
+	 */
+	private static List<ItemStack> heldLootTools(LivingEntity entity) {
+		List<ItemStack> held = null;
+		for (InteractionHand hand : InteractionHand.values()) {
+			ItemStack stack = entity.getItemInHand(hand);
+			if (stack.getItem() instanceof LootItem) {
+				if (held == null) {
+					held = new ArrayList<>(2);
+				}
+				held.add(stack);
+			}
+		}
+		return held == null ? List.of() : held;
+	}
+
 	/** Pre-damage hook: wearer-hurt traits may reduce (or alter) the damage. Returns the new damage. */
 	public static float onLivingDamagePre(LivingEntity wearer, DamageSource source, float damage) {
 		if (wearer.level().isClientSide()) {
@@ -55,8 +77,17 @@ public final class ArmorDispatcher {
 			return damage;
 		}
 
-		// getModifiers already filters config-disabled traits.
+		// getModifiers already filters config-disabled traits. Worn armor and held
+		// loot tools both carry wearer-hurt traits; forTool gating keeps armor-only
+		// traits off weapons and vice versa, so scanning both is safe.
 		for (ItemStack stack : wornLootArmor(wearer)) {
+			for (Modifier mod : LootUtils.getModifiers(stack)) {
+				if (mod instanceof WearerHurtModifier whm) {
+					damage = whm.onWearerHurt(stack, wearer, source, damage);
+				}
+			}
+		}
+		for (ItemStack stack : heldLootTools(wearer)) {
 			for (Modifier mod : LootUtils.getModifiers(stack)) {
 				if (mod instanceof WearerHurtModifier whm) {
 					damage = whm.onWearerHurt(stack, wearer, source, damage);

@@ -117,6 +117,8 @@
   "modifier.randomloot.rainy.name": "Rainy",
   "modifier.randomloot.regeneration.name": "Healing",
   "modifier.randomloot.resistance.name": "Resistant",
+  "modifier.randomloot.riposte.description": "After taking a hit, your next strike within 5 seconds deals bonus damage.",
+  "modifier.randomloot.riposte.name": "Riposte",
   "modifier.randomloot.scorched.name": "Scorched",
   "modifier.randomloot.soulbound.description": "Grants 15% bonus damage and mining speed when wielded by the original owner.",
   "modifier.randomloot.soulbound.name": "Soulbound",
