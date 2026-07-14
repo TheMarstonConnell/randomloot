@@ -113,6 +113,7 @@ jobs:
 
       # One version entry per loader so CurseForge/Modrinth tag them correctly.
       - name: Publish NeoForge jar to CurseForge & Modrinth
+        id: publish_neoforge
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: bM2Gf75C
@@ -129,6 +130,7 @@ jobs:
           java: 25
 
       - name: Publish Fabric jar to CurseForge & Modrinth
+        id: publish_fabric
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: bM2Gf75C
@@ -143,3 +145,81 @@ jobs:
           game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
           loaders: fabric
           java: 25
+
+      # mc-publish does not currently expose CurseForge's per-file environment
+      # metadata, so add it through CurseForge's supported file-update API.
+      - name: Mark CurseForge files for client and server
+        shell: bash
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE }}
+          CURSEFORGE_PROJECT_ID: "301631"
+          MINECRAFT_VERSION: ${{ steps.mc_version.outputs.MC_VERSION }}
+          NEOFORGE_FILES: ${{ steps.publish_neoforge.outputs['curseforge-files'] }}
+          FABRIC_FILES: ${{ steps.publish_fabric.outputs['curseforge-files'] }}
+        run: |
+          set -euo pipefail
+
+          API_ROOT="https://minecraft.curseforge.com/api"
+          VERSION_DATA=$(curl --fail-with-body --silent --show-error --retry 2 \
+            -H "X-Api-Token: $CURSEFORGE_TOKEN" \
+            "$API_ROOT/game/versions?cache=true")
+
+          version_name_exists() {
+            jq -e --arg name "$1" \
+              '[.[] | select(.name == $name)] | length > 0' \
+              <<< "$VERSION_DATA" > /dev/null
+          }
+
+          CURSEFORGE_MINECRAFT_VERSION="$MINECRAFT_VERSION"
+          if [[ "$MINECRAFT_VERSION" =~ ^[0-9]+\.[0-9]+$ ]] && version_name_exists "$MINECRAFT_VERSION.0"; then
+            CURSEFORGE_MINECRAFT_VERSION="$MINECRAFT_VERSION.0"
+          elif ! version_name_exists "$MINECRAFT_VERSION"; then
+            echo "::error::CurseForge does not recognize Minecraft $MINECRAFT_VERSION."
+            exit 1
+          fi
+
+          for name in Client Server Fabric NeoForge "Java 25"; do
+            if ! version_name_exists "$name"; then
+              echo "::error::CurseForge does not recognize game-version name '$name'."
+              exit 1
+            fi
+          done
+
+          update_files() {
+            local loader=$1
+            local files_json=$2
+            local -a file_ids
+            local file_id metadata
+            mapfile -t file_ids < <(jq -r '.[].id' <<< "$files_json")
+
+            if (( ${#file_ids[@]} == 0 )); then
+              echo "::error::mc-publish returned no CurseForge file IDs for $loader."
+              exit 1
+            fi
+
+            for file_id in "${file_ids[@]}"; do
+              if [[ ! "$file_id" =~ ^[0-9]+$ ]]; then
+                echo "::error::Invalid CurseForge file ID '$file_id' for $loader."
+                exit 1
+              fi
+
+              metadata=$(jq -cn \
+                --argjson file_id "$file_id" \
+                --arg minecraft "$CURSEFORGE_MINECRAFT_VERSION" \
+                --arg loader "$loader" \
+                '{
+                  fileID: $file_id,
+                  gameVersionNames: ["Client", "Server", $minecraft, $loader, "Java 25"]
+                }')
+
+              curl --fail-with-body --silent --show-error --retry 2 \
+                -H "X-Api-Token: $CURSEFORGE_TOKEN" \
+                -F "metadata=$metadata" \
+                "$API_ROOT/projects/$CURSEFORGE_PROJECT_ID/update-file" \
+                > "/tmp/curseforge-update-$file_id.json"
+              echo "Added Client and Server environments to CurseForge file $file_id ($loader)."
+            done
+          }
+
+          update_files NeoForge "$NEOFORGE_FILES"
+          update_files Fabric "$FABRIC_FILES"
