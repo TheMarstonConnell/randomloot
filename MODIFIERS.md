@@ -224,6 +224,10 @@ These effects are applied when hurting enemies.
 **id:** `pummeling` | **crafting:** `n/a` ![n/a](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/n/a.png)
 
 **Description:** Slams enemies into the ground
+### Riposte
+**id:** `riposte` | **crafting:** `n/a` ![n/a](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/n/a.png)
+
+**Description:** After taking a hit, your next strike within 5 seconds deals bonus damage.
 ### Scorched
 **id:** `scorched` | **crafting:** `n/a` ![n/a](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/n/a.png)
 

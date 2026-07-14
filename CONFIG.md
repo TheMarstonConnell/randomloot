@@ -78,6 +78,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `rainy_enabled` | [Rainy](MODIFIERS.md#rainy) | While holding or wearing this item in the rain, mine faster! |
 | `regeneration_enabled` | [Healing](MODIFIERS.md#healing) | While holding or wearing this item, get the regeneration I effect. |
 | `resistance_enabled` | [Resistant](MODIFIERS.md#resistant) | While holding or wearing this item, get the resistance I effect. |
+| `riposte_enabled` | [Riposte](MODIFIERS.md#riposte) | After taking a hit, your next strike within 5 seconds deals bonus damage. |
 | `scorched_enabled` | [Scorched](MODIFIERS.md#scorched) | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
 | `soulbound_enabled` | [Soulbound](MODIFIERS.md#soulbound) | Grants 15% bonus damage and mining speed when wielded by the original owner. |
 | `spawner_enabled` | [Tomb Raider](MODIFIERS.md#tomb-raider) | While held or worn, spawners around you will glow. |
