@@ -7,7 +7,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 
 ## Current Version
 - **Minecraft**: 26.2 (fabric/NeoForm artifacts use `26.2`; NeoForge builds are `26.2.0.x`)
-- **NeoForge**: 26.2.0.12-beta · **ModDevGradle**: 2.0.141
+- **NeoForge**: 26.2.0.21-beta · **ModDevGradle**: 2.0.141
 - **Fabric**: loader 0.19.3, fabric-api 0.154.2+26.2, fabric-loom 1.17.14
 - **Forge Config API Port**: 26.2.1 (NeoForge config API on Fabric; bundled jar-in-jar)
 - **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4
@@ -15,7 +15,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.12-beta` = MC `26.2`, build `12`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.21-beta` = MC `26.2`, build `21`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
 
 ## Multiloader Architecture
 - `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
