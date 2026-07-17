@@ -216,11 +216,45 @@ Each iteration:
 Report the real outcome each run — never claim green without the passing output, and say it
 per loader (NeoForge build/tests, Fabric build/tests).
 
+### 6b. When the local build can't run (cloud sandbox)
+
+A local `./gradlew` run is the preferred loop — it's the fastest way to see a compile error.
+But in a cloud sandbox the toolchain may not be reachable: the wrapper's `distributionUrl`
+307-redirects from `services.gradle.org` to a `gradle/gradle-distributions` GitHub release
+asset, and the sandbox's GitHub proxy 403s any repo not attached to the routine. The build
+also needs `maven.neoforged.net`, `maven.fabricmc.net`, Mojang's `piston-*` /
+`libraries.minecraft.net` / `resources.download.minecraft.net`, and `api.foojay.io` for the
+Java 25 toolchain.
+
+**Do not report a bump as unverified in that case, and never claim green from inspection.**
+`.github/workflows/gradle.yml` runs exactly the three commands from step 6, on both loaders,
+on a properly provisioned runner — it is the verification of record. Push and wait on it:
+
+```bash
+git push -u origin <branch>
+gh run watch <run-id> --exit-status    # blocks; non-zero exit if CI fails
+gh pr checks <pr>                      # per-check summary
+```
+
+Then read the actual CI log — not just the green check — and pull the real numbers out of it,
+the same way you would read local output:
+
+```bash
+gh run view <run-id> --log | grep -E "BUILD SUCCESSFUL|BUILD FAILED|tests are now running|error:"
+```
+
+The gametest step prints `N tests are now running` per loader; quote those counts in the
+report. If CI fails, that's a real failure — resume the step-6 loop, fix, push again. Only the
+*location* of the build moves; the "don't stop until both loaders are green" discipline is
+unchanged. Prefix `gh` with `env -u GITHUB_TOKEN` if it 401s.
+
 ### 7. Wrap up
 
 Summarize: old → new versions (all fields in the step-3 table), files changed, migration
 fixes applied (grouped by primer change, and noting which were common vs loader-specific),
-and the final build/gametest result **for each loader**. For opening a PR, follow the
+and the final build/gametest result **for each loader**, saying where it ran (local or CI,
+with the run URL) and quoting the gametest counts. A CI-verified bump is fully verified — do
+not caveat it as unverified. For opening a PR, follow the
 project's PR workflow (target the matching `26.x.x` branch — for a line jump, the new
 `26.2.x`; a bot pushes wiki-regen commits, so rebase before pushing) — see the project
 memory.
