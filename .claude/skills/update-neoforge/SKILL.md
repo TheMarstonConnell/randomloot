@@ -216,19 +216,47 @@ Each iteration:
 Report the real outcome each run — never claim green without the passing output, and say it
 per loader (NeoForge build/tests, Fabric build/tests).
 
-### 6b. When the local build can't run (cloud sandbox)
+### 6b. Provisioning Gradle in a cloud sandbox
 
-A local `./gradlew` run is the preferred loop — it's the fastest way to see a compile error.
-But in a cloud sandbox the toolchain may not be reachable: the wrapper's `distributionUrl`
-307-redirects from `services.gradle.org` to a `gradle/gradle-distributions` GitHub release
-asset, and the sandbox's GitHub proxy 403s any repo not attached to the routine. The build
-also needs `maven.neoforged.net`, `maven.fabricmc.net`, Mojang's `piston-*` /
-`libraries.minecraft.net` / `resources.download.minecraft.net`, and `api.foojay.io` for the
-Java 25 toolchain.
+A local `./gradlew` run is the preferred loop — it's the fastest way to see a compile error,
+so make it run even in the cloud sandbox. The wrapper's `distributionUrl` 307-redirects from
+`services.gradle.org` to a `gradle/gradle-distributions` GitHub release asset, and the
+sandbox's GitHub proxy 403s any repo not attached to the routine (`GitHub access to this
+repository is not enabled`). But the sandbox has open egress to non-GitHub hosts, so fetch
+the distribution from a direct mirror instead of giving up on the local build. (Dependency
+resolution — `maven.neoforged.net`, `maven.fabricmc.net`, Mojang's `piston-*` /
+`libraries.minecraft.net` / `resources.download.minecraft.net`, `api.foojay.io` for the Java
+25 toolchain — is not GitHub-proxied and already works.)
 
-**Do not report a bump as unverified in that case, and never claim green from inspection.**
-`.github/workflows/gradle.yml` runs exactly the three commands from step 6, on both loaders,
-on a properly provisioned runner — it is the verification of record. Push and wait on it:
+Provision Gradle from a mirror, integrity-pinned to the official checksum, then revert so the
+committed wrapper stays on the canonical URL (local dev and CI reach GitHub fine and this
+keeps their download fast):
+
+```bash
+GWP=gradle/wrapper/gradle-wrapper.properties
+VER=$(sed -n 's/.*gradle-\(.*\)-bin\.zip/\1/p' "$GWP")
+# official checksum — this endpoint is NOT GitHub and is reachable:
+SUM=$(curl -sL "https://services.gradle.org/distributions/gradle-$VER-bin.zip.sha256")
+# repoint at a direct mirror (bytes verified == official) + pin the checksum.
+# rewrite via a temp file so it's portable (the cloud sandbox is Linux, not BSD sed)
+# and idempotent (drops any existing url/sum line before re-adding):
+{ grep -vE '^distribution(Url|Sha256Sum)=' "$GWP"
+  echo "distributionUrl=https\\://mirrors.cloud.tencent.com/gradle/gradle-$VER-bin.zip"
+  echo "distributionSha256Sum=$SUM"
+} > "$GWP.tmp" && mv "$GWP.tmp" "$GWP"
+# ...run the step-6 build/gametest loop normally; ./gradlew now downloads from the mirror...
+git checkout -- "$GWP"   # BEFORE committing — keep the PR on the canonical URL
+```
+
+Fallback mirror if Tencent is unreachable:
+`https://mirrors.aliyun.com/macports/distfiles/gradle/gradle-$VER-bin.zip` (same bytes). The
+`distributionSha256Sum` pin means a tampered or truncated mirror download fails the build
+rather than compiling something unverified, so trusting a mirror is safe.
+
+Only if BOTH mirrors are unreachable — never merely because the GitHub path 403s — fall back
+to CI as the verification of record. **Do not report a bump as unverified in that case, and
+never claim green from inspection.** `.github/workflows/gradle.yml` runs exactly the three
+commands from step 6, on both loaders, on a properly provisioned runner. Push and wait on it:
 
 ```bash
 git push -u origin <branch>
