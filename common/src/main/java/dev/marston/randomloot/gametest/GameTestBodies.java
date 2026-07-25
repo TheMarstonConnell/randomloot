@@ -13,6 +13,7 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.GearTags;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -444,15 +445,15 @@ public final class GameTestBodies {
 	public static void migrationRestoresDerivedComponents(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-		// Build an "old" item by writing the raw tags directly, bypassing the
-		// LootUtils mutators (which would refresh the components immediately).
+		// Build an "old" item through GearTags.write, the raw layer that skips the
+		// derived-component refresh GearTags.mutate performs.
 		ItemStack tool = new ItemStack(ModItems.TOOL.get());
-		var info = LootUtils.getOrCreateTagElement(tool, "info");
+		var info = GearTags.read(tool, GearTags.INFO);
 		info.putString("type", ToolType.SWORD.name());
-		LootUtils.addTagElement(tool, "info", info);
-		var stats = LootUtils.getOrCreateTagElement(tool, "itemStats");
+		GearTags.write(tool, GearTags.INFO, info);
+		var stats = GearTags.read(tool, GearTags.STATS);
 		stats.putFloat("goodness", 5.0f);
-		LootUtils.addTagElement(tool, "itemStats", stats);
+		GearTags.write(tool, GearTags.STATS, stats);
 
 		helper.assertTrue(
 				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
@@ -1098,12 +1099,19 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/** CloneItem (smithing/retexture output) must carry over enchantments and repair cost. */
+	/**
+	 * CloneItem (smithing/retexture output) must carry over enchantments and repair cost,
+	 * and must arrive with its derived components already stamped: it builds a fresh
+	 * stack rather than going through GearTags.mutate, so it has to refresh explicitly.
+	 * Without that the smithing output carried default attributes and durability until
+	 * its first inventoryTick.
+	 */
 	public static void clonePreservesEnchantments(GameTestHelper helper) {
 		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
 
 		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.setStats(sword, 5.0f);
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
@@ -1116,6 +1124,13 @@ public final class GameTestBodies {
 				"clone should keep the anvil repair cost");
 		helper.assertTrue(clone.getOrDefault(DataComponents.DAMAGE, 0) == 7,
 				"clone should keep its durability damage");
+
+		helper.assertFalse(
+				clone.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers()
+						.isEmpty(),
+				"clone should arrive with its attributes already stamped");
+		helper.assertTrue(clone.getMaxDamage() == LootItem.computeMaxDamage(sword),
+				"clone should arrive with the right durability, not the item default");
 
 		helper.succeed();
 	}

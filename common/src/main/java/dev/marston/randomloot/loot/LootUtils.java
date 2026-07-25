@@ -95,7 +95,6 @@ public class LootUtils {
 	 * plus the stashed display name.
 	 */
 
-	public static final String ROLLING_TAG = "rolling";
 	/** How long a freshly opened item rolls before revealing itself. */
 	public static final int ROLL_TICKS = 60;
 	// Steps remaining with t ticks left = t^2 / ROLL_CURVE: one texture per tick at the
@@ -119,7 +118,7 @@ public class LootUtils {
 			stack.remove(DataComponents.CUSTOM_NAME);
 		}
 
-		addTagElement(stack, ROLLING_TAG, tag);
+		GearTags.write(stack, GearTags.ROLLING, tag);
 		// No identity yet: without EQUIPPABLE, rolling armor can't be worn either.
 		stack.remove(DataComponents.EQUIPPABLE);
 		// Rolling gear shows no attributes until the reveal.
@@ -127,7 +126,7 @@ public class LootUtils {
 	}
 
 	public static boolean isRolling(ItemStack stack) {
-		return hasTagElement(stack, ROLLING_TAG);
+		return GearTags.has(stack, GearTags.ROLLING);
 	}
 
 	/** True for the mod's gear items (tools and armor). */
@@ -154,13 +153,13 @@ public class LootUtils {
 
 	/** Game time at which a rolling item settles; 0 when not rolling. */
 	public static long getRollEnd(ItemStack stack) {
-		return getOrCreateTagElement(stack, ROLLING_TAG).getLongOr("endTime", 0L);
+		return GearTags.read(stack, GearTags.ROLLING).getLongOr("endTime", 0L);
 	}
 
 	/** Reveals the finished item: restores the stashed name and the worn-armor component. */
 	public static void finishRoll(ItemStack stack) {
-		CompoundTag tag = getOrCreateTagElement(stack, ROLLING_TAG);
-		removeTagKey(stack, ROLLING_TAG);
+		CompoundTag tag = GearTags.read(stack, GearTags.ROLLING);
+		GearTags.clear(stack, GearTags.ROLLING);
 
 		if (tag.contains("name")) {
 			setItemName(stack, tag.getStringOr("name", ""), tag.getStringOr("nameColor", "#FFFFFF"));
@@ -299,6 +298,11 @@ public class LootUtils {
 		// Armor carries its slot + worn-texture in the per-stack EQUIPPABLE component.
 		updateEquippable(copy);
 
+		// The copy's tags were set wholesale rather than through GearTags.mutate, so
+		// stamp the derived components here. Without this the recipe output carried
+		// default attributes until its first inventoryTick.
+		refreshDerivedComponents(copy);
+
 		return copy;
 	}
 	
@@ -343,16 +347,11 @@ public class LootUtils {
 	}
 
 	public static void setItemLore(ItemStack stack, String lore) {
-		CompoundTag tag = getOrCreateTagElement(stack, "itemLore");
-
-		tag.putString("itemLore", lore);
-
-		addTagElement(stack, "itemLore", tag);
+		GearTags.mutate(stack, GearTags.LORE, tag -> tag.putString("itemLore", lore));
 	}
 
 	public static String getItemLore(ItemStack stack) {
-		CompoundTag tag = getOrCreateTagElement(stack, "itemLore");
-        return tag.getStringOr("itemLore", "");
+		return GearTags.read(stack, GearTags.LORE).getStringOr("itemLore", "");
 	}
 
 	public static int getMaxXP(int level) {
@@ -385,19 +384,6 @@ public class LootUtils {
 	}
 	
 	/**
-	 * Allocation-free presence check for a non-empty tag element; prefer this over
-	 * {@code !getOrCreateTagElement(...).isEmpty()} on per-tick/per-frame paths.
-	 */
-	public static boolean hasTagElement(ItemStack stack, String tagName) {
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			return false;
-		}
-		CompoundTag tag = mods.getTags().get(tagName);
-		return tag != null && !tag.isEmpty();
-	}
-
-	/**
 	 * Cheap "does this stack carry an enabled trait" check - a key lookup on the raw
 	 * component, without deserializing the whole modifier list like getModifiers does.
 	 */
@@ -405,69 +391,25 @@ public class LootUtils {
 		if (!Config.traitEnabled(tagName)) {
 			return false;
 		}
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			return false;
-		}
-		CompoundTag all = mods.getTags().get(Modifier.MODTAG);
-		return all != null && all.contains(tagName);
+		return hasRawTrait(stack, tagName);
 	}
 
-	public static CompoundTag getOrCreateTagElement(ItemStack stack, String tagName) {
-
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			return new CompoundTag();
-		}
-
-        Map<String, CompoundTag> tags = mods.getTags();
-		CompoundTag tag = tags.get(tagName);
-		if (tag == null) {
-			tag = new CompoundTag();
-		}
-		return tag;
+	/**
+	 * Whether the trait is written on the gear at all, ignoring the config toggle -
+	 * config-disabled traits are still on the item and still removable.
+	 */
+	public static boolean hasRawTrait(ItemStack stack, String tagName) {
+		return GearTags.read(stack, Modifier.MODTAG).contains(tagName);
 	}
 
-
-
-	public static void addTagElement(ItemStack stack, String tagName, CompoundTag tag) {
-
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			mods = new ToolModifier(new HashMap<>());
-		}
-
-		Map<String, CompoundTag> tags = mods.getTags();
-		HashMap<String, CompoundTag> mutTags = new HashMap<>(tags);
-
-		mutTags.put(tagName, tag);
-
-		mods = new ToolModifier(mutTags);
-
-		stack.set(ModDataComponents.TOOL_MODIFIER.get(), mods);
-	}
-
-	public static void removeTagKey(ItemStack stack, String tagName) {
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			mods = new ToolModifier(new HashMap<>());
-		}
-
-		Map<String, CompoundTag> tags = mods.getTags();
-
-
-		HashMap<String, CompoundTag> mutTags = new HashMap<>(tags);
-
-		mutTags.remove(tagName);
-
-		mods = new ToolModifier(mutTags);
-
-		stack.set(ModDataComponents.TOOL_MODIFIER.get(), mods);
+	/** Every trait written on the gear, including config-disabled ones. */
+	public static Set<String> rawTraitNames(ItemStack stack) {
+		return GearTags.read(stack, Modifier.MODTAG).keySet();
 	}
 
 	public static void addXp(ItemStack item, LivingEntity holder, int amount) {
 
-		CompoundTag tag = getOrCreateTagElement(item,"XP");
+		CompoundTag tag = GearTags.read(item, GearTags.XP);
 
 		int level = tag.getIntOr("level", 0);
 
@@ -490,40 +432,22 @@ public class LootUtils {
 			ModCriteria.toolLeveled(holder, level);
 		}
 
-		tag.putInt("level", level);
-		tag.putInt("xp", xp);
-
-		addTagElement(item,"XP", tag);
-
-		if (leveled) {
-			// Level-ups can change trait state (and with it derived stats).
-			refreshDerivedComponents(item);
-		}
-
+		setLevelAndXP(item, level, xp);
 	}
 
 	public static int getLevel(ItemStack item) {
-
-		CompoundTag tag = getOrCreateTagElement(item,"XP");
-
-        return tag.getIntOr("level", 0);
+		return GearTags.read(item, GearTags.XP).getIntOr("level", 0);
 	}
 
 	public static int getXP(ItemStack item) {
-
-		CompoundTag tag = getOrCreateTagElement(item,"XP");
-
-        return tag.getIntOr("xp", 0);
+		return GearTags.read(item, GearTags.XP).getIntOr("xp", 0);
 	}
 
 	public static ItemStack setLevelAndXP(ItemStack item, int level, int xp) {
-
-		CompoundTag tag = getOrCreateTagElement(item,"XP");
-
-		tag.putInt("level", level);
-		tag.putInt("xp", xp);
-
-		addTagElement(item,"XP", tag);
+		GearTags.mutate(item, GearTags.XP, tag -> {
+			tag.putInt("level", level);
+			tag.putInt("xp", xp);
+		});
 
 		return item;
 	}
@@ -532,7 +456,7 @@ public class LootUtils {
 
 		ArrayList<Modifier> tags = new ArrayList<Modifier>();
 
-		CompoundTag modifiers = getOrCreateTagElement(item,Modifier.MODTAG);
+		CompoundTag modifiers = GearTags.read(item, Modifier.MODTAG);
 
         Set<String> mods = modifiers.keySet();
 
@@ -556,131 +480,89 @@ public class LootUtils {
 
 	public static void addModifier(ItemStack item, Modifier mod) {
 
-		CompoundTag modifiers = getOrCreateTagElement(item,Modifier.MODTAG);
-		CompoundTag newTag = mod.toNBT();
+		CompoundTag existing = GearTags.read(item, Modifier.MODTAG);
 
-		boolean oldModFound = modifiers.contains(mod.tagName()); // does that tag already exist on the tool?
-
-		if (!oldModFound) { // tag doesn't exist so we're adding a new trait.
-
-			modifiers.put(mod.tagName(), newTag);
-			addTagElement(item,Modifier.MODTAG, modifiers);
-			refreshDerivedComponents(item);
+		if (!existing.contains(mod.tagName())) { // tag doesn't exist so we're adding a new trait.
+			GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
 			return;
-
 		}
 
-		CompoundTag oldmod = modifiers.getCompoundOrEmpty(mod.tagName());
-		Modifier oldModifier = mod.fromNBT(oldmod);
+		Modifier oldModifier = mod.fromNBT(existing.getCompoundOrEmpty(mod.tagName()));
 
 		if (!oldModifier.canLevel()) {
 			return;
 		}
 
 		oldModifier.levelUp();
-		modifiers.put(oldModifier.tagName(), oldModifier.toNBT());
-
-		addTagElement(item,Modifier.MODTAG, modifiers);
-		refreshDerivedComponents(item);
-
+		GearTags.mutate(item, Modifier.MODTAG,
+				modifiers -> modifiers.put(oldModifier.tagName(), oldModifier.toNBT()));
 	}
 
 	public static void updateModifier(ItemStack item, Modifier mod) {
 
-		CompoundTag modifiers = getOrCreateTagElement(item,Modifier.MODTAG);
-
-		boolean oldModFound = modifiers.contains(mod.tagName()); // does that tag already exist on the tool?
-
-		if (!oldModFound) { // tag doesn't exist so we're adding a new trait.
+		if (!hasRawTrait(item, mod.tagName())) { // not on the gear, nothing to update
 			return;
 		}
 
-		modifiers.put(mod.tagName(), mod.toNBT());
-
-		addTagElement(item,Modifier.MODTAG, modifiers);
-		refreshDerivedComponents(item);
+		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
 	}
 
 	public static ItemStack removeModifier(ItemStack item, Modifier mod) {
-
-		CompoundTag modifiers = getOrCreateTagElement(item,Modifier.MODTAG);
-
-		modifiers.remove(mod.tagName());
-
-		addTagElement(item,Modifier.MODTAG, modifiers);
-		refreshDerivedComponents(item);
+		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.remove(mod.tagName()));
 
 		return item;
 	}
 
 	public static void setStats(ItemStack stack, float goodness) {
-		CompoundTag statTag = getOrCreateTagElement(stack,"itemStats");
-
-		statTag.putFloat("goodness", goodness);
-
-		addTagElement(stack,"itemStats", statTag);
-		refreshDerivedComponents(stack);
+		GearTags.mutate(stack, GearTags.STATS, tag -> tag.putFloat("goodness", goodness));
 	}
 
 	public static float getStats(ItemStack stack) {
-		CompoundTag statTag = getOrCreateTagElement(stack,"itemStats");
-
-        return statTag.getFloatOr("goodness", 0f);
-	}
-
-	/** Applies {@code edit} to the stack's {@code tagName} element and writes it back. */
-	private static void editTag(ItemStack stack, String tagName, java.util.function.Consumer<CompoundTag> edit) {
-		CompoundTag tag = getOrCreateTagElement(stack, tagName);
-		edit.accept(tag);
-		addTagElement(stack, tagName, tag);
+		return GearTags.read(stack, GearTags.STATS).getFloatOr("goodness", 0f);
 	}
 
 	public static void setBiomeTemperature(ItemStack stack, float temperature) {
-		editTag(stack, "info", tag -> tag.putFloat("biomeTemp", temperature));
+		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putFloat("biomeTemp", temperature));
 	}
 
 	public static float getBiomeTemperature(ItemStack stack) {
-		return getOrCreateTagElement(stack, "info").getFloatOr("biomeTemp", 0.7f);
+		return GearTags.read(stack, GearTags.INFO).getFloatOr("biomeTemp", 0.7f);
 	}
 
 	public static void setBiomeKey(ItemStack stack, String biomeKey) {
-		editTag(stack, "info", tag -> tag.putString("biomeKey", biomeKey));
+		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("biomeKey", biomeKey));
 	}
 
 	public static String getBiomeKey(ItemStack stack) {
-		return getOrCreateTagElement(stack, "info").getStringOr("biomeKey", "");
+		return GearTags.read(stack, GearTags.INFO).getStringOr("biomeKey", "");
 	}
 
 	public static void setDimension(ItemStack stack, String dimension) {
-		editTag(stack, "info", tag -> tag.putString("dimension", dimension));
+		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("dimension", dimension));
 	}
 
 	public static String getDimension(ItemStack stack) {
-		return getOrCreateTagElement(stack, "info").getStringOr("dimension", "minecraft:overworld");
+		return GearTags.read(stack, GearTags.INFO).getStringOr("dimension", "minecraft:overworld");
 	}
 
 	public static void setOwnerUUID(ItemStack stack, String uuid) {
-		editTag(stack, "info", tag -> tag.putString("ownerUUID", uuid));
+		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("ownerUUID", uuid));
 	}
 
 	public static String getOwnerUUID(ItemStack stack) {
-		return getOrCreateTagElement(stack, "info").getStringOr("ownerUUID", "");
+		return GearTags.read(stack, GearTags.INFO).getStringOr("ownerUUID", "");
 	}
 
 	public static void setOwnerName(ItemStack stack, String name) {
-		editTag(stack, "info", tag -> tag.putString("ownerName", name));
+		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("ownerName", name));
 	}
 
 	public static String getOwnerName(ItemStack stack) {
-		return getOrCreateTagElement(stack, "info").getStringOr("ownerName", "");
+		return GearTags.read(stack, GearTags.INFO).getStringOr("ownerName", "");
 	}
 
 	public static void setTexture(ItemStack stack, int texture) {
-		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
-
-		cosmeticTag.putInt("texture", texture);
-
-		addTagElement(stack,"cosmetics", cosmeticTag);
+		GearTags.mutate(stack, GearTags.COSMETICS, tag -> tag.putInt("texture", texture));
 
 		// Worn armor looks come from the EQUIPPABLE asset id, which tracks the texture index.
 		updateEquippable(stack);
@@ -710,9 +592,7 @@ public class LootUtils {
 	}
 
 	public static float getTexture(ItemStack stack) {
-		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
-
-		int texture = cosmeticTag.getIntOr("texture", 0);
+		int texture = getTextureIndex(stack);
 
 		return typeOffset(getToolType(stack)) + ((float) texture) / 10000.0f;
 	}
@@ -745,9 +625,7 @@ public class LootUtils {
 	}
 
 	public static int getTextureIndex(ItemStack stack) {
-		CompoundTag cosmeticTag = getOrCreateTagElement(stack,"cosmetics");
-
-        return cosmeticTag.getIntOr("texture", 0);
+		return GearTags.read(stack, GearTags.COSMETICS).getIntOr("texture", 0);
 	}
 
 	private static void storeBiomeData(ItemStack lootItem, Level level, @Nullable BlockPos pos) {
@@ -830,8 +708,7 @@ public class LootUtils {
 	}
 
 	public static ToolType getToolType(ItemStack item) {
-		CompoundTag toolType = getOrCreateTagElement(item,"info");
-		String type = toolType.getStringOr("type", "");
+		String type = GearTags.read(item, GearTags.INFO).getStringOr("type", "");
 		if (type.isEmpty()) {
 			return ToolType.NULL;
 		}
@@ -839,10 +716,7 @@ public class LootUtils {
 	}
 
 	public static ItemStack setToolType(ItemStack item, ToolType type) {
-		CompoundTag toolInfo = getOrCreateTagElement(item,"info");
-		toolInfo.putString("type", type.name());
-		addTagElement(item,"info", toolInfo);
-		refreshDerivedComponents(item);
+		GearTags.mutate(item, GearTags.INFO, tag -> tag.putString("type", type.name()));
 		return item;
 	}
 

@@ -56,7 +56,7 @@ public class ModCommands {
 		}
 		// Raw tag keys, not getModifiers(): config-disabled traits should still be removable.
 		return SharedSuggestionProvider
-				.suggest(LootUtils.getOrCreateTagElement(player.getMainHandItem(), Modifier.MODTAG).keySet(), builder);
+				.suggest(LootUtils.rawTraitNames(player.getMainHandItem()), builder);
 	};
 
 	private static final SuggestionProvider<CommandSourceStack> GEAR_TYPES = (ctx, builder) -> SharedSuggestionProvider
@@ -190,7 +190,7 @@ public class ModCommands {
 
 		// Check the raw tag, not getModifiers(): config-disabled traits are still on the
 		// item and should still be removable.
-		if (!LootUtils.getOrCreateTagElement(held, Modifier.MODTAG).contains(mod.tagName())) {
+		if (!LootUtils.hasRawTrait(held, mod.tagName())) {
 			source.sendFailure(Component.empty().append("This gear does not have ").append(mod.displayName())
 					.append("."));
 			return 0;

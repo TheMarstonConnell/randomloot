@@ -500,9 +500,9 @@ public class LootItem extends Item  {
 		}
 
 		// Only trigger for mainhand slot (replacing the old 'holding' boolean check).
-		// The hasTagElement guard skips the per-tick trait deserialization for
+		// The GearTags.has guard skips the per-tick trait deserialization for
 		// trait-less tools.
-		if (slot == EquipmentSlot.MAINHAND && LootUtils.hasTagElement(stack, Modifier.MODTAG)) {
+		if (slot == EquipmentSlot.MAINHAND && GearTags.has(stack, Modifier.MODTAG)) {
 
 			for (Modifier mod : LootUtils.getModifiers(stack)) {
 
