@@ -16,6 +16,6 @@ public abstract class ItemStackMixin {
             at = @At("HEAD"), argsOnly = true)
     private int randomloot$armorUnbreaking(int amount, int amountArg, LivingEntity owner, EquipmentSlot slot) {
         ItemStack self = (ItemStack) (Object) this;
-        return (int) ArmorDispatcher.onArmorHurt(owner, self, amount);
+        return (int) ArmorDispatcher.onArmorHurt(owner, self, slot, amount);
     }
 }

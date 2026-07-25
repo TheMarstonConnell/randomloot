@@ -15,6 +15,15 @@ import org.jetbrains.annotations.NotNull;
 public class CaseLootModifier extends LootModifier {
     private final Item item;
 
+    /**
+     * Items covered by a loaded case_item modifier. Fabric enumerates
+     * LootInjection.entries() directly, so it picks up a new injected item for free;
+     * NeoForge needs a hand-written JSON in data/randomloot/loot_modifiers/, and adding
+     * one without the other silently ships the item on Fabric only. Recorded here so
+     * loot_modifiers_load can check the two agree. Refilled on every datapack load.
+     */
+    public static final java.util.Set<Item> LOADED_ITEMS = java.util.concurrent.ConcurrentHashMap.newKeySet();
+
     // See below for how the codec works.
     public static final MapCodec<CaseLootModifier> CODEC = RecordCodecBuilder.mapCodec(inst ->
             LootModifier.codecStart(inst).and(
@@ -26,6 +35,7 @@ public class CaseLootModifier extends LootModifier {
     public CaseLootModifier(LootItemCondition[] conditions, int priority, Item itemIn) {
         super(conditions, priority);
         this.item = itemIn;
+        LOADED_ITEMS.add(itemIn);
     }
 
     // Return our codec here.

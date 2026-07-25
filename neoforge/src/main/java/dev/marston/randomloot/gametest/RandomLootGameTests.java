@@ -6,6 +6,8 @@ import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.loot.CaseLootModifier;
+import dev.marston.randomloot.loot.LootInjection;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -106,6 +108,7 @@ public final class RandomLootGameTests {
 		register(event, env, "smithing_trait_gating", GameTestBodies::smithingTraitGating);
 		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
+		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
@@ -126,6 +129,14 @@ public final class RandomLootGameTests {
 				"case_dungeon loot modifier should be loaded");
 		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
 				"trait_dungeon loot modifier should be loaded");
+
+		// Fabric enumerates LootInjection.entries(); NeoForge needs one hand-written JSON
+		// per entry, so an entry added without its modifier would ship on Fabric only.
+		for (LootInjection.Entry entry : LootInjection.entries()) {
+			helper.assertTrue(CaseLootModifier.LOADED_ITEMS.contains(entry.item()),
+					"no loot modifier json injects " + entry.item()
+							+ "; add one to data/randomloot/loot_modifiers/");
+		}
 
 		helper.succeed();
 	}

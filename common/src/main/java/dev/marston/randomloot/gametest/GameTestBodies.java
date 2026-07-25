@@ -18,6 +18,8 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.platform.GameHook;
+import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -1131,6 +1133,20 @@ public final class GameTestBodies {
 				"clone should arrive with its attributes already stamped");
 		helper.assertTrue(clone.getMaxDamage() == LootItem.computeMaxDamage(sword),
 				"clone should arrive with the right durability, not the item default");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Every GameHook is wired on the loader under test. Adding a hook is one method on
+	 * NeoForge and up to three edits on Fabric (callback or mixin class, plus a
+	 * mixins.json entry), so a hook wired on one loader and forgotten on the other used
+	 * to be invisible until someone played the game.
+	 */
+	public static void loaderHooksAllBound(GameTestHelper helper) {
+		java.util.Set<GameHook> missing = GameHooks.missing();
+
+		helper.assertTrue(missing.isEmpty(), "this loader never bound these hooks: " + missing);
 
 		helper.succeed();
 	}
