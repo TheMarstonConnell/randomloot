@@ -6,7 +6,6 @@ import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -62,35 +61,11 @@ public class LootArmorItem extends Item {
 	}
 
 	public static float getDefense(ItemStack stack, ToolType type) {
-
-		float statMod = 1.0f;
-
-		// getModifiers already filters out config-disabled traits.
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-			if (mod instanceof StatsModifier sm) {
-				statMod *= sm.getStats(stack);
-			}
-		}
-
-		float base = LootUtils.getStats(stack) + 1.0f;
-
-		float scale = switch (type) {
-		case HELMET -> 0.6f;
-		case CHESTPLATE -> 1.4f;
-		case LEGGINGS -> 1.1f;
-		case BOOTS -> 0.6f;
-		default -> 0.0f;
-		};
-
-		return base * scale * statMod;
+		return GearStats.defense(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
 	}
 
 	public static float getToughness(ItemStack stack, ToolType type) {
-		if (!type.isArmor()) {
-			return 0.0f;
-		}
-
-		return LootUtils.getStats(stack) * 0.25f;
+		return GearStats.toughness(LootUtils.getStats(stack), type);
 	}
 
 	/**
@@ -128,19 +103,7 @@ public class LootArmorItem extends Item {
 
 	/** Durability derived from stats; stored as the vanilla MAX_DAMAGE component. */
 	public static int computeMaxDamage(ItemStack stack) {
-
-		ToolType tt = LootUtils.getToolType(stack);
-
-		// Per-piece durability weights follow vanilla's ArmorType unit durabilities.
-		int unit = switch (tt) {
-		case HELMET -> 11;
-		case CHESTPLATE -> 16;
-		case LEGGINGS -> 15;
-		case BOOTS -> 13;
-		default -> 10;
-		};
-
-		return (int) ((LootUtils.getStats(stack) + 10.0f) * unit * 3.0f);
+		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
 	}
 
 	@Override

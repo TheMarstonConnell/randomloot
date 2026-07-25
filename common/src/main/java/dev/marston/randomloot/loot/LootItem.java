@@ -110,67 +110,15 @@ public class LootItem extends Item  {
 	}
 
 	public static float getDigSpeed(ItemStack stack, ToolType type) {
-
-		float statMod = 1.0f;
-
-		// getModifiers already filters out config-disabled traits.
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-			if (mod instanceof StatsModifier ehm) {
-				statMod *= ehm.getStats(stack);
-			}
-		}
-
-		if (type.equals(ToolType.SWORD)) {
-			return 1.0f;
-		}
-
-		float speed = (LootUtils.getStats(stack) / 2.0f) + 6.0f;
-		return speed * statMod;
+		return GearStats.digSpeed(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
 	}
 
 	public static float getAttackSpeed(ItemStack stack, ToolType type) {
-
-		float speed = 0.0f;
-
-		switch (type) {
-		case PICKAXE:
-			speed = -2.8F;
-			break;
-		case AXE:
-			speed = -3.0F;
-			break;
-		case SHOVEL:
-			speed = -3.0F;
-			break;
-		case SWORD:
-			speed = -2.4F;
-			break;
-		default:
-			break;
-		}
-
-		return speed;
+		return GearStats.attackSpeed(type);
 	}
 
 	public static float getAttackDamage(ItemStack stack, ToolType type) {
-
-		float damage = (LootUtils.getStats(stack)) + 1.0f;
-
-		switch (type) {
-		case PICKAXE:
-			damage = damage * 0.5f;
-			break;
-		case AXE:
-			damage = damage * 1.2f;
-			break;
-		case SHOVEL:
-			damage = damage * 0.6f;
-			break;
-		default:
-			break;
-		}
-
-		return damage;
+		return GearStats.attackDamage(LootUtils.getStats(stack), type);
 	}
 
 	@Override
@@ -378,9 +326,7 @@ public class LootItem extends Item  {
 
 	/** Durability derived from stats; stored as the vanilla MAX_DAMAGE component. */
 	public static int computeMaxDamage(ItemStack stack) {
-		float stats = (LootUtils.getStats(stack) + 10.0f) * 80.0f;
-
-		return (int) stats;
+		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
 	}
 
 	@Override

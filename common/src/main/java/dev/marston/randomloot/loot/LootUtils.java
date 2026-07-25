@@ -11,9 +11,9 @@ import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem.ToolType;
-import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
@@ -356,15 +356,26 @@ public class LootUtils {
 	}
 
 	public static int getMaxXP(int level) {
-		int starting = 500;
+		return GearStats.maxXp(level);
+	}
 
-        return (int) (starting * Math.pow(2, level));
+	/**
+	 * The combined multiplier the stack's StatsModifier traits apply to dig speed and
+	 * defense. getModifiers already filters out config-disabled traits.
+	 */
+	public static float statMultiplier(ItemStack stack) {
+		float statMod = 1.0f;
+		for (Modifier mod : getModifiers(stack)) {
+			if (mod instanceof StatsModifier sm) {
+				statMod *= sm.getStats(stack);
+			}
+		}
+		return statMod;
 	}
 
 	public static ItemStack levelUp(ItemStack item, LivingEntity holder) {
 
-		float stats = getStats(item);
-		stats = stats * 1.1f;
+		float stats = GearStats.leveledGoodness(getStats(item));
 		setStats(item, stats);
 
 		holder.level().playSound(null, holder.getX(), holder.getY(), holder.getZ(), SoundEvents.PLAYER_LEVELUP,
@@ -936,8 +947,7 @@ public class LootUtils {
 			ServerPlayer sPlayer = (ServerPlayer) player;
 			StatType<Item> itemUsed = Stats.ITEM_USED;
 			int count = sPlayer.getStats().getValue(itemUsed.get(ModItems.CASE.get()));
-			goodness = (float) (Math.sqrt(count + 1) * Config.Goodness); // keeping track of items stats through a
-																			// "goodness" curve
+			goodness = GearStats.goodnessForCases(count, Config.Goodness);
 		} else {
 			goodness = machineGoodness(level);
 		}
@@ -991,7 +1001,7 @@ public class LootUtils {
 			return ItemStack.EMPTY;
 		}
 
-		int traits = (int) (Math.floor(goodness / 2.0f)); // how many traits the tool should be created with
+		int traits = GearStats.startingTraits(goodness);
 
 		ItemStack lootItem = new ItemStack(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
 
@@ -1035,7 +1045,7 @@ public class LootUtils {
 				best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
 			}
 		}
-		return (float) (Math.sqrt(best + 1) * Config.Goodness * Config.DispenserGoodness);
+		return GearStats.goodnessForCases(best, Config.Goodness * Config.DispenserGoodness);
 	}
 
 	/**
