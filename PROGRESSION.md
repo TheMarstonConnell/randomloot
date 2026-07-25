@@ -11,6 +11,14 @@ Each tool has a "goodness" value that determines its base stats. Higher goodness
 
 **Speed Formula:** `(goodness / 2) + 6`
 
+| Goodness | Speed | Damage (Sword) | Durability |
+|----------|-------|----------------|------------|
+| 0 | 6.00 | 1.00 | 800 |
+| 2 | 7.00 | 3.00 | 960 |
+| 5 | 8.50 | 6.00 | 1,200 |
+| 10 | 11.00 | 11.00 | 1,600 |
+| 20 | 16.00 | 21.00 | 2,400 |
+
 **Damage Formula:** `goodness + 1` (modified by tool type)
 - Pickaxe: 50% damage
 - Axe: 120% damage
@@ -66,8 +74,10 @@ Random Loot generates four types of tools, each with multiple texture variants:
 
 | Tool Type | Texture Variants | Primary Use |
 |-----------|------------------|-------------|
-| Pickaxe | 18 | Mining stone and ores |
-| Axe | 14 | Chopping wood |
-| Shovel | 9 | Digging dirt and sand |
-| Sword | 50 | Combat |
+| Pickaxe | 22 | Mining stone and ores |
+| Axe | 18 | Chopping wood |
+| Shovel | 12 | Digging dirt and sand |
+| Sword | 53 | Combat |
+
+Armor comes in 19 sets, each covering all four pieces.
 

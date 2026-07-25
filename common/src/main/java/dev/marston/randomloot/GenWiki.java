@@ -5,6 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.GearStats;
+import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.ToolType;
+import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.resources.Identifier;
@@ -36,6 +40,14 @@ public class GenWiki {
     // Resolves a path relative to the repo root. RL_WIKI_DIR overrides the
     // default of "..", which only holds when the game's working directory is a
     // direct child of the repo root (e.g. run/) — CI run configs live deeper.
+    /**
+     * Where the mod's assets and data live. This moved from src/ to common/src/ in the
+     * multiloader restructure, and GenWiki was not updated: every recipe lookup and the
+     * lang merge silently failed, which is why all 68 entries in MODIFIERS.md read
+     * "crafting: n/a" and LOOT.md's recipe table shipped with no rows.
+     */
+    private static final String RESOURCES = "common/src/main/resources/";
+
     private static File repoFile(String relativePath) {
         String root = System.getenv("RL_WIKI_DIR");
         if (root == null || root.isBlank()) {
@@ -104,6 +116,19 @@ public class GenWiki {
         writeMods(ModifierRegistry.MISC, f);
     }
 
+    /** One CONFIG.md row, rendered from the spec definition rather than restated. */
+    private static void writeOptionRow(Config.Option option, FileWriter f) throws IOException {
+        String description = Character.toUpperCase(option.comment().charAt(0))
+                + option.comment().substring(1).replaceAll("\\.$", "");
+        write("| `" + option.name() + "` | " + trimNumber(option.defaultValue()) + " | "
+                + trimNumber(option.min()) + "-" + trimNumber(option.max()) + " | " + description + " |", f);
+    }
+
+    /** 0.25 not 0.25000000000000001; 1.0 stays 1.0 so ranges read as decimals. */
+    private static String trimNumber(double value) {
+        return String.valueOf(value);
+    }
+
     private static void writeConfig(FileWriter f) throws IOException {
         write("# Configuration Guide", f);
         write("", f);
@@ -116,8 +141,9 @@ public class GenWiki {
         write("", f);
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
-        write("| `caseChance` | 0.25 | 0.0-1.0 | Chance to find a Loot Case in a chest |", f);
-        write("| `modChance` | 0.15 | 0.0-1.0 | Chance to find a Trait Template in a chest |", f);
+        for (Config.Option option : Config.lootChanceOptions()) {
+            writeOptionRow(option, f);
+        }
         write("| `lootTableMatches` | `[\"chest\"]` | list of strings | Loot table id substrings that cases/templates can be injected into. Empty list disables injection |", f);
         write("", f);
 
@@ -127,9 +153,9 @@ public class GenWiki {
         write("", f);
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
-        write("| `goodness_rate` | 1.0 | 0.01-10.0 | Multiplier for tool improvement rate per player |", f);
-        write("| `armorChance` | 0.15 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |", f);
-        write("| `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |", f);
+        for (Config.Option option : Config.progressionOptions()) {
+            writeOptionRow(option, f);
+        }
         write("", f);
 
         write("## Modifier Toggles", f);
@@ -165,6 +191,15 @@ public class GenWiki {
         write("", f);
         write("**Speed Formula:** `(goodness / 2) + 6`", f);
         write("", f);
+        write("| Goodness | Speed | Damage (Sword) | Durability |", f);
+        write("|----------|-------|----------------|------------|", f);
+        for (int goodness : new int[] { 0, 2, 5, 10, 20 }) {
+            write(String.format("| %d | %.2f | %.2f | %,d |", goodness,
+                    GearStats.digSpeed(goodness, ToolType.PICKAXE, 1.0f),
+                    GearStats.attackDamage(goodness, ToolType.SWORD),
+                    GearStats.maxDamage(goodness, ToolType.SWORD)), f);
+        }
+        write("", f);
         write("**Damage Formula:** `goodness + 1` (modified by tool type)", f);
         write("- Pickaxe: 50% damage", f);
         write("- Axe: 120% damage", f);
@@ -183,13 +218,16 @@ public class GenWiki {
         write("| Level | XP Required | Total XP | Stat Multiplier |", f);
         write("|-------|-------------|----------|-----------------|", f);
         for (int i = 0; i <= 10; i++) {
-            int xpRequired = (int) (500 * Math.pow(2, i));
             int totalXP = 0;
             for (int j = 0; j < i; j++) {
-                totalXP += (int) (500 * Math.pow(2, j));
+                totalXP += GearStats.maxXp(j);
             }
-            double multiplier = Math.pow(1.1, i);
-            write(String.format("| %d | %,d | %,d | %.2fx |", i, xpRequired, totalXP, multiplier), f);
+            // Walk the same 10%-per-level step the game applies, rather than restating it.
+            float multiplier = 1.0f;
+            for (int j = 0; j < i; j++) {
+                multiplier = GearStats.leveledGoodness(multiplier);
+            }
+            write(String.format("| %d | %,d | %,d | %.2fx |", i, GearStats.maxXp(i), totalXP, multiplier), f);
         }
         write("", f);
 
@@ -205,9 +243,9 @@ public class GenWiki {
         write("|--------------|----------|-----------------|", f);
         int[] caseCounts = {0, 1, 5, 10, 25, 50, 100, 200, 500, 1000};
         for (int count : caseCounts) {
-            double goodness = Math.sqrt(count + 1);
-            int traits = (int) Math.floor(goodness / 2.0);
-            write(String.format("| %d | %.2f | %d |", count, goodness, traits), f);
+            // Rate 1.0: the table documents the base curve, not a configured one.
+            float goodness = GearStats.goodnessForCases(count, 1.0);
+            write(String.format("| %d | %.2f | %d |", count, goodness, GearStats.startingTraits(goodness)), f);
         }
         write("", f);
 
@@ -217,10 +255,12 @@ public class GenWiki {
         write("", f);
         write("| Tool Type | Texture Variants | Primary Use |", f);
         write("|-----------|------------------|-------------|", f);
-        write("| Pickaxe | 18 | Mining stone and ores |", f);
-        write("| Axe | 14 | Chopping wood |", f);
-        write("| Shovel | 9 | Digging dirt and sand |", f);
-        write("| Sword | 50 | Combat |", f);
+        write("| Pickaxe | " + LootUtils.textureCount(ToolType.PICKAXE) + " | Mining stone and ores |", f);
+        write("| Axe | " + LootUtils.textureCount(ToolType.AXE) + " | Chopping wood |", f);
+        write("| Shovel | " + LootUtils.textureCount(ToolType.SHOVEL) + " | Digging dirt and sand |", f);
+        write("| Sword | " + LootUtils.textureCount(ToolType.SWORD) + " | Combat |", f);
+        write("", f);
+        write("Armor comes in " + LootUtils.ARMOR_SET_COUNT + " sets, each covering all four pieces.", f);
         write("", f);
     }
 
@@ -340,11 +380,18 @@ public class GenWiki {
         write("", f);
         write("| Trait | Biome Requirement | Details |", f);
         write("|-------|-------------------|---------|", f);
-        write("| [Aquatic](MODIFIERS.md#aquatic) | Ocean or River biomes | Water breathing + Haste underwater |", f);
-        write("| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temp <= 0.15) | Slowness on hit, frost walker |", f);
-        write("| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temp >= 1.0) or Nether | Fire damage, fire resistance |", f);
-        write("| [Overgrown](MODIFIERS.md#overgrown) | Jungle, Swamp, or Bamboo biomes | Arthropod damage, poison immunity |", f);
-        write("| [Void-Touched](MODIFIERS.md#void-touched) | The End dimension only | Teleport on right-click |", f);
+        // Every biome-restricted trait in the registry describes its own restriction, so
+        // a sixth one shows up here without an edit.
+        List<Map.Entry<String, Modifier>> biomeMods = new ArrayList<>(ModifierRegistry.getModifiers().entrySet());
+        biomeMods.sort(Comparator.comparing(Map.Entry::getKey));
+        for (Map.Entry<String, Modifier> entry : biomeMods) {
+            if (!(entry.getValue() instanceof BiomeRestrictedModifier restricted)) {
+                continue;
+            }
+            Modifier mod = entry.getValue();
+            write("| [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | "
+                    + restricted.describeRestriction() + " | " + mod.description() + " |", f);
+        }
         write("", f);
         write("See [MODIFIERS.md](MODIFIERS.md) for full effect descriptions and crafting recipes.", f);
         write("", f);
@@ -456,7 +503,7 @@ public class GenWiki {
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
 
-        File recipeDir = repoFile("src/main/resources/data/randomloot/recipe/");
+        File recipeDir = repoFile(RESOURCES + "data/randomloot/recipe/");
         File[] recipeFiles = recipeDir.listFiles((dir, name) -> name.startsWith("trait_") && name.endsWith(".json"));
 
         if (recipeFiles != null) {
@@ -501,7 +548,7 @@ public class GenWiki {
      */
     private static void writeLang() throws IOException {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-        File langFile = repoFile("src/main/resources/assets/randomloot/lang/en_us.json");
+        File langFile = repoFile(RESOURCES + "assets/randomloot/lang/en_us.json");
 
         Map<String, String> entries = new TreeMap<>();
 
@@ -608,7 +655,7 @@ public class GenWiki {
     }
 
     public static String readRecipe(String trait) throws IOException {
-        File recipeFile = repoFile("src/main/resources/data/randomloot/recipe/trait_" + trait + ".json");
+        File recipeFile = repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json");
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
             JsonObject obj = new Gson().fromJson(bufferedReader, JsonObject.class);
             return obj.get("item").getAsJsonObject().get("id").getAsString();

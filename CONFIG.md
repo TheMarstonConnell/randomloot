@@ -8,8 +8,8 @@ These settings control how often Random Loot items appear in structure chests.
 
 | Option | Default | Range | Description |
 |--------|---------|-------|-------------|
-| `caseChance` | 0.25 | 0.0-1.0 | Chance to find a Loot Case in a chest |
-| `modChance` | 0.15 | 0.0-1.0 | Chance to find a Trait Template in a chest |
+| `caseChance` | 0.25 | 0.0-1.0 | Chance to find a case in a chest |
+| `modChance` | 0.15 | 0.0-1.0 | Chance to find a modifier template in a chest |
 | `lootTableMatches` | `["chest"]` | list of strings | Loot table id substrings that cases/templates can be injected into. Empty list disables injection |
 
 ## Progression
@@ -18,8 +18,8 @@ These settings affect how tools improve over time.
 
 | Option | Default | Range | Description |
 |--------|---------|-------|-------------|
-| `goodness_rate` | 1.0 | 0.01-10.0 | Multiplier for tool improvement rate per player |
-| `armorChance` | 0.15 | 0.0-1.0 | Chance that a Loot Case contains an armor piece instead of a tool |
+| `goodness_rate` | 1.0 | 0.01-10.0 | Rate of tool improvement per player |
+| `armorChance` | 0.15 | 0.0-1.0 | Chance that a loot case contains an armor piece instead of a tool |
 | `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |
 
 ## Modifier Toggles

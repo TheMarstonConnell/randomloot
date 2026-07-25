@@ -78,6 +78,11 @@ public class Scorched extends LeveledModifier implements EntityHurtModifier, Hol
 	}
 
 	@Override
+	public String describeRestriction() {
+		return "Hot biomes (temperature >= 1.0) or the Nether";
+	}
+
+	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
 		return temperature >= 1.0f || (dimension != null && dimension.equals("minecraft:the_nether"));
 	}

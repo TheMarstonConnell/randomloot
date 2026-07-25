@@ -77,6 +77,11 @@ public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestr
 	}
 
 	@Override
+	public String describeRestriction() {
+		return "Ocean and river biomes";
+	}
+
+	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
 		return biomeKey != null && (
 			biomeKey.contains("ocean") ||

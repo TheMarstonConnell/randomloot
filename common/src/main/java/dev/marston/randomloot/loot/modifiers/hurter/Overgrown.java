@@ -96,6 +96,11 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 	}
 
 	@Override
+	public String describeRestriction() {
+		return "Jungle, swamp and bamboo biomes";
+	}
+
+	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
 		return biomeKey != null && (
 			biomeKey.contains("jungle") ||

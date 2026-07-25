@@ -110,6 +110,11 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 	}
 
 	@Override
+	public String describeRestriction() {
+		return "Cold biomes (temperature <= 0.15)";
+	}
+
+	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
 		return temperature <= 0.15f;
 	}

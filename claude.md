@@ -22,12 +22,13 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 - `neoforge/`, `fabric/` — loader projects compile the **common sources** into their jars (`commonJava`/`commonResources` configurations from `build-logic/`), so each shipped jar is self-contained.
 - **Platform seam** (`dev.marston.randomloot.platform`): `Services.PLATFORM`/`Services.REG` resolved via Java `ServiceLoader` (bindings in each loader's `META-INF/services/`). `RegHelper` = registration (NeoForge: DeferredRegisters attached in the mod ctor; Fabric: immediate `Registry.register`). `IPlatformHelper` = item factories (NeoForge subclasses add `canPerformAction`/`supportsEnchantment`/`isCombineRepairable` extension overrides), `getToolModifiedState` (strip/scrape/wax/flatten), `canHarvestBlock`, `tooltipLevel`.
 - **Event seam**: dispatchers in common are plain static methods (`KillDispatcher.onLivingDeath`, `ArmorDispatcher.onLivingDamagePre/Post/onArmorHurt`, `Soulbound.modifyBreakSpeed`, `BlockHighlighter.onServerTick/onServerStopping`, `ModCommands.register`, `Config.onLoad`). NeoForge shim: `neoforge/.../NeoForgeEvents` (+`NeoForgeClientEvents`). Fabric shim: `RandomLootFabric` (Fabric API events) + 3 mixins for hooks Fabric lacks (`PlayerMixin` break speed, `LivingEntityMixin` pre-damage armor traits, `ItemStackMixin` armor durability skip).
-- **Derived data components**: per-stack attributes (attack / armor+toughness) and MAX_DAMAGE are vanilla components rebuilt by `LootUtils.refreshDerivedComponents(stack)` — called from every mutator (setStats/setToolType/add/remove/updateModifier/addXp/startRoll/finishRoll); `migrateDerivedComponents` in inventoryTick upgrades pre-component items. They replaced NeoForge's dynamic `getDefaultAttributeModifiers`/`getMaxDamage` item overrides — never reintroduce loader-only dynamic item methods for stats.
+- **Derived data components**: per-stack attributes (attack / armor+toughness) and MAX_DAMAGE are vanilla components rebuilt by `LootUtils.refreshDerivedComponents(stack)`. **`GearTags.mutate` calls it for you** — that is the whole point of the seam, so never pair a raw read with a raw write. `GearTags.write` is the escape hatch that skips the refresh (only the migration gametest wants it); if you build a gear stack by hand, call `refreshDerivedComponents` yourself like `CloneItem` does. `migrateDerivedComponents` in inventoryTick upgrades pre-component items but **bails as soon as ATTRIBUTE_MODIFIERS exists**, so it cannot rescue a stack that was stamped once and then mutated. These replaced NeoForge's dynamic `getDefaultAttributeModifiers`/`getMaxDamage` item overrides — never reintroduce loader-only dynamic item methods for stats.
+- **Hook contract**: `platform/GameHook` names every game event a loader must route into a common dispatcher; each shim calls `GameHooks.bind(...)` and the `loader_hooks_all_bound` gametest fails if either loader forgot one. Add a hook → add the enum constant → wire AND bind on both loaders. It checks the hook was declared wired, not that a Fabric mixin actually applied.
 - **Loot injection**: NeoForge = GLM (`CaseLootModifier` + `data/randomloot/loot_modifiers/`, lives in `neoforge/`); Fabric = `LootTableEvents.MODIFY` pools in `RandomLootFabric` (chances baked at datapack load; `/reload` picks up config changes).
 - **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
 - **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
 - **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration), `AxeItem.STRIPPABLES`, `ShovelItem.FLATTENABLES`.
-- **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (39 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (37 tests incl. loot-injection test).
+- **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (41 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (39 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).
 
 ## Useful Links
 - [NeoForge Versions](https://projects.neoforged.net/neoforged/neoforge) - Find latest NeoForge versions
@@ -61,6 +62,11 @@ common/src/main/java/dev/marston/randomloot/
 ├── gametest/GameTestBodies.java # Shared gametest bodies (both loaders run them)
 ├── commands/  advancements/     # Plain-method dispatch, loader shims call in
 ├── loot/                        # Core loot system + modifiers/ (breakers, holders, hurters, stats, users)
+│   ├── LootGearItem.java        #   shared base for LootItem + LootArmorItem
+│   ├── ToolType.java            #   the 8 gear types (top-level, NOT nested in LootItem)
+│   ├── GearStats.java           #   pure stat/XP/goodness formulas over (goodness, ToolType)
+│   ├── GearTags.java            #   per-stack tag namespaces; mutate() refreshes components
+│   └── TraitEligibility.java    #   the one "can this trait go on this gear" rule
 └── recipes/                     # Custom recipes
 common/src/main/resources/       # All assets + data (loader-agnostic)
 neoforge/src/main/java/…/neoforge/   # @Mod entry, event shims, reg helper, item subclasses
@@ -297,6 +303,13 @@ git worktree list
 5. Add recipe JSON in `data/randomloot/recipe/trait_<tagname>.json`
 6. Add to config in `Config.java` if toggleable
 
+### Deep modules in `loot/` — reach for these before writing new logic
+- **`GearStats`** — every derived number as a pure function of `(goodness, ToolType[, statMultiplier])`. No `ItemStack`, so it is **unit-testable** (`GearStatsTest`). Put new stat maths here, not on an item class; `LootUtils.statMultiplier(stack)` folds the `StatsModifier` traits.
+- **`GearTags`** — the per-stack tag store. `read`/`has`/`mutate`/`clear`, plus named namespace constants (`INFO`, `STATS`, `COSMETICS`, `XP`, `LORE`, `ROLLING`; traits use `Modifier.MODTAG`). Never write a bare namespace literal.
+- **`TraitEligibility`** — the single gate for adding a trait, used by the case roll, `/randomloot trait add` and `TraitAdditionRecipe`. Works off a `GearContext` so it is unit-testable (`TraitEligibilityTest`); `Result.reason(trait)` renders the player-facing refusal. **Never add a fourth copy of the forTool/biome/config/compatible/canLevel checks.**
+- **`LootGearItem`** — shared base for tools and armor. Subclass hooks: `buildAttributeModifiers`, `holdSlot`, `appendStatLines`, `supportsEnchantmentCommon`.
+- **`BiomeRestrictedModifier.describeRestriction()`** — biome traits state their own restriction so `BIOMES.md` doesn't restate thresholds. Implement it on any new biome trait.
+
 ### Shared modifier infrastructure
 - **`AbstractModifier`** (`loot/modifiers/`) — base for every modifier; holds `name` + default `name()`/`writeToLore()`/`toNBT()` (name-only; stateful classes extend via `super.toNBT()`) and the `isWeapon`/`isMiningTool` tool-group helpers.
 - **`LeveledModifier`** (`loot/modifiers/`) — base for smithing-leveled traits; holds `level`, the roman-numeral `name()` (first upgrade displays "II"), `canLevel()`/`levelUp()` and LEVEL serialization. Subclasses supply `minLevel()` (0 or 1) + `maxLevel()` and read the level back in `fromNBT` via `ModifierConstants.getLevel`.
@@ -421,6 +434,8 @@ Key wiring:
   silently removes enchants from the table only, which tests missed for a whole version. The
   `enchanting_table_filters_by_type` gametest is the regression net.
 - **Repair**: anvil material repair via `data/randomloot/tags/item/armor_repair_materials.json` (diamond).
+
+GenWiki reads from the code rather than restating it: config rows come from `Config.lootChanceOptions()/progressionOptions()`, the progression tables from `GearStats`, texture counts from `LootUtils.textureCount`, and the biome table from `describeRestriction()`. Its resource paths are rooted at `common/src/main/resources/` (the `RESOURCES` constant) — they were left pointing at the pre-multiloader `src/` for a whole release, which silently made all 68 `MODIFIERS.md` recipe entries read `n/a`. The failures are caught and logged as warnings, so **check the diff after regenerating**, not just the exit code.
 
 Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` (and
 optionally `RL_WIKI_DIR=<repo root>`), e.g.

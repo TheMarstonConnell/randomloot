@@ -143,6 +143,11 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 	}
 
 	@Override
+	public String describeRestriction() {
+		return "The End dimension only";
+	}
+
+	@Override
 	public boolean canSpawnInBiome(String biomeKey, float temperature, String dimension) {
 		return dimension != null && dimension.equals("minecraft:the_end");
 	}
