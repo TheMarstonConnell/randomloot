@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.TraitEligibility;
 import dev.marston.randomloot.loot.TraitEligibility.GearContext;
 import dev.marston.randomloot.loot.TraitEligibility.Verdict;

@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
 
 /**
  * Every number derived from a piece of gear's goodness and type: dig speed, attack,

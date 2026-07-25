@@ -12,7 +12,7 @@ import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.GearTags;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;

@@ -7,7 +7,7 @@ import com.mojang.serialization.codecs.RecordCodecBuilder;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;

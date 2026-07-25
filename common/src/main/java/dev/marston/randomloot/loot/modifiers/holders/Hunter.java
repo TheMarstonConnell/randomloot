@@ -2,7 +2,7 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import java.util.List;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;

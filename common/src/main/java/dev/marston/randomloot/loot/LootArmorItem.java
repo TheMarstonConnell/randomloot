@@ -3,7 +3,6 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
-import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.platform.Services;
@@ -41,23 +40,10 @@ import java.util.function.Consumer;
  * equipment slot + worn texture live in the per-stack EQUIPPABLE component, kept in
  * sync by {@link LootUtils#updateEquippable(ItemStack)}.
  */
-public class LootArmorItem extends Item {
+public class LootArmorItem extends LootGearItem {
 
 	public LootArmorItem(Properties p) {
-		super(p.stacksTo(1).durability(100));
-	}
-
-	@Override
-	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
-		super.onCraftedBy(stack, player);
-		// Taking armor out of a smithing table means a trait recipe ran; crafting-table
-		// takes are the texture-change recipe, which doesn't alter traits.
-		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
-			if (player.level() instanceof ServerLevel serverLevel) {
-				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
-			}
-			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
-		}
+		super(p);
 	}
 
 	public static float getDefense(ItemStack stack, ToolType type) {
@@ -73,7 +59,8 @@ public class LootArmorItem extends Item {
 	 * StatsModifier traits. Stored on the stack as the vanilla
 	 * ATTRIBUTE_MODIFIERS component by {@link LootUtils#refreshDerivedComponents}.
 	 */
-	public static ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
+	@Override
+	public ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
 
 		// No attributes while rolling: hides the tooltip lines until the reveal.
 		if (LootUtils.isRolling(stack)) {
@@ -101,62 +88,22 @@ public class LootArmorItem extends Item {
 				.build();
 	}
 
-	/** Durability derived from stats; stored as the vanilla MAX_DAMAGE component. */
-	public static int computeMaxDamage(ItemStack stack) {
-		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
-	}
-
+	/** Hold-style traits run only while the piece is actually worn in its own slot. */
 	@Override
-	public @NotNull Component getName(@NotNull ItemStack stack) {
-		if (LootUtils.isRolling(stack)) {
-			return LootTooltips.rollingName();
-		}
-		return super.getName(stack);
-	}
-
-	@Override
-	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
-
-		// Migrates items from before attributes/durability moved to data
-		// components (they were dynamic NeoForge item-method overrides).
-		LootUtils.migrateDerivedComponents(stack);
-
-		// Rolling armor can't be worn (no EQUIPPABLE yet), so this runs in inventory slots.
-		if (LootUtils.tickRoll(stack, level, holder)) {
-			return;
-		}
-
-		// Hold-style traits run while the piece is actually worn in its slot. The
-		// GearTags.has guard skips the per-tick trait deserialization for
-		// trait-less pieces.
+	protected EquipmentSlot holdSlot(ItemStack stack) {
 		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
-		if (equippable == null || slot != equippable.slot()
-				|| !GearTags.has(stack, Modifier.MODTAG)) {
-			return;
-		}
-
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-
-			if (mod instanceof HoldModifier holdMod) {
-
-				holdMod.hold(stack, level, holder);
-			}
-
-		}
-
+		return equippable == null ? null : equippable.slot();
 	}
 
 	@Override
-	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display, Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
-		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList, (tt, tips) -> {
-			float defense = getDefense(item, tt);
-			tips.accept(Component.translatableWithFallback("tooltip.randomloot.armor", "Armor: %s",
-					String.format("%.2f", defense)).withStyle(ChatFormatting.GRAY));
+	protected void appendStatLines(ItemStack item, ToolType tt, Consumer<Component> tips) {
+		float defense = getDefense(item, tt);
+		tips.accept(Component.translatableWithFallback("tooltip.randomloot.armor", "Armor: %s",
+				String.format("%.2f", defense)).withStyle(ChatFormatting.GRAY));
 
-			float toughness = getToughness(item, tt);
-			tips.accept(Component.translatableWithFallback("tooltip.randomloot.toughness", "Toughness: %s",
-					String.format("%.2f", toughness)).withStyle(ChatFormatting.GRAY));
-		});
+		float toughness = getToughness(item, tt);
+		tips.accept(Component.translatableWithFallback("tooltip.randomloot.toughness", "Toughness: %s",
+				String.format("%.2f", toughness)).withStyle(ChatFormatting.GRAY));
 	}
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
@@ -176,6 +123,7 @@ public class LootArmorItem extends Item {
 	 * minecraft:enchantable/*_armor tag, so per-piece filtering has to happen here for
 	 * both the enchanting table and the anvil/book path.
 	 */
+	@Override
 	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
 		if (LootUtils.isRolling(stack)) {
 			return false;

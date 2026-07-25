@@ -10,7 +10,6 @@ import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
@@ -131,7 +130,7 @@ public class LootUtils {
 
 	/** True for the mod's gear items (tools and armor). */
 	public static boolean isLootGear(ItemStack stack) {
-		return stack.getItem() instanceof LootItem || stack.getItem() instanceof LootArmorItem;
+		return stack.getItem() instanceof LootGearItem;
 	}
 
 	/**
@@ -142,11 +141,8 @@ public class LootUtils {
 	 */
 	@Nullable
 	public static Boolean gearEnchantGate(ItemStack stack, Holder<Enchantment> enchantment) {
-		if (stack.getItem() instanceof LootArmorItem armor) {
-			return armor.supportsEnchantmentCommon(stack, enchantment);
-		}
-		if (stack.getItem() instanceof LootItem tool) {
-			return tool.supportsEnchantmentCommon(stack, enchantment);
+		if (stack.getItem() instanceof LootGearItem gear) {
+			return gear.supportsEnchantmentCommon(stack, enchantment);
 		}
 		return null;
 	}
@@ -176,12 +172,9 @@ public class LootUtils {
 	 * extensions.
 	 */
 	public static void refreshDerivedComponents(ItemStack stack) {
-		if (stack.getItem() instanceof LootItem) {
-			stack.set(DataComponents.ATTRIBUTE_MODIFIERS, LootItem.buildAttributeModifiers(stack));
-			stack.set(DataComponents.MAX_DAMAGE, LootItem.computeMaxDamage(stack));
-		} else if (stack.getItem() instanceof LootArmorItem) {
-			stack.set(DataComponents.ATTRIBUTE_MODIFIERS, LootArmorItem.buildAttributeModifiers(stack));
-			stack.set(DataComponents.MAX_DAMAGE, LootArmorItem.computeMaxDamage(stack));
+		if (stack.getItem() instanceof LootGearItem gear) {
+			stack.set(DataComponents.ATTRIBUTE_MODIFIERS, gear.buildAttributeModifiers(stack));
+			stack.set(DataComponents.MAX_DAMAGE, LootGearItem.computeMaxDamage(stack));
 		}
 	}
 

@@ -5,7 +5,6 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.network.chat.Component;

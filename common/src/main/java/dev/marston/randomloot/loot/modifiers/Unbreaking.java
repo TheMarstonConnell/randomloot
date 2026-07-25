@@ -1,6 +1,6 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;

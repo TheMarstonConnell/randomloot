@@ -1,6 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
