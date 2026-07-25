@@ -835,53 +835,18 @@ public class LootUtils {
 		return item;
 	}
 
-	public static void generateNewTrait(ItemStack stack, ToolType type, RandomSource random, long worldSeed) {
+	/** Rolls one eligible trait onto the gear, or does nothing when none are eligible. */
+	public static void generateNewTrait(ItemStack stack, RandomSource random, long worldSeed) {
 
-		List<Modifier> mods = getModifiers(stack);
+		// One context for the whole sweep: the gear doesn't change while we pick.
+		TraitEligibility.GearContext ctx = TraitEligibility.contextOf(stack);
 
 		ArrayList<Modifier> allowedMods = new ArrayList<Modifier>();
 
 		for (Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
 			Modifier newMod = entry.getValue();
 
-			if (!Config.traitEnabled(newMod.tagName())) {
-				continue;
-			}
-
-			// Filter by biome restrictions (for natural spawning only)
-			if (newMod instanceof BiomeRestrictedModifier biomeRestricted) {
-				String biomeKey = getBiomeKey(stack);
-				float temp = getBiomeTemperature(stack);
-				String dimension = getDimension(stack);
-
-				if (!biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension)) {
-					continue; // Skip this modifier if biome doesn't match
-				}
-			}
-
-			if (!newMod.forTool(type)) {
-				continue;
-			}
-
-			boolean compatible = true;
-
-			for (Modifier modifier : mods) {
-
-				if (modifier.tagName().equals(newMod.tagName())) {
-					if (!modifier.canLevel()) {
-						compatible = false;
-						break;
-					}
-				}
-
-				if (!modifier.compatible(newMod)) {
-					compatible = false;
-					break;
-				}
-
-			}
-
-			if (compatible) {
+			if (TraitEligibility.check(ctx, newMod).allowed()) {
 				allowedMods.add(newMod);
 			}
 
@@ -901,9 +866,9 @@ public class LootUtils {
 
 	}
 
-	public static void generateInitialTraits(ItemStack stack, ToolType type, int count, RandomSource random, long worldSeed) {
+	public static void generateInitialTraits(ItemStack stack, int count, RandomSource random, long worldSeed) {
 		for (int i = 0; i < count; i++) {
-			generateNewTrait(stack, getToolType(stack), random, worldSeed);
+			generateNewTrait(stack, random, worldSeed);
 		}
 	}
 
@@ -1046,7 +1011,7 @@ public class LootUtils {
 		}
 
 		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
-		generateInitialTraits(lootItem, type, traits, level.getRandom(), worldSeed);
+		generateInitialTraits(lootItem, traits, level.getRandom(), worldSeed);
 
 		generateLore(lootItem, level, player);
 

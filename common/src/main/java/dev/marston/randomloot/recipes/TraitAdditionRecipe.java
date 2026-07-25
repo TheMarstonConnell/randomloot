@@ -9,9 +9,8 @@ import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
+import dev.marston.randomloot.loot.TraitEligibility;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.Holder;
@@ -94,36 +93,18 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		// Gear only accepts traits that actually work on its type (no Veiny helmets, no
-		// Thorny swords), matching the case-roll and /randomloot trait add paths. The
+		// Adding runs the same gate as the case roll and /randomloot trait add: type,
+		// biome, config toggle, compatibility and the level cap. Skipping any of them
+		// here used to eat the template and the addition for an unchanged tool. The
 		// subtraction template stays ungated so mismatched traits can always be stripped.
-		LootItem.ToolType baseType = LootUtils.getToolType(input.base());
-		if (input.template().is(ModItems.MOD_ADD.get()) && !modToAdd.forTool(baseType)) {
-			return false;
-		}
-
-		// Check if we're adding a modifier (not removing)
 		if (input.template().is(ModItems.MOD_ADD.get())) {
-			// If it's a biome-restricted modifier, check if the tool's biome matches
-			if (modToAdd instanceof BiomeRestrictedModifier biomeRestricted) {
-				ItemStack tool = input.base();
-				String biomeKey = LootUtils.getBiomeKey(tool);
-				float temp = LootUtils.getBiomeTemperature(tool);
-				String dimension = LootUtils.getDimension(tool);
-
-				boolean canAdd = biomeRestricted.canSpawnInBiome(biomeKey, temp, dimension);
-
-				if (!canAdd) {
-					RandomLoot.LOGGER.info("Recipe blocked: {} cannot be added to tool from biome: {}, temp: {}, dim: {}",
-							this.trait, biomeKey, temp, dimension);
-					return false;
-				}
+			TraitEligibility.Result verdict = TraitEligibility.check(input.base(), modToAdd);
+			if (!verdict.allowed()) {
+				RandomLoot.LOGGER.debug("Recipe blocked: {} cannot be added to this gear ({})", this.trait,
+						verdict.verdict());
+				return false;
 			}
 		}
-
-//		if (this.addition.getCount() > input.addition().getCount()) {
-//			return false;
-//		}
 
         return this.template.get().test(input.template());
     }
