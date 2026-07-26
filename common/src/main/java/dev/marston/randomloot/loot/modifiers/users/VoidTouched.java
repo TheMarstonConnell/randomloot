@@ -1,7 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
@@ -140,6 +140,11 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 	@Override
 	public boolean useAnywhere() {
 		return true;
+	}
+
+	@Override
+	public String describeRestriction() {
+		return "The End dimension only";
 	}
 
 	@Override

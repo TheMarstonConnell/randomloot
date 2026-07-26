@@ -9,6 +9,8 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.KillDispatcher;
 import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
+import dev.marston.randomloot.platform.GameHook;
+import dev.marston.randomloot.platform.GameHooks;
 import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
 import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
 import net.fabricmc.api.ModInitializer;
@@ -42,13 +44,25 @@ public class RandomLootFabric implements ModInitializer {
         // NeoForge-style TOML config via Forge Config API Port; same file name on both loaders.
         ConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
         ModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
+        // Both registrations matter: dropping .reloading silently breaks /reload-time
+        // config refresh, which NeoForge gets from the single ModConfigEvent.
         ModConfigEvents.reloading(RandomLoot.MODID).register(config -> Config.onLoad());
+        GameHooks.bind(GameHook.CONFIG);
 
         registerEvents();
     }
 
     private static void registerEvents() {
         ServerLivingEntityEvents.AFTER_DEATH.register(KillDispatcher::onLivingDeath);
+        GameHooks.bind(GameHook.KILL);
+
+        // Wired by mixin rather than a Fabric API callback - see randomloot.fabric.mixins.json.
+        // LivingEntityMixin (@WrapOperation on the actuallyHurt call inside hurtServer),
+        // ItemStackMixin (hurtAndBreak), PlayerMixin (getDestroySpeed), AnvilMenuMixin.
+        GameHooks.bind(GameHook.DAMAGE_PRE);
+        GameHooks.bind(GameHook.ARMOR_HURT);
+        GameHooks.bind(GameHook.BREAK_SPEED);
+        GameHooks.bind(GameHook.ANVIL_COMBINE);
 
         // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin.
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
@@ -56,24 +70,31 @@ public class RandomLootFabric implements ModInitializer {
                 ArmorDispatcher.onLivingDamagePost(entity, damageTaken);
             }
         });
+        GameHooks.bind(GameHook.DAMAGE_POST);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> BlockHighlighter.onServerTick());
+        GameHooks.bind(GameHook.SERVER_TICK);
+
         ServerLifecycleEvents.SERVER_STOPPING.register(server -> BlockHighlighter.onServerStopping());
+        GameHooks.bind(GameHook.SERVER_STOPPING);
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
                 ModCommands.register(dispatcher));
+        GameHooks.bind(GameHook.COMMANDS);
 
         CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(output -> {
             for (Item item : ModItems.creativeTabItems()) {
                 output.accept(item);
             }
         });
+        GameHooks.bind(GameHook.CREATIVE_TAB);
 
         // Per-type/per-piece enchantment gating (NeoForge does this via supportsEnchantment overrides).
         EnchantmentEvents.ALLOW_ENCHANTING.register((enchantment, target, context) -> {
             Boolean allowed = LootUtils.gearEnchantGate(target, enchantment);
             return allowed == null ? TriState.DEFAULT : TriState.of(allowed);
         });
+        GameHooks.bind(GameHook.ENCHANT_GATE);
 
         // Loot injection: the LootInjection policy is common; pools are Fabric's
         // delivery mechanism (NeoForge uses the case_item global loot modifier).
@@ -89,5 +110,6 @@ public class RandomLootFabric implements ModInitializer {
                         .add(lootTableItem(entry.item())));
             }
         });
+        GameHooks.bind(GameHook.LOOT_INJECTION);
     }
 }

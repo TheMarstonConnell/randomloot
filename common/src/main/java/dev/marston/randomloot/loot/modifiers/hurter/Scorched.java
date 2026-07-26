@@ -1,6 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -75,6 +75,11 @@ public class Scorched extends LeveledModifier implements EntityHurtModifier, Hol
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		if (!(holder instanceof LivingEntity living)) return;
 		living.addEffect(new MobEffectInstance(MobEffects.FIRE_RESISTANCE, 60, 0, false, false));
+	}
+
+	@Override
+	public String describeRestriction() {
+		return "Hot biomes (temperature >= 1.0) or the Nether";
 	}
 
 	@Override

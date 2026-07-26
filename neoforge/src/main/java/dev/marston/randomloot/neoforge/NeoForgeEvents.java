@@ -9,6 +9,8 @@ import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.KillDispatcher;
 import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
+import dev.marston.randomloot.platform.GameHook;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -34,6 +36,30 @@ public final class NeoForgeEvents {
     private NeoForgeEvents() {
     }
 
+    /**
+     * Declares the hooks routed below. @EventBusSubscriber wires them by annotation, so
+     * there is nothing to call at registration time - this is the checked inventory.
+     * Keep it in step with the handlers; loader_hooks_all_bound fails if a GameHook is
+     * never bound.
+     */
+    public static void bindHooks() {
+        GameHooks.bind(GameHook.KILL);
+        GameHooks.bind(GameHook.DAMAGE_PRE);
+        GameHooks.bind(GameHook.DAMAGE_POST);
+        GameHooks.bind(GameHook.ARMOR_HURT);
+        GameHooks.bind(GameHook.BREAK_SPEED);
+        GameHooks.bind(GameHook.SERVER_TICK);
+        GameHooks.bind(GameHook.SERVER_STOPPING);
+        GameHooks.bind(GameHook.COMMANDS);
+        GameHooks.bind(GameHook.CONFIG);
+        GameHooks.bind(GameHook.CREATIVE_TAB);
+        GameHooks.bind(GameHook.ANVIL_COMBINE);
+        // Item-extension overrides on NeoForgeLootItem / NeoForgeLootArmorItem.
+        GameHooks.bind(GameHook.ENCHANT_GATE);
+        // The case_item global loot modifier; see data/randomloot/loot_modifiers/.
+        GameHooks.bind(GameHook.LOOT_INJECTION);
+    }
+
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
         KillDispatcher.onLivingDeath(event.getEntity(), event.getSource());
@@ -53,8 +79,8 @@ public final class NeoForgeEvents {
     public static void onArmorHurt(ArmorHurtEvent event) {
         for (Map.Entry<EquipmentSlot, ArmorHurtEvent.ArmorEntry> entry : event.getArmorMap().entrySet()) {
             ArmorHurtEvent.ArmorEntry armorEntry = entry.getValue();
-            event.setNewDamage(entry.getKey(),
-                    ArmorDispatcher.onArmorHurt(event.getEntity(), armorEntry.armorItemStack, armorEntry.newDamage));
+            event.setNewDamage(entry.getKey(), ArmorDispatcher.onArmorHurt(event.getEntity(),
+                    armorEntry.armorItemStack, entry.getKey(), armorEntry.newDamage));
         }
     }
 

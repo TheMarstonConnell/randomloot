@@ -2,7 +2,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 
 import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;

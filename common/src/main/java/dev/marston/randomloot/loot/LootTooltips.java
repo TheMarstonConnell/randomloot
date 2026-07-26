@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.util.Util;

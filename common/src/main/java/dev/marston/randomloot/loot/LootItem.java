@@ -47,130 +47,22 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class LootItem extends Item  {
-
-	public enum ToolType {
-		PICKAXE, SHOVEL, AXE, SWORD, HELMET, CHESTPLATE, LEGGINGS, BOOTS, NULL;
-
-		@Override
-		public String toString() {
-            return switch (this) {
-                case PICKAXE -> "Pickaxe";
-                case SHOVEL -> "Shovel";
-                case AXE -> "Axe";
-                case SWORD -> "Sword";
-                case HELMET -> "Helmet";
-                case CHESTPLATE -> "Chestplate";
-                case LEGGINGS -> "Leggings";
-                case BOOTS -> "Boots";
-                default -> "Null";
-            };
-		}
-
-		/** Translatable display name for tooltips, falling back to the English toString(). */
-		public Component displayName() {
-			return Component.translatableWithFallback(
-					"tooltip.randomloot.type." + name().toLowerCase(Locale.ROOT), toString());
-		}
-
-		/** True for the four wearable piece types. */
-		public boolean isArmor() {
-			return this == HELMET || this == CHESTPLATE || this == LEGGINGS || this == BOOTS;
-		}
-
-		/** The equipment slot an armor piece occupies, or null for hand tools. */
-		public EquipmentSlot armorSlot() {
-			return switch (this) {
-				case HELMET -> EquipmentSlot.HEAD;
-				case CHESTPLATE -> EquipmentSlot.CHEST;
-				case LEGGINGS -> EquipmentSlot.LEGS;
-				case BOOTS -> EquipmentSlot.FEET;
-				default -> null;
-			};
-		}
-	}
-
+public class LootItem extends LootGearItem {
 
 	public LootItem(Properties p) {
-		super(p.stacksTo(1).durability(100));
-	}
-
-	@Override
-	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
-		super.onCraftedBy(stack, player);
-		// Taking a tool out of a smithing table means a trait recipe ran;
-		// crafting-table takes are the texture-change recipe, which doesn't
-		// alter traits.
-		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
-			if (player.level() instanceof ServerLevel serverLevel) {
-				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
-			}
-			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
-		}
+		super(p);
 	}
 
 	public static float getDigSpeed(ItemStack stack, ToolType type) {
-
-		float statMod = 1.0f;
-
-		// getModifiers already filters out config-disabled traits.
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-			if (mod instanceof StatsModifier ehm) {
-				statMod *= ehm.getStats(stack);
-			}
-		}
-
-		if (type.equals(ToolType.SWORD)) {
-			return 1.0f;
-		}
-
-		float speed = (LootUtils.getStats(stack) / 2.0f) + 6.0f;
-		return speed * statMod;
+		return GearStats.digSpeed(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
 	}
 
 	public static float getAttackSpeed(ItemStack stack, ToolType type) {
-
-		float speed = 0.0f;
-
-		switch (type) {
-		case PICKAXE:
-			speed = -2.8F;
-			break;
-		case AXE:
-			speed = -3.0F;
-			break;
-		case SHOVEL:
-			speed = -3.0F;
-			break;
-		case SWORD:
-			speed = -2.4F;
-			break;
-		default:
-			break;
-		}
-
-		return speed;
+		return GearStats.attackSpeed(type);
 	}
 
 	public static float getAttackDamage(ItemStack stack, ToolType type) {
-
-		float damage = (LootUtils.getStats(stack)) + 1.0f;
-
-		switch (type) {
-		case PICKAXE:
-			damage = damage * 0.5f;
-			break;
-		case AXE:
-			damage = damage * 1.2f;
-			break;
-		case SHOVEL:
-			damage = damage * 0.6f;
-			break;
-		default:
-			break;
-		}
-
-		return damage;
+		return GearStats.attackDamage(LootUtils.getStats(stack), type);
 	}
 
 	@Override
@@ -248,7 +140,8 @@ public class LootItem extends Item  {
 	 * stack as the vanilla ATTRIBUTE_MODIFIERS component by
 	 * {@link LootUtils#refreshDerivedComponents} whenever the inputs change.
 	 */
-	public static ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
+	@Override
+	public ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
 
 		// No attributes while rolling: hides the tooltip lines and keeps the
 		// undecided tool from working as a weapon.
@@ -375,13 +268,6 @@ public class LootItem extends Item  {
 	}
 
 
-
-	/** Durability derived from stats; stored as the vanilla MAX_DAMAGE component. */
-	public static int computeMaxDamage(ItemStack stack) {
-		float stats = (LootUtils.getStats(stack) + 10.0f) * 80.0f;
-
-		return (int) stats;
-	}
 
 	@Override
 	public @NotNull InteractionResult useOn(UseOnContext ctx) {
@@ -521,53 +407,20 @@ public class LootItem extends Item  {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display, Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
-		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList, (tt, tips) -> {
-			float digSpeed = getDigSpeed(item, tt);
-			tips.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
-					String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
+	protected void appendStatLines(ItemStack item, ToolType tt, Consumer<Component> tips) {
+		float digSpeed = getDigSpeed(item, tt);
+		tips.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
+				String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
 
-			float attackDamage = getAttackDamage(item, tt);
-			tips.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
-					String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
-		});
+		float attackDamage = getAttackDamage(item, tt);
+		tips.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
+				String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
 	}
 
+	/** Hold-style traits run while the tool is actually held. */
 	@Override
-	public @NotNull Component getName(@NotNull ItemStack stack) {
-		if (LootUtils.isRolling(stack)) {
-			return LootTooltips.rollingName();
-		}
-		return super.getName(stack);
-	}
-
-	@Override
-	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
-
-		// Migrates items from before attributes/durability moved to data
-		// components (they were dynamic NeoForge item-method overrides).
-		LootUtils.migrateDerivedComponents(stack);
-
-		// Runs in any slot, unlike the mainhand-gated trait ticking below.
-		if (LootUtils.tickRoll(stack, level, holder)) {
-			return;
-		}
-
-		// Only trigger for mainhand slot (replacing the old 'holding' boolean check).
-		// The hasTagElement guard skips the per-tick trait deserialization for
-		// trait-less tools.
-		if (slot == EquipmentSlot.MAINHAND && LootUtils.hasTagElement(stack, Modifier.MODTAG)) {
-
-			for (Modifier mod : LootUtils.getModifiers(stack)) {
-
-				if (mod instanceof HoldModifier hodlMod) {
-
-                    hodlMod.hold(stack, level, holder);
-				}
-
-			}
-		}
-
+	protected EquipmentSlot holdSlot(ItemStack stack) {
+		return EquipmentSlot.MAINHAND;
 	}
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
@@ -588,6 +441,7 @@ public class LootItem extends Item  {
 	 * four tool types), that default let an efficiency book land on a sword. The default
 	 * isPrimaryItemFor delegates here, so the table stays filtered too.
 	 */
+	@Override
 	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
 		if (LootUtils.isRolling(stack)) {
 			return false;

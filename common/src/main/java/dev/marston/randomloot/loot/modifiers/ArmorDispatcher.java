@@ -86,9 +86,20 @@ public final class ArmorDispatcher {
 	/**
 	 * Durability hook for a single armor piece about to take damage. Returns the
 	 * (possibly zeroed) durability damage after Unbreaking rolls.
+	 *
+	 * <p>The slot gate lives here rather than in the shims because the two loaders
+	 * deliver very different scopes: NeoForge's ArmorHurtEvent fires only for armor
+	 * slots, while Fabric's stand-in mixin hooks every ItemStack.hurtAndBreak. Without
+	 * it, a loot armor piece damaged outside an armor slot got Unbreaking on Fabric
+	 * only.
 	 */
-	public static float onArmorHurt(LivingEntity wearer, ItemStack stack, float durabilityDamage) {
-		// instanceof first: on Fabric this hooks EVERY ItemStack.hurtAndBreak.
+	public static float onArmorHurt(LivingEntity wearer, ItemStack stack, EquipmentSlot slot,
+			float durabilityDamage) {
+		if (slot == null || slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
+			return durabilityDamage;
+		}
+
+		// instanceof next: on Fabric this hooks EVERY ItemStack.hurtAndBreak.
 		if (!(stack.getItem() instanceof LootArmorItem)) {
 			return durabilityDamage;
 		}

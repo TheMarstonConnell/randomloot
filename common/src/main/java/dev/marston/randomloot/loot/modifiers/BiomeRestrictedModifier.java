@@ -11,4 +11,12 @@ public interface BiomeRestrictedModifier extends Modifier {
 	 * @return true if modifier can spawn naturally in this biome
 	 */
 	boolean canSpawnInBiome(String biomeKey, float temperature, String dimension);
+
+	/**
+	 * Plain-English statement of the restriction, for BIOMES.md. The trait describes
+	 * itself so the doc stops restating thresholds that live in
+	 * {@link #canSpawnInBiome} - they had already drifted apart once, and a sixth
+	 * biome trait used to mean editing a hand-written table in GenWiki.
+	 */
+	String describeRestriction();
 }

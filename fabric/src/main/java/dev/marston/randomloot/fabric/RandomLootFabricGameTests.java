@@ -149,6 +149,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void loaderHooksAllBound(GameTestHelper helper) {
+        GameTestBodies.loaderHooksAllBound(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void lootInjectionAddsCases(GameTestHelper helper) {
         GameTestBodies.lootInjectionAddsCases(helper);
     }

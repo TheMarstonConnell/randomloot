@@ -3,7 +3,7 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;

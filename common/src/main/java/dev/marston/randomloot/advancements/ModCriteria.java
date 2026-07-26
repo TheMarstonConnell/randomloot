@@ -1,6 +1,6 @@
 package dev.marston.randomloot.advancements;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.registries.Registries;

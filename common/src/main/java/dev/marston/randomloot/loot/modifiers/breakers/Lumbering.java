@@ -3,7 +3,7 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import java.util.HashSet;
 import java.util.Set;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;

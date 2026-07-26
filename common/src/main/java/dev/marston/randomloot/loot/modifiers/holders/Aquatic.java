@@ -1,6 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
@@ -74,6 +74,11 @@ public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestr
 		if (living.isUnderWater()) {
 			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, this.level + 1, true, false));
 		}
+	}
+
+	@Override
+	public String describeRestriction() {
+		return "Ocean and river biomes";
 	}
 
 	@Override

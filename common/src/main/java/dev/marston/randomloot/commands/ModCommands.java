@@ -5,11 +5,10 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootItem.ToolType;
+import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
+import dev.marston.randomloot.loot.TraitEligibility;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.commands.CommandSourceStack;
@@ -57,7 +56,7 @@ public class ModCommands {
 		}
 		// Raw tag keys, not getModifiers(): config-disabled traits should still be removable.
 		return SharedSuggestionProvider
-				.suggest(LootUtils.getOrCreateTagElement(player.getMainHandItem(), Modifier.MODTAG).keySet(), builder);
+				.suggest(LootUtils.rawTraitNames(player.getMainHandItem()), builder);
 	};
 
 	private static final SuggestionProvider<CommandSourceStack> GEAR_TYPES = (ctx, builder) -> SharedSuggestionProvider
@@ -136,39 +135,11 @@ public class ModCommands {
 	/**
 	 * Why {@code mod} can't be added to {@code held}, or {@code null} when it can. Shared
 	 * by the add executor and its tab-completion so the suggestions never offer a trait
-	 * the command would refuse.
+	 * the command would refuse - and with the case roll and the smithing table, via
+	 * {@link TraitEligibility}.
 	 */
 	private static Component addBlocker(ItemStack held, Modifier mod) {
-		if (!Config.traitEnabled(mod.tagName())) {
-			return Component.literal("Trait is disabled in the config: " + mod.tagName());
-		}
-
-		ToolType type = LootUtils.getToolType(held);
-		if (!mod.forTool(type)) {
-			return Component.empty().append(mod.displayName()).append(" cannot be applied to a ")
-					.append(type.displayName()).append(".");
-		}
-
-		if (mod instanceof BiomeRestrictedModifier biomeRestricted
-				&& !biomeRestricted.canSpawnInBiome(LootUtils.getBiomeKey(held), LootUtils.getBiomeTemperature(held),
-						LootUtils.getDimension(held))) {
-			return Component.empty().append(mod.displayName())
-					.append(" cannot be applied to gear from this gear's biome.");
-		}
-
-		for (Modifier existing : LootUtils.getModifiers(held)) {
-			if (existing.tagName().equals(mod.tagName())) {
-				if (!existing.canLevel()) {
-					return Component.empty().append("This gear already has ").append(mod.displayName())
-							.append(" and it cannot level up.");
-				}
-			} else if (!existing.compatible(mod)) {
-				return Component.empty().append(mod.displayName()).append(" is incompatible with ")
-						.append(existing.displayName()).append(".");
-			}
-		}
-
-		return null;
+		return TraitEligibility.check(held, mod).reason(mod);
 	}
 
 	private static int addTrait(CommandSourceStack source, String traitName) throws CommandSyntaxException {
@@ -219,7 +190,7 @@ public class ModCommands {
 
 		// Check the raw tag, not getModifiers(): config-disabled traits are still on the
 		// item and should still be removable.
-		if (!LootUtils.getOrCreateTagElement(held, Modifier.MODTAG).contains(mod.tagName())) {
+		if (!LootUtils.hasRawTrait(held, mod.tagName())) {
 			source.sendFailure(Component.empty().append("This gear does not have ").append(mod.displayName())
 					.append("."));
 			return 0;

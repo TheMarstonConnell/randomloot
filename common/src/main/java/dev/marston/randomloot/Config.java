@@ -30,6 +30,51 @@ public class Config
 
     private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
+    /**
+     * A documented numeric option: one source for the spec definition, for the plain
+     * static field's pre-load default, and for the CONFIG.md table {@link GenWiki}
+     * renders. Defaults and ranges used to be written twice - once here, once as literal
+     * markdown - so the docs could drift from the spec with nothing to notice.
+     *
+     * <p>These must be declared above {@link #SPEC}: static initializers run in source
+     * order, and {@code SPEC = build()} reads them.
+     */
+    public record Option(String name, double defaultValue, double min, double max, String comment) {
+    }
+
+    public static final Option CASE_CHANCE_OPTION = new Option("caseChance", 0.25, 0.0, 1.0,
+            "chance to find a case in a chest.");
+    public static final Option MOD_CHANCE_OPTION = new Option("modChance", 0.15, 0.0, 1.0,
+            "chance to find a modifier template in a chest.");
+    public static final Option GOODNESS_OPTION = new Option("goodness_rate", 1.0, 0.01, 10.0,
+            "rate of tool improvement per player");
+    public static final Option ARMOR_CHANCE_OPTION = new Option("armorChance", 0.15, 0.0, 1.0,
+            "chance that a loot case contains an armor piece instead of a tool.");
+    public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
+            "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
+
+    /** The loot-chance options, in the order CONFIG.md lists them. */
+    public static List<Option> lootChanceOptions() {
+        return List.of(CASE_CHANCE_OPTION, MOD_CHANCE_OPTION);
+    }
+
+    /** The progression options, in the order CONFIG.md lists them. */
+    public static List<Option> progressionOptions() {
+        return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION);
+    }
+
+    // These mirror the spec so reads that land before the first ModConfigEvent.Loading
+    // (e.g. early world gen) see sane values, not 0.0.
+    public static double CaseChance = CASE_CHANCE_OPTION.defaultValue();
+    public static double ModChance = MOD_CHANCE_OPTION.defaultValue();
+    public static double Goodness = GOODNESS_OPTION.defaultValue();
+    public static double ArmorChance = ARMOR_CHANCE_OPTION.defaultValue();
+    public static double DispenserGoodness = DISPENSER_GOODNESS_OPTION.defaultValue();
+    public static List<? extends String> LootTableMatches = List.of("chest");
+
+    private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
+    private static Map<String, Boolean> ModsEnabled = new HashMap<>();
+
     public static final ModConfigSpec SPEC = build();
 
     public static ModConfigSpec build() {
@@ -37,24 +82,16 @@ public class Config
         return BUILDER.build();
     }
 
-    // Field initializers mirror the spec defaults below so reads that land before the
-    // first ModConfigEvent.Loading (e.g. early world gen) see sane values, not 0.0.
-    public static double CaseChance = 0.25;
-    public static double ModChance = 0.15;
-    public static double Goodness = 1.0;
-    public static double ArmorChance = 0.15;
-    public static double DispenserGoodness = 0.75;
-    public static List<? extends String> LootTableMatches = List.of("chest");
-
-    private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
-    private static Map<String, Boolean> ModsEnabled = new HashMap<>();
+    private static ModConfigSpec.DoubleValue define(Option option) {
+        return BUILDER.comment(option.comment())
+                .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
+    }
 
     public static void init() {
 
         BUILDER.push("Loot Chances");
-        CASE_CHANCE = BUILDER.comment("chance to find a case in a chest.").defineInRange("caseChance", 0.25, 0.0, 1.0);
-        MOD_CHANCE = BUILDER.comment("chance to find a modifier template in a chest.").defineInRange("modChance", 0.15,
-                0.0, 1.0);
+        CASE_CHANCE = define(CASE_CHANCE_OPTION);
+        MOD_CHANCE = define(MOD_CHANCE_OPTION);
         LOOT_TABLE_MATCHES = BUILDER
                 .comment("loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
                 .defineListAllowEmpty("lootTableMatches", List.of("chest"), () -> "chest", o -> o instanceof String);
@@ -73,13 +110,9 @@ public class Config
         BUILDER.pop();
 
         BUILDER.push("Misc");
-        GOODNESS = BUILDER.comment("rate of tool improvement per player").defineInRange("goodness_rate", 1.0, 0.01,
-                10.0);
-        ARMOR_CHANCE = BUILDER.comment("chance that a loot case contains an armor piece instead of a tool.")
-                .defineInRange("armorChance", 0.15, 0.0, 1.0);
-        DISPENSER_GOODNESS = BUILDER
-                .comment("goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.")
-                .defineInRange("dispenserGoodness", 0.75, 0.0, 1.0);
+        GOODNESS = define(GOODNESS_OPTION);
+        ARMOR_CHANCE = define(ARMOR_CHANCE_OPTION);
+        DISPENSER_GOODNESS = define(DISPENSER_GOODNESS_OPTION);
         BUILDER.pop();
     }
 

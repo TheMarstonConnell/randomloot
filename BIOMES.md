@@ -15,11 +15,11 @@ This information determines which biome-specific traits can appear on the tool, 
 
 | Trait | Biome Requirement | Details |
 |-------|-------------------|---------|
-| [Aquatic](MODIFIERS.md#aquatic) | Ocean or River biomes | Water breathing + Haste underwater |
-| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temp <= 0.15) | Slowness on hit, frost walker |
-| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temp >= 1.0) or Nether | Fire damage, fire resistance |
-| [Overgrown](MODIFIERS.md#overgrown) | Jungle, Swamp, or Bamboo biomes | Arthropod damage, poison immunity |
-| [Void-Touched](MODIFIERS.md#void-touched) | The End dimension only | Teleport on right-click |
+| [Aquatic](MODIFIERS.md#aquatic) | Ocean and river biomes | Grants water breathing and Haste II when underwater. |
+| [Frozen](MODIFIERS.md#frozen) | Cold biomes (temperature <= 0.15) | Slows enemies on hit. Creates 3 block radius of frosted ice on water. |
+| [Overgrown](MODIFIERS.md#overgrown) | Jungle, swamp and bamboo biomes | Grants poison immunity. Deals 2.5 bonus damage to arthropods. |
+| [Scorched](MODIFIERS.md#scorched) | Hot biomes (temperature >= 1.0) or the Nether | Sets enemies on fire for 4 seconds. Grants fire resistance while held. |
+| [Void-Touched](MODIFIERS.md#void-touched) | The End dimension only | Right-click to teleport up to 8.0 blocks. Costs 10 durability. |
 
 See [MODIFIERS.md](MODIFIERS.md) for full effect descriptions and crafting recipes.
 
