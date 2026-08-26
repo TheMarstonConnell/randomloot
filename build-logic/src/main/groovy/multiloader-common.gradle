@@ -95,3 +95,11 @@ publishing {
         }
     }
 }
+
+// Byte-reproducible archives: the release workflow hashes jars (with the version
+// string normalized out) against the previous release to skip republishing
+// unchanged versions to CurseForge/Modrinth.
+tasks.withType(AbstractArchiveTask).configureEach {
+    preserveFileTimestamps = false
+    reproducibleFileOrder = true
+}
