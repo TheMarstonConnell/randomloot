@@ -2,7 +2,7 @@
   "type": "randomloot:trait_change",
   "item": {
     "count": 4,
-    "id": "minecraft:cinnabar"
+    "id": "minecraft:redstone"
   },
   "trait": "catalyst"
 }

@@ -2,7 +2,7 @@
   "type": "randomloot:trait_change",
   "item": {
     "count": 1,
-    "id": "minecraft:iron_chain"
+    "id": "minecraft:chain"
   },
   "trait": "clunky"
 }

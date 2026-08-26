@@ -67,8 +67,14 @@ public final class ArmorDispatcher {
 		return Math.max(0.0f, damage);
 	}
 
-	/** Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP per block/swing. */
-	public static void onLivingDamagePost(LivingEntity wearer, float inflictedDamage) {
+	/**
+	 * Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP
+	 * per block/swing - and takes durability damage. 1.21.1's vanilla armor
+	 * durability path (Inventory/CommonHooks) is hard-gated on {@code ArmorItem} on
+	 * both loaders, so worn Random Armor is damaged here instead; the vanilla path
+	 * never touches it, so nothing double-charges.
+	 */
+	public static void onLivingDamagePost(LivingEntity wearer, DamageSource source, float inflictedDamage) {
 		if (wearer.level().isClientSide()) {
 			return;
 		}
@@ -78,8 +84,18 @@ public final class ArmorDispatcher {
 		}
 
 		int xp = Math.max(1, Math.round(inflictedDamage));
+		boolean damagesArmor = !source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_ARMOR);
+		int durability = Math.max(1, (int) (inflictedDamage / 4.0f));
 		for (ItemStack stack : wornLootArmor(wearer)) {
 			LootUtils.addXp(stack, wearer, xp);
+
+			if (damagesArmor && stack.canBeHurtBy(source)) {
+				EquipmentSlot slot = LootUtils.wearableSlot(stack);
+				int hurt = (int) onArmorHurt(wearer, stack, slot, durability);
+				if (slot != null && hurt > 0) {
+					stack.hurtAndBreak(hurt, wearer, slot);
+				}
+			}
 		}
 	}
 

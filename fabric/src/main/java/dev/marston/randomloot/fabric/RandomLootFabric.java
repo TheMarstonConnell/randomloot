@@ -67,7 +67,7 @@ public class RandomLootFabric implements ModInitializer {
         // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin.
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (!blocked) {
-                ArmorDispatcher.onLivingDamagePost(entity, damageTaken);
+                ArmorDispatcher.onLivingDamagePost(entity, source, damageTaken);
             }
         });
         GameHooks.bind(GameHook.DAMAGE_POST);

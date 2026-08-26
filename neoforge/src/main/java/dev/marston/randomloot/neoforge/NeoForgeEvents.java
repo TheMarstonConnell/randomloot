@@ -66,7 +66,7 @@ public final class NeoForgeEvents {
 
     @SubscribeEvent
     public static void onLivingDamagePost(LivingDamageEvent.Post event) {
-        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getNewDamage());
+        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getSource(), event.getNewDamage());
     }
 
     @SubscribeEvent

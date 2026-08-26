@@ -385,6 +385,17 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.getAbilities().instabuild = false;
 		player.getAbilities().invulnerable = false;
+		// 1.21.1: ServerPlayer.hurt ignores damage while the private
+		// spawnInvulnerableTime (60 ticks) is positive; it only decrements in
+		// tick(). Tick it down so same-tick test hits actually land - each
+		// iteration decrements before anything that could throw on a mock player.
+		for (int i = 0; i < 61; i++) {
+			try {
+				player.tick();
+			} catch (Throwable ignored) {
+			}
+		}
+		player.setHealth(player.getMaxHealth());
 		return player;
 	}
 
@@ -836,7 +847,8 @@ public final class GameTestBodies {
 	 * The cinnabar/sulfur trait recipes load with valid ingredient ids. A bad item id makes
 	 * the whole recipe fail to parse at datapack load and drop out of the recipe set (which
 	 * is exactly what left them as "n/a" in the wiki), so presence here proves both the JSON
-	 * and the {@code minecraft:cinnabar}/{@code minecraft:sulfur} ids resolve.
+	 * and the ingredient ids resolve (redstone/rotten flesh on 1.21.1 - cinnabar and
+	 * sulfur don't exist before 26.x).
 	 */
 	public static void newTraitRecipesLoad(GameTestHelper helper) {
 		var recipes = helper.getLevel().getRecipeManager().getRecipes();
@@ -844,8 +856,8 @@ public final class GameTestBodies {
 		record Expected(String trait, ResourceLocation ingredient) {
 		}
 		Expected[] expected = {
-				new Expected("catalyst", ResourceLocation.withDefaultNamespace("cinnabar")),
-				new Expected("stench", ResourceLocation.withDefaultNamespace("sulfur")),
+				new Expected("catalyst", ResourceLocation.withDefaultNamespace("redstone")),
+				new Expected("stench", ResourceLocation.withDefaultNamespace("rotten_flesh")),
 		};
 
 		for (Expected e : expected) {
