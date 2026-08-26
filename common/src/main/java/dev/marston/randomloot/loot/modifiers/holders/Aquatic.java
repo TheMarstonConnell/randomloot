@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -40,7 +42,7 @@ public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestr
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Aquatic(tag.getStringOr(NAME, "Aquatic"), ModifierConstants.getLevel(tag, 0));
+		return new Aquatic(NbtCompat.getStringOr(tag, NAME, "Aquatic"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class Aquatic extends LeveledModifier implements HoldModifier, BiomeRestr
 
 		// Extra haste when underwater
 		if (living.isUnderWater()) {
-			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, this.level + 1, true, false));
+			living.addEffect(new MobEffectInstance(MobEffects.DIG_SPEED, 40, this.level + 1, true, false));
 		}
 	}
 

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -69,7 +71,7 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Learning(tag.getStringOr(NAME, "Learning"), tag.getIntOr(COUNT, 0), tag.getIntOr(POINTS, 3));
+		return new Learning(NbtCompat.getStringOr(tag, NAME, "Learning"), NbtCompat.getIntOr(tag, COUNT, 0), NbtCompat.getIntOr(tag, POINTS, 3));
 	}
 
 	@Override

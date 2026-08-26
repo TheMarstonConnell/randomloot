@@ -8,7 +8,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -20,6 +20,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
@@ -41,7 +42,6 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
 import dev.marston.randomloot.platform.Services;
 import dev.marston.randomloot.platform.ToolAction;
-import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -179,10 +179,10 @@ public class LootItem extends LootGearItem {
 	}
 
 	@Override
-	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		if (LootUtils.isRolling(itemstack)) {
-			return;
+			return true;
 		}
 
 		ToolType type = LootUtils.getToolType(itemstack);
@@ -208,6 +208,7 @@ public class LootItem extends LootGearItem {
 		if (!shouldSkipBreak) {
 			itemstack.hurtAndBreak(1, hurter, EquipmentSlot.MAINHAND);
 		}
+		return true;
 	}
 
 //	@Override
@@ -374,11 +375,11 @@ public class LootItem extends LootGearItem {
 	}
 
 	@Override
-	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack toolItem = player.getItemInHand(hand);
 
 		if (LootUtils.isRolling(toolItem)) {
-			return InteractionResult.PASS;
+			return InteractionResultHolder.pass(toolItem);
 		}
 
 		boolean used = false;
@@ -400,10 +401,10 @@ public class LootItem extends LootGearItem {
 				sPlayer.awardStat(Stats.ITEM_USED.get(this));
 			}
 
-			return InteractionResult.SUCCESS;
+			return InteractionResultHolder.success(toolItem);
 		}
 
-		return InteractionResult.PASS;
+		return InteractionResultHolder.pass(toolItem);
 	}
 
 	@Override
@@ -417,21 +418,21 @@ public class LootItem extends LootGearItem {
 				String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
 	}
 
-	/** Hold-style traits run while the tool is actually held. */
+	/** Hold-style traits run while the tool is the selected hotbar item. */
 	@Override
-	protected EquipmentSlot holdSlot(ItemStack stack) {
-		return EquipmentSlot.MAINHAND;
+	protected boolean isInHoldSlot(ItemStack stack, Entity holder, int slotId, boolean selected) {
+		return selected;
 	}
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
 	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
 	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
 	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
 	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
 
 	/**
 	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:

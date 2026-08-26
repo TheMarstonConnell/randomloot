@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -59,7 +61,7 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Munchies(tag.getStringOr(NAME, "Munchies"), ModifierConstants.getLevel(tag, 1));
+		return new Munchies(NbtCompat.getStringOr(tag, NAME, "Munchies"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

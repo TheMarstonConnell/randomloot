@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
@@ -25,7 +27,7 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Soulbound(tag.getStringOr(NAME, "Soulbound"));
+		return new Soulbound(NbtCompat.getStringOr(tag, NAME, "Soulbound"));
 	}
 
 	@Override

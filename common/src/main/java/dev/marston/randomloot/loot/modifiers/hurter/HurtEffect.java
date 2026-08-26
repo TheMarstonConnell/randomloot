@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EffectModifier;
@@ -25,7 +27,7 @@ public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect, this.format);
+		return new HurtEffect(NbtCompat.getStringOr(tag, NAME, this.name), this.tagname, NbtCompat.getIntOr(tag, POWER, 0), this.duration, this.effect, this.format);
 	}
 
 	@Override

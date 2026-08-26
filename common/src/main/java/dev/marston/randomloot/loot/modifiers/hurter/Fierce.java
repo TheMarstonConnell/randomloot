@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -25,7 +27,7 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fierce(tag.getStringOr(NAME, "Fierce"));
+		return new Fierce(NbtCompat.getStringOr(tag, NAME, "Fierce"));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -46,7 +48,7 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Combo(tag.getStringOr(ModifierConstants.NAME, "Dexterous"), tag.getIntOr(ModifierConstants.POINTS, 2), tag.getLongOr(ModifierConstants.CHARGED, 0L));
+		return new Combo(NbtCompat.getStringOr(tag, ModifierConstants.NAME, "Dexterous"), NbtCompat.getIntOr(tag, ModifierConstants.POINTS, 2), NbtCompat.getLongOr(tag, ModifierConstants.CHARGED, 0L));
 	}
 
 	@Override

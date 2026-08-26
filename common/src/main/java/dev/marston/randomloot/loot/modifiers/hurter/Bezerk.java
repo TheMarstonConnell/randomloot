@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -30,7 +32,7 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Bezerk(tag.getStringOr(NAME, "Bezerk"));
+		return new Bezerk(NbtCompat.getStringOr(tag, NAME, "Bezerk"));
 	}
 
 	@Override

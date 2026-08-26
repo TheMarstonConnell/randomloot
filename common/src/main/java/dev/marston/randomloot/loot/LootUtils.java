@@ -15,7 +15,6 @@ import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
@@ -38,17 +37,14 @@ import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.ItemOwner;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.equipment.Equippable;
-import net.minecraft.world.item.equipment.EquipmentAsset;
-import net.minecraft.world.item.equipment.EquipmentAssets;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
@@ -59,24 +55,19 @@ import java.util.Map.Entry;
 
 public class LootUtils {
 
-	public record TextureProperty() implements RangeSelectItemModelProperty {
-		public static final MapCodec<TextureProperty> MAP_CODEC = MapCodec.unit(new TextureProperty());
-
-		@Override
-		public float get(ItemStack stack, @Nullable ClientLevel level, @Nullable ItemOwner owner, int seed) {
-			if (level != null && LootUtils.isRolling(stack)) {
-				long ticksLeft = LootUtils.getRollEnd(stack) - level.getGameTime();
-				if (ticksLeft > 0) {
-					return LootUtils.rollingTexture(stack, ticksLeft, seed);
-				}
+	/**
+	 * The {@code randomloot:cosmetic} item-model property value (1.21.1 uses classic
+	 * {@code ItemProperties} predicates + model {@code overrides}; each loader's client
+	 * init registers a lambda that calls this).
+	 */
+	public static float modelTexture(ItemStack stack, @Nullable ClientLevel level, int seed) {
+		if (level != null && LootUtils.isRolling(stack)) {
+			long ticksLeft = LootUtils.getRollEnd(stack) - level.getGameTime();
+			if (ticksLeft > 0) {
+				return LootUtils.rollingTexture(stack, ticksLeft, seed);
 			}
-			return LootUtils.getTexture(stack);
 		}
-
-		@Override
-		public MapCodec<? extends RangeSelectItemModelProperty> type() {
-			return MAP_CODEC;
-		}
+		return LootUtils.getTexture(stack);
 	}
 
 	private static int PICKAXE_COUNT = 22;
@@ -118,8 +109,8 @@ public class LootUtils {
 		}
 
 		GearTags.write(stack, GearTags.ROLLING, tag);
-		// No identity yet: without EQUIPPABLE, rolling armor can't be worn either.
-		stack.remove(DataComponents.EQUIPPABLE);
+		// No identity yet: wearableSlot() returns null while rolling, so rolling
+		// armor can't be worn either.
 		// Rolling gear shows no attributes until the reveal.
 		refreshDerivedComponents(stack);
 	}
@@ -149,7 +140,7 @@ public class LootUtils {
 
 	/** Game time at which a rolling item settles; 0 when not rolling. */
 	public static long getRollEnd(ItemStack stack) {
-		return GearTags.read(stack, GearTags.ROLLING).getLongOr("endTime", 0L);
+		return NbtCompat.getLongOr(GearTags.read(stack, GearTags.ROLLING), "endTime", 0L);
 	}
 
 	/** Reveals the finished item: restores the stashed name and the worn-armor component. */
@@ -158,7 +149,7 @@ public class LootUtils {
 		GearTags.clear(stack, GearTags.ROLLING);
 
 		if (tag.contains("name")) {
-			setItemName(stack, tag.getStringOr("name", ""), tag.getStringOr("nameColor", "#FFFFFF"));
+			setItemName(stack, NbtCompat.getStringOr(tag, "name", ""), NbtCompat.getStringOr(tag, "nameColor", "#FFFFFF"));
 		}
 		updateEquippable(stack);
 		refreshDerivedComponents(stack);
@@ -344,7 +335,7 @@ public class LootUtils {
 	}
 
 	public static String getItemLore(ItemStack stack) {
-		return GearTags.read(stack, GearTags.LORE).getStringOr("itemLore", "");
+		return NbtCompat.getStringOr(GearTags.read(stack, GearTags.LORE), "itemLore", "");
 	}
 
 	public static int getMaxXP(int level) {
@@ -397,16 +388,16 @@ public class LootUtils {
 
 	/** Every trait written on the gear, including config-disabled ones. */
 	public static Set<String> rawTraitNames(ItemStack stack) {
-		return GearTags.read(stack, Modifier.MODTAG).keySet();
+		return GearTags.read(stack, Modifier.MODTAG).getAllKeys();
 	}
 
 	public static void addXp(ItemStack item, LivingEntity holder, int amount) {
 
 		CompoundTag tag = GearTags.read(item, GearTags.XP);
 
-		int level = tag.getIntOr("level", 0);
+		int level = NbtCompat.getIntOr(tag, "level", 0);
 
-		int xp = tag.getIntOr("xp", 0);
+		int xp = NbtCompat.getIntOr(tag, "xp", 0);
 
 		xp += amount;
 
@@ -429,11 +420,11 @@ public class LootUtils {
 	}
 
 	public static int getLevel(ItemStack item) {
-		return GearTags.read(item, GearTags.XP).getIntOr("level", 0);
+		return NbtCompat.getIntOr(GearTags.read(item, GearTags.XP), "level", 0);
 	}
 
 	public static int getXP(ItemStack item) {
-		return GearTags.read(item, GearTags.XP).getIntOr("xp", 0);
+		return NbtCompat.getIntOr(GearTags.read(item, GearTags.XP), "xp", 0);
 	}
 
 	public static ItemStack setLevelAndXP(ItemStack item, int level, int xp) {
@@ -451,10 +442,10 @@ public class LootUtils {
 
 		CompoundTag modifiers = GearTags.read(item, Modifier.MODTAG);
 
-        Set<String> mods = modifiers.keySet();
+        Set<String> mods = modifiers.getAllKeys();
 
         for (String string : mods) {
-            CompoundTag modTag = modifiers.getCompoundOrEmpty(string);
+            CompoundTag modTag = NbtCompat.getCompoundOrEmpty(modifiers, string);
 
             Modifier finalModifier = ModifierRegistry.loadModifier(string, modTag);
             if (finalModifier == null) {
@@ -480,7 +471,7 @@ public class LootUtils {
 			return;
 		}
 
-		Modifier oldModifier = mod.fromNBT(existing.getCompoundOrEmpty(mod.tagName()));
+		Modifier oldModifier = mod.fromNBT(NbtCompat.getCompoundOrEmpty(existing, mod.tagName()));
 
 		if (!oldModifier.canLevel()) {
 			return;
@@ -511,7 +502,7 @@ public class LootUtils {
 	}
 
 	public static float getStats(ItemStack stack) {
-		return GearTags.read(stack, GearTags.STATS).getFloatOr("goodness", 0f);
+		return NbtCompat.getFloatOr(GearTags.read(stack, GearTags.STATS), "goodness", 0f);
 	}
 
 	public static void setBiomeTemperature(ItemStack stack, float temperature) {
@@ -519,7 +510,7 @@ public class LootUtils {
 	}
 
 	public static float getBiomeTemperature(ItemStack stack) {
-		return GearTags.read(stack, GearTags.INFO).getFloatOr("biomeTemp", 0.7f);
+		return NbtCompat.getFloatOr(GearTags.read(stack, GearTags.INFO), "biomeTemp", 0.7f);
 	}
 
 	public static void setBiomeKey(ItemStack stack, String biomeKey) {
@@ -527,7 +518,7 @@ public class LootUtils {
 	}
 
 	public static String getBiomeKey(ItemStack stack) {
-		return GearTags.read(stack, GearTags.INFO).getStringOr("biomeKey", "");
+		return NbtCompat.getStringOr(GearTags.read(stack, GearTags.INFO), "biomeKey", "");
 	}
 
 	public static void setDimension(ItemStack stack, String dimension) {
@@ -535,7 +526,7 @@ public class LootUtils {
 	}
 
 	public static String getDimension(ItemStack stack) {
-		return GearTags.read(stack, GearTags.INFO).getStringOr("dimension", "minecraft:overworld");
+		return NbtCompat.getStringOr(GearTags.read(stack, GearTags.INFO), "dimension", "minecraft:overworld");
 	}
 
 	public static void setOwnerUUID(ItemStack stack, String uuid) {
@@ -543,7 +534,7 @@ public class LootUtils {
 	}
 
 	public static String getOwnerUUID(ItemStack stack) {
-		return GearTags.read(stack, GearTags.INFO).getStringOr("ownerUUID", "");
+		return NbtCompat.getStringOr(GearTags.read(stack, GearTags.INFO), "ownerUUID", "");
 	}
 
 	public static void setOwnerName(ItemStack stack, String name) {
@@ -551,7 +542,7 @@ public class LootUtils {
 	}
 
 	public static String getOwnerName(ItemStack stack) {
-		return GearTags.read(stack, GearTags.INFO).getStringOr("ownerName", "");
+		return NbtCompat.getStringOr(GearTags.read(stack, GearTags.INFO), "ownerName", "");
 	}
 
 	public static void setTexture(ItemStack stack, int texture) {
@@ -562,26 +553,31 @@ public class LootUtils {
 	}
 
 	/**
-	 * Rebuilds the per-stack EQUIPPABLE component for armor pieces so the equipment
-	 * slot and worn texture (equipment asset {@code randomloot:setN}) match the piece
-	 * type and cosmetic texture index. No-op for hand tools.
+	 * The slot this stack is worn in, or {@code null} when it can't be worn (hand
+	 * tools, and armor that is still rolling). 1.21.1 has no per-stack EQUIPPABLE
+	 * component, so both loaders' equipment-slot hooks and the worn-armor renderers
+	 * derive the slot (and texture set, via {@link #wornSetIndex}) on demand.
+	 */
+	@Nullable
+	public static EquipmentSlot wearableSlot(ItemStack stack) {
+		ToolType type = getToolType(stack);
+		if (!type.isArmor() || isRolling(stack)) {
+			return null;
+		}
+		return type.armorSlot();
+	}
+
+	/** The 1-based worn-texture set index for armor, tracking the cosmetic texture index. */
+	public static int wornSetIndex(ItemStack stack) {
+		return (getTextureIndex(stack) % ARMOR_SET_COUNT) + 1;
+	}
+
+	/**
+	 * 26.x rebuilt the per-stack EQUIPPABLE component here; on 1.21.1 the slot and
+	 * worn look are derived on demand instead (see {@link #wearableSlot}), so this
+	 * is a no-op kept so mutators stay line-for-line portable across branches.
 	 */
 	public static void updateEquippable(ItemStack stack) {
-		ToolType type = getToolType(stack);
-		if (!type.isArmor()) {
-			return;
-		}
-
-		// Rolling gear has no identity yet; finishRoll() re-runs this at the reveal.
-		if (isRolling(stack)) {
-			return;
-		}
-
-		int set = (getTextureIndex(stack) % ARMOR_SET_COUNT) + 1;
-		ResourceKey<EquipmentAsset> asset = ResourceKey.create(EquipmentAssets.ROOT_ID,
-				Identifier.fromNamespaceAndPath(RandomLoot.MODID, "set" + set));
-
-		stack.set(DataComponents.EQUIPPABLE, Equippable.builder(type.armorSlot()).setAsset(asset).build());
 	}
 
 	public static float getTexture(ItemStack stack) {
@@ -618,7 +614,7 @@ public class LootUtils {
 	}
 
 	public static int getTextureIndex(ItemStack stack) {
-		return GearTags.read(stack, GearTags.COSMETICS).getIntOr("texture", 0);
+		return NbtCompat.getIntOr(GearTags.read(stack, GearTags.COSMETICS), "texture", 0);
 	}
 
 	private static void storeBiomeData(ItemStack lootItem, Level level, @Nullable BlockPos pos) {
@@ -633,20 +629,20 @@ public class LootUtils {
 		// Store biome key for modifier filtering
 		String biomeKey = "unknown";
 		if (biomeHolder.unwrapKey().isPresent()) {
-			biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
+			biomeKey = biomeHolder.unwrapKey().get().location().toString();
 		} else {
 			// Fallback: search registry for this biome
-			Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
+			Registry<Biome> biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
 			for (var entry : biomeRegistry.entrySet()) {
 				if (entry.getValue() == biomeHolder.value()) {
-					biomeKey = entry.getKey().identifier().toString();
+					biomeKey = entry.getKey().location().toString();
 					break;
 				}
 			}
 		}
 
 		setBiomeKey(lootItem, biomeKey);
-		setDimension(lootItem, level.dimension().identifier().toString());
+		setDimension(lootItem, level.dimension().location().toString());
 	}
 
 	private static String biomeKeyToReadableName(String biomeKey) {
@@ -701,7 +697,7 @@ public class LootUtils {
 	}
 
 	public static ToolType getToolType(ItemStack item) {
-		String type = GearTags.read(item, GearTags.INFO).getStringOr("type", "");
+		String type = NbtCompat.getStringOr(GearTags.read(item, GearTags.INFO), "type", "");
 		if (type.isEmpty()) {
 			return ToolType.NULL;
 		}

@@ -11,11 +11,11 @@ import dev.marston.randomloot.loot.modifiers.KillDispatcher;
 import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
-import fuzs.forgeconfigapiport.fabric.api.v5.ConfigRegistry;
-import fuzs.forgeconfigapiport.fabric.api.v5.ModConfigEvents;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeConfigRegistry;
+import fuzs.forgeconfigapiport.fabric.api.neoforge.v4.NeoForgeModConfigEvents;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
+import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -42,11 +42,11 @@ public class RandomLootFabric implements ModInitializer {
         RandomLoot.commonSetup();
 
         // NeoForge-style TOML config via Forge Config API Port; same file name on both loaders.
-        ConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
-        ModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
+        NeoForgeConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
+        NeoForgeModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
         // Both registrations matter: dropping .reloading silently breaks /reload-time
         // config refresh, which NeoForge gets from the single ModConfigEvent.
-        ModConfigEvents.reloading(RandomLoot.MODID).register(config -> Config.onLoad());
+        NeoForgeModConfigEvents.reloading(RandomLoot.MODID).register(config -> Config.onLoad());
         GameHooks.bind(GameHook.CONFIG);
 
         registerEvents();
@@ -82,7 +82,7 @@ public class RandomLootFabric implements ModInitializer {
                 ModCommands.register(dispatcher));
         GameHooks.bind(GameHook.COMMANDS);
 
-        CreativeModeTabEvents.modifyOutputEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(output -> {
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(output -> {
             for (Item item : ModItems.creativeTabItems()) {
                 output.accept(item);
             }
@@ -99,7 +99,7 @@ public class RandomLootFabric implements ModInitializer {
         // Loot injection: the LootInjection policy is common; pools are Fabric's
         // delivery mechanism (NeoForge uses the case_item global loot modifier).
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
-            if (!LootInjection.matchesTable(key.identifier().getPath())) {
+            if (!LootInjection.matchesTable(key.location().getPath())) {
                 return;
             }
 

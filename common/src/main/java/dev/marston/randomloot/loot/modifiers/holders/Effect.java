@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EffectModifier;
@@ -28,7 +30,7 @@ public class Effect extends EffectModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration,
+		return new Effect(NbtCompat.getStringOr(tag, NAME, this.name), this.tagname, NbtCompat.getIntOr(tag, POWER, 0), this.duration,
 				this.effect, this.format);
 	}
 

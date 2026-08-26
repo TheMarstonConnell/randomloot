@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -10,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
@@ -53,7 +55,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 			List<Entity> items = level.getEntities(null, box);
 
 			for (Entity entity : items) {
-				if (entity.getType() != EntityTypes.ITEM) {
+				if (entity.getType() != EntityType.ITEM) {
 					continue;
 				}
 
@@ -64,22 +66,18 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 
 				ItemStack stack = i.getItem();
 
-				RecipeManager manager = serverLevel.recipeAccess();
+				RecipeManager manager = serverLevel.getRecipeManager();
 
-				Collection<RecipeHolder<?>> recipes = manager.getRecipes();
-				List<SingleItemRecipe> smeltingRecipes = recipes.stream()
+				List<SmeltingRecipe> smeltingRecipes = manager.getAllRecipesFor(RecipeType.SMELTING).stream()
 						.map(RecipeHolder::value)
-						.filter(r -> r.getType() == RecipeType.SMELTING)
-						.filter(r -> r instanceof SingleItemRecipe)
-						.map(r -> (SingleItemRecipe) r)
 						.toList();
 
-				for (SingleItemRecipe recipe : smeltingRecipes) {
+				for (SmeltingRecipe recipe : smeltingRecipes) {
 					if (!recipe.matches(new SingleRecipeInput(stack), level)) {
 						continue;
 					}
 
-					ItemStack result = recipe.assemble(new SingleRecipeInput(stack));
+					ItemStack result = recipe.assemble(new SingleRecipeInput(stack), serverLevel.registryAccess());
 
 					if (result.isEmpty()) {
 						continue;
@@ -91,7 +89,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 					ItemEntity k = new ItemEntity(level, i.getX(), i.getY(), i.getZ(), result);
 
 					i.setPos(i.position().x, -1, i.position().z);
-					i.kill(serverLevel);
+					i.discard();
 
 					level.addFreshEntity(k);
 
@@ -109,7 +107,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Melting(tag.getStringOr(NAME, "Melting"));
+		return new Melting(NbtCompat.getStringOr(tag, NAME, "Melting"));
 	}
 
 	@Override

@@ -20,10 +20,10 @@ import net.minecraft.network.codec.StreamCodec;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.item.crafting.*;
-import net.minecraft.world.item.crafting.display.RecipeDisplay;
-import net.minecraft.world.item.crafting.display.SlotDisplay;
-import net.minecraft.world.item.crafting.display.SmithingRecipeDisplay;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
@@ -32,8 +32,6 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	final Optional<Ingredient> template;
 	final Optional<Ingredient> base;
 	final String trait;
-	@Nullable
-	private PlacementInfo placementInfo;
 
 	// Reads {"id": <item>, "count": <int>} via Item.CODEC, which (unlike ItemStack.CODEC) does
 	// NOT require item data-components to be bound. Recipes are parsed during datapack load,
@@ -42,7 +40,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	// table (no recipe contributed it to the SMITHING_BASE set). Only the item type is needed.
 	private static final Codec<Holder<Item>> ADDITION_ITEM_CODEC = RecordCodecBuilder.create(
 			i -> i.group(
-							Item.CODEC.fieldOf("id").forGetter(holder -> holder),
+							BuiltInRegistries.ITEM.holderByNameCodec().fieldOf("id").forGetter(holder -> holder),
 							Codec.INT.optionalFieldOf("count", 1).forGetter(holder -> 1)
 					)
 					.apply(i, (item, count) -> item)
@@ -56,7 +54,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 					.apply(builder, TraitAdditionRecipe::new)
 	);
 	public static final StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> STREAM_CODEC = StreamCodec.composite(
-			Item.STREAM_CODEC,
+			ByteBufCodecs.holderRegistry(Registries.ITEM),
 			c -> c.additionItem,
 			ByteBufCodecs.STRING_UTF8,
 			c -> c.trait,
@@ -138,60 +136,34 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 
 	@Override
-	public ItemStack assemble(SmithingRecipeInput input) {
+	public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider provider) {
 		return this.getResult(input);
 	}
 
 	@Override
-	public String group() {
-		return "";
+	public ItemStack getResultItem(HolderLookup.Provider provider) {
+		// Recipe-book preview only; the real result is assembled per input.
+		return new ItemStack(ModItems.TOOL.get());
 	}
 
 	@Override
-	public boolean showNotification() {
-		return true;
+	public boolean isTemplateIngredient(ItemStack stack) {
+		return this.template.get().test(stack);
 	}
 
 	@Override
-	public Optional<Ingredient> templateIngredient() {
-		return this.template;
+	public boolean isBaseIngredient(ItemStack stack) {
+		return this.base.get().test(stack);
 	}
 
 	@Override
-	public Ingredient baseIngredient() {
-		return this.base.get();
-	}
-
-	@Override
-	public Optional<Ingredient> additionIngredient() {
-		return Optional.of(Ingredient.of(this.additionItem.value()));
+	public boolean isAdditionIngredient(ItemStack stack) {
+		return stack.is(this.additionItem.value());
 	}
 
 	@Override
 	public @NotNull RecipeSerializer<TraitAdditionRecipe> getSerializer() {
 		return Recipies.TRAIT_ADDITION_RECIPE.get();
-	}
-
-	@Override
-	public PlacementInfo placementInfo() {
-		if (this.placementInfo == null) {
-			this.placementInfo = PlacementInfo.createFromOptionals(List.of(templateIngredient(), Optional.of(baseIngredient()), additionIngredient()));
-		}
-
-		return this.placementInfo;
-	}
-
-	@Override
-	public List<RecipeDisplay> display() {
-		return List.of(
-				new SmithingRecipeDisplay(
-						Ingredient.optionalIngredientToDisplay(templateIngredient()),
-						baseIngredient().display(),
-						Ingredient.optionalIngredientToDisplay(additionIngredient()),
-						baseIngredient().display(),
-						new SlotDisplay.ItemSlotDisplay(Items.SMITHING_TABLE)
-				)
-		);
 	}
 }
 

@@ -1,9 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,8 +38,8 @@ public class DirtPlace extends PlaceOnUseModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new DirtPlace(
-			tag.getStringOr(NAME, NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace"),
-			tag.getIntOr(DAMAGE, 1)
+			NbtCompat.getStringOr(tag, NAME, NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace"),
+			NbtCompat.getIntOr(tag, DAMAGE, 1)
 		);
 	}
 

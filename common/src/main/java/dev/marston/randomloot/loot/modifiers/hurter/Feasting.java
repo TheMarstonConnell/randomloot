@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
@@ -48,7 +50,7 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Feasting(tag.getStringOr(NAME, "Feasting"));
+        return new Feasting(NbtCompat.getStringOr(tag, NAME, "Feasting"));
     }
 
     @Override
@@ -92,11 +94,11 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
 
         if (isWellFed(player)) {
             // Well fed: Apply haste for faster mining
-            MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 2, 0, true, false);
+            MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 2, 0, true, false);
             player.addEffect(haste);
         } else {
             // Hungry: Apply mining fatigue for slower mining
-            MobEffectInstance fatigue = new MobEffectInstance(MobEffects.MINING_FATIGUE, 2, 0, true, false);
+            MobEffectInstance fatigue = new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 2, 0, true, false);
             player.addEffect(fatigue);
         }
     }

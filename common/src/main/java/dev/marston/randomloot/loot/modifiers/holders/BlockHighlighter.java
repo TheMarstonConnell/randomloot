@@ -6,7 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -108,7 +108,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 
 	private static boolean hasMarker(Level level, BlockPos p) {
 		for (Entity entity : level.getEntities(null, new AABB(p))) {
-			if (entity.getType() == EntityTypes.SHULKER) {
+			if (entity.getType() == EntityType.SHULKER) {
 				return true;
 			}
 		}
@@ -116,7 +116,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	}
 
 	private static void spawnMarker(Level level, BlockPos p) {
-		Shulker se = new Shulker(EntityTypes.SHULKER, level);
+		Shulker se = new Shulker(EntityType.SHULKER, level);
 		se.setGlowingTag(true);
 		se.setInvulnerable(true);
 		se.setInvisible(true);

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.List;
 
 import dev.marston.randomloot.loot.ToolType;
@@ -69,7 +71,7 @@ public class Stench extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Stench(tag.getStringOr(NAME, "Stench"), ModifierConstants.getLevel(tag, 1));
+		return new Stench(NbtCompat.getStringOr(tag, NAME, "Stench"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override
@@ -92,7 +94,7 @@ public class Stench extends LeveledModifier implements HoldModifier {
 		List<Monster> hostileMobs = level.getEntitiesOfClass(Monster.class, searchBox);
 
 		for (Monster mob : hostileMobs) {
-			mob.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, EFFECT_DURATION, 0, false, true));
+			mob.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, EFFECT_DURATION, 0, false, true));
 			mob.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, EFFECT_DURATION, 0, false, true));
 		}
 	}

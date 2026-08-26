@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -12,7 +14,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -40,7 +42,7 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 
 	private static final ResourceKey<LootTable> LOOT_TABLE = ResourceKey.create(
 			Registries.LOOT_TABLE,
-			Identifier.fromNamespaceAndPath("randomloot", "prospector_drops"));
+			ResourceLocation.fromNamespaceAndPath("randomloot", "prospector_drops"));
 
 	public Prospector(String name, int level, int totalFinds) {
 		this.name = name;
@@ -123,9 +125,9 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new Prospector(
-				tag.getStringOr(NAME, "Prospector"),
+				NbtCompat.getStringOr(tag, NAME, "Prospector"),
 				ModifierConstants.getLevel(tag, 1),
-				tag.getIntOr(TOTAL_FINDS, 0));
+				NbtCompat.getIntOr(tag, TOTAL_FINDS, 0));
 	}
 
 	@Override

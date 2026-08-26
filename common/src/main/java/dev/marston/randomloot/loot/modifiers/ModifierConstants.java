@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import net.minecraft.nbt.CompoundTag;
 
 public final class ModifierConstants {
@@ -23,6 +25,6 @@ public final class ModifierConstants {
 	 * @param defaultLevel value to use when neither key is present
 	 */
 	public static int getLevel(CompoundTag tag, int defaultLevel) {
-		return tag.getIntOr(LEVEL, tag.getIntOr(LEGACY_LEVEL, defaultLevel));
+		return NbtCompat.getIntOr(tag, LEVEL, NbtCompat.getIntOr(tag, LEGACY_LEVEL, defaultLevel));
 	}
 }

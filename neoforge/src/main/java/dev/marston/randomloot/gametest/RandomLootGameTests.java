@@ -1,10 +1,5 @@
 package dev.marston.randomloot.gametest;
 
-import java.util.function.Consumer;
-
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.CaseLootModifier;
 import dev.marston.randomloot.loot.LootInjection;
@@ -13,22 +8,15 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.GameTest;
 import net.minecraft.gametest.framework.GameTestHelper;
-import net.minecraft.gametest.framework.GameTestInstance;
-import net.minecraft.gametest.framework.TestData;
-import net.minecraft.gametest.framework.TestEnvironmentDefinition;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.neoforged.bus.api.IEventBus;
-import net.neoforged.neoforge.common.loot.LootModifierManager;
-import net.neoforged.neoforge.resource.NeoForgeReloadListeners;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
 
 /**
  * In-world NeoForge GameTests for server-side logic that plain unit tests can't reach
@@ -37,97 +25,232 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  *
  * <p>Shared test bodies live in {@link GameTestBodies} (common); this class holds the
  * NeoForge registration plumbing plus the NeoForge-only tests (global loot modifiers,
- * the supportsEnchantment item-extension paths).
- *
- * <p>26.1's gametest system is data-driven. Vanilla's {@code FunctionGameTestInstance}
- * resolves test bodies from the {@code TEST_FUNCTION} registry, which is bootstrapped
- * before mods load and has no mod hook -- so a mod can't add functions there. Instead we
- * register a small custom {@link GameTestInstance} ({@link RLTestInstance}) that holds the
- * test body directly, and bind it through {@link RegisterGameTestsEvent}. Each test uses
- * the empty structure at {@code data/randomloot/structure/empty.nbt}.
+ * the supportsEnchantment item-extension paths). 1.21.1 uses the classic
+ * annotation-based framework (26.x's data-driven GameTestInstance doesn't exist here);
+ * each test runs in the empty structure at {@code data/randomloot/structure/empty.nbt}.
  */
-public final class RandomLootGameTests {
+@PrefixGameTestTemplate(false)
+public class RandomLootGameTests {
 
-	private RandomLootGameTests() {
-	}
-
-	private static final Identifier STRUCTURE = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "empty");
-
-	// GameTestInstance.codec() must resolve to an entry in this registry.
-	private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_INSTANCE_TYPES =
-			DeferredRegister.create(Registries.TEST_INSTANCE_TYPE, RandomLoot.MODID);
-	static {
-		TEST_INSTANCE_TYPES.register("rl_test", () -> RLTestInstance.CODEC);
-	}
+	private static final String TEMPLATE = "randomloot:empty";
 
 	public static void init(IEventBus modEventBus) {
-		TEST_INSTANCE_TYPES.register(modEventBus);
 		modEventBus.addListener(RandomLootGameTests::onRegisterGameTests);
 	}
 
 	public static void onRegisterGameTests(RegisterGameTestsEvent event) {
-		Holder<TestEnvironmentDefinition<?>> env =
-				event.registerEnvironment(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "default_env"));
-
-		register(event, env, "modifier_roundtrip", GameTestBodies::modifierRoundTrip);
-		register(event, env, "gen_tool", GameTestBodies::genTool);
-		register(event, env, "gen_tool_dispenser", GameTestBodies::genToolDispenser);
-		register(event, env, "dispenser_opens_case", GameTestBodies::dispenserOpensCase);
-		register(event, env, "case_opens_into_hand", GameTestBodies::caseOpensIntoHand);
-		register(event, env, "case_roll_reveal", GameTestBodies::caseRollReveal);
-		register(event, env, "deterministic_roll_lifecycles", GameTestBodies::deterministicRollLifecycles);
-		register(event, env, "break_block", GameTestBodies::breakBlock);
-		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
-		register(event, env, "advancements_load", GameTestBodies::advancementsLoad);
-		register(event, env, "xp_level_curve", GameTestBodies::xpLevelCurve);
-		register(event, env, "kill_trait_hooks", GameTestBodies::killTraitHooks);
-		register(event, env, "catalyst_extends_effects", GameTestBodies::catalystExtendsEffects);
-		register(event, env, "stench_debuffs_mobs", GameTestBodies::stenchDebuffsMobs);
-		register(event, env, "new_trait_recipes_load", GameTestBodies::newTraitRecipesLoad);
-		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
-		register(event, env, "tool_repairable", GameTestBodies::toolRepairable);
-		register(event, env, "armor_components", GameTestBodies::armorComponents);
-		register(event, env, "forger_world_constant", GameTestBodies::forgerWorldConstant);
-		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
-		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
-		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
-		register(event, env, "migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents);
-		register(event, env, "featherweight_softens_fall_damage", GameTestBodies::featherweightSoftensFallDamage);
-		register(event, env, "adrenaline_grants_speed", GameTestBodies::adrenalineGrantsSpeed);
-		register(event, env, "bulwark_blocks_some_hits", GameTestBodies::bulwarkBlocksSomeHits);
-		register(event, env, "unbreaking_skips_armor_durability", GameTestBodies::unbreakingSkipsArmorDurability);
-		register(event, env, "soulbound_owner_mines_faster", GameTestBodies::soulboundOwnerMinesFaster);
-		register(event, env, "enchanting_table_filters_by_type", GameTestBodies::enchantingTableFiltersByType);
-		register(event, env, "axe_tool_actions", GameTestBodies::axeToolActions);
-		register(event, env, "shovel_flattens", GameTestBodies::shovelFlattens);
-		register(event, env, "loot_injection_adds_cases", GameTestBodies::lootInjectionAddsCases);
-		register(event, env, "anvil_cannot_combine_loot_gear", GameTestBodies::anvilCannotCombineLootGear);
-		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
-		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
-		register(event, env, "admin_commands", GameTestBodies::adminCommands);
-		register(event, env, "smithing_trait_gating", GameTestBodies::smithingTraitGating);
-		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
-		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
-		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);
+		event.register(RandomLootGameTests.class);
 	}
 
-	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
-			String name, Consumer<GameTestHelper> body) {
-		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(env, STRUCTURE, 200, 0, true);
-		event.registerTest(Identifier.fromNamespaceAndPath(RandomLoot.MODID, name), new RLTestInstance(body, data));
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void modifier_roundtrip(GameTestHelper helper) {
+		GameTestBodies.modifierRoundTrip(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void gen_tool(GameTestHelper helper) {
+		GameTestBodies.genTool(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void gen_tool_dispenser(GameTestHelper helper) {
+		GameTestBodies.genToolDispenser(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void dispenser_opens_case(GameTestHelper helper) {
+		GameTestBodies.dispenserOpensCase(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void case_opens_into_hand(GameTestHelper helper) {
+		GameTestBodies.caseOpensIntoHand(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void case_roll_reveal(GameTestHelper helper) {
+		GameTestBodies.caseRollReveal(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void deterministic_roll_lifecycles(GameTestHelper helper) {
+		GameTestBodies.deterministicRollLifecycles(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void break_block(GameTestHelper helper) {
+		GameTestBodies.breakBlock(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void loot_modifiers_load(GameTestHelper helper) {
+		RandomLootGameTests.lootModifiersLoad(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void advancements_load(GameTestHelper helper) {
+		GameTestBodies.advancementsLoad(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void xp_level_curve(GameTestHelper helper) {
+		GameTestBodies.xpLevelCurve(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void kill_trait_hooks(GameTestHelper helper) {
+		GameTestBodies.killTraitHooks(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void catalyst_extends_effects(GameTestHelper helper) {
+		GameTestBodies.catalystExtendsEffects(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void stench_debuffs_mobs(GameTestHelper helper) {
+		GameTestBodies.stenchDebuffsMobs(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void new_trait_recipes_load(GameTestHelper helper) {
+		GameTestBodies.newTraitRecipesLoad(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void enchant_type_filtering(GameTestHelper helper) {
+		RandomLootGameTests.enchantTypeFiltering(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void tool_repairable(GameTestHelper helper) {
+		GameTestBodies.toolRepairable(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void armor_components(GameTestHelper helper) {
+		GameTestBodies.armorComponents(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void forger_world_constant(GameTestHelper helper) {
+		GameTestBodies.forgerWorldConstant(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void dirt_place_world_forger(GameTestHelper helper) {
+		GameTestBodies.dirtPlaceWorldForger(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void armor_xp_on_damage(GameTestHelper helper) {
+		GameTestBodies.armorXpOnDamage(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void thorny_reflects_for_player(GameTestHelper helper) {
+		GameTestBodies.thornyReflectsForPlayer(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void migration_restores_derived_components(GameTestHelper helper) {
+		GameTestBodies.migrationRestoresDerivedComponents(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void featherweight_softens_fall_damage(GameTestHelper helper) {
+		GameTestBodies.featherweightSoftensFallDamage(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void adrenaline_grants_speed(GameTestHelper helper) {
+		GameTestBodies.adrenalineGrantsSpeed(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void bulwark_blocks_some_hits(GameTestHelper helper) {
+		GameTestBodies.bulwarkBlocksSomeHits(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void unbreaking_skips_armor_durability(GameTestHelper helper) {
+		GameTestBodies.unbreakingSkipsArmorDurability(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void soulbound_owner_mines_faster(GameTestHelper helper) {
+		GameTestBodies.soulboundOwnerMinesFaster(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void enchanting_table_filters_by_type(GameTestHelper helper) {
+		GameTestBodies.enchantingTableFiltersByType(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void axe_tool_actions(GameTestHelper helper) {
+		GameTestBodies.axeToolActions(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void shovel_flattens(GameTestHelper helper) {
+		GameTestBodies.shovelFlattens(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void loot_injection_adds_cases(GameTestHelper helper) {
+		GameTestBodies.lootInjectionAddsCases(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void anvil_cannot_combine_loot_gear(GameTestHelper helper) {
+		GameTestBodies.anvilCannotCombineLootGear(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void armor_enchant_filtering(GameTestHelper helper) {
+		RandomLootGameTests.armorEnchantFiltering(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void armor_repairable(GameTestHelper helper) {
+		GameTestBodies.armorRepairable(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void admin_commands(GameTestHelper helper) {
+		GameTestBodies.adminCommands(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void smithing_trait_gating(GameTestHelper helper) {
+		GameTestBodies.smithingTraitGating(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void smithing_craft_sequence(GameTestHelper helper) {
+		GameTestBodies.smithingCraftSequence(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void clone_preserves_enchantments(GameTestHelper helper) {
+		GameTestBodies.clonePreservesEnchantments(helper);
+	}
+
+	@GameTest(template = TEMPLATE, timeoutTicks = 200)
+	public void loader_hooks_all_bound(GameTestHelper helper) {
+		GameTestBodies.loaderHooksAllBound(helper);
 	}
 
 	// --- NeoForge-only test bodies -------------------------------------------
 
 	/** Both global loot modifiers (which inject cases/templates into chest loot) actually loaded. */
 	private static void lootModifiersLoad(GameTestHelper helper) {
-		MinecraftServer server = helper.getLevel().getServer();
-		LootModifierManager manager = server.getServerResources().managers()
-				.getListener(NeoForgeReloadListeners.LOOT_MODIFIERS_KEY);
-
-		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "case_dungeon")) != null,
+		// 1.21.1 has no public handle on LootModifierManager; LOADED_ITEMS is filled by
+		// each modifier's constructor at datapack load, so it proves both JSONs parsed.
+		helper.assertTrue(CaseLootModifier.LOADED_ITEMS.contains(ModItems.CASE.get()),
 				"case_dungeon loot modifier should be loaded");
-		helper.assertTrue(manager.getModifier(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_dungeon")) != null,
+		helper.assertTrue(CaseLootModifier.LOADED_ITEMS.contains(ModItems.MOD_ADD.get()),
 				"trait_dungeon loot modifier should be loaded");
 
 		// Fabric enumerates LootInjection.entries(); NeoForge needs one hand-written JSON
@@ -197,36 +320,5 @@ public final class RandomLootGameTests {
 		helper.assertFalse(helmet.supportsEnchantment(sharpness), "armor must not accept sharpness");
 
 		helper.succeed();
-	}
-
-	/** A code-defined test instance: holds its body directly instead of a TEST_FUNCTION key. */
-	public static final class RLTestInstance extends GameTestInstance {
-		// Encodes only the TestData; decode yields a no-op body. These instances are registered
-		// BUILT_IN and run in-process, so the codec is never actually round-tripped.
-		public static final MapCodec<RLTestInstance> CODEC = RecordCodecBuilder.mapCodec(
-				i -> i.group(TestData.CODEC.forGetter(inst -> inst.info()))
-						.apply(i, info -> new RLTestInstance(helper -> {}, info)));
-
-		private final Consumer<GameTestHelper> body;
-
-		RLTestInstance(Consumer<GameTestHelper> body, TestData<Holder<TestEnvironmentDefinition<?>>> info) {
-			super(info);
-			this.body = body;
-		}
-
-		@Override
-		public void run(GameTestHelper helper) {
-			this.body.accept(helper);
-		}
-
-		@Override
-		public MapCodec<? extends GameTestInstance> codec() {
-			return CODEC;
-		}
-
-		@Override
-		protected MutableComponent typeDescription() {
-			return Component.literal("RandomLoot GameTest");
-		}
 	}
 }

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
@@ -58,7 +60,7 @@ public class Adrenaline extends LeveledModifier implements WearerHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Adrenaline(tag.getStringOr(NAME, "Adrenaline"), ModifierConstants.getLevel(tag, 0));
+		return new Adrenaline(NbtCompat.getStringOr(tag, NAME, "Adrenaline"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -69,7 +71,7 @@ public class Adrenaline extends LeveledModifier implements WearerHurtModifier {
 	@Override
 	public float onWearerHurt(ItemStack stack, LivingEntity wearer, DamageSource source, float damage) {
 
-		wearer.addEffect(new MobEffectInstance(MobEffects.SPEED, DURATION, this.level, false, false));
+		wearer.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, DURATION, this.level, false, false));
 
 		return damage;
 	}

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem;
@@ -47,7 +49,7 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new CrowdPleaser(tag.getStringOr(NAME, "Crowd Pleaser"));
+        return new CrowdPleaser(NbtCompat.getStringOr(tag, NAME, "Crowd Pleaser"));
     }
 
     @Override

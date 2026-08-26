@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -11,7 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
+import net.minecraft.world.entity.projectile.LargeFireball;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
@@ -40,7 +42,7 @@ public class FireBall extends AbstractModifier implements UseModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new FireBall(tag.getStringOr(NAME, "Flame Thrower"), tag.getIntOr(DAMAGE, 20));
+		return new FireBall(NbtCompat.getStringOr(tag, NAME, "Flame Thrower"), NbtCompat.getIntOr(tag, DAMAGE, 20));
 	}
 
 	@Override

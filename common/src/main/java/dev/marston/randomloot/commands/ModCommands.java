@@ -16,7 +16,7 @@ import net.minecraft.commands.Commands;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import com.mojang.brigadier.CommandDispatcher;
@@ -66,7 +66,7 @@ public class ModCommands {
 	/** Registers /randomloot; called from each loader's command-registration hook. */
 	public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
 		dispatcher.register(Commands.literal("randomloot")
-				.requires(Commands.hasPermission(Commands.LEVEL_GAMEMASTERS))
+				.requires(source -> source.hasPermission(Commands.LEVEL_GAMEMASTERS))
 				.then(Commands.literal("give")
 						.then(Commands.argument("type", StringArgumentType.word())
 								.suggests(GEAR_TYPES)
@@ -109,7 +109,7 @@ public class ModCommands {
 		Component name = stack.getDisplayName();
 
 		if (!player.getInventory().add(stack)) {
-			ItemEntity dropItem = new ItemEntity(EntityTypes.ITEM, player.level());
+			ItemEntity dropItem = new ItemEntity(EntityType.ITEM, player.level());
 			dropItem.setItem(stack);
 			dropItem.setPos(player.position());
 			player.level().addFreshEntity(dropItem);

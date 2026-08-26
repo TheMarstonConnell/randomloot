@@ -35,6 +35,7 @@ public class TextureChangeRecipe extends CustomRecipe {
 
 
 	public TextureChangeRecipe() {
+		super(CraftingBookCategory.MISC);
 	}
 
 	public static final TextureChangeRecipe INSTANCE = new TextureChangeRecipe();
@@ -74,7 +75,12 @@ public class TextureChangeRecipe extends CustomRecipe {
 	}
 
 	@Override
-	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput) {
+	public boolean canCraftInDimensions(int width, int height) {
+		return width * height >= 2;
+	}
+
+	@Override
+	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput, net.minecraft.core.HolderLookup.Provider provider) {
 		int modCount = 0;
 		List<ItemStack> stacks = craftingInput.items();
 

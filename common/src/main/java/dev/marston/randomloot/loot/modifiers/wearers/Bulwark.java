@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -56,7 +58,7 @@ public class Bulwark extends LeveledModifier implements WearerHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Bulwark(tag.getStringOr(NAME, "Bulwark"), ModifierConstants.getLevel(tag, 0));
+		return new Bulwark(NbtCompat.getStringOr(tag, NAME, "Bulwark"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -75,7 +77,7 @@ public class Bulwark extends LeveledModifier implements WearerHurtModifier {
 			return damage;
 		}
 
-		wearer.level().playSound(null, wearer.getX(), wearer.getY(), wearer.getZ(), SoundEvents.SHIELD_BLOCK.value(),
+		wearer.level().playSound(null, wearer.getX(), wearer.getY(), wearer.getZ(), SoundEvents.SHIELD_BLOCK,
 				wearer.getSoundSource(), 1.0f, 1.0f);
 
 		return damage / 2.0f;

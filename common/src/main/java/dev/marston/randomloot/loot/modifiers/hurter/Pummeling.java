@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -40,7 +42,7 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Pummeling(tag.getStringOr(NAME, "Pummeling"));
+        return new Pummeling(NbtCompat.getStringOr(tag, NAME, "Pummeling"));
     }
 
     @Override

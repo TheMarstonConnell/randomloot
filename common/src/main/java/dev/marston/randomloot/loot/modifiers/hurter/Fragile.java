@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -73,7 +75,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fragile(tag.getStringOr(NAME, "Fragile"), ModifierConstants.getLevel(tag, 1));
+		return new Fragile(NbtCompat.getStringOr(tag, NAME, "Fragile"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

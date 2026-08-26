@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -18,7 +20,7 @@ public class OreFinder extends BlockHighlighter {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new OreFinder(tag.getStringOr(NAME, "Detecting"));
+		return new OreFinder(NbtCompat.getStringOr(tag, NAME, "Detecting"));
 	}
 
 	@Override

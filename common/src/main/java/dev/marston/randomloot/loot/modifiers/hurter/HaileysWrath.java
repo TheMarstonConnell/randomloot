@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
@@ -11,9 +13,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -45,7 +46,7 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new HaileysWrath(tag.getStringOr(NAME, "Hailey's Wrath"));
+        return new HaileysWrath(NbtCompat.getStringOr(tag, NAME, "Hailey's Wrath"));
     }
 
     @Override
@@ -62,7 +63,7 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
 
         // Spawn a bee at the victim's location
         BlockPos pos = victim.blockPosition();
-        Entity bee = EntityTypes.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
+        Entity bee = EntityType.BEE.create(serverLevel, null, pos, net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, false, false);
         if (bee != null) {
             bee.setPos(victim.getX(), victim.getY(), victim.getZ());
             level.addFreshEntity(bee);

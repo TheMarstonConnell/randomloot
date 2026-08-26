@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -26,7 +28,7 @@ public class Rainy extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Rainy(tag.getStringOr(NAME, "Rainy"));
+		return new Rainy(NbtCompat.getStringOr(tag, NAME, "Rainy"));
 	}
 
 	@Override
@@ -53,7 +55,7 @@ public class Rainy extends AbstractModifier implements HoldModifier {
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		if (level.isRainingAt(holder.blockPosition())) {
 			// hold() runs every tick; a too-short duration makes the effect timer flicker.
-			MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 40, 2, false, false);
+			MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 40, 2, false, false);
 
 			if (holder instanceof LivingEntity le) {
 				le.addEffect(haste);

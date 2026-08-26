@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -47,7 +49,7 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new VoidTouched(tag.getStringOr(NAME, "Void-Touched"), ModifierConstants.getLevel(tag, 0));
+		return new VoidTouched(NbtCompat.getStringOr(tag, NAME, "Void-Touched"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

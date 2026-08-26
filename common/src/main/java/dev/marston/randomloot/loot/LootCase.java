@@ -11,6 +11,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -65,7 +66,7 @@ public class LootCase extends Item {
 	}
 
 	@Override
-	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack lootCase = player.getItemInHand(hand);
 		boolean consumeCase = !player.getAbilities().instabuild;
 
@@ -93,7 +94,7 @@ public class LootCase extends Item {
 		// stat to size the loot "goodness" curve, so it must only be counted once.
 		player.awardStat(Stats.ITEM_USED.get(this));
 
-		return InteractionResult.SUCCESS;
+		return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
 	}
 
 //	@Override

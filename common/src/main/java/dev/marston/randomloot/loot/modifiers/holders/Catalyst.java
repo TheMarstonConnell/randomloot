@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.ArrayList;
 
 import dev.marston.randomloot.loot.ToolType;
@@ -76,7 +78,7 @@ public class Catalyst extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Catalyst(tag.getStringOr(NAME, "Catalyst"), ModifierConstants.getLevel(tag, 1));
+		return new Catalyst(NbtCompat.getStringOr(tag, NAME, "Catalyst"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

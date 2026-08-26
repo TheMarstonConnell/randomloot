@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.List;
 
 import dev.marston.randomloot.loot.ToolType;
@@ -45,7 +47,7 @@ public class Hunter extends AbstractModifier implements HoldModifier {
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Hunter(tag.getStringOr(NAME, "Hunter"));
+        return new Hunter(NbtCompat.getStringOr(tag, NAME, "Hunter"));
     }
 
     @Override

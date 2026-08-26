@@ -5,7 +5,6 @@ import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.platform.ToolAction;
 import dev.marston.randomloot.platform.services.IPlatformHelper;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
@@ -34,6 +33,12 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public LootArmorItem createLootArmorItem(Item.Properties props) {
+        // Per-stack equipment slot (NeoForge overrides getEquipmentSlot instead);
+        // fabric-item-api-v1 injects equipmentSlot() into Item.Properties.
+        props.equipmentSlot((entity, stack) -> {
+            net.minecraft.world.entity.EquipmentSlot slot = dev.marston.randomloot.loot.LootUtils.wearableSlot(stack);
+            return slot != null ? slot : net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+        });
         return new LootArmorItem(props);
     }
 
@@ -53,11 +58,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
         // so modded blocks registered the standard Fabric way work here too.
         return switch (action) {
             case AXE_STRIP -> {
-                // Transformer-based registrations live outside the vanilla map.
-                BlockState custom = StrippableBlockRegistry.getStrippedBlockState(state);
-                if (custom != null) {
-                    yield custom;
-                }
+                // Fabric API's StrippableBlockRegistry feeds this same vanilla map.
                 Block stripped = AxeItem.STRIPPABLES.get(block);
                 yield stripped == null ? null : stripped.withPropertiesOf(state);
             }

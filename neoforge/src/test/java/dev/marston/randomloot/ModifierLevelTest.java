@@ -1,5 +1,7 @@
 package dev.marston.randomloot;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -48,10 +50,10 @@ class ModifierLevelTest {
 		Fragile f = new Fragile();
 		f.levelUp(); // 1 -> 2
 		CompoundTag tag = f.toNBT();
-		assertEquals(2, tag.getIntOr(ModifierConstants.LEVEL, -1));
+		assertEquals(2, NbtCompat.getIntOr(tag, ModifierConstants.LEVEL, -1));
 
 		Modifier restored = new Fragile().fromNBT(tag);
-		assertEquals(2, restored.toNBT().getIntOr(ModifierConstants.LEVEL, -1));
+		assertEquals(2, NbtCompat.getIntOr(restored.toNBT(), ModifierConstants.LEVEL, -1));
 	}
 
 	@Test
@@ -62,7 +64,7 @@ class ModifierLevelTest {
 
 		Modifier restored = new Fragile().fromNBT(legacy);
 		// Re-serializes under the canonical key with the level preserved.
-		assertEquals(2, restored.toNBT().getIntOr(ModifierConstants.LEVEL, -1));
+		assertEquals(2, NbtCompat.getIntOr(restored.toNBT(), ModifierConstants.LEVEL, -1));
 	}
 
 	@Test
@@ -73,7 +75,7 @@ class ModifierLevelTest {
 		legacy.putInt(ModifierConstants.LEGACY_LEVEL, 1);
 
 		CompoundTag out = new Hasty().fromNBT(legacy).toNBT();
-		assertEquals(1, out.getIntOr(ModifierConstants.LEVEL, -1));
-		assertEquals(1, out.getIntOr(ModifierConstants.POWER, -1));
+		assertEquals(1, NbtCompat.getIntOr(out, ModifierConstants.LEVEL, -1));
+		assertEquals(1, NbtCompat.getIntOr(out, ModifierConstants.POWER, -1));
 	}
 }

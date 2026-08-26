@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -25,7 +27,7 @@ public class Critical extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Critical(tag.getStringOr(NAME, "Critical"));
+		return new Critical(NbtCompat.getStringOr(tag, NAME, "Critical"));
 	}
 
 	@Override

@@ -29,7 +29,7 @@ public final class ArmorDispatcher {
 	 */
 	private static List<ItemStack> wornLootArmor(LivingEntity entity) {
 		List<ItemStack> worn = null;
-		for (EquipmentSlot slot : EquipmentSlot.VALUES) {
+		for (EquipmentSlot slot : EquipmentSlot.values()) {
 			if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
 				continue;
 			}

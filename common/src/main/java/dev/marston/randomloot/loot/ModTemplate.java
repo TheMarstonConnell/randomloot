@@ -5,6 +5,7 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -25,7 +26,7 @@ public class ModTemplate extends Item {
 	}
 
 	@Override
-	public InteractionResult use(Level level, Player player, InteractionHand hand) {
+	public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
 		ItemStack template = player.getItemInHand(hand);
 
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
@@ -43,7 +44,7 @@ public class ModTemplate extends Item {
 			player.setItemInHand(hand, s);
 		}
 
-		return InteractionResult.SUCCESS;
+		return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());
 	}
 
 //	@Override

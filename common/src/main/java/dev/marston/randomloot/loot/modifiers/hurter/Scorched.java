@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
@@ -40,7 +42,7 @@ public class Scorched extends LeveledModifier implements EntityHurtModifier, Hol
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Scorched(tag.getStringOr(NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
+		return new Scorched(NbtCompat.getStringOr(tag, NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -64,7 +66,7 @@ public class Featherweight extends LeveledModifier implements WearerHurtModifier
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Featherweight(tag.getStringOr(NAME, "Featherweight"), ModifierConstants.getLevel(tag, 0));
+		return new Featherweight(NbtCompat.getStringOr(tag, NAME, "Featherweight"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

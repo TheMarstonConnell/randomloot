@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -43,7 +45,7 @@ public class Healing extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(tag.getStringOr(NAME, "Living"), ModifierConstants.getLevel(tag, 1));
+		return new Healing(NbtCompat.getStringOr(tag, NAME, "Living"), ModifierConstants.getLevel(tag, 1));
 	}
 
 	@Override

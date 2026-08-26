@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -49,7 +51,7 @@ public class Magnetized extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Magnetized(tag.getStringOr(NAME, "Magnetized"));
+		return new Magnetized(NbtCompat.getStringOr(tag, NAME, "Magnetized"));
 	}
 
 	@Override

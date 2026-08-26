@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -131,7 +133,7 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Veiny(tag.getStringOr(NAME, "Veiny"), tag.getFloatOr(POWER, 5.0f));
+		return new Veiny(NbtCompat.getStringOr(tag, NAME, "Veiny"), NbtCompat.getFloatOr(tag, POWER, 5.0f));
 	}
 
 	@Override

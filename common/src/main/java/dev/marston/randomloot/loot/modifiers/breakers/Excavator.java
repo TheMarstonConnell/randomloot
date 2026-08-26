@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -119,7 +121,7 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Excavator(tag.getStringOr(NAME, "Excavator"));
+		return new Excavator(NbtCompat.getStringOr(tag, NAME, "Excavator"));
 	}
 
 	@Override

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
@@ -13,7 +15,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -42,7 +44,7 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), ModifierConstants.getLevel(tag, 0));
+		return new Overgrown(NbtCompat.getStringOr(tag, NAME, "Overgrown"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -69,11 +71,11 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		EntityType<?> type = hurtee.getType();
-		boolean isArthropod = type == EntityTypes.SPIDER ||
-							  type == EntityTypes.CAVE_SPIDER ||
-							  type == EntityTypes.SILVERFISH ||
-							  type == EntityTypes.ENDERMITE ||
-							  type == EntityTypes.BEE;
+		boolean isArthropod = type == EntityType.SPIDER ||
+							  type == EntityType.CAVE_SPIDER ||
+							  type == EntityType.SILVERFISH ||
+							  type == EntityType.ENDERMITE ||
+							  type == EntityType.BEE;
 
 		if (isArthropod) {
 			if (hurtee.level().isClientSide()) {
@@ -81,7 +83,7 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 			}
 			float bonusDamage = 2.5f + (this.level * 2.5f);
 			dealBonusDamage(hurtee, hurter, bonusDamage);
-			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, this.level));
+			hurtee.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 60, this.level));
 		}
 
 		return false;

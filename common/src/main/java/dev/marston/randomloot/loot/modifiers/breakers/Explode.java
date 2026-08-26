@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -56,7 +58,7 @@ public class Explode extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Explode(tag.getStringOr(NAME, "Explosive"), tag.getFloatOr(POWER, 4.0f));
+		return new Explode(NbtCompat.getStringOr(tag, NAME, "Explosive"), NbtCompat.getFloatOr(tag, POWER, 4.0f));
 	}
 
 	@Override

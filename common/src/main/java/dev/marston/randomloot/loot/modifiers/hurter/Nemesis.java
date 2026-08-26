@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -59,13 +61,13 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		String name = tag.getStringOr(NAME, "Nemesis");
+		String name = NbtCompat.getStringOr(tag, NAME, "Nemesis");
 		int level = ModifierConstants.getLevel(tag, 1);
 
 		Map<String, Integer> killCounts = new HashMap<>();
-		CompoundTag killCountsTag = tag.getCompoundOrEmpty(KILL_COUNTS);
-		for (String key : killCountsTag.keySet()) {
-			killCounts.put(key, killCountsTag.getIntOr(key, 0));
+		CompoundTag killCountsTag = NbtCompat.getCompoundOrEmpty(tag, KILL_COUNTS);
+		for (String key : killCountsTag.getAllKeys()) {
+			killCounts.put(key, NbtCompat.getIntOr(killCountsTag, key, 0));
 		}
 
 		return new Nemesis(name, level, killCounts);

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -50,8 +52,8 @@ public class Hasty extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Hasty(tag.getStringOr(NAME, "Hasty"),
-				ModifierConstants.getLevel(tag, tag.getIntOr(POWER, 0)));
+		return new Hasty(NbtCompat.getStringOr(tag, NAME, "Hasty"),
+				ModifierConstants.getLevel(tag, NbtCompat.getIntOr(tag, POWER, 0)));
 	}
 
 	@Override
@@ -77,7 +79,7 @@ public class Hasty extends LeveledModifier implements HoldModifier {
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		// hold() runs every tick; a too-short duration makes the effect timer flicker.
-		MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 40, this.level, true, false);
+		MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 40, this.level, true, false);
 
 		if (holder instanceof LivingEntity le) {
 			le.addEffect(haste);

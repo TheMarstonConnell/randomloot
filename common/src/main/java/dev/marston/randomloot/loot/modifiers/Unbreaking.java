@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -51,7 +53,7 @@ public class Unbreaking extends LeveledModifier {
 	}
 
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Unbreaking(tag.getStringOr(NAME, "Unbreaking"), ModifierConstants.getLevel(tag, 0));
+		return new Unbreaking(NbtCompat.getStringOr(tag, NAME, "Unbreaking"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	public boolean forTool(ToolType type) {

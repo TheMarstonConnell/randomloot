@@ -1,8 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.advancements.triggers.CriteriaTriggers;
+import net.minecraft.advancements.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -36,8 +38,8 @@ public class TorchPlace extends PlaceOnUseModifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return new TorchPlace(
-			tag.getStringOr(NAME, "Spelunking"),
-			tag.getIntOr(DAMAGE, 10)
+			NbtCompat.getStringOr(tag, NAME, "Spelunking"),
+			NbtCompat.getIntOr(tag, DAMAGE, 10)
 		);
 	}
 

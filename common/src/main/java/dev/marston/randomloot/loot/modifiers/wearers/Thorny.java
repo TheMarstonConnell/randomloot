@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.wearers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -55,7 +57,7 @@ public class Thorny extends LeveledModifier implements WearerHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Thorny(tag.getStringOr(NAME, "Thorny"), ModifierConstants.getLevel(tag, 0));
+		return new Thorny(NbtCompat.getStringOr(tag, NAME, "Thorny"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override

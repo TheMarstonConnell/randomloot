@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -48,7 +50,7 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Lumbering(tag.getStringOr(NAME, "Lumbering"));
+		return new Lumbering(NbtCompat.getStringOr(tag, NAME, "Lumbering"));
 	}
 
 	@Override

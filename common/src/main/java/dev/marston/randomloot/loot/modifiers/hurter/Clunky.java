@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -45,7 +47,7 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Clunky(tag.getStringOr(NAME, "Clunky"));
+        return new Clunky(NbtCompat.getStringOr(tag, NAME, "Clunky"));
     }
 
     @Override
@@ -59,7 +61,7 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
             return;
         }
 
-        living.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 40, 0, false, false));
+        living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 40, 0, false, false));
     }
 
     @Override

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.Random;
 
 import dev.marston.randomloot.loot.LootItem;
@@ -59,8 +61,8 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        String name = tag.getStringOr(NAME, "Chaotic");
-        long s = tag.getLongOr(SEED, 12345L); // Fixed default seed
+        String name = NbtCompat.getStringOr(tag, NAME, "Chaotic");
+        long s = NbtCompat.getLongOr(tag, SEED, 12345L); // Fixed default seed
         return new Chaotic(name, s);
     }
 

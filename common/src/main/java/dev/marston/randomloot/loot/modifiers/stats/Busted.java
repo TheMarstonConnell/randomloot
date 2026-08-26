@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.stats;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -21,7 +23,7 @@ public class Busted extends AbstractModifier implements StatsModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Busted(tag.getStringOr(NAME, "Busted"));
+		return new Busted(NbtCompat.getStringOr(tag, NAME, "Busted"));
 	}
 
 	@Override

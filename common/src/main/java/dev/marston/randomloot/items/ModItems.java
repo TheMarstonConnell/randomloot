@@ -8,7 +8,7 @@ import dev.marston.randomloot.loot.LootCase;
 import dev.marston.randomloot.loot.ModTemplate;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 
@@ -21,12 +21,12 @@ public class ModItems {
     // Datapack-editable anvil repair materials for Random Tools; see
     // data/randomloot/tags/item/tool_repair_materials.json (default: diamond).
     public static final TagKey<Item> TOOL_REPAIR_MATERIALS = TagKey.create(Registries.ITEM,
-            Identifier.fromNamespaceAndPath(RandomLoot.MODID, "tool_repair_materials"));
+            ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "tool_repair_materials"));
 
     // Datapack-editable anvil repair materials for Random Armor; see
     // data/randomloot/tags/item/armor_repair_materials.json (default: diamond).
     public static final TagKey<Item> ARMOR_REPAIR_MATERIALS = TagKey.create(Registries.ITEM,
-            Identifier.fromNamespaceAndPath(RandomLoot.MODID, "armor_repair_materials"));
+            ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "armor_repair_materials"));
 
     public static Supplier<Item> TOOL = Services.REG.registerItem("tool",
             p -> Services.PLATFORM.createLootItem(gearProps(p, TOOL_REPAIR_MATERIALS)));
@@ -39,11 +39,13 @@ public class ModItems {
     // crafting-grid ingredient for cycling loot gear textures.
     public static Supplier<Item> ESSENCE = Services.REG.registerItem("essence", Item::new);
 
-    /** Shared properties for both gear items: empty trait component, enchantable, tag-repairable. */
+    /**
+     * Shared properties for both gear items: empty trait component. Enchantability and
+     * tag-based repair live on LootGearItem (1.21.1 has no Properties.enchantable /
+     * repairable; the item methods are the API).
+     */
     private static Item.Properties gearProps(Item.Properties p, TagKey<Item> repairMaterials) {
-        return p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>()))
-                .enchantable(15)
-                .repairable(repairMaterials);
+        return p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>()));
     }
 
     /** Classloads the class so the item registrations above run. */

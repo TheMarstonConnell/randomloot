@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -13,7 +15,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -49,7 +51,7 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Charging(tag.getStringOr(ModifierConstants.NAME, "Charged"), tag.getIntOr(ModifierConstants.POINTS, 10), tag.getLongOr(ModifierConstants.CHARGED, 0L));
+		return new Charging(NbtCompat.getStringOr(tag, ModifierConstants.NAME, "Charged"), NbtCompat.getIntOr(tag, ModifierConstants.POINTS, 10), NbtCompat.getLongOr(tag, ModifierConstants.CHARGED, 0L));
 	}
 
 	@Override
@@ -98,7 +100,7 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 		long time = level.getGameTime();
 
 		if (ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
-			LightningBolt lb = new LightningBolt(EntityTypes.LIGHTNING_BOLT, level);
+			LightningBolt lb = new LightningBolt(EntityType.LIGHTNING_BOLT, level);
 			lb.setPos(hurtee.position());
 			if (hurter instanceof ServerPlayer) {
 				lb.setCause((ServerPlayer) hurter);

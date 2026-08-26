@@ -16,13 +16,13 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.enchantment.Enchantment;
 
 /**
@@ -49,11 +49,10 @@ public abstract class LootGearItem extends Item {
 	public abstract ItemAttributeModifiers buildAttributeModifiers(ItemStack stack);
 
 	/**
-	 * The slot in which hold-style traits run, or {@code null} when they should not run
-	 * at all (armor that isn't currently worn).
+	 * Whether hold-style traits should run this tick: the tool is the selected hotbar
+	 * item, or the armor piece is actually worn in its own slot.
 	 */
-	@Nullable
-	protected abstract EquipmentSlot holdSlot(ItemStack stack);
+	protected abstract boolean isInHoldSlot(ItemStack stack, Entity holder, int slotId, boolean selected);
 
 	/** The type-specific stat lines in the shift-expanded tooltip. */
 	protected abstract void appendStatLines(ItemStack stack, ToolType type, Consumer<Component> tips);
@@ -66,14 +65,28 @@ public abstract class LootGearItem extends Item {
 	 */
 	public abstract Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment);
 
+	/** 26.x sets this via Properties.enchantable(15); 1.21.1 reads the item method. */
+	@Override
+	public int getEnchantmentValue() {
+		return 15;
+	}
+
+	/** 26.x sets this via Properties.repairable(tag); 1.21.1 reads the item method. */
+	@Override
+	public boolean isValidRepairItem(@NotNull ItemStack stack, @NotNull ItemStack repairCandidate) {
+		return repairCandidate.is(this instanceof LootArmorItem
+				? dev.marston.randomloot.items.ModItems.ARMOR_REPAIR_MATERIALS
+				: dev.marston.randomloot.items.ModItems.TOOL_REPAIR_MATERIALS);
+	}
+
 	/** Durability derived from goodness; stored as the vanilla MAX_DAMAGE component. */
 	public static int computeMaxDamage(ItemStack stack) {
 		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
 	}
 
 	@Override
-	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
-		super.onCraftedBy(stack, player);
+	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Level level, @NotNull Player player) {
+		super.onCraftedBy(stack, level, player);
 		// Taking gear out of a smithing table means a trait recipe ran; crafting-table
 		// takes are the texture-change recipe, which doesn't alter traits.
 		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
@@ -93,7 +106,10 @@ public abstract class LootGearItem extends Item {
 	}
 
 	@Override
-	public void inventoryTick(ItemStack stack, ServerLevel level, Entity holder, EquipmentSlot slot) {
+	public void inventoryTick(ItemStack stack, Level lvl, Entity holder, int slotId, boolean selected) {
+		if (!(lvl instanceof ServerLevel level)) {
+			return;
+		}
 
 		// Migrates items from before attributes/durability moved to data components
 		// (they were dynamic NeoForge item-method overrides).
@@ -106,7 +122,7 @@ public abstract class LootGearItem extends Item {
 
 		// The GearTags.has guard skips the per-tick trait deserialization for
 		// trait-less gear.
-		if (slot != holdSlot(stack) || !GearTags.has(stack, Modifier.MODTAG)) {
+		if (!isInHoldSlot(stack, holder, slotId, selected) || !GearTags.has(stack, Modifier.MODTAG)) {
 			return;
 		}
 
@@ -118,9 +134,9 @@ public abstract class LootGearItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack item, TooltipContext pContext, TooltipDisplay display,
-			Consumer<Component> tipList, TooltipFlag pTooltipFlag) {
-		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList,
+	public void appendHoverText(ItemStack item, TooltipContext pContext, java.util.List<Component> tipList,
+			TooltipFlag pTooltipFlag) {
+		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList::add,
 				(type, tips) -> appendStatLines(item, type, tips));
 	}
 }

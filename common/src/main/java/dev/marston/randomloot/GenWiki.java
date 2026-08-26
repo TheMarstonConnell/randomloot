@@ -11,7 +11,7 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 
 import java.io.*;
 import java.util.*;
@@ -23,7 +23,7 @@ public class GenWiki {
     }
 
     private static String stripItemName(String name) {
-        Identifier loc = Identifier.tryParse(name);
+        ResourceLocation loc = ResourceLocation.tryParse(name);
         return loc.getPath();
     }
 

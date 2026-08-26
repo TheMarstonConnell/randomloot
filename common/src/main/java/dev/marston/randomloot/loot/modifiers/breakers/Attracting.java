@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -10,7 +12,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -50,7 +52,7 @@ public class Attracting extends AbstractModifier implements BlockBreakModifier {
 				List<Entity> items = level.getEntities(null, box);
 
 				for (Entity entity : items) {
-					if (entity.getType() == EntityTypes.ITEM) {
+					if (entity.getType() == EntityType.ITEM) {
 						entity.setPos(player.position());
 					}
 				}
@@ -62,7 +64,7 @@ public class Attracting extends AbstractModifier implements BlockBreakModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Attracting(tag.getStringOr(NAME, "Magnetic"));
+		return new Attracting(NbtCompat.getStringOr(tag, NAME, "Magnetic"));
 	}
 
 	@Override

@@ -11,7 +11,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
@@ -20,15 +20,18 @@ import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-import net.minecraft.world.item.component.TooltipDisplay;
 import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.equipment.Equippable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -75,7 +78,7 @@ public class LootArmorItem extends LootGearItem {
 		}
 
 		EquipmentSlotGroup group = EquipmentSlotGroup.bySlot(slot);
-		Identifier modifierId = Identifier.fromNamespaceAndPath(RandomLoot.MODID,
+		ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID,
 				"armor." + tt.name().toLowerCase(Locale.ROOT));
 
 		return ItemAttributeModifiers.builder()
@@ -90,9 +93,38 @@ public class LootArmorItem extends LootGearItem {
 
 	/** Hold-style traits run only while the piece is actually worn in its own slot. */
 	@Override
-	protected EquipmentSlot holdSlot(ItemStack stack) {
-		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
-		return equippable == null ? null : equippable.slot();
+	protected boolean isInHoldSlot(ItemStack stack, Entity holder, int slotId, boolean selected) {
+		EquipmentSlot slot = LootUtils.wearableSlot(stack);
+		return slot != null && holder instanceof LivingEntity living && living.getItemBySlot(slot) == stack;
+	}
+
+	/**
+	 * Right-click to equip. 26.x got this for free from the EQUIPPABLE component;
+	 * on 1.21.1 we swap into the piece's slot by hand (mirroring Equipable's
+	 * swapWithEquipmentSlot, which can't be used - its slot is item-level while
+	 * ours is per-stack).
+	 */
+	@Override
+	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
+		ItemStack stack = player.getItemInHand(hand);
+		EquipmentSlot slot = LootUtils.wearableSlot(stack);
+		if (slot == null) {
+			return InteractionResultHolder.pass(stack);
+		}
+
+		ItemStack worn = player.getItemBySlot(slot);
+		if ((!net.minecraft.world.item.enchantment.EnchantmentHelper.has(worn,
+				net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)
+				|| player.isCreative()) && !ItemStack.matches(stack, worn)) {
+			if (!level.isClientSide()) {
+				player.awardStat(net.minecraft.stats.Stats.ITEM_USED.get(this));
+			}
+			ItemStack swapped = worn.isEmpty() ? stack : worn.copyAndClear();
+			ItemStack equipped = player.isCreative() ? stack.copy() : stack.copyAndClear();
+			player.setItemSlot(slot, equipped);
+			return InteractionResultHolder.sidedSuccess(swapped, level.isClientSide());
+		}
+		return InteractionResultHolder.fail(stack);
 	}
 
 	@Override
@@ -108,15 +140,15 @@ public class LootArmorItem extends LootGearItem {
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
 	private static final TagKey<Enchantment> ALL_ARMOR_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_armor"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "all_armor"));
 	private static final TagKey<Enchantment> HELMET_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "helmets"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "helmets"));
 	private static final TagKey<Enchantment> CHESTPLATE_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "chestplates"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "chestplates"));
 	private static final TagKey<Enchantment> LEGGINGS_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "leggings"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "leggings"));
 	private static final TagKey<Enchantment> BOOTS_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "boots"));
+			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "boots"));
 
 	/**
 	 * Mirrors {@link LootItem#supportsEnchantment}: the single armor item sits in every

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
@@ -19,7 +21,7 @@ public class TreasureFinder extends BlockHighlighter {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new TreasureFinder(tag.getStringOr(NAME, "Tomb Raider"));
+		return new TreasureFinder(NbtCompat.getStringOr(tag, NAME, "Tomb Raider"));
 	}
 
 	@Override

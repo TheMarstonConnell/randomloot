@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
@@ -45,7 +47,7 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Frozen(tag.getStringOr(NAME, "Frozen"), ModifierConstants.getLevel(tag, 0));
+		return new Frozen(NbtCompat.getStringOr(tag, NAME, "Frozen"), ModifierConstants.getLevel(tag, 0));
 	}
 
 	@Override
@@ -72,7 +74,7 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		int duration = 3 * 20;
-		hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, duration, this.level + 1, false, true));
+		hurtee.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, this.level + 1, false, true));
 		return false;
 	}
 

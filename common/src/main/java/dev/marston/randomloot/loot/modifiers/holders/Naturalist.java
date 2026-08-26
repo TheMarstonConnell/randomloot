@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -79,9 +81,9 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        String name = tag.getStringOr(NAME, "Naturalist");
+        String name = NbtCompat.getStringOr(tag, NAME, "Naturalist");
         int level = ModifierConstants.getLevel(tag, 1);
-        long lastUpdate = tag.getLongOr(LAST_UPDATE, 0L);
+        long lastUpdate = NbtCompat.getLongOr(tag, LAST_UPDATE, 0L);
         return new Naturalist(name, level, lastUpdate);
     }
 

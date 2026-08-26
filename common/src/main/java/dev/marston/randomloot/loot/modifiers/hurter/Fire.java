@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -42,7 +44,7 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Fire(tag.getStringOr(NAME, "Flaming"), tag.getIntOr(POINTS, BASE_SECONDS));
+		return new Fire(NbtCompat.getStringOr(tag, NAME, "Flaming"), NbtCompat.getIntOr(tag, POINTS, BASE_SECONDS));
 	}
 
 	@Override

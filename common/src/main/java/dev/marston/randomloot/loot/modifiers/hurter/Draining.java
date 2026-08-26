@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -39,7 +41,7 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Draining(tag.getStringOr(NAME, "Necrotic"), tag.getIntOr(POINTS, 2));
+		return new Draining(NbtCompat.getStringOr(tag, NAME, "Necrotic"), NbtCompat.getIntOr(tag, POINTS, 2));
 	}
 
 	@Override

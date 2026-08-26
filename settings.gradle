@@ -13,6 +13,8 @@ pluginManagement {
             }
             filter {
                 includeGroupAndSubgroups('net.fabricmc')
+                // Marker artifact for the classic (remapping) loom plugin id used on obfuscated MC versions.
+                includeGroup('fabric-loom')
             }
         }
     }

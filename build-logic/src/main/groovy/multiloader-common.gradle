@@ -10,9 +10,9 @@ base {
 version = mod_version
 group = mod_group_id
 
-// Minecraft 26.x ships and requires Java 25.
+// Minecraft 1.21.1 requires Java 21.
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(25)
+    toolchain.languageVersion = JavaLanguageVersion.of(21)
     withSourcesJar()
 }
 

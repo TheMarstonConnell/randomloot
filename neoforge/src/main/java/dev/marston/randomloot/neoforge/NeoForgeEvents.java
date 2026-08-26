@@ -1,9 +1,7 @@
 package dev.marston.randomloot.neoforge;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.commands.ModCommands;
-import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.KillDispatcher;
@@ -12,13 +10,9 @@ import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.fml.event.config.ModConfigEvent;
 import net.neoforged.neoforge.event.AnvilUpdateEvent;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.ArmorHurtEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
@@ -72,7 +66,7 @@ public final class NeoForgeEvents {
 
     @SubscribeEvent
     public static void onLivingDamagePost(LivingDamageEvent.Post event) {
-        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getInflictedDamage());
+        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getNewDamage());
     }
 
     @SubscribeEvent
@@ -117,19 +111,4 @@ public final class NeoForgeEvents {
         ModCommands.register(event.getDispatcher());
     }
 
-    // Mod-bus events below: @EventBusSubscriber auto-routes by event type in 26.x.
-
-    @SubscribeEvent
-    public static void onConfigLoad(ModConfigEvent event) {
-        Config.onLoad();
-    }
-
-    @SubscribeEvent
-    public static void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            for (Item item : ModItems.creativeTabItems()) {
-                event.accept(item);
-            }
-        }
-    }
 }

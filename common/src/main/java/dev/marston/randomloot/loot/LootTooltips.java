@@ -2,11 +2,10 @@ package dev.marston.randomloot.loot;
 
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
@@ -34,8 +33,7 @@ final class LootTooltips {
 	}
 
 	// The enchanting table's Standard Galactic Alphabet font.
-	private static final FontDescription ROLLING_FONT =
-			new FontDescription.Resource(Identifier.fromNamespaceAndPath("minecraft", "alt"));
+	private static final ResourceLocation ROLLING_FONT = ResourceLocation.fromNamespaceAndPath("minecraft", "alt");
 
 	// Gibberish in the enchanting-table tradition; SGA only maps a-z, so letters only.
 	private static final String[] ROLLING_WORDS = { "klaatu", "berata", "niktu", "phnglui", "xyzzy", "azimuth",
@@ -64,7 +62,7 @@ final class LootTooltips {
 	 * must not invoke this on a dedicated server.
 	 */
 	private static boolean isKeyDown(int leftKey, int rightKey) {
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
+		long window = net.minecraft.client.Minecraft.getInstance().getWindow().getWindow();
 		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, leftKey)
 				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, rightKey);
 	}

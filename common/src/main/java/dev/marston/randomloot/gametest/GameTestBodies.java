@@ -1,5 +1,7 @@
 package dev.marston.randomloot.gametest;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -28,18 +30,17 @@ import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.commands.Commands;
 import net.minecraft.gametest.framework.GameTestHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
-import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ServerAdvancementManager;
-import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -50,17 +51,15 @@ import net.minecraft.stats.Stats;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
-import net.minecraft.world.inventory.ContainerInput;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.Enchantments;
-import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.gamerules.GameRules;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
@@ -105,7 +104,7 @@ public final class GameTestBodies {
 		helper.assertTrue(type != ToolType.NULL, "generated item should have a real type");
 		if (type.isArmor()) {
 			helper.assertTrue(tool.is(ModItems.ARMOR.get()), "armor rolls should produce the RandomLoot armor item");
-			helper.assertTrue(tool.get(DataComponents.EQUIPPABLE) != null, "generated armor should be equippable");
+			helper.assertTrue(LootUtils.wearableSlot(tool) != null, "generated armor should be equippable");
 		} else {
 			helper.assertTrue(tool.is(ModItems.TOOL.get()), "tool rolls should produce the RandomLoot tool");
 		}
@@ -203,7 +202,7 @@ public final class GameTestBodies {
 		ItemStack held = player.getMainHandItem();
 		helper.assertTrue(LootUtils.isRolling(held), "freshly opened gear should be rolling");
 		helper.assertTrue(held.get(DataComponents.CUSTOM_NAME) == null, "rolling gear should hide its name");
-		helper.assertTrue(held.get(DataComponents.EQUIPPABLE) == null, "rolling gear should not be equippable");
+		helper.assertTrue(LootUtils.wearableSlot(held) == null, "rolling gear should not be equippable");
 		helper.assertTrue(heldAttributes(held).modifiers().isEmpty(),
 				"rolling gear should grant no attributes");
 		helper.assertTrue(LootUtils.getRollEnd(held) == helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS,
@@ -212,7 +211,7 @@ public final class GameTestBodies {
 		helper.onEachTick(() -> {
 			ItemStack inHand = player.getMainHandItem();
 			if (LootUtils.isRolling(inHand)) {
-				inHand.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
+				inHand.inventoryTick(helper.getLevel(), player, player.getInventory().selected, true);
 			}
 		});
 
@@ -222,7 +221,7 @@ public final class GameTestBodies {
 			helper.assertTrue(inHand.get(DataComponents.CUSTOM_NAME) != null,
 					"revealed gear should get its name back");
 			if (LootUtils.getToolType(inHand).isArmor()) {
-				helper.assertTrue(inHand.get(DataComponents.EQUIPPABLE) != null,
+				helper.assertTrue(LootUtils.wearableSlot(inHand) != null,
 						"revealed armor should become equippable");
 			}
 			helper.assertFalse(heldAttributes(inHand).modifiers().isEmpty(),
@@ -251,14 +250,14 @@ public final class GameTestBodies {
 
 		helper.assertTrue(heldAttributes(sword).modifiers().isEmpty(),
 				"rolling tool should have no attributes");
-		helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) == null,
+		helper.assertTrue(LootUtils.wearableSlot(chestplate) == null,
 				"rolling armor should not be equippable");
 		helper.assertTrue(heldAttributes(chestplate).modifiers().isEmpty(),
 				"rolling armor should have no attributes");
 
 		helper.onEachTick(() -> {
-			sword.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
-			chestplate.inventoryTick(helper.getLevel(), player, EquipmentSlot.OFFHAND);
+			sword.inventoryTick(helper.getLevel(), player, player.getInventory().selected, true);
+			chestplate.inventoryTick(helper.getLevel(), player, 0, false);
 		});
 
 		helper.succeedWhen(() -> {
@@ -270,8 +269,8 @@ public final class GameTestBodies {
 					"revealed tool should restore attributes");
 			helper.assertTrue(chestplate.get(DataComponents.CUSTOM_NAME) != null,
 					"revealed armor should restore its name");
-			helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) != null,
-					"revealed armor should restore its equippable component");
+			helper.assertTrue(LootUtils.wearableSlot(chestplate) != null,
+					"revealed armor should restore its equippable state");
 			helper.assertFalse(heldAttributes(chestplate).modifiers().isEmpty(),
 					"revealed armor should restore attributes");
 		});
@@ -283,8 +282,8 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Building an armor piece wires up the per-stack EQUIPPABLE component (slot + worn
-	 * texture asset) and produces positive defense and durability.
+	 * Building an armor piece wires up its equip slot + worn texture set and produces
+	 * positive defense and durability.
 	 */
 	public static void armorComponents(GameTestHelper helper) {
 		ItemStack helmet = new ItemStack(ModItems.ARMOR.get());
@@ -292,23 +291,19 @@ public final class GameTestBodies {
 		LootUtils.setToolType(helmet, ToolType.HELMET);
 		LootUtils.setTexture(helmet, 3);
 
-		Equippable equippable = helmet.get(DataComponents.EQUIPPABLE);
-		helper.assertTrue(equippable != null, "armor should carry an EQUIPPABLE component after setTexture");
-		helper.assertTrue(equippable.slot() == EquipmentSlot.HEAD, "helmet should equip in the head slot");
-		helper.assertTrue(equippable.assetId().isPresent()
-						&& equippable.assetId().get().identifier().toString().equals("randomloot:set4"),
-				"texture index 3 should map to equipment asset randomloot:set4");
+		helper.assertTrue(LootUtils.wearableSlot(helmet) != null, "armor should be equippable after setTexture");
+		helper.assertTrue(LootUtils.wearableSlot(helmet) == EquipmentSlot.HEAD, "helmet should equip in the head slot");
+		helper.assertTrue(LootUtils.wornSetIndex(helmet) == 4,
+				"texture index 3 should map to worn texture set 4");
 
 		helper.assertTrue(LootArmorItem.getDefense(helmet, ToolType.HELMET) > 0f,
 				"helmet should have positive defense");
 		helper.assertTrue(helmet.getMaxDamage() > 0, "helmet should have positive durability");
 
-		// Texture cycling wraps within the armor set count and keeps the asset in sync.
+		// Texture cycling wraps within the armor set count and keeps the worn set in sync.
 		LootUtils.addTexture(helmet, LootUtils.ARMOR_SET_COUNT - 3);
-		Equippable wrapped = helmet.get(DataComponents.EQUIPPABLE);
-		helper.assertTrue(wrapped != null && wrapped.assetId().isPresent()
-						&& wrapped.assetId().get().identifier().toString().equals("randomloot:set1"),
-				"texture cycling should wrap back to equipment asset randomloot:set1");
+		helper.assertTrue(LootUtils.wornSetIndex(helmet) == 1,
+				"texture cycling should wrap back to worn texture set 1");
 
 		helper.succeed();
 	}
@@ -376,7 +371,7 @@ public final class GameTestBodies {
 		float attackerHealth = attacker.getHealth();
 		float wearerHealth = player.getHealth();
 
-		helper.hurt(player, player.damageSources().playerAttack(attacker), 6.0f);
+		player.hurt(player.damageSources().playerAttack(attacker), 6.0f);
 
 		helper.assertTrue(player.getHealth() < wearerHealth, "the wearer should take damage");
 		helper.assertTrue(attacker.getHealth() < attackerHealth,
@@ -385,17 +380,11 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/**
-	 * A mock player that can actually be hurt: survival-ish abilities, and its
-	 * fake connection acknowledged as loaded - ServerPlayer.isInvulnerableTo
-	 * returns true until hasClientLoaded(), which a mock connection never
-	 * reaches on its own.
-	 */
+	/** A mock player that can actually be hurt: survival-ish abilities. */
 	private static ServerPlayer mockVulnerablePlayer(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.getAbilities().instabuild = false;
 		player.getAbilities().invulnerable = false;
-		player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket());
 		return player;
 	}
 
@@ -414,9 +403,9 @@ public final class GameTestBodies {
 		return piece;
 	}
 
-	/** PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer. */
+	/** PvP is off by default on the gametest server and gates player-vs-player damage. */
 	private static void enablePvp(GameTestHelper helper) {
-		helper.getLevel().getGameRules().set(GameRules.PVP, true, helper.getLevel().getServer());
+		helper.getLevel().getServer().setPvpAllowed(true);
 	}
 
 	/** An armor piece of the given type wearing the given trait leveled to its max. */
@@ -436,7 +425,7 @@ public final class GameTestBodies {
 	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, DamageSource source, float damage) {
 		wearer.setHealth(wearer.getMaxHealth());
 		wearer.invulnerableTime = 0;
-		helper.hurt(wearer, source, damage);
+		wearer.hurt(source, damage);
 	}
 
 	/**
@@ -461,7 +450,7 @@ public final class GameTestBodies {
 				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
 				"pre-migration item should have no stamped attributes");
 
-		tool.getItem().inventoryTick(tool, helper.getLevel(), player, EquipmentSlot.MAINHAND);
+		tool.getItem().inventoryTick(tool, helper.getLevel(), player, player.getInventory().selected, true);
 
 		helper.assertFalse(
 				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
@@ -499,9 +488,9 @@ public final class GameTestBodies {
 		LootUtils.addModifier(chest, ModifierRegistry.getModifier("adrenaline"));
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
-		helper.assertFalse(player.hasEffect(MobEffects.SPEED), "no speed before the hit");
+		helper.assertFalse(player.hasEffect(MobEffects.MOVEMENT_SPEED), "no speed before the hit");
 		freshHit(helper, player, player.damageSources().generic(), 4.0f);
-		helper.assertTrue(player.hasEffect(MobEffects.SPEED), "adrenaline should grant speed on hit");
+		helper.assertTrue(player.hasEffect(MobEffects.MOVEMENT_SPEED), "adrenaline should grant speed on hit");
 
 		helper.succeed();
 	}
@@ -603,7 +592,7 @@ public final class GameTestBodies {
 	private static boolean tableOffers(ItemStack stack, Holder<Enchantment> wanted, Holder<Enchantment> other) {
 		return EnchantmentHelper
 				.getAvailableEnchantmentResults(30, stack, Stream.of(wanted, other)).stream()
-				.anyMatch(instance -> instance.enchantment() == wanted);
+				.anyMatch(instance -> instance.enchantment == wanted);
 	}
 
 	/** A Random Axe strips logs (preserving the axis), scrapes and un-waxes copper. */
@@ -622,14 +611,14 @@ public final class GameTestBodies {
 				"stripping should preserve the log's axis");
 
 		BlockPos copperPos = new BlockPos(2, 1, 1);
-		helper.setBlock(copperPos, Blocks.COPPER_BLOCK.weathering().oxidized());
+		helper.setBlock(copperPos, Blocks.OXIDIZED_COPPER);
 		useOnBlock(helper, player, copperPos);
-		helper.assertBlockPresent(Blocks.COPPER_BLOCK.weathering().weathered(), copperPos);
+		helper.assertBlockPresent(Blocks.WEATHERED_COPPER, copperPos);
 
 		BlockPos waxedPos = new BlockPos(3, 1, 1);
-		helper.setBlock(waxedPos, Blocks.COPPER_BLOCK.waxed().unaffected());
+		helper.setBlock(waxedPos, Blocks.WAXED_COPPER_BLOCK);
 		useOnBlock(helper, player, waxedPos);
-		helper.assertBlockPresent(Blocks.COPPER_BLOCK.weathering().unaffected(), waxedPos);
+		helper.assertBlockPresent(Blocks.COPPER_BLOCK, waxedPos);
 
 		helper.succeed();
 	}
@@ -703,7 +692,7 @@ public final class GameTestBodies {
 	 */
 	public static void lootInjectionAddsCases(GameTestHelper helper) {
 		var key = ResourceKey.create(Registries.LOOT_TABLE,
-				Identifier.withDefaultNamespace("chests/simple_dungeon"));
+				ResourceLocation.withDefaultNamespace("chests/simple_dungeon"));
 		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
 		helper.assertTrue(table != LootTable.EMPTY,
 				"simple_dungeon loot table should exist");
@@ -725,10 +714,10 @@ public final class GameTestBodies {
 	public static void armorXpOnDamage(GameTestHelper helper) {
 		ItemStack chest = newArmor(ToolType.CHESTPLATE);
 
-		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
 		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
 
-		helper.hurt(zombie, zombie.damageSources().generic(), 6.0f);
+		zombie.hurt(zombie.damageSources().generic(), 6.0f);
 
 		ItemStack worn = zombie.getItemBySlot(EquipmentSlot.CHEST);
 		helper.assertTrue(LootUtils.getXP(worn) > 0 || LootUtils.getLevel(worn) > 0,
@@ -741,9 +730,9 @@ public final class GameTestBodies {
 	public static void armorRepairable(GameTestHelper helper) {
 		ItemStack armor = new ItemStack(ModItems.ARMOR.get());
 
-		helper.assertTrue(armor.isValidRepairItem(new ItemStack(Items.DIAMOND)),
+		helper.assertTrue(armor.getItem().isValidRepairItem(armor, new ItemStack(Items.DIAMOND)),
 				"diamond should repair Random Armor (armor_repair_materials tag)");
-		helper.assertFalse(armor.isValidRepairItem(new ItemStack(Items.STICK)),
+		helper.assertFalse(armor.getItem().isValidRepairItem(armor, new ItemStack(Items.STICK)),
 				"stick should not repair Random Armor");
 
 		helper.succeed();
@@ -790,7 +779,7 @@ public final class GameTestBodies {
 		int damageBefore = tool.getDamageValue();
 		int xpBefore = LootUtils.getXP(tool);
 
-		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
 		zombie.setHealth(0.1f);
 		player.attack(zombie);
 
@@ -799,12 +788,12 @@ public final class GameTestBodies {
 				"a real weapon hit should award one tool XP");
 		helper.assertTrue(tool.getDamageValue() == damageBefore + 1,
 				"a real weapon hit should consume one durability");
-		helper.assertEntityPresent(EntityTypes.BEE);
+		helper.assertEntityPresent(EntityType.BEE);
 
 		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
 				.filter(m -> m.tagName().equals("nemesis")).findFirst().orElse(null);
 		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
-		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		int zombieKills = NbtCompat.getIntOr(NbtCompat.getCompoundOrEmpty(nemesis.toNBT(), "killCounts"), "minecraft:zombie", 0);
 		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
 		assertAdvancementDone(helper, player, "beekeeper");
 
@@ -820,7 +809,7 @@ public final class GameTestBodies {
 	public static void catalystExtendsEffects(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-		player.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 0, false, false));
+		player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 100, 0, false, false));
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
 		ItemStack tool = newTool(ToolType.SWORD);
@@ -828,10 +817,10 @@ public final class GameTestBodies {
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		for (int i = 0; i < 200; i++) {
-			tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
+			tool.inventoryTick(helper.getLevel(), player, player.getInventory().selected, true);
 		}
 
-		MobEffectInstance speed = player.getEffect(MobEffects.SPEED);
+		MobEffectInstance speed = player.getEffect(MobEffects.MOVEMENT_SPEED);
 		MobEffectInstance poison = player.getEffect(MobEffects.POISON);
 		helper.assertTrue(speed != null && speed.getDuration() > 100,
 				"catalyst should extend the beneficial speed effect, got "
@@ -850,22 +839,22 @@ public final class GameTestBodies {
 	 * and the {@code minecraft:cinnabar}/{@code minecraft:sulfur} ids resolve.
 	 */
 	public static void newTraitRecipesLoad(GameTestHelper helper) {
-		var recipes = helper.getLevel().recipeAccess().getRecipes();
+		var recipes = helper.getLevel().getRecipeManager().getRecipes();
 
-		record Expected(String trait, Identifier ingredient) {
+		record Expected(String trait, ResourceLocation ingredient) {
 		}
 		Expected[] expected = {
-				new Expected("catalyst", Identifier.withDefaultNamespace("cinnabar")),
-				new Expected("stench", Identifier.withDefaultNamespace("sulfur")),
+				new Expected("catalyst", ResourceLocation.withDefaultNamespace("cinnabar")),
+				new Expected("stench", ResourceLocation.withDefaultNamespace("sulfur")),
 		};
 
 		for (Expected e : expected) {
 			helper.assertTrue(BuiltInRegistries.ITEM.containsKey(e.ingredient()),
 					"ingredient item should exist: " + e.ingredient());
 
-			Identifier recipeId = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + e.trait());
+			ResourceLocation recipeId = ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + e.trait());
 			boolean present = recipes.stream().anyMatch(
-					h -> h.id().identifier().equals(recipeId) && h.value() instanceof TraitAdditionRecipe);
+					h -> h.id().equals(recipeId) && h.value() instanceof TraitAdditionRecipe);
 			helper.assertTrue(present, "trait recipe should load: " + recipeId);
 		}
 
@@ -876,7 +865,7 @@ public final class GameTestBodies {
 	public static void stenchDebuffsMobs(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity zombie = helper.spawn(EntityType.ZOMBIE, new BlockPos(1, 2, 1));
 		// Stand the holder on the zombie so it's well within the aura radius.
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
@@ -884,9 +873,9 @@ public final class GameTestBodies {
 		LootUtils.addModifier(tool, ModifierRegistry.getModifier("stench"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
-		tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
+		tool.inventoryTick(helper.getLevel(), player, player.getInventory().selected, true);
 
-		helper.assertTrue(zombie.hasEffect(MobEffects.SLOWNESS), "stench should slow nearby hostiles");
+		helper.assertTrue(zombie.hasEffect(MobEffects.MOVEMENT_SLOWDOWN), "stench should slow nearby hostiles");
 		helper.assertTrue(zombie.hasEffect(MobEffects.WEAKNESS), "stench should weaken nearby hostiles");
 
 		helper.succeed();
@@ -928,7 +917,7 @@ public final class GameTestBodies {
 				"lightning_strike", "beekeeper" };
 
 		for (String id : ids) {
-			helper.assertTrue(advancements.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id)) != null,
+			helper.assertTrue(advancements.get(ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, id)) != null,
 					"advancement " + id + " should be loaded");
 		}
 
@@ -937,7 +926,7 @@ public final class GameTestBodies {
 
 	private static void assertAdvancementDone(GameTestHelper helper, ServerPlayer player, String id) {
 		var advancement = helper.getLevel().getServer().getAdvancements()
-				.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id));
+				.get(ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, id));
 		helper.assertTrue(advancement != null, "advancement should be loaded: " + id);
 		helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
 				"gameplay sequence should complete advancement: " + id);
@@ -947,9 +936,9 @@ public final class GameTestBodies {
 	public static void toolRepairable(GameTestHelper helper) {
 		ItemStack tool = new ItemStack(ModItems.TOOL.get());
 
-		helper.assertTrue(tool.isValidRepairItem(new ItemStack(Items.DIAMOND)),
+		helper.assertTrue(tool.getItem().isValidRepairItem(tool, new ItemStack(Items.DIAMOND)),
 				"diamond should repair Random Tools (tool_repair_materials tag)");
-		helper.assertFalse(tool.isValidRepairItem(new ItemStack(Items.STICK)),
+		helper.assertFalse(tool.getItem().isValidRepairItem(tool, new ItemStack(Items.STICK)),
 				"stick should not repair Random Tools");
 
 		helper.succeed();
@@ -962,7 +951,7 @@ public final class GameTestBodies {
 	/** The /randomloot admin commands: give, trait add/remove (with gating), and xp. */
 	public static void adminCommands(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
+		CommandSourceStack source = player.createCommandSourceStack().withPermission(Commands.LEVEL_OWNERS);
 		CommandDispatcher<CommandSourceStack> commands = helper.getLevel().getServer().getCommands().getDispatcher();
 
 		helper.assertTrue(run(commands, source, "randomloot give sword") == 1, "give should succeed");
@@ -1011,7 +1000,7 @@ public final class GameTestBodies {
 
 		// The whole tree is gamemaster-gated, so an unprivileged source can't even see it.
 		CommandSourceStack noPerms = player.createCommandSourceStack()
-				.withMaximumPermission(PermissionSet.NO_PERMISSIONS);
+				.withMaximumPermission(Commands.LEVEL_ALL);
 		boolean denied;
 		try {
 			commands.execute("randomloot xp 1", noPerms);
@@ -1082,7 +1071,7 @@ public final class GameTestBodies {
 		helper.assertFalse(preview.isEmpty(), "the loaded critical recipe should produce a smithing result");
 		helper.assertTrue(hasTrait(preview, "critical"), "the smithing preview should contain critical");
 
-		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ClickType.PICKUP, player);
 		ItemStack crafted = menu.getCarried();
 		helper.assertFalse(crafted.isEmpty(), "taking the smithing result should put it on the cursor");
 		helper.assertTrue(hasTrait(crafted, "critical"), "the taken result should contain critical");

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.NbtCompat;
+
 
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
@@ -59,7 +61,7 @@ public class Executioner extends LeveledModifier implements EntityHurtModifier {
 
     @Override
     public Modifier fromNBT(CompoundTag tag) {
-        return new Executioner(tag.getStringOr(NAME, "Executioner"), ModifierConstants.getLevel(tag, 1));
+        return new Executioner(NbtCompat.getStringOr(tag, NAME, "Executioner"), ModifierConstants.getLevel(tag, 1));
     }
 
     @Override
