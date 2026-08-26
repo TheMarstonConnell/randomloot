@@ -26,7 +26,7 @@ def norm(path, pattern, repl):
         open(path, "w").write(re.sub(pattern, repl, s, flags=re.M))
 
 norm(os.path.join(root, "fabric.mod.json"),
-     r'"version": "[^"]+"', '"version": "__VERSION__"')
+     r'"version"\s*:\s*"[^"]+"', '"version":"__VERSION__"')
 norm(os.path.join(root, "META-INF", "neoforge.mods.toml"),
      r'^version="[^"]+"', 'version="__VERSION__"')
 norm(os.path.join(root, "META-INF", "MANIFEST.MF"),
