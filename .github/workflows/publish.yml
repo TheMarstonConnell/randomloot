@@ -13,15 +13,27 @@ permissions:
   contents: write
 
 jobs:
-  release:
+  # One tag releases every maintained Minecraft version at once: each matrix entry
+  # checks out its version branch's HEAD, builds + gametests it, and publishes.
+  build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: "26.x"
+            java: "25"
+          - branch: "1.21.1.x"
+            java: "21"
 
     steps:
       - uses: actions/checkout@v7
-      - name: Set up JDK 25
+        with:
+          ref: ${{ matrix.branch }}
+      - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: '25'
+          java-version: ${{ matrix.java }}
           distribution: 'temurin'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -105,14 +117,58 @@ jobs:
             exit 1
           fi
           ls -la dist/
-      - name: Release on GitHub
-        uses: softprops/action-gh-release@v3
+
+      # Skip CurseForge/Modrinth for a jar whose version-normalized content hash
+      # matches the previous release's jar for the same loader + Minecraft version:
+      # matching means no changes shipped for that version. Builds are reproducible
+      # (build-logic sets reproducible archives) and scripts/modhash.sh blanks the
+      # stamped release version before hashing, so identical code hashes identically.
+      - name: Compare against previous release
+        id: unchanged
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MC_VERSION: ${{ steps.mc_version.outputs.MC_VERSION }}
+        run: |
+          set -euo pipefail
+          PREV_TAG=$(gh release list --exclude-drafts --limit 20 --json tagName --jq '.[].tagName' \
+            | grep -v -Fx "${GITHUB_REF#refs/tags/}" | head -1 || true)
+
+          for LOADER in neoforge fabric; do
+            SKIP=false
+            JAR=$(find dist -maxdepth 1 -name "*-${LOADER}-*.jar" | head -1)
+            if [ -n "$PREV_TAG" ]; then
+              PREV_ASSET=$(gh release view "$PREV_TAG" --json assets \
+                --jq ".assets[].name | select(test(\"-${LOADER}-\")) | select(contains(\"${MC_VERSION}\"))" | head -1 || true)
+              if [ -n "$PREV_ASSET" ]; then
+                gh release download "$PREV_TAG" --pattern "$PREV_ASSET" --output /tmp/prev-${LOADER}.jar
+                NEW_HASH=$(./scripts/modhash.sh "$JAR")
+                OLD_HASH=$(./scripts/modhash.sh /tmp/prev-${LOADER}.jar)
+                echo "${LOADER}: new=$NEW_HASH prev=$OLD_HASH (from $PREV_TAG/$PREV_ASSET)"
+                if [ "$NEW_HASH" = "$OLD_HASH" ]; then
+                  SKIP=true
+                  echo "::notice::${LOADER} ${MC_VERSION} jar is unchanged since ${PREV_TAG}; skipping CurseForge/Modrinth."
+                fi
+              else
+                echo "${LOADER}: no previous ${MC_VERSION} asset on ${PREV_TAG}; publishing."
+              fi
+            else
+              echo "No previous release found; publishing everything."
+            fi
+            echo "SKIP_${LOADER^^}=$SKIP" >> "$GITHUB_OUTPUT"
+          done
+
+      # Every built jar still lands on the GitHub release (via the release job),
+      # unchanged or not — only the mod-platform uploads are skipped.
+      - name: Upload jars for the GitHub release
+        uses: actions/upload-artifact@v6
         with:
-          prerelease: ${{ steps.release.outputs.IS_PRE_RELEASE }}
-          files: dist/*.jar
+          name: jars-${{ steps.mc_version.outputs.MC_VERSION }}
+          path: dist/*.jar
 
       # One version entry per loader so CurseForge/Modrinth tag them correctly.
       - name: Publish NeoForge jar to CurseForge & Modrinth
+        if: steps.unchanged.outputs.SKIP_NEOFORGE != 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: bM2Gf75C
@@ -121,14 +177,15 @@ jobs:
           curseforge-token: ${{ secrets.CURSEFORGE }}
           changelog: "# Change Log\n\nClick [here](https://github.com/TheMarstonConnell/randomloot/releases/tag/v${{ steps.get_version.outputs.VERSION }}) for full list of changes."
           files: dist/*-neoforge-*.jar
-          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (NeoForge)"
-          version: "${{ steps.get_version.outputs.VERSION }}+neoforge"
+          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (NeoForge ${{ steps.mc_version.outputs.MC_VERSION }})"
+          version: "${{ steps.get_version.outputs.VERSION }}+mc${{ steps.mc_version.outputs.MC_VERSION }}-neoforge"
           version-type: ${{ steps.release.outputs.RELEASE_TYPE }}
           game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
           loaders: neoforge
-          java: 25
+          java: ${{ matrix.java }}
 
       - name: Publish Fabric jar to CurseForge & Modrinth
+        if: steps.unchanged.outputs.SKIP_FABRIC != 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: bM2Gf75C
@@ -137,9 +194,35 @@ jobs:
           curseforge-token: ${{ secrets.CURSEFORGE }}
           changelog: "# Change Log\n\nClick [here](https://github.com/TheMarstonConnell/randomloot/releases/tag/v${{ steps.get_version.outputs.VERSION }}) for full list of changes."
           files: dist/*-fabric-*.jar
-          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (Fabric)"
-          version: "${{ steps.get_version.outputs.VERSION }}+fabric"
+          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (Fabric ${{ steps.mc_version.outputs.MC_VERSION }})"
+          version: "${{ steps.get_version.outputs.VERSION }}+mc${{ steps.mc_version.outputs.MC_VERSION }}-fabric"
           version-type: ${{ steps.release.outputs.RELEASE_TYPE }}
           game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
           loaders: fabric
-          java: 25
+          java: ${{ matrix.java }}
+
+  # The GitHub release carries every version's jars, created once after all
+  # matrix builds pass.
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Classify release
+        id: release
+        shell: bash
+        run: |
+          case "${GITHUB_REF#refs/tags/}" in
+            *-alpha.*|*-beta.*|*-rc.*) echo "IS_PRE_RELEASE=true" >> "$GITHUB_OUTPUT" ;;
+            *) echo "IS_PRE_RELEASE=false" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - name: Download all built jars
+        uses: actions/download-artifact@v7
+        with:
+          pattern: jars-*
+          merge-multiple: true
+          path: dist
+      - name: Release on GitHub
+        uses: softprops/action-gh-release@v3
+        with:
+          prerelease: ${{ steps.release.outputs.IS_PRE_RELEASE }}
+          files: dist/*.jar
