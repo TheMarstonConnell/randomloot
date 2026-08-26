@@ -440,3 +440,38 @@ GenWiki reads from the code rather than restating it: config rows come from `Con
 Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` (and
 optionally `RL_WIKI_DIR=<repo root>`), e.g.
 `RL_PROD=false RL_WIKI_DIR=$PWD ./gradlew runGameTestServer`.
+
+## 1.21.1 Backport Branch (1.21.1.x)
+
+This branch is the 26.x codebase backported to MC 1.21.1 (NeoForge 21.1.x, Java 21).
+Port fixes across from 26.x; the mechanical API deltas are:
+
+- **Loom plugin id**: obfuscated MC needs the classic remapping plugin — id `fabric-loom`
+  (not `net.fabricmc.fabric-loom`, which is the 26.x no-remap variant) + `mappings
+  loom.officialMojangMappings()` + the `fabric-loom` marker group in settings.gradle's
+  repo filter. Access widener namespace is `named`.
+- **NbtCompat** (`loot/NbtCompat.java`) replaces the 26.x `getIntOr`-style CompoundTag
+  getters; `keySet()` → `getAllKeys()`; `Identifier` → `ResourceLocation`;
+  `.identifier()` → `.location()`; MobEffects use legacy names (`MOVEMENT_SLOWDOWN`,
+  `DIG_SPEED`, ...); `use()` returns `InteractionResultHolder`; `hurtEnemy` returns
+  boolean; `inventoryTick(Level, Entity, int, boolean)`.
+- **No EQUIPPABLE component**: `LootUtils.wearableSlot(stack)`/`wornSetIndex(stack)`
+  derive slot + worn look on demand. NeoForge routes `getEquipmentSlot`, Fabric the
+  `equipmentSlot()` item-setting; worn rendering = `LootArmorRendering` (common) via a
+  custom NeoForge layer / Fabric `ArmorRenderer`. Vanilla armor durability is
+  `instanceof ArmorItem`-gated on BOTH loaders, so `ArmorDispatcher.onLivingDamagePost`
+  applies durability (with the Unbreaking gate) itself.
+- **Item models**: classic `ItemProperties` predicate `randomloot:cosmetic` (registered
+  in each loader's client init) + `models/item/tool.json`/`armor.json` overrides (181
+  entries each, all types, so rolling can flash any look). The 26.x `items/` dir is gone.
+- **Gametests**: annotation-based on both loaders. NeoForge needs
+  `@GameTest(template = "empty", templateNamespace = MODID)` + `@PrefixGameTestTemplate(false)`
+  (a colon'd template silently registers ZERO tests). Mock players carry a private
+  60-tick `spawnInvulnerableTime` only `tick()` decrements — `mockVulnerablePlayer`
+  ticks it down. PvP is `server.setPvpAllowed(true)` (no game rule).
+- **GLMs need the index**: `data/neoforge/loot_modifiers/global_loot_modifiers.json`
+  (26.x auto-discovers). Recipe ingredients are object-form (`{"item": ...}`).
+  Cinnabar/sulfur/iron_chain don't exist → redstone / rotten_flesh / chain.
+- **Releases**: publish.yml (same file on 26.x) builds BOTH version branches per tag and
+  skips CurseForge/Modrinth for a jar whose `scripts/modhash.sh` hash matches the
+  previous release (reproducible archives are configured in build-logic).
