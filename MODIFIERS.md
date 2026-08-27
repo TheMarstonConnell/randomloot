@@ -53,11 +53,11 @@ These effects are applied when holding the tool.
 
 **Description:** Grants water breathing and Haste II when underwater.
 ### Catalyst
-**id:** `catalyst` | **crafting:** `minecraft:cinnabar` ![cinnabar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cinnabar.png)
+**id:** `catalyst` | **crafting:** `minecraft:redstone` ![redstone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/redstone.png)
 
 **Description:** While held or worn, your beneficial status effects last up to 2x longer.
 ### Clunky
-**id:** `clunky` | **crafting:** `minecraft:iron_chain` ![iron_chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_chain.png)
+**id:** `clunky` | **crafting:** `minecraft:chain` ![chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/chain.png)
 
 **Description:** Applies slowness to holder but extra knockback on hit
 ### Detecting
@@ -105,7 +105,7 @@ These effects are applied when holding the tool.
 
 **Description:** While holding or wearing this item, get the resistance I effect.
 ### Stench
-**id:** `stench` | **crafting:** `minecraft:sulfur` ![sulfur](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sulfur.png)
+**id:** `stench` | **crafting:** `minecraft:rotten_flesh` ![rotten_flesh](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/rotten_flesh.png)
 
 **Description:** Hostile mobs within 6 blocks are afflicted with Slowness and Weakness.
 ### Tomb Raider
@@ -153,7 +153,7 @@ These effects are applied when hurting enemies.
 
 **Description:** After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter.
 ### Clunky
-**id:** `clunky` | **crafting:** `minecraft:iron_chain` ![iron_chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/iron_chain.png)
+**id:** `clunky` | **crafting:** `minecraft:chain` ![chain](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/chain.png)
 
 **Description:** Applies slowness to holder but extra knockback on hit
 ### Critical
