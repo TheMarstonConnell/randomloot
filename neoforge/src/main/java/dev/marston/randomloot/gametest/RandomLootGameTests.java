@@ -203,6 +203,11 @@ public class RandomLootGameTests {
 	}
 
 	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void loot_injection_skips_block_drops(GameTestHelper helper) {
+		GameTestBodies.lootInjectionSkipsBlockDrops(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
 	public void anvil_cannot_combine_loot_gear(GameTestHelper helper) {
 		GameTestBodies.anvilCannotCombineLootGear(helper);
 	}

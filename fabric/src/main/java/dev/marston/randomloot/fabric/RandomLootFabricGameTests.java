@@ -160,6 +160,11 @@ public class RandomLootFabricGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
+        GameTestBodies.lootInjectionSkipsBlockDrops(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
     public void migrationRestoresDerivedComponents(GameTestHelper helper) {
         GameTestBodies.migrationRestoresDerivedComponents(helper);
     }

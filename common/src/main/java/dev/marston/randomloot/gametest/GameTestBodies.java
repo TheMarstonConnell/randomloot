@@ -63,6 +63,7 @@ import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParamSets;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.DispenserBlock;
@@ -717,6 +718,35 @@ public final class GameTestBodies {
 					.anyMatch(s -> s.is(ModItems.CASE.get()) || s.is(ModItems.MOD_ADD.get()));
 		}
 		helper.assertTrue(found, "chest loot should contain injected cases/templates");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Breaking a chest drops only the chest. Its block-drop table is named
+	 * "blocks/chest", which contains the default "chest" injection match, so the
+	 * injection used to fire on every chest broken - empty or player-placed alike -
+	 * handing out a case and a template for a block the player had just placed.
+	 * 200 rolls: a regression survives with probability ~1e-38.
+	 */
+	public static void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
+		var key = ResourceKey.create(Registries.LOOT_TABLE,
+				ResourceLocation.withDefaultNamespace("blocks/chest"));
+		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+		helper.assertTrue(table != LootTable.EMPTY, "chest block loot table should exist");
+
+		var params = new LootParams.Builder(helper.getLevel())
+				.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
+				.withParameter(LootContextParams.BLOCK_STATE, Blocks.CHEST.defaultBlockState())
+				.withParameter(LootContextParams.TOOL, ItemStack.EMPTY)
+				.create(LootContextParamSets.BLOCK);
+
+		for (int i = 0; i < 200; i++) {
+			for (ItemStack drop : table.getRandomItems(params)) {
+				helper.assertFalse(drop.is(ModItems.CASE.get()) || drop.is(ModItems.MOD_ADD.get()),
+						"breaking a chest should not drop " + drop.getItem());
+			}
+		}
 
 		helper.succeed();
 	}
