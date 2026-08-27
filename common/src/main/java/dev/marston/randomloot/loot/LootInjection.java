@@ -20,8 +20,27 @@ public final class LootInjection {
 	private LootInjection() {
 	}
 
-	/** Which loot tables get injected into; substring match, configurable (default: "chest"). */
+	/**
+	 * Loot tables a block drops when broken. Never an injection target however the
+	 * config is written: vanilla names the chest block's drop table
+	 * {@code blocks/chest} (likewise {@code blocks/trapped_chest} and
+	 * {@code blocks/ender_chest}), so the default "chest" substring matched it and
+	 * every chest broken - empty, player-placed, any of them - rolled a case and a
+	 * template on top of the chest item itself. Injection targets container loot.
+	 */
+	private static final String BLOCK_DROPS = "blocks/";
+
+	/**
+	 * Which loot tables get injected into; substring match, configurable (default:
+	 * "chest"), minus {@linkplain #BLOCK_DROPS block drops}. The exclusion is not
+	 * configurable because it isn't a preference - a table under {@code blocks/} is
+	 * what a block drops when broken, never chest loot.
+	 */
 	public static boolean matchesTable(String tablePath) {
+		if (tablePath.startsWith(BLOCK_DROPS)) {
+			return false;
+		}
+
 		for (String match : Config.LootTableMatches) {
 			if (tablePath.contains(match)) {
 				return true;
