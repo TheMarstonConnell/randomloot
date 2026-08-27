@@ -159,6 +159,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
+        GameTestBodies.lootInjectionSkipsBlockDrops(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void migrationRestoresDerivedComponents(GameTestHelper helper) {
         GameTestBodies.migrationRestoresDerivedComponents(helper);
     }

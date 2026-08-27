@@ -101,6 +101,7 @@ public final class RandomLootGameTests {
 		register(event, env, "axe_tool_actions", GameTestBodies::axeToolActions);
 		register(event, env, "shovel_flattens", GameTestBodies::shovelFlattens);
 		register(event, env, "loot_injection_adds_cases", GameTestBodies::lootInjectionAddsCases);
+		register(event, env, "loot_injection_skips_block_drops", GameTestBodies::lootInjectionSkipsBlockDrops);
 		register(event, env, "anvil_cannot_combine_loot_gear", GameTestBodies::anvilCannotCombineLootGear);
 		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
 		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
