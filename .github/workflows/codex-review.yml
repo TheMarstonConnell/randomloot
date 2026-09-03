@@ -17,9 +17,12 @@ permissions:
 
 jobs:
   review:
-    # CODEX_AUTH_JSON is absent on fork PRs (GitHub withholds secrets there),
-    # so skip rather than fail with an auth error. Every branch PR runs.
-    if: ${{ !github.event.pull_request.draft && secrets.CODEX_AUTH_JSON != '' }}
+    # Fork PRs cannot receive the CODEX_AUTH_JSON secret, so skip those
+    # (they would only fail with an auth error). Branch PRs always run: a
+    # missing secret fails loudly instead of silently skipping. NOTE: do not
+    # gate on secrets.* here — that breaks run creation (bogus instant-fail
+    # push runs, no pull_request run); compare by repo ownership instead.
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
     env:
       # Thread judging is a cheaper decision than a review pass and is tuned
