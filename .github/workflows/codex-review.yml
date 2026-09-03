@@ -109,7 +109,7 @@ jobs:
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict
           sudo mkdir -p /etc/apparmor.d/local
-          printf '%s\n' 'deny @{HOME}/.codex/auth.json r,' | \
+          printf '%s\n' 'deny /home/runner/.codex/auth.json r,' | \
             sudo tee /etc/apparmor.d/local/unpriv_bwrap > /dev/null
           sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
           mkdir -p ~/.codex
