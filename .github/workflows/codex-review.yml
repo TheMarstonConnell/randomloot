@@ -108,7 +108,7 @@ jobs:
       - name: Configure codex sandbox
         run: |
           sudo apt-get update
-          sudo apt-get install -y bubblewrap apparmor-profiles apparmor-utils
+          sudo apt-get install -y bubblewrap apparmor-profiles
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict
@@ -124,8 +124,17 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
         with:
           script: |
-            const gather = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/gather-threads.js`);
-            await gather({ github, context, core });
+            const fs = require('fs');
+            const { fetchThreads, candidates } = require(
+              `${process.env.GITHUB_WORKSPACE}/.github/codex/threads.js`
+            );
+            const found = candidates(await fetchThreads({ github, context }));
+            fs.writeFileSync(
+              `${process.env.CTX_DIR}/threads.json`,
+              JSON.stringify(found, null, 2)
+            );
+            core.setOutput('count', String(found.length));
+            core.info(`${found.length} open codex thread(s) to check`);
 
       - name: Judge open threads against the current tree
         id: judge_threads
@@ -135,23 +144,17 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-          mkdir -p ~/.codex
-          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
-          chmod 600 ~/.codex/auth.json
-          unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
             echo
             cat .github/codex/resolve-prompt.md
           } > "${CTX_DIR}/resolve-prompt-full.md"
-          codex exec \
-            --model gpt-5.6-sol \
-            -c model_reasoning_effort=medium \
-            --sandbox read-only \
-            --output-schema .github/codex/resolve-schema.json \
-            --output-last-message "${CTX_DIR}/resolutions.json" \
-            - < "${CTX_DIR}/resolve-prompt-full.md"
+          .github/codex/run-review.sh \
+            medium \
+            "${CTX_DIR}/resolve-prompt-full.md" \
+            .github/codex/resolve-schema.json \
+            "${CTX_DIR}/resolutions.json" \
+            false
 
       - name: Resolve addressed threads
         if: ${{ steps.judge_threads.outcome == 'success' }}
@@ -172,28 +175,11 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-          mkdir -p ~/.codex
-          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
-          chmod 600 ~/.codex/auth.json
-          unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
-          codex exec \
-            --model gpt-5.6-sol \
-            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
-            --sandbox read-only \
-            --output-schema .github/codex/review-schema.json \
-            --output-last-message "${CTX_DIR}/review.json" \
-            - < "${CTX_DIR}/prompt.md"
-
-      - name: Verify codex completed the review
-        env:
-          REVIEW_FILE: ${{ runner.temp }}/codex-review/review.json
-        run: |
-          if grep -Eqi 'review unavailable|sandbox (initialization )?failed|bwrap:.*failed' "$REVIEW_FILE"; then
-            echo "Codex could not inspect the repository" >&2
-            cat "$REVIEW_FILE" >&2
-            exit 1
-          fi
+          .github/codex/run-review.sh \
+            "$CODEX_REVIEW_EFFORT" \
+            "${CTX_DIR}/prompt.md" \
+            .github/codex/review-schema.json \
+            "${CTX_DIR}/review.json"
 
       - name: Post review
         uses: actions/github-script@v7
@@ -209,28 +195,11 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-          mkdir -p ~/.codex
-          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
-          chmod 600 ~/.codex/auth.json
-          unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
-          codex exec \
-            --model gpt-5.6-sol \
-            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
-            --sandbox read-only \
-            --output-schema .github/codex/minimalism-review-schema.json \
-            --output-last-message "${CTX_DIR}/minimalism-review.json" \
-            - < "${CTX_DIR}/minimalism-prompt.md"
-
-      - name: Verify codex completed the minimalism review
-        env:
-          REVIEW_FILE: ${{ runner.temp }}/codex-review/minimalism-review.json
-        run: |
-          if grep -Eqi 'review (could not be completed|unavailable)|sandbox (initialization )?failed|bwrap:.*failed' "$REVIEW_FILE"; then
-            echo "Codex could not inspect the repository" >&2
-            cat "$REVIEW_FILE" >&2
-            exit 1
-          fi
+          .github/codex/run-review.sh \
+            "$CODEX_REVIEW_EFFORT" \
+            "${CTX_DIR}/minimalism-prompt.md" \
+            .github/codex/minimalism-review-schema.json \
+            "${CTX_DIR}/minimalism-review.json"
 
       - name: Post minimalism review
         uses: actions/github-script@v7

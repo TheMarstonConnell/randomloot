@@ -29,7 +29,11 @@ module.exports = async ({ github, context, core }) => {
     const comments = await github.paginate(github.rest.issues.listComments, {
       ...repo, issue_number: pr.number, per_page: 100,
     });
-    const existing = comments.find((c) => c.body && c.body.includes(MARKER));
+    const existing = comments.find((c) =>
+      c.user?.type === 'Bot' &&
+      c.user.login === 'github-actions[bot]' &&
+      c.body?.includes(MARKER)
+    );
     if (existing) {
       await github.rest.issues.updateComment({ ...repo, comment_id: existing.id, body });
     } else {

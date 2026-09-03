@@ -1,29 +1,49 @@
-You are running unattended in CI. Follow the review process documented in
-`.github/codex/code-review-skill.md`, with these adaptations:
+You are running unattended in CI. Review the pull request on two independent
+axes:
 
-- **Fixed point**: already pinned above, do not ask for one. Capture
-  `git diff <fixed-point>...HEAD` (three-dot) and
-  `git log <fixed-point>..HEAD --oneline` as the skill describes.
-- **No sub-agents**: you cannot spawn parallel agents here. Run the Standards
-  axis first, then the Spec axis, keeping their findings strictly separate as
-  the skill demands.
-- **Spec source**: use the context files listed above (PR description and
-  linked issues) instead of the skill's issue-tracker workflow. If they contain
-  no real requirements, the Spec axis reports "no spec available", do not ask.
-- **Standards sources**: any standards docs present in the repo (for example
-  `claude.md`, `CONTRIBUTING.md`, `BIOMES.md`), plus the smell
-  baseline in the skill file.
-- You have read-only access: do not attempt to write files, run builds, or
-  reach the network.
+- **Standards:** Does the diff follow this repository's documented standards?
+- **Spec:** Does the diff implement what the PR description and linked issues
+  request, without missing behavior, incorrect behavior, or scope creep?
 
-Your final message must be JSON conforming to the provided schema.
+The fixed point and context files are listed above. Confirm the fixed point
+resolves, then inspect `git diff <fixed-point>...HEAD` (three-dot) and
+`git log <fixed-point>..HEAD --oneline`. A bad ref or empty diff is an error.
+Run Standards first and Spec second, and keep their findings separate.
 
-- `summary` is the skill's aggregated report: a `## Standards` section, a
-  `## Spec` section, and the closing one-line totals.
-- `findings` holds each distinct issue as an inline-comment candidate. `line`
-  must be a line of the NEW file version that appears in the diff (an added or
-  context line inside a hunk). Keep each `body` self-contained: cite the
-  standards file and rule, or the spec line, that it rests on. Use `blocking`
-  only for documented-standard breaches or spec violations; baseline smells
-  are `suggestion` or `nit`.
+For Standards, inspect repository guidance such as `claude.md`,
+`CONTRIBUTING.md`, and relevant domain documentation. Also apply this Fowler
+smell baseline to the diff:
+
+- **Mysterious Name:** a name does not reveal what it does or holds.
+- **Duplicated Code:** the same logic shape appears more than once.
+- **Feature Envy:** code reaches into another object's data more than its own.
+- **Data Clumps:** the same fields or parameters repeatedly travel together.
+- **Primitive Obsession:** a primitive stands in for a domain concept.
+- **Repeated Switches:** the same conditional dispatch recurs.
+- **Shotgun Surgery:** one logical change requires scattered edits.
+- **Divergent Change:** one module changes for unrelated reasons.
+- **Speculative Generality:** abstraction exists for an unrequested future.
+- **Message Chains:** callers depend on long navigation chains.
+- **Middle Man:** code mostly delegates without adding policy.
+- **Refused Bequest:** an implementation ignores most inherited behavior.
+
+Repository guidance overrides the smell baseline. Documented-standard breaches
+may be hard findings; smells are always judgment calls and must be labeled as
+possible smells. Skip anything tooling already enforces. For each Standards
+finding, cite the guidance file and rule or name the smell and quote the hunk.
+
+For Spec, use only the supplied PR and issue context. If they contain no real
+requirements, report "no spec available". For each finding, quote the relevant
+spec line and explain the missing or incorrect behavior or scope creep.
+
+You have read-only access: do not write files, run builds, or reach the network.
+Your final message must be JSON conforming to the provided schema:
+
+- `summary` contains a `## Standards` section, a `## Spec` section, and a final
+  line with finding totals and the worst issue on each axis, if any.
+- `findings` contains each distinct inline-comment candidate. `line` must be a
+  NEW-side line appearing in the diff. Each `body` must be self-contained and
+  cite the standard, smell, or spec line supporting it.
+- Use `blocking` only for documented-standard breaches or spec violations.
+  Smells are `suggestion` or `nit`.
 - If an axis is clean, say so in `summary` and return no findings for it.
