@@ -1,0 +1,191 @@
+name: Codex review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  # GitHub files pull requests under the code-bearing surface, so it refuses
+  # resolveReviewThread without write on contents.
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    if: ${{ !github.event.pull_request.draft }}
+    runs-on: ubuntu-latest
+    env:
+      # Thread judging is a cheaper decision than a review pass and is tuned
+      # independently.
+      CODEX_REVIEW_EFFORT: medium
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The PR head itself, not the merge ref: inline comments anchor to
+          # head-side line numbers, so the reviewed tree must match.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Full history so the three-dot merge-base diff against the base
+          # branch resolves.
+          fetch-depth: 0
+          # codex reads this checkout; leave it no credential to find.
+          persist-credentials: false
+
+      - name: Gather spec context (PR body + linked issues)
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const fs = require('fs');
+            const dir = process.env.CTX_DIR;
+            fs.mkdirSync(dir, { recursive: true });
+            const pr = context.payload.pull_request;
+            fs.writeFileSync(`${dir}/pr.md`,
+              `# PR #${pr.number}: ${pr.title}\n\n${pr.body || '(no description)'}\n`);
+
+            // Issues referenced from the PR body or commit messages are the spec.
+            const commits = await github.paginate(github.rest.pulls.listCommits,
+              { ...context.repo, pull_number: pr.number, per_page: 100 });
+            const text = [pr.body || '', ...commits.map(c => c.commit.message)].join('\n');
+            // Lookbehind keeps cross-repo refs like codex-action#27 out.
+            const nums = [...new Set([...text.matchAll(/(?<![\w/])#(\d+)/g)].map(m => Number(m[1])))];
+            let issues = '';
+            for (const n of nums) {
+              try {
+                const { data } = await github.rest.issues.get(
+                  { ...context.repo, issue_number: n });
+                if (data.pull_request) continue; // a PR reference, not a spec
+                issues += `# Issue #${n}: ${data.title}\n\n${data.body || ''}\n\n---\n\n`;
+              } catch { /* deleted or out of range; skip */ }
+            }
+            fs.writeFileSync(`${dir}/issues.md`, issues);
+
+      - name: Build review prompt
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          build_prompt() {
+            {
+              echo "Review pull request #${PR_NUMBER} of this repository."
+              echo
+              echo "The fixed point is origin/${BASE_REF}."
+              echo "Spec context files:"
+              echo "- ${CTX_DIR}/pr.md (PR title and description)"
+              echo "- ${CTX_DIR}/issues.md (linked issues; may be empty)"
+              echo
+              cat "$1"
+            } > "$2"
+          }
+          build_prompt .github/codex/review-prompt.md "${CTX_DIR}/prompt.md"
+          build_prompt .github/codex/minimalism-review-prompt.md "${CTX_DIR}/minimalism-prompt.md"
+
+      # Auth comes from the OPENAI_API_KEY repository secret (Settings →
+      # Secrets and variables → Actions), exported only on the codex steps so
+      # build scripts and test hooks cannot read it. codex picks it up from
+      # the environment, as the codex CI/CD auth docs describe.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install codex
+        run: npm install -g @openai/codex
+
+      # Clearing findings the code has since answered must never cost the PR
+      # its review.
+      - name: Gather open review threads
+        id: gather_threads
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const gather = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/gather-threads.js`);
+            await gather({ github, context, core });
+
+      - name: Judge open threads against the current tree
+        id: judge_threads
+        if: ${{ steps.gather_threads.outcome == 'success' && steps.gather_threads.outputs.count != '0' }}
+        continue-on-error: true
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          {
+            echo "Open review threads are listed in ${CTX_DIR}/threads.json."
+            echo
+            cat .github/codex/resolve-prompt.md
+          } > "${CTX_DIR}/resolve-prompt-full.md"
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort=medium \
+            --sandbox read-only \
+            --output-schema .github/codex/resolve-schema.json \
+            --output-last-message "${CTX_DIR}/resolutions.json" \
+            - < "${CTX_DIR}/resolve-prompt-full.md"
+
+      - name: Resolve addressed threads
+        if: ${{ steps.judge_threads.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const resolve = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/resolve-threads.js`);
+            await resolve({ github, context, core });
+
+      # Read-only sandbox, and no GitHub token in the environment: codex can
+      # inspect the checkout but not write, reach the network, or post
+      # anything. The github-script steps are the only writers.
+      - name: Run codex
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            --sandbox read-only \
+            --output-schema .github/codex/review-schema.json \
+            --output-last-message "${CTX_DIR}/review.json" \
+            - < "${CTX_DIR}/prompt.md"
+
+      - name: Post review
+        uses: actions/github-script@v7
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/review.json
+        with:
+          script: |
+            const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
+            await post({ github, context, core });
+
+      - name: Run minimalism review
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: |
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            --sandbox read-only \
+            --output-schema .github/codex/minimalism-review-schema.json \
+            --output-last-message "${CTX_DIR}/minimalism-review.json" \
+            - < "${CTX_DIR}/minimalism-prompt.md"
+
+      - name: Post minimalism review
+        uses: actions/github-script@v7
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/minimalism-review.json
+          REVIEW_KIND: minimalism
+        with:
+          script: |
+            const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
+            await post({ github, context, core });

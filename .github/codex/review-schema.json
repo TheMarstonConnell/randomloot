@@ -1,0 +1,36 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "findings"],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "description": "The full two-axis review report in GitHub markdown: a '## Standards' section, a '## Spec' section, and the one-line totals summary the skill asks for."
+    },
+    "findings": {
+      "type": "array",
+      "description": "Individual findings worth an inline comment, anchored to the new (RIGHT) side of the PR diff.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "line", "axis", "severity", "body"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path relative to the repository root, exactly as it appears in the diff."
+          },
+          "line": {
+            "type": "integer",
+            "description": "Line number in the NEW version of the file. Must be a line that appears in the PR diff (added or context line inside a hunk)."
+          },
+          "axis": { "type": "string", "enum": ["standards", "spec"] },
+          "severity": { "type": "string", "enum": ["blocking", "suggestion", "nit"] },
+          "body": {
+            "type": "string",
+            "description": "The comment text in GitHub markdown. Self-contained: cite the standard or spec line it rests on."
+          }
+        }
+      }
+    }
+  }
+}
