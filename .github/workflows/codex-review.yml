@@ -1,0 +1,237 @@
+name: Codex review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: codex-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  # GitHub files pull requests under the code-bearing surface, so it refuses
+  # resolveReviewThread without write on contents.
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    # Fork PRs cannot receive the CODEX_AUTH_JSON secret, so skip those
+    # (they would only fail with an auth error). Branch PRs always run: a
+    # missing secret fails loudly instead of silently skipping. NOTE: do not
+    # gate on secrets.* here — that breaks run creation (bogus instant-fail
+    # push runs, no pull_request run); compare by repo ownership instead.
+    if: >-
+      ${{
+        !github.event.pull_request.draft &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # The PR head itself, not the merge ref: inline comments anchor to
+          # head-side line numbers, so the reviewed tree must match.
+          ref: ${{ github.event.pull_request.head.sha }}
+          # Full history so the three-dot merge-base diff against the base
+          # branch resolves.
+          fetch-depth: 0
+          # codex reads this checkout; leave it no credential to find.
+          persist-credentials: false
+
+      - name: Gather spec context (PR body + linked issues)
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const fs = require('fs');
+            const dir = process.env.CTX_DIR;
+            fs.mkdirSync(dir, { recursive: true });
+            const pr = context.payload.pull_request;
+            fs.writeFileSync(`${dir}/pr.md`,
+              `# PR #${pr.number}: ${pr.title}\n\n${pr.body || '(no description)'}\n`);
+
+            // Issues referenced from the PR body or commit messages are the spec.
+            const commits = await github.paginate(github.rest.pulls.listCommits,
+              { ...context.repo, pull_number: pr.number, per_page: 100 });
+            const text = [pr.body || '', ...commits.map(c => c.commit.message)].join('\n');
+            // Lookbehind keeps cross-repo refs like codex-action#27 out.
+            const nums = [...new Set([...text.matchAll(/(?<![\w/])#(\d+)/g)].map(m => Number(m[1])))];
+            let issues = '';
+            for (const n of nums) {
+              try {
+                const { data } = await github.rest.issues.get(
+                  { ...context.repo, issue_number: n });
+                if (data.pull_request) continue; // a PR reference, not a spec
+                issues += `# Issue #${n}: ${data.title}\n\n${data.body || ''}\n\n---\n\n`;
+              } catch { /* deleted or out of range; skip */ }
+            }
+            fs.writeFileSync(`${dir}/issues.md`, issues);
+
+      - name: Build review prompt
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          build_prompt() {
+            {
+              echo "Review pull request #${PR_NUMBER} of this repository."
+              echo
+              echo "The fixed point is origin/${BASE_REF}."
+              echo "Spec context files:"
+              echo "- ${CTX_DIR}/pr.md (PR title and description)"
+              echo "- ${CTX_DIR}/issues.md (linked issues; may be empty)"
+              echo
+              cat "$1"
+            } > "$2"
+          }
+          build_prompt .github/codex/review-prompt.md "${CTX_DIR}/prompt.md"
+          build_prompt .github/codex/minimalism-review-prompt.md "${CTX_DIR}/minimalism-prompt.md"
+
+      # Auth comes from the CODEX_AUTH_JSON repository secret (a codex
+      # ChatGPT login). Each codex step restores it only for that process and
+      # removes it before any repository-controlled github-script runs.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install codex
+        run: npm install -g @openai/codex
+
+      # Ubuntu 24.04 restricts unprivileged user namespaces. Bubblewrap alone
+      # is not enough: Codex's documented AppArmor profile must also be loaded
+      # or every sandboxed command fails with `bwrap: loopback: Failed
+      # RTM_NEWADDR` while codex itself still exits 0.
+      - name: Configure codex sandbox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap apparmor-profiles
+          sudo install -m 0644 \
+            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+            /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+
+      # Clearing findings the code has since answered must never cost the PR
+      # its review.
+      - name: Gather open review threads
+        id: gather_threads
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const fs = require('fs');
+            const { fetchThreads, candidates } = require(
+              `${process.env.GITHUB_WORKSPACE}/.github/codex/threads.js`
+            );
+            const found = candidates(await fetchThreads({ github, context }));
+            fs.writeFileSync(
+              `${process.env.CTX_DIR}/threads.json`,
+              JSON.stringify(found, null, 2)
+            );
+            core.setOutput('count', String(found.length));
+            core.info(`${found.length} open codex thread(s) to check`);
+
+      - name: Judge open threads against the current tree
+        id: judge_threads
+        if: ${{ steps.gather_threads.outcome == 'success' && steps.gather_threads.outputs.count != '0' }}
+        continue-on-error: true
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          {
+            echo "Open review threads are listed in ${CTX_DIR}/threads.json."
+            echo
+            cat .github/codex/resolve-prompt.md
+          } > "${CTX_DIR}/resolve-prompt-full.md"
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort=medium \
+            --sandbox read-only \
+            --output-schema .github/codex/resolve-schema.json \
+            --output-last-message "${CTX_DIR}/resolutions.json" \
+            - < "${CTX_DIR}/resolve-prompt-full.md"
+
+      - name: Resolve addressed threads
+        if: ${{ steps.judge_threads.outcome == 'success' }}
+        continue-on-error: true
+        uses: actions/github-script@v7
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+        with:
+          script: |
+            const resolve = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/resolve-threads.js`);
+            await resolve({ github, context, core });
+
+      # Read-only sandbox, and no GitHub token in the environment: codex can
+      # inspect the checkout but not write, reach the network, or post
+      # anything. The github-script steps are the only writers.
+      - name: Run codex
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort=medium \
+            --sandbox read-only \
+            --output-schema .github/codex/review-schema.json \
+            --output-last-message "${CTX_DIR}/review.json" \
+            - < "${CTX_DIR}/prompt.md"
+          jq -e --arg head "$(git rev-parse HEAD)" \
+            '.reviewed_commit == $head' "${CTX_DIR}/review.json" > /dev/null
+
+      - name: Post review
+        uses: actions/github-script@v7
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/review.json
+        with:
+          script: |
+            const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
+            await post({ github, context });
+
+      - name: Run minimalism review
+        env:
+          CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort=medium \
+            --sandbox read-only \
+            --output-schema .github/codex/minimalism-review-schema.json \
+            --output-last-message "${CTX_DIR}/minimalism-review.json" \
+            - < "${CTX_DIR}/minimalism-prompt.md"
+          jq -e --arg head "$(git rev-parse HEAD)" \
+            '.reviewed_commit == $head' "${CTX_DIR}/minimalism-review.json" > /dev/null
+
+      - name: Post minimalism review
+        uses: actions/github-script@v7
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/minimalism-review.json
+          REVIEW_KIND: minimalism
+        with:
+          script: |
+            const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
+            await post({ github, context });

@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["threads"],
+  "properties": {
+    "threads": {
+      "type": "array",
+      "description": "One entry per thread in threads.json, in any order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "solved"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "The thread id, copied exactly from threads.json."
+          },
+          "solved": {
+            "type": "boolean",
+            "description": "true only when the complaint no longer holds in the current tree."
+          }
+        }
+      }
+    }
+  }
+}

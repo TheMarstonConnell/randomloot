@@ -1,0 +1,40 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["reviewed_commit", "summary", "findings"],
+  "properties": {
+    "reviewed_commit": {
+      "type": "string",
+      "description": "The full HEAD commit SHA read from git during this review."
+    },
+    "summary": {
+      "type": "string",
+      "description": "A concise Markdown overview of the minimalism review."
+    },
+    "findings": {
+      "type": "array",
+      "description": "Unnecessary structure worth flagging as an inline comment.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "line", "axis", "severity", "body"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "File path relative to the repository root, exactly as it appears in the diff."
+          },
+          "line": {
+            "type": "integer",
+            "description": "Line number in the NEW version of the file. Must be a line that appears in the PR diff."
+          },
+          "axis": { "type": "string", "enum": ["minimalism"] },
+          "severity": { "type": "string", "enum": ["suggestion"] },
+          "body": {
+            "type": "string",
+            "description": "A self-contained comment identifying what to remove, the smaller implementation, and proof that acceptance conditions remain satisfied."
+          }
+        }
+      }
+    }
+  }
+}
