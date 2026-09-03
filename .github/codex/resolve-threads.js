@@ -54,7 +54,7 @@ module.exports = async ({ github, context, core }) => {
       core.warning(`could not close ${t.id}: ${err.message}`);
       continue;
     }
-    core.info(`resolved ${t.id}: ${t.reason || 'no reason given'}`);
+    core.info(`resolved ${t.id}`);
     resolved++;
   }
   core.info(`resolved ${resolved} thread(s)`);

@@ -22,7 +22,12 @@ jobs:
     # missing secret fails loudly instead of silently skipping. NOTE: do not
     # gate on secrets.* here — that breaks run creation (bogus instant-fail
     # push runs, no pull_request run); compare by repo ownership instead.
-    if: ${{ !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository }}
+    if: >-
+      ${{
+        !github.event.pull_request.draft &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.pull_request.author_association)
+      }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

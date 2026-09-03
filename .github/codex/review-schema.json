@@ -9,7 +9,7 @@
     },
     "summary": {
       "type": "string",
-      "description": "The full two-axis review report in GitHub markdown: a '## Standards' section, a '## Spec' section, and the one-line totals summary the skill asks for."
+      "description": "The two-axis review report in GitHub markdown, with '## Standards' and '## Spec' sections and the worst issue on each axis when applicable."
     },
     "findings": {
       "type": "array",

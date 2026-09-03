@@ -41,8 +41,9 @@ Your final message must be JSON conforming to the provided schema:
 
 - `reviewed_commit` is the full output of `git rev-parse HEAD` read during this
   review. Do not infer or copy it from the prompt.
-- `summary` contains a `## Standards` section, a `## Spec` section, and a final
-  line with finding totals and the worst issue on each axis, if any.
+- `summary` contains a `## Standards` section and a `## Spec` section, naming
+  the worst issue on each axis, if any. Do not repeat finding totals; the
+  posting script computes them from `findings`.
 - `findings` contains each distinct inline-comment candidate. `line` must be a
   NEW-side line appearing in the diff. Each `body` must be self-contained and
   cite the standard, smell, or spec line supporting it.

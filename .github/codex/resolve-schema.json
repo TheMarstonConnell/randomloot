@@ -9,7 +9,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "solved", "reason"],
+        "required": ["id", "solved"],
         "properties": {
           "id": {
             "type": "string",
@@ -18,10 +18,6 @@
           "solved": {
             "type": "boolean",
             "description": "true only when the complaint no longer holds in the current tree."
-          },
-          "reason": {
-            "type": "string",
-            "description": "One short sentence of justification, for the workflow log."
           }
         }
       }
