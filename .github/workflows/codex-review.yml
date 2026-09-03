@@ -104,7 +104,7 @@ jobs:
       - name: Configure codex sandbox
         run: |
           sudo apt-get update
-          sudo apt-get install -y bubblewrap apparmor-profiles inotify-tools
+          sudo apt-get install -y bubblewrap apparmor-profiles
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict
@@ -144,10 +144,7 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
-            rm -f ~/.codex/auth.json) &
-          auth_watcher=$!
-          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
+          trap 'rm -f ~/.codex/auth.json' EXIT
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
             echo
@@ -184,10 +181,7 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
-            rm -f ~/.codex/auth.json) &
-          auth_watcher=$!
-          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
+          trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort=medium \
@@ -216,10 +210,7 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
-            rm -f ~/.codex/auth.json) &
-          auth_watcher=$!
-          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
+          trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort=medium \
