@@ -102,15 +102,18 @@ jobs:
       - name: Install codex
         run: npm install -g @openai/codex
 
-      # codex's read-only sandbox needs setuid bubblewrap. Without it codex
-      # falls back to its bundled binary, which runs unprivileged and dies on
-      # hosted runners (`bwrap: loopback: Failed RTM_NEWADDR`: Ubuntu
-      # restricts unprivileged user namespaces). Every sandboxed shell then
-      # fails and codex posts an empty "review unavailable" report that still
-      # exits 0 — green CI with no review. The apt build is setuid root, so
-      # the sandbox actually works.
-      - name: Install bubblewrap
-        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+      # Ubuntu 24.04 restricts unprivileged user namespaces. Bubblewrap alone
+      # is not enough: Codex's documented AppArmor profile must also be loaded
+      # or every sandboxed command fails with `bwrap: loopback: Failed
+      # RTM_NEWADDR` while codex itself still exits 0.
+      - name: Configure codex sandbox
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bubblewrap apparmor-profiles apparmor-utils
+          sudo install -m 0644 \
+            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+            /etc/apparmor.d/bwrap-userns-restrict
+          sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
 
       - name: Restore codex auth
         env:
@@ -179,6 +182,16 @@ jobs:
             --output-last-message "${CTX_DIR}/review.json" \
             - < "${CTX_DIR}/prompt.md"
 
+      - name: Verify codex completed the review
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/review.json
+        run: |
+          if grep -Eqi 'review unavailable|sandbox (initialization )?failed|bwrap:.*failed' "$REVIEW_FILE"; then
+            echo "Codex could not inspect the repository" >&2
+            cat "$REVIEW_FILE" >&2
+            exit 1
+          fi
+
       - name: Post review
         uses: actions/github-script@v7
         env:
@@ -199,6 +212,16 @@ jobs:
             --output-schema .github/codex/minimalism-review-schema.json \
             --output-last-message "${CTX_DIR}/minimalism-review.json" \
             - < "${CTX_DIR}/minimalism-prompt.md"
+
+      - name: Verify codex completed the minimalism review
+        env:
+          REVIEW_FILE: ${{ runner.temp }}/codex-review/minimalism-review.json
+        run: |
+          if grep -Eqi 'review (could not be completed|unavailable)|sandbox (initialization )?failed|bwrap:.*failed' "$REVIEW_FILE"; then
+            echo "Codex could not inspect the repository" >&2
+            cat "$REVIEW_FILE" >&2
+            exit 1
+          fi
 
       - name: Post minimalism review
         uses: actions/github-script@v7
