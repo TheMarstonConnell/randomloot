@@ -17,10 +17,9 @@ permissions:
 
 jobs:
   review:
-    # Skip (rather than fail) when the key is missing: fork PRs never receive
-    # secrets, and the repo may not have OPENAI_API_KEY configured yet. Add it
-    # under Settings → Secrets and variables → Actions to enable the bot.
-    if: ${{ !github.event.pull_request.draft && secrets.OPENAI_API_KEY != '' }}
+    # CODEX_AUTH_JSON is absent on fork PRs (GitHub withholds secrets there),
+    # so skip rather than fail with an auth error. Every branch PR runs.
+    if: ${{ !github.event.pull_request.draft && secrets.CODEX_AUTH_JSON != '' }}
     runs-on: ubuntu-latest
     env:
       # Thread judging is a cheaper decision than a review pass and is tuned
@@ -89,16 +88,24 @@ jobs:
           build_prompt .github/codex/review-prompt.md "${CTX_DIR}/prompt.md"
           build_prompt .github/codex/minimalism-review-prompt.md "${CTX_DIR}/minimalism-prompt.md"
 
-      # Auth comes from the OPENAI_API_KEY repository secret (Settings →
-      # Secrets and variables → Actions), exported only on the codex steps so
-      # build scripts and test hooks cannot read it. codex picks it up from
-      # the environment, as the codex CI/CD auth docs describe.
+      # Auth comes from the CODEX_AUTH_JSON repository secret (a codex
+      # ChatGPT login), restored to the CLI's usual location below. Same
+      # shape as yamsap's runner-local ~/.codex/auth.json; codex refreshes
+      # the in-place copy, and the ephemeral runner discards it.
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
 
       - name: Install codex
         run: npm install -g @openai/codex
+
+      - name: Restore codex auth
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+        run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
 
       # Clearing findings the code has since answered must never cost the PR
       # its review.
@@ -119,7 +126,6 @@ jobs:
         continue-on-error: true
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
@@ -151,7 +157,6 @@ jobs:
       - name: Run codex
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           codex exec \
             --model gpt-5.6-sol \
@@ -173,7 +178,6 @@ jobs:
       - name: Run minimalism review
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           codex exec \
             --model gpt-5.6-sol \
