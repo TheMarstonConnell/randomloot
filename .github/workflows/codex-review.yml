@@ -17,7 +17,10 @@ permissions:
 
 jobs:
   review:
-    if: ${{ !github.event.pull_request.draft }}
+    # Skip (rather than fail) when the key is missing: fork PRs never receive
+    # secrets, and the repo may not have OPENAI_API_KEY configured yet. Add it
+    # under Settings → Secrets and variables → Actions to enable the bot.
+    if: ${{ !github.event.pull_request.draft && secrets.OPENAI_API_KEY != '' }}
     runs-on: ubuntu-latest
     env:
       # Thread judging is a cheaper decision than a review pass and is tuned
