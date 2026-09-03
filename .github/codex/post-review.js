@@ -20,10 +20,7 @@ module.exports = async ({ github, context, core }) => {
   const headSha = pr.head.sha;
 
   const raw = fs.readFileSync(process.env.REVIEW_FILE, 'utf8');
-  let review = null;
-  try {
-    review = JSON.parse(raw);
-  } catch {}
+  const review = JSON.parse(raw);
 
   const upsertSummary = async (body) => {
     const comments = await github.paginate(github.rest.issues.listComments, {
@@ -40,15 +37,6 @@ module.exports = async ({ github, context, core }) => {
       await github.rest.issues.createComment({ ...repo, issue_number: pr.number, body });
     }
   };
-
-  if (!review || typeof review.summary !== 'string' || !Array.isArray(review.findings)) {
-    core.warning('codex output was not valid schema JSON; posting it raw');
-    await upsertSummary(
-      `${MARKER}\n## ${TITLE}\n\nThe reviewer did not return structured output` +
-      ` for ${headSha}; raw output below.\n\n~~~\n${raw.slice(0, 60000)}\n~~~\n`
-    );
-    return;
-  }
 
   // An anchor outside the PR diff makes createReview reject the whole batch,
   // so build the set of commentable NEW-side lines per file first.

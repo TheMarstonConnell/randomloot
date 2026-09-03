@@ -24,10 +24,6 @@ jobs:
     # push runs, no pull_request run); compare by repo ownership instead.
     if: ${{ !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ubuntu-latest
-    env:
-      # Thread judging is a cheaper decision than a review pass and is tuned
-      # independently.
-      CODEX_REVIEW_EFFORT: medium
     steps:
       - uses: actions/checkout@v5
         with:
@@ -112,7 +108,17 @@ jobs:
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict
+          sudo mkdir -p /etc/apparmor.d/local
+          printf '%s\n' 'deny @{HOME}/.codex/auth.json r,' | \
+            sudo tee /etc/apparmor.d/local/unpriv_bwrap > /dev/null
           sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+          mkdir -p ~/.codex
+          : > ~/.codex/auth.json
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          bwrap --unshare-all --share-net --ro-bind / / --dev /dev --proc /proc \
+            /bin/sh -c 'test ! -r "$HOME/.codex/auth.json"'
+          rm -f ~/.codex/auth.json
+          trap - EXIT
 
       # Clearing findings the code has since answered must never cost the PR
       # its review.
@@ -188,7 +194,7 @@ jobs:
           trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
-            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            -c model_reasoning_effort=medium \
             --sandbox read-only \
             --output-schema .github/codex/review-schema.json \
             --output-last-message "${CTX_DIR}/review.json" \
@@ -217,7 +223,7 @@ jobs:
           trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
-            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            -c model_reasoning_effort=medium \
             --sandbox read-only \
             --output-schema .github/codex/minimalism-review-schema.json \
             --output-last-message "${CTX_DIR}/minimalism-review.json" \

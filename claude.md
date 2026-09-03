@@ -194,7 +194,7 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 
 > **Fabric mixin gotcha**: never inject into a `LivingEntity` method that `Player`/`ServerPlayer` overrides (e.g. `actuallyHurt`) — the injection silently won't run for players. Wrap the call sites in the caller (`hurtServer`) with MixinExtras `@WrapOperation` instead, which catches the virtual dispatch.
 
-> **Codex CI sandbox gotcha (Ubuntu 24.04)**: installing `bubblewrap` alone is not enough on GitHub-hosted runners. Install `apparmor-profiles`, copy `/usr/share/apparmor/extra-profiles/bwrap-userns-restrict` to `/etc/apparmor.d/`, and load it with `apparmor_parser -r`. Otherwise every sandboxed command can fail with `bwrap: loopback: Failed RTM_NEWADDR` while `codex exec` still exits successfully; require and verify the reviewed HEAD SHA before accepting the output.
+> **Codex CI sandbox gotcha (Ubuntu 24.04)**: installing `bubblewrap` alone is not enough on GitHub-hosted runners. Install `apparmor-profiles`, copy `/usr/share/apparmor/extra-profiles/bwrap-userns-restrict` to `/etc/apparmor.d/`, add a local `unpriv_bwrap` deny rule for the Codex auth file, and load the profile with `apparmor_parser -r`. Otherwise every sandboxed command can fail with `bwrap: loopback: Failed RTM_NEWADDR` while `codex exec` still exits successfully; require and verify the reviewed HEAD SHA before accepting the output.
 - Use `/give @p randomloot:case` to get a loot case
 - Right-click case to generate random tool
 - Modifier templates can add/remove traits via smithing table
