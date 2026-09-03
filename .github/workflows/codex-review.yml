@@ -92,9 +92,8 @@ jobs:
           build_prompt .github/codex/minimalism-review-prompt.md "${CTX_DIR}/minimalism-prompt.md"
 
       # Auth comes from the CODEX_AUTH_JSON repository secret (a codex
-      # ChatGPT login), restored to the CLI's usual location below. Same
-      # shape as yamsap's runner-local ~/.codex/auth.json; codex refreshes
-      # the in-place copy, and the ephemeral runner discards it.
+      # ChatGPT login). Each codex step restores it only for that process and
+      # removes it before any repository-controlled github-script runs.
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
@@ -115,14 +114,6 @@ jobs:
             /etc/apparmor.d/bwrap-userns-restrict
           sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
 
-      - name: Restore codex auth
-        env:
-          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
-        run: |
-          mkdir -p ~/.codex
-          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
-          chmod 600 ~/.codex/auth.json
-
       # Clearing findings the code has since answered must never cost the PR
       # its review.
       - name: Gather open review threads
@@ -142,7 +133,13 @@ jobs:
         continue-on-error: true
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
             echo
@@ -173,7 +170,13 @@ jobs:
       - name: Run codex
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
@@ -204,7 +207,13 @@ jobs:
       - name: Run minimalism review
         env:
           CTX_DIR: ${{ runner.temp }}/codex-review
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
