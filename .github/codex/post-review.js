@@ -14,7 +14,7 @@ const KIND = process.env.REVIEW_KIND || 'codex';
 const { marker: MARKER, axes: AXES } = REVIEWERS[KIND];
 const TITLE = `${KIND} review`;
 
-module.exports = async ({ github, context, core }) => {
+module.exports = async ({ github, context }) => {
   const pr = context.payload.pull_request;
   const repo = context.repo;
   const headSha = pr.head.sha;

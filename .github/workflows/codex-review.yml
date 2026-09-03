@@ -199,7 +199,7 @@ jobs:
         with:
           script: |
             const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
-            await post({ github, context, core });
+            await post({ github, context });
 
       - name: Run minimalism review
         env:
@@ -229,4 +229,4 @@ jobs:
         with:
           script: |
             const post = require(`${process.env.GITHUB_WORKSPACE}/.github/codex/post-review.js`);
-            await post({ github, context, core });
+            await post({ github, context });
