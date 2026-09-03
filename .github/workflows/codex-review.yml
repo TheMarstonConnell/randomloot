@@ -104,21 +104,11 @@ jobs:
       - name: Configure codex sandbox
         run: |
           sudo apt-get update
-          sudo apt-get install -y bubblewrap apparmor-profiles
+          sudo apt-get install -y bubblewrap apparmor-profiles inotify-tools
           sudo install -m 0644 \
             /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
             /etc/apparmor.d/bwrap-userns-restrict
-          sudo mkdir -p /etc/apparmor.d/local
-          printf '%s\n' 'deny /home/runner/.codex/auth.json r,' | \
-            sudo tee /etc/apparmor.d/local/unpriv_bwrap > /dev/null
           sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
-          mkdir -p ~/.codex
-          : > ~/.codex/auth.json
-          trap 'rm -f ~/.codex/auth.json' EXIT
-          bwrap --unshare-all --share-net --ro-bind / / --dev /dev --proc /proc \
-            /bin/sh -c 'test ! -r "$HOME/.codex/auth.json"'
-          rm -f ~/.codex/auth.json
-          trap - EXIT
 
       # Clearing findings the code has since answered must never cost the PR
       # its review.
@@ -154,7 +144,10 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
+          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
+            rm -f ~/.codex/auth.json) &
+          auth_watcher=$!
+          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
             echo
@@ -191,7 +184,10 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
+          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
+            rm -f ~/.codex/auth.json) &
+          auth_watcher=$!
+          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort=medium \
@@ -220,7 +216,10 @@ jobs:
           printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
           chmod 600 ~/.codex/auth.json
           unset CODEX_AUTH_JSON
-          trap 'rm -f ~/.codex/auth.json' EXIT
+          (inotifywait -q -e close_nowrite ~/.codex/auth.json > /dev/null &&
+            rm -f ~/.codex/auth.json) &
+          auth_watcher=$!
+          trap 'kill "$auth_watcher" 2>/dev/null || true; rm -f ~/.codex/auth.json' EXIT
           codex exec \
             --model gpt-5.6-sol \
             -c model_reasoning_effort=medium \
