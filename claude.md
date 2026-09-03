@@ -193,6 +193,8 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 > **Gametest gotcha — damaging a mock player** (26.x): `makeMockServerPlayerInLevel()` players are effectively invulnerable until you (1) set `abilities.instabuild/invulnerable = false`, (2) mark their fake connection loaded — `player.connection.handleAcceptPlayerLoad(new ServerboundPlayerLoadedPacket())` — because `ServerPlayer.isInvulnerableTo` returns true until `hasClientLoaded()`. Mob damage also difficulty-scales to 0 on the gametest server's Peaceful setting, and player-vs-player damage needs the `pvp` **game rule** (moved to `GameRules.PVP` in 26.x) enabled. See `GameTestBodies.mockVulnerablePlayer` + `thornyReflectsForPlayer`.
 
 > **Fabric mixin gotcha**: never inject into a `LivingEntity` method that `Player`/`ServerPlayer` overrides (e.g. `actuallyHurt`) — the injection silently won't run for players. Wrap the call sites in the caller (`hurtServer`) with MixinExtras `@WrapOperation` instead, which catches the virtual dispatch.
+
+> **Codex CI sandbox gotcha (Ubuntu 24.04)**: installing `bubblewrap` alone is not enough on GitHub-hosted runners. Install `apparmor-profiles` and `apparmor-utils`, copy `/usr/share/apparmor/extra-profiles/bwrap-userns-restrict` to `/etc/apparmor.d/`, and load it with `apparmor_parser -r`. Otherwise every sandboxed command can fail with `bwrap: loopback: Failed RTM_NEWADDR` while `codex exec` still exits successfully; keep an output check that turns an unavailable review into a failed job.
 - Use `/give @p randomloot:case` to get a loot case
 - Right-click case to generate random tool
 - Modifier templates can add/remove traits via smithing table
