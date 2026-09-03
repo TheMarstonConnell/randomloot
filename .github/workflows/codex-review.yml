@@ -102,6 +102,16 @@ jobs:
       - name: Install codex
         run: npm install -g @openai/codex
 
+      # codex's read-only sandbox needs setuid bubblewrap. Without it codex
+      # falls back to its bundled binary, which runs unprivileged and dies on
+      # hosted runners (`bwrap: loopback: Failed RTM_NEWADDR`: Ubuntu
+      # restricts unprivileged user namespaces). Every sandboxed shell then
+      # fails and codex posts an empty "review unavailable" report that still
+      # exits 0 — green CI with no review. The apt build is setuid root, so
+      # the sandbox actually works.
+      - name: Install bubblewrap
+        run: sudo apt-get update && sudo apt-get install -y bubblewrap
+
       - name: Restore codex auth
         env:
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
