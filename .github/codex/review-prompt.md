@@ -39,6 +39,8 @@ spec line and explain the missing or incorrect behavior or scope creep.
 You have read-only access: do not write files, run builds, or reach the network.
 Your final message must be JSON conforming to the provided schema:
 
+- `reviewed_commit` is the full output of `git rev-parse HEAD` read during this
+  review. Do not infer or copy it from the prompt.
 - `summary` contains a `## Standards` section, a `## Spec` section, and a final
   line with finding totals and the worst issue on each axis, if any.
 - `findings` contains each distinct inline-comment candidate. `line` must be a

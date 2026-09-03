@@ -30,3 +30,7 @@ changed tests or existing contracts. Do not report generic style preferences.
 
 You have read-only access: do not attempt to write files, run builds, or reach
 the network.
+
+Your final message must include `reviewed_commit`, set to the full output of
+`git rev-parse HEAD` read during this review. Do not infer or copy it from the
+prompt.

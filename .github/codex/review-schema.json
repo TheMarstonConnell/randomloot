@@ -1,8 +1,12 @@
 {
   "type": "object",
   "additionalProperties": false,
-  "required": ["summary", "findings"],
+  "required": ["reviewed_commit", "summary", "findings"],
   "properties": {
+    "reviewed_commit": {
+      "type": "string",
+      "description": "The full HEAD commit SHA read from git during this review."
+    },
     "summary": {
       "type": "string",
       "description": "The full two-axis review report in GitHub markdown: a '## Standards' section, a '## Spec' section, and the one-line totals summary the skill asks for."

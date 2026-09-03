@@ -144,17 +144,23 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
           {
             echo "Open review threads are listed in ${CTX_DIR}/threads.json."
             echo
             cat .github/codex/resolve-prompt.md
           } > "${CTX_DIR}/resolve-prompt-full.md"
-          .github/codex/run-review.sh \
-            medium \
-            "${CTX_DIR}/resolve-prompt-full.md" \
-            .github/codex/resolve-schema.json \
-            "${CTX_DIR}/resolutions.json" \
-            false
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort=medium \
+            --sandbox read-only \
+            --output-schema .github/codex/resolve-schema.json \
+            --output-last-message "${CTX_DIR}/resolutions.json" \
+            - < "${CTX_DIR}/resolve-prompt-full.md"
 
       - name: Resolve addressed threads
         if: ${{ steps.judge_threads.outcome == 'success' }}
@@ -175,11 +181,20 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-          .github/codex/run-review.sh \
-            "$CODEX_REVIEW_EFFORT" \
-            "${CTX_DIR}/prompt.md" \
-            .github/codex/review-schema.json \
-            "${CTX_DIR}/review.json"
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            --sandbox read-only \
+            --output-schema .github/codex/review-schema.json \
+            --output-last-message "${CTX_DIR}/review.json" \
+            - < "${CTX_DIR}/prompt.md"
+          jq -e --arg head "$(git rev-parse HEAD)" \
+            '.reviewed_commit == $head' "${CTX_DIR}/review.json" > /dev/null
 
       - name: Post review
         uses: actions/github-script@v7
@@ -195,11 +210,20 @@ jobs:
           CTX_DIR: ${{ runner.temp }}/codex-review
           CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
         run: |
-          .github/codex/run-review.sh \
-            "$CODEX_REVIEW_EFFORT" \
-            "${CTX_DIR}/minimalism-prompt.md" \
-            .github/codex/minimalism-review-schema.json \
-            "${CTX_DIR}/minimalism-review.json"
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" > ~/.codex/auth.json
+          chmod 600 ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+          codex exec \
+            --model gpt-5.6-sol \
+            -c model_reasoning_effort="${CODEX_REVIEW_EFFORT}" \
+            --sandbox read-only \
+            --output-schema .github/codex/minimalism-review-schema.json \
+            --output-last-message "${CTX_DIR}/minimalism-review.json" \
+            - < "${CTX_DIR}/minimalism-prompt.md"
+          jq -e --arg head "$(git rev-parse HEAD)" \
+            '.reviewed_commit == $head' "${CTX_DIR}/minimalism-review.json" > /dev/null
 
       - name: Post minimalism review
         uses: actions/github-script@v7
