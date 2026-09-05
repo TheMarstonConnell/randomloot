@@ -208,6 +208,9 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 - `/randomloot xp <amount>` - add XP to the held gear
 - 26.1 gotcha: command permission gating is `Commands.hasPermission(Commands.LEVEL_GAMEMASTERS)` (PermissionCheck/PermissionSet), not the old `source.hasPermission(int)`
 
+## Guide Book (MarkMeDown)
+`bun scripts/gen_book.ts` converts the root wiki docs (README/LOOT/MODIFIERS/BIOMES/PROGRESSION/NAMES/CONFIG .md) into a MarkMeDown guide book at `src/main/resources/data/randomloot/markmedown/book/` (the ../markmedown mod renders it in-game when installed). The output is generated — edit the root docs (or GenWiki) and re-run the script, which wipes and rebuilds the folder. Rerun it whenever the docs change. MarkMeDown quirks: no remote images — the script rewrites crafting sprites to `item:<id>` icons and copies README screenshots from `.github/assets/` into `assets/randomloot/textures/book/` (downscaled to 640px via sips), referencing them as `randomloot:textures/book/x.png WxH`; badges and the animated GIF are dropped. No `#heading` anchors in internal links (trait links point at the containing category page); one book per namespace; internal link targets are `section` or `section/page`.
+
 ## Key Files
 - `gradle.properties` - Version configuration, mod metadata
 - `src/main/resources/META-INF/neoforge.mods.toml` - Mod manifest
