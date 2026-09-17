@@ -19,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
+import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.RandomSource;
 
@@ -119,7 +120,7 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
                     Block block = state.getBlock();
 
                     if (block instanceof BonemealableBlock bonemealable) {
-                        if (bonemealable.isValidBonemealTarget(level, checkPos, state)) {
+                        if (bonemealable.isValidBonemealTarget(level, checkPos, state, BonemealSource.INTERACTION)) {
                             bonemealableBlocks.add(checkPos);
                         }
                     }
@@ -134,8 +135,8 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
             Block block = state.getBlock();
 
             if (block instanceof BonemealableBlock bonemealable) {
-                if (bonemealable.isBonemealSuccess(level, random, targetPos, state)) {
-                    bonemealable.performBonemeal(serverLevel, random, targetPos, state);
+                if (bonemealable.isBonemealSuccess(level, random, targetPos, state, BonemealSource.INTERACTION)) {
+                    bonemealable.performBonemeal(serverLevel, random, targetPos, state, BonemealSource.INTERACTION);
 
                     // Spawn particles
                     serverLevel.sendParticles(
