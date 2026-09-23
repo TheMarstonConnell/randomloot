@@ -10,6 +10,7 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -106,8 +107,8 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 				continue;
 			}
 
-			// Break the block with drops
-			state.getBlock().playerDestroy(level, player, blockPos, state, null, itemstack);
+			// Break the block with drops (26.3: playerDestroy takes a ServerLevel; guarded server-side above)
+			state.getBlock().playerDestroy((ServerLevel) level, player, blockPos, state, null, itemstack);
 			level.removeBlock(blockPos, false);
 
 			// Apply durability damage for each block

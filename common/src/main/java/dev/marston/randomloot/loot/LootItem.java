@@ -7,12 +7,12 @@ import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.BlockTags;
@@ -31,16 +31,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
-import dev.marston.randomloot.platform.Services;
-import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 
@@ -158,24 +156,6 @@ public class LootItem extends LootGearItem {
 				Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, attack, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
 				.add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, speed, AttributeModifier.Operation.ADD_VALUE),
 						EquipmentSlotGroup.MAINHAND).build();
-	}
-
-	/** Loader-neutral form of NeoForge's canPerformAction; loader subclasses hook it into their APIs. */
-	public boolean canPerform(ItemStack itemStack, ToolAction action) {
-		if (LootUtils.isRolling(itemStack)) {
-			return false;
-		}
-		ToolType type = LootUtils.getToolType(itemStack);
-
-		if (type == ToolType.AXE) {
-			return action == ToolAction.AXE_STRIP ||
-				   action == ToolAction.AXE_SCRAPE ||
-				   action == ToolAction.AXE_WAX_OFF;
-		}
-		if (type == ToolType.SHOVEL) {
-			return action == ToolAction.SHOVEL_FLATTEN;
-		}
-		return false;
 	}
 
 	@Override
@@ -306,71 +286,26 @@ public class LootItem extends LootGearItem {
 	}
 
 	private InteractionResult tryAxeActions(UseOnContext ctx) {
-		Level level = ctx.getLevel();
-		BlockPos pos = ctx.getClickedPos();
-		BlockState state = level.getBlockState(pos);
-		Player player = ctx.getPlayer();
-		ItemStack stack = ctx.getItemInHand();
-
-		// Try stripping logs
-		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
-		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, stripped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		// Try scraping oxidation
-		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
-		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, scraped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		// Try removing wax
-		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
-		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, unwaxed, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		return InteractionResult.PASS;
+		return applyBlockTransformer(ctx, BlockTransformers.AXE);
 	}
 
 	private InteractionResult tryShovelFlatten(UseOnContext ctx) {
 		if (ctx.getClickedFace() != Direction.UP) return InteractionResult.PASS;
+		return applyBlockTransformer(ctx, BlockTransformers.SHOVEL);
+	}
 
-		Level level = ctx.getLevel();
-		BlockPos pos = ctx.getClickedPos();
-
-		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
-
-		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
-		if (flattened != null) {
-			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, flattened, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-		return InteractionResult.PASS;
+	// 26.3 removed AxeItem/ShovelItem and their strippable/flattenable maps, moving the
+	// vanilla tool conversions (axe strip/scrape/wax-off, shovel flatten) into the
+	// data-driven BlockTransformer registry. transformBlock reproduces the old behavior on
+	// both loaders - it sets the block (preserving log axis via CopyPropertiesProvider),
+	// plays the sound/particle, drops loot and damages the tool - so this vanilla logic
+	// lives in common instead of the old getToolModifiedState platform seam.
+	private static InteractionResult applyBlockTransformer(UseOnContext ctx, ResourceKey<BlockTransformer> key) {
+		return ctx.getLevel().registryAccess()
+				.lookupOrThrow(Registries.BLOCK_TRANSFORMER)
+				.get(key)
+				.map(holder -> holder.value().transformBlock(ctx))
+				.orElse(InteractionResult.PASS);
 	}
 
 	@Override
