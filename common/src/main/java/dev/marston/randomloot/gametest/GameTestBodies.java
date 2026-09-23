@@ -436,7 +436,10 @@ public final class GameTestBodies {
 	/** Hurts the wearer once with full effect: no i-frames, health reset so they never die. */
 	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, DamageSource source, float damage) {
 		wearer.setHealth(wearer.getMaxHealth());
-		wearer.invulnerableTime = 0;
+		// 26.3 moved the combat i-frame gate off invulnerableTime onto damageCooldownTime;
+		// clear it so every hit lands at full strength instead of only the first.
+		wearer.setInvulnerableTime(0);
+		wearer.damageCooldownTime = 0;
 		helper.hurt(wearer, source, damage);
 	}
 

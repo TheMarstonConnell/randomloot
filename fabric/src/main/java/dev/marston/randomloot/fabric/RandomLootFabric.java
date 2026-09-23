@@ -26,7 +26,9 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.core.Holder;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProvider;
 import net.neoforged.fml.config.ModConfig;
 
 import static net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem;
@@ -105,7 +107,7 @@ public class RandomLootFabric implements ModInitializer {
 
             for (LootInjection.Entry entry : LootInjection.entries()) {
                 tableBuilder.withPool(LootPool.lootPool()
-                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setRolls(Holder.<ContextIntProvider>direct(new ConstantValue(1)))
                         .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
                         .add(lootTableItem(entry.item())));
             }

@@ -2,10 +2,10 @@ package dev.marston.randomloot.advancements;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.predicates.ContextAwarePredicate;
-import net.minecraft.advancements.predicates.entity.EntityPredicate;
 import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.advancements.triggers.SimpleCriterionTrigger;
+import net.minecraft.core.Holder;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.minecraft.server.level.ServerPlayer;
 
 import java.util.Optional;
@@ -25,11 +25,11 @@ public class ToolLeveledTrigger extends SimpleCriterionTrigger<ToolLeveledTrigge
 		this.trigger(player, t -> t.level().matches(level));
 	}
 
-	public record TriggerInstance(Optional<ContextAwarePredicate> player,
+	public record TriggerInstance(Optional<Holder<LootItemCondition>> player,
 			MinMaxBounds.Ints level) implements SimpleCriterionTrigger.SimpleInstance {
 
 		public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(i -> i.group(
-				EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+				LootItemCondition.CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
 				MinMaxBounds.Ints.CODEC.optionalFieldOf("level", MinMaxBounds.Ints.ANY).forGetter(TriggerInstance::level))
 				.apply(i, TriggerInstance::new));
 	}
