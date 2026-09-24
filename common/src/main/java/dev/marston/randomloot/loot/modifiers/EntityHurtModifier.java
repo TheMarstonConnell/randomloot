@@ -21,7 +21,10 @@ public interface EntityHurtModifier extends Modifier {
 		if (amount <= 0.0f) {
 			return;
 		}
-		hurtee.invulnerableTime = 0;
+		hurtee.setInvulnerableTime(0);
+		// Since 26.3 the repeat-hit gate lives on damageCooldownTime, not
+		// invulnerableTime; clear it so the bonus hit lands on the same tick.
+		hurtee.damageCooldownTime = 0;
 		if (hurter instanceof Player player) {
 			hurtee.hurt(hurter.damageSources().playerAttack(player), amount);
 		} else {
