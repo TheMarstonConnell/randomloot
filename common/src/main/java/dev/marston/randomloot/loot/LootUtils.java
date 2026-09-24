@@ -20,6 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -184,9 +185,13 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
+		// Runs from inventoryTick for every loot item, every tick: keep the common
+		// (already-patched) path cheap and only split the patch when it is non-empty.
+		DataComponentPatch patch = stack.getComponentsPatch();
+		if (!patch.isEmpty()) {
+			DataComponentPatch.SplitResult split = patch.split();
+			if (split.added().keySet().contains(DataComponents.ATTRIBUTE_MODIFIERS)
+					|| split.removed().contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
 				return;
 			}
 		}
@@ -309,7 +314,7 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}

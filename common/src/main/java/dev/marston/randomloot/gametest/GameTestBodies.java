@@ -436,7 +436,10 @@ public final class GameTestBodies {
 	/** Hurts the wearer once with full effect: no i-frames, health reset so they never die. */
 	private static void freshHit(GameTestHelper helper, ServerPlayer wearer, DamageSource source, float damage) {
 		wearer.setHealth(wearer.getMaxHealth());
-		wearer.invulnerableTime = 0;
+		wearer.setInvulnerableTime(0);
+		// Since 26.3 the repeat-hit gate lives on damageCooldownTime, not
+		// invulnerableTime; clear it so each successive hit lands in full.
+		wearer.damageCooldownTime = 0;
 		helper.hurt(wearer, source, damage);
 	}
 
