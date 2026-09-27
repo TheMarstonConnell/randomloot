@@ -59,14 +59,17 @@ final class LootTooltips {
 	}
 
 	/**
-	 * Whether the given GLFW key pair is held. Client-only code reached via fully
-	 * qualified names so this common class never imports client-only types; callers
-	 * must not invoke this on a dedicated server.
+	 * Whether shift is held. Client-only code reached via fully qualified names so this
+	 * common class never imports client-only types; callers must not invoke this on a
+	 * dedicated server.
 	 */
-	private static boolean isKeyDown(int leftKey, int rightKey) {
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, leftKey)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, rightKey);
+	private static boolean shiftDown() {
+		return net.minecraft.client.Minecraft.getInstance().hasShiftDown();
+	}
+
+	/** Whether control is held. See {@link #shiftDown()} for the client-only contract. */
+	private static boolean controlDown() {
+		return net.minecraft.client.Minecraft.getInstance().hasControlDown();
 	}
 
 	/**
@@ -86,10 +89,8 @@ final class LootTooltips {
 		// Tooltips are only ever built with key state on the client; the level check
 		// keeps Minecraft.getInstance() unreachable on a dedicated server.
 		boolean onClient = level != null && level.isClientSide();
-		boolean show = onClient && isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_LSHIFT,
-				com.mojang.blaze3d.platform.InputConstants.KEY_RSHIFT);
-		boolean showDescription = onClient && isKeyDown(com.mojang.blaze3d.platform.InputConstants.KEY_LCONTROL,
-				com.mojang.blaze3d.platform.InputConstants.KEY_RCONTROL);
+		boolean show = onClient && shiftDown();
+		boolean showDescription = onClient && controlDown();
 
 		ToolType tt = LootUtils.getToolType(item);
 
