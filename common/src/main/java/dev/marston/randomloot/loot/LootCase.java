@@ -13,6 +13,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -83,7 +84,7 @@ public class LootCase extends Item {
 				player.setItemInHand(hand, tool);
 			} else if (!player.getInventory().add(tool)) {
 				// Creative keeps the case in hand, so the tool goes to the inventory.
-				player.drop(tool, false);
+				player.drop(tool, false, Prediction.SERVER_ONLY);
 			}
 		} else if (consumeCase) {
 			lootCase.shrink(1); // client prediction; the server replaces the stack above
