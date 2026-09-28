@@ -59,14 +59,13 @@ final class LootTooltips {
 	}
 
 	/**
-	 * Whether the given GLFW key pair is held. Client-only code reached via fully
+	 * Whether the given key pair is held. Client-only code reached via fully
 	 * qualified names so this common class never imports client-only types; callers
 	 * must not invoke this on a dedicated server.
 	 */
 	private static boolean isKeyDown(int leftKey, int rightKey) {
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, leftKey)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, rightKey);
+		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(leftKey)
+				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(rightKey);
 	}
 
 	/**
