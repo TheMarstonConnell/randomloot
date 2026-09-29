@@ -20,7 +20,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -184,11 +184,11 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// This runs from inventoryTick for every loot item, every tick. Reading the patch
+		// against an empty prototype yields the stamped value only if it lives in the patch
+		// (not the item's default components) — null means this stack predates the stamp.
+		if (stack.getComponentsPatch().get(DataComponentMap.EMPTY, DataComponents.ATTRIBUTE_MODIFIERS) != null) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,7 +309,8 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		// playerDestroy takes a ServerLevel since 26.3; this only runs server-side (ServerPlayer).
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}

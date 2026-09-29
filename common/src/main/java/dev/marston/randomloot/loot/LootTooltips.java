@@ -64,9 +64,9 @@ final class LootTooltips {
 	 * must not invoke this on a dedicated server.
 	 */
 	private static boolean isKeyDown(int leftKey, int rightKey) {
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, leftKey)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, rightKey);
+		// Since 26.3 InputConstants.isKeyDown resolves the active window itself.
+		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(leftKey)
+				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(rightKey);
 	}
 
 	/**
