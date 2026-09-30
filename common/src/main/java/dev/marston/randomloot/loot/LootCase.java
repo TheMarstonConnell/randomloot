@@ -5,6 +5,7 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
 import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.util.Prediction;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
@@ -83,7 +84,7 @@ public class LootCase extends Item {
 				player.setItemInHand(hand, tool);
 			} else if (!player.getInventory().add(tool)) {
 				// Creative keeps the case in hand, so the tool goes to the inventory.
-				player.drop(tool, false);
+				player.drop(tool, false, Prediction.SERVER_ONLY);
 			}
 		} else if (consumeCase) {
 			lootCase.shrink(1); // client prediction; the server replaces the stack above

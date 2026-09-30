@@ -184,11 +184,12 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// Runs from inventoryTick for every loot item, every tick. Inspect the per-stack
+		// patch (not the effective components, whose prototype always carries the modifiers).
+		var patch = stack.getComponentsPatch().split();
+		if (patch.added().has(DataComponents.ATTRIBUTE_MODIFIERS)
+				|| patch.removed().contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,7 +310,7 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}
