@@ -26,7 +26,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
+import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
 import net.neoforged.fml.config.ModConfig;
 
 import static net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem;
@@ -41,7 +41,9 @@ public class RandomLootFabric implements ModInitializer {
         // Dispenser behavior; mod init is single-threaded on Fabric so no deferral needed.
         RandomLoot.commonSetup();
 
-        // NeoForge-style TOML config via Forge Config API Port; same file name on both loaders.
+        // NeoForge-style TOML config via Forge Config API Port. FCAP keeps the pre-26.3
+        // ModConfig.Type.COMMON name (NeoForge's FML renamed it to LOCAL); both mean
+        // "loaded on both sides, not synced" — so the Fabric config file is randomloot-common.toml.
         ConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
         ModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
         // Both registrations matter: dropping .reloading silently breaks /reload-time
@@ -105,7 +107,7 @@ public class RandomLootFabric implements ModInitializer {
 
             for (LootInjection.Entry entry : LootInjection.entries()) {
                 tableBuilder.withPool(LootPool.lootPool()
-                        .setRolls(ConstantValue.exactly(1.0f))
+                        .setRolls(ContextIntProviders.exactly(1))
                         .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
                         .add(lootTableItem(entry.item())));
             }

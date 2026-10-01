@@ -20,7 +20,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -184,11 +183,13 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// Runs from inventoryTick for every loot item, every tick. 26.3 dropped
+		// DataComponentPatch.entrySet(); split() exposes the overridden (added) and
+		// removed component types, which is all we need to see if attributes were stamped.
+		var patch = stack.getComponentsPatch().split();
+		if (patch.added().has(DataComponents.ATTRIBUTE_MODIFIERS)
+				|| patch.removed().contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,7 +310,9 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		// 26.3: playerDestroy now takes a ServerLevel. The caller only invokes this with a
+		// ServerPlayer, so the level is always server-side.
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}

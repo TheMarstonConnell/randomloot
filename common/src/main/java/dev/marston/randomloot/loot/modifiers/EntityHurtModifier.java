@@ -21,7 +21,10 @@ public interface EntityHurtModifier extends Modifier {
 		if (amount <= 0.0f) {
 			return;
 		}
-		hurtee.invulnerableTime = 0;
+		// 26.3 split the old invulnerableTime into Entity's spawn-grace invulnerableTime and
+		// LivingEntity's per-hit damageCooldownTime; clear the latter so the bonus hit isn't
+		// absorbed by the triggering hit's i-frames.
+		hurtee.damageCooldownTime = 0;
 		if (hurter instanceof Player player) {
 			hurtee.hurt(hurter.damageSources().playerAttack(player), amount);
 		} else {

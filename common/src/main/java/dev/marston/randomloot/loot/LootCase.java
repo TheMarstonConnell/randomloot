@@ -9,6 +9,7 @@ import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -83,7 +84,9 @@ public class LootCase extends Item {
 				player.setItemInHand(hand, tool);
 			} else if (!player.getInventory().add(tool)) {
 				// Creative keeps the case in hand, so the tool goes to the inventory.
-				player.drop(tool, false);
+				// 26.3 added a Prediction arg; the tool is generated server-side, so this
+				// drop is server-authoritative rather than client-predicted.
+				player.drop(tool, false, Prediction.SERVER_ONLY);
 			}
 		} else if (consumeCase) {
 			lootCase.shrink(1); // client prediction; the server replaces the stack above

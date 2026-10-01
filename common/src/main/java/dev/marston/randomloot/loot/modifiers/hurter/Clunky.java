@@ -77,7 +77,7 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
             currentVelocity.z + knockbackDir.z * KNOCKBACK_STRENGTH
         );
         
-        hurtee.hurtMarked = true;
+        hurtee.syncVelocity = true;
 
         return false;
     }
