@@ -214,8 +214,8 @@ public class RandomLootFabricGameTests {
     }
 
     /**
-     * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
-     * NeoForge writes, and its values reached the Config fields.
+     * Fabric-only: Forge Config API Port generated randomloot-common.toml (FCAP keeps the
+     * pre-26.3 COMMON type name) and its values reached the Config fields.
      */
     @GameTest(maxTicks = MAX_TICKS)
     public void configLoads(GameTestHelper helper) {

@@ -10,11 +10,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.ArrayList;
@@ -81,7 +81,9 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 			return false;
 		}
 
-		Level level = player.level();
+		// player is a ServerPlayer, so the level is always server-side; 26.3's
+		// Block.playerDestroy requires a ServerLevel.
+		ServerLevel level = (ServerLevel) player.level();
 
 		if (level.isClientSide()) {
 			return false;
