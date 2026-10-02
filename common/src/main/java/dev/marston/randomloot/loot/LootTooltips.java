@@ -64,9 +64,10 @@ final class LootTooltips {
 	 * must not invoke this on a dedicated server.
 	 */
 	private static boolean isKeyDown(int leftKey, int rightKey) {
-		com.mojang.blaze3d.platform.Window window = net.minecraft.client.Minecraft.getInstance().getWindow();
-		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, leftKey)
-				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(window, rightKey);
+		// 26.3's InputConstants.isKeyDown reads SDL keyboard state directly and no longer
+		// takes a window handle.
+		return com.mojang.blaze3d.platform.InputConstants.isKeyDown(leftKey)
+				|| com.mojang.blaze3d.platform.InputConstants.isKeyDown(rightKey);
 	}
 
 	/**

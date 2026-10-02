@@ -7,10 +7,13 @@ import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -27,19 +30,21 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.HoneycombItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
-import dev.marston.randomloot.platform.Services;
 import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
@@ -313,9 +318,9 @@ public class LootItem extends LootGearItem {
 		ItemStack stack = ctx.getItemInHand();
 
 		// Try stripping logs
-		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
+		BlockState stripped = getToolModifiedState(ctx, ToolAction.AXE_STRIP);
 		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_STRIP.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
@@ -325,9 +330,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		// Try scraping oxidation
-		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
+		BlockState scraped = getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
 		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_SCRAPE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
@@ -337,9 +342,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		// Try removing wax
-		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
+		BlockState unwaxed = getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
 		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
@@ -359,10 +364,10 @@ public class LootItem extends LootGearItem {
 
 		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
 
-		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
+		BlockState flattened = getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
 		if (flattened != null) {
 			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
@@ -371,6 +376,53 @@ public class LootItem extends LootGearItem {
 			return InteractionResult.SUCCESS;
 		}
 		return InteractionResult.PASS;
+	}
+
+	/**
+	 * The state a block turns into when the given tool action is applied (axe
+	 * strip/scrape/wax-off, shovel flatten), or null when it does not apply. 26.3
+	 * moved strip/flatten into the data-driven {@code BlockTransformer} datapack
+	 * registry; scrape/wax-off still key off the vanilla copper/honeycomb maps the
+	 * transformer is built from. All vanilla API, so both loaders share this (it used
+	 * to be a platform seam — NeoForge no longer exposes these as item abilities).
+	 */
+	private static BlockState getToolModifiedState(UseOnContext ctx, ToolAction action) {
+		BlockState state = ctx.getLevel().getBlockState(ctx.getClickedPos());
+		Block block = state.getBlock();
+		return switch (action) {
+			case AXE_STRIP -> transformerState(ctx, BlockTransformers.AXE, SoundEvents.AXE_STRIP);
+			case AXE_SCRAPE -> WeatheringCopper.getPrevious(state).orElse(null);
+			case AXE_WAX_OFF -> {
+				Block unwaxed = HoneycombItem.WAX_OFF_BY_BLOCK.get().get(block);
+				yield unwaxed == null ? null : unwaxed.withPropertiesOf(state);
+			}
+			case SHOVEL_FLATTEN -> transformerState(ctx, BlockTransformers.SHOVEL, SoundEvents.SHOVEL_FLATTEN);
+		};
+	}
+
+	/**
+	 * Evaluates a vanilla {@code BlockTransformer} for the clicked block, returning the
+	 * state its rules would produce (null if none apply). The axe transformer bundles
+	 * strip, scrape and wax-off together, so the sound narrows it to the one sub-transform
+	 * we want.
+	 */
+	private static BlockState transformerState(UseOnContext ctx, ResourceKey<BlockTransformer> key,
+			Holder<SoundEvent> sound) {
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+		Direction face = ctx.getClickedFace();
+		BlockTransformer transformer = level.registryAccess()
+				.lookupOrThrow(Registries.BLOCK_TRANSFORMER)
+				.getOrThrow(key)
+				.value();
+		for (BlockTransformer.BlockTransformData transform : transformer.transforms()) {
+			if (transform.sound().value() != sound.value()) continue;
+			if (transform.disallowedFaces().contains(face)) continue;
+			BlockState result = transform.blockStateProvider().value()
+					.getOptionalState(level, level.getRandom(), pos);
+			if (result != null) return result;
+		}
+		return null;
 	}
 
 	@Override

@@ -13,15 +13,16 @@ public interface EntityHurtModifier extends Modifier {
 	 * <p>The primary melee hit has already set the target's invulnerability frames and
 	 * {@code lastHurt} to the full attack damage; vanilla only lets a second hit land
 	 * during i-frames if it exceeds {@code lastHurt}, so any smaller bonus is silently
-	 * swallowed unless the i-frames are reset first. The damage source mirrors the
-	 * attacker (player vs. mob) so kill credit, knockback and death messages stay correct.
-	 * Non-positive amounts are ignored (a negative {@code hurt} would heal the target).
+	 * swallowed unless the i-frames are reset first. (26.3 moved the i-frame gate from
+	 * {@code invulnerableTime} to {@code damageCooldownTime}.) The damage source mirrors
+	 * the attacker (player vs. mob) so kill credit, knockback and death messages stay
+	 * correct. Non-positive amounts are ignored (a negative {@code hurt} would heal the target).
 	 */
 	default void dealBonusDamage(LivingEntity hurtee, LivingEntity hurter, float amount) {
 		if (amount <= 0.0f) {
 			return;
 		}
-		hurtee.invulnerableTime = 0;
+		hurtee.damageCooldownTime = 0;
 		if (hurter instanceof Player player) {
 			hurtee.hurt(hurter.damageSources().playerAttack(player), amount);
 		} else {
