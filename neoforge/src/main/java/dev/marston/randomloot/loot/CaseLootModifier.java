@@ -3,6 +3,8 @@ package dev.marston.randomloot.loot;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import java.util.Optional;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -31,8 +33,10 @@ public class CaseLootModifier extends LootModifier {
             ).apply(inst, CaseLootModifier::new)
     );
 
-    // First constructor parameter is the list of conditions. The rest is our extra properties.
-    public CaseLootModifier(LootItemCondition[] conditions, int priority, Item itemIn) {
+    // First constructor parameter is the (optional) condition. The rest is our extra properties.
+    // 26.3 changed the LootModifier base from a LootItemCondition[] to a single
+    // Optional<Holder<LootItemCondition>>, matching codecStart's output.
+    public CaseLootModifier(Optional<Holder<LootItemCondition>> conditions, int priority, Item itemIn) {
         super(conditions, priority);
         this.item = itemIn;
         LOADED_ITEMS.add(itemIn);

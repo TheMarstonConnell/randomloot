@@ -1,6 +1,6 @@
 accessWidener v2 official
 # randomloot:cosmetic item model property registration (NeoForge exposes this via an event)
 accessible field net/minecraft/client/renderer/item/properties/numeric/RangeSelectItemModelProperties ID_MAPPER Lnet/minecraft/util/ExtraCodecs$LateBoundIdMapper;
-# vanilla tool-action conversion maps, used by FabricPlatformHelper.getToolModifiedState
-accessible field net/minecraft/world/item/AxeItem STRIPPABLES Ljava/util/Map;
-accessible field net/minecraft/world/item/ShovelItem FLATTENABLES Ljava/util/Map;
+# NOTE: 26.3 replaced AxeItem.STRIPPABLES / ShovelItem.FLATTENABLES with the data-driven
+# BlockTransformer registry (all public API), so FabricPlatformHelper.getToolModifiedState
+# no longer needs those fields widened.
