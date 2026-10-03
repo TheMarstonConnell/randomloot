@@ -14,6 +14,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -106,8 +107,9 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 				continue;
 			}
 
-			// Break the block with drops
-			state.getBlock().playerDestroy(level, player, blockPos, state, null, itemstack);
+			// Break the block with drops. The early isClientSide guard above means
+			// level is a ServerLevel here, which 26.3's playerDestroy now requires.
+			state.getBlock().playerDestroy((ServerLevel) level, player, blockPos, state, null, itemstack);
 			level.removeBlock(blockPos, false);
 
 			// Apply durability damage for each block

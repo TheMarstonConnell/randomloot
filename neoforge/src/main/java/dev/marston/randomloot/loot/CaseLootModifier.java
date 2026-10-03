@@ -3,6 +3,7 @@ package dev.marston.randomloot.loot;
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.core.Holder;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -11,6 +12,8 @@ import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 import net.neoforged.neoforge.common.loot.IGlobalLootModifier;
 import net.neoforged.neoforge.common.loot.LootModifier;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Optional;
 
 public class CaseLootModifier extends LootModifier {
     private final Item item;
@@ -31,9 +34,10 @@ public class CaseLootModifier extends LootModifier {
             ).apply(inst, CaseLootModifier::new)
     );
 
-    // First constructor parameter is the list of conditions. The rest is our extra properties.
-    public CaseLootModifier(LootItemCondition[] conditions, int priority, Item itemIn) {
-        super(conditions, priority);
+    // First constructor parameter is the optional condition. The rest is our extra properties.
+    // 26.3 collapsed LootModifier's LootItemCondition[] into a single Optional<Holder<...>>.
+    public CaseLootModifier(Optional<Holder<LootItemCondition>> condition, int priority, Item itemIn) {
+        super(condition, priority);
         this.item = itemIn;
         LOADED_ITEMS.add(itemIn);
     }

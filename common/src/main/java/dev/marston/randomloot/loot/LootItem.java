@@ -6,13 +6,12 @@ import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.core.Holder;
 import net.minecraft.tags.BlockTags;
@@ -31,16 +30,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
-import dev.marston.randomloot.platform.Services;
-import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
 
@@ -160,24 +157,6 @@ public class LootItem extends LootGearItem {
 						EquipmentSlotGroup.MAINHAND).build();
 	}
 
-	/** Loader-neutral form of NeoForge's canPerformAction; loader subclasses hook it into their APIs. */
-	public boolean canPerform(ItemStack itemStack, ToolAction action) {
-		if (LootUtils.isRolling(itemStack)) {
-			return false;
-		}
-		ToolType type = LootUtils.getToolType(itemStack);
-
-		if (type == ToolType.AXE) {
-			return action == ToolAction.AXE_STRIP ||
-				   action == ToolAction.AXE_SCRAPE ||
-				   action == ToolAction.AXE_WAX_OFF;
-		}
-		if (type == ToolType.SHOVEL) {
-			return action == ToolAction.SHOVEL_FLATTEN;
-		}
-		return false;
-	}
-
 	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
@@ -291,86 +270,33 @@ public class LootItem extends LootGearItem {
 
 		}
 
-		// No modifier consumed - try vanilla tool behaviors
+		// No modifier consumed - try vanilla tool behaviors. Since 26.3 these conversions
+		// are data-driven BlockTransformers (vanilla dropped AxeItem/ShovelItem and their
+		// STRIPPABLES/FLATTENABLES maps, and NeoForge dropped the matching ItemAbilities).
 		if (type == ToolType.AXE) {
-			InteractionResult result = tryAxeActions(ctx);
+			InteractionResult result = applyBlockTransformer(ctx, BlockTransformers.AXE);
 			if (result.consumesAction()) return result;
 		}
 
 		if (type == ToolType.SHOVEL) {
-			InteractionResult result = tryShovelFlatten(ctx);
+			InteractionResult result = applyBlockTransformer(ctx, BlockTransformers.SHOVEL);
 			if (result.consumesAction()) return result;
 		}
 
 		return InteractionResult.PASS;
 	}
 
-	private InteractionResult tryAxeActions(UseOnContext ctx) {
-		Level level = ctx.getLevel();
-		BlockPos pos = ctx.getClickedPos();
-		BlockState state = level.getBlockState(pos);
-		Player player = ctx.getPlayer();
-		ItemStack stack = ctx.getItemInHand();
-
-		// Try stripping logs
-		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
-		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, stripped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		// Try scraping oxidation
-		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
-		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, scraped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		// Try removing wax
-		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
-		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, unwaxed, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		return InteractionResult.PASS;
-	}
-
-	private InteractionResult tryShovelFlatten(UseOnContext ctx) {
-		if (ctx.getClickedFace() != Direction.UP) return InteractionResult.PASS;
-
-		Level level = ctx.getLevel();
-		BlockPos pos = ctx.getClickedPos();
-
-		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
-
-		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
-		if (flattened != null) {
-			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, flattened, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-		return InteractionResult.PASS;
+	/**
+	 * Run a vanilla block transformation - log stripping (axis preserved), copper
+	 * scraping/un-waxing for the axe, grass-to-path flattening for the shovel - on the
+	 * block the context points at. {@link BlockTransformer#transformBlock} performs the
+	 * whole operation (resulting state, sound, particle, game event and tool damage)
+	 * exactly as the vanilla tool would, so both loaders share this one path.
+	 */
+	private InteractionResult applyBlockTransformer(UseOnContext ctx, ResourceKey<BlockTransformer> key) {
+		BlockTransformer transformer = ctx.getLevel().registryAccess()
+				.lookupOrThrow(Registries.BLOCK_TRANSFORMER).getValue(key);
+		return transformer != null ? transformer.transformBlock(ctx) : InteractionResult.PASS;
 	}
 
 	@Override
