@@ -27,7 +27,7 @@ public class RandomLootNeoForge {
 
         modEventBus.addListener(this::commonSetup);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        modContainer.registerConfig(ModConfig.Type.LOCAL, Config.SPEC);
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {

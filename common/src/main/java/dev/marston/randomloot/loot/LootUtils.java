@@ -184,11 +184,11 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// This runs from inventoryTick for every loot item, every tick. 26.3's vanilla
+		// DataComponentPatch dropped entrySet(); split().added() exposes the explicitly
+		// set overrides, so has() answers the same "already stamped?" question.
+		if (stack.getComponentsPatch().split().added().has(DataComponents.ATTRIBUTE_MODIFIERS)) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,7 +309,11 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		// 26.3 tightened playerDestroy to ServerLevel; this harvest path is server-only.
+		if (!(level instanceof ServerLevel serverLevel)) {
+			return false;
+		}
+		state.getBlock().playerDestroy(serverLevel, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}
