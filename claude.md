@@ -6,16 +6,16 @@
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. **Multiloader**: one shared codebase (`common/`) shipping both a NeoForge jar and a Fabric jar.
 
 ## Current Version
-- **Minecraft**: 26.2 (fabric/NeoForm artifacts use `26.2`; NeoForge builds are `26.2.0.x`)
-- **NeoForge**: 26.2.0.12-beta · **ModDevGradle**: 2.0.141
-- **Fabric**: loader 0.19.3, fabric-api 0.154.2+26.2, fabric-loom 1.17.14
-- **Forge Config API Port**: 26.2.1 (NeoForge config API on Fabric; bundled jar-in-jar)
+- **Minecraft**: 26.3 (fabric/NeoForm artifacts use `26.3`; NeoForge builds are `26.3.0.x`)
+- **NeoForge**: 26.3.0.51-beta · **ModDevGradle**: 2.0.148
+- **Fabric**: loader 0.19.5, fabric-api 0.161.0+26.3, fabric-loom 1.18.2
+- **Forge Config API Port**: 26.3.1 (NeoForge config API on Fabric; bundled jar-in-jar)
 - **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4
 - **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.12-beta` = MC `26.2`, build `12`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.3.0.51-beta` = MC `26.3`, build `51`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.3`, NeoForm `26.3-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
 
 ## Multiloader Architecture
 - `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
@@ -25,7 +25,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 - **Derived data components**: per-stack attributes (attack / armor+toughness) and MAX_DAMAGE are vanilla components rebuilt by `LootUtils.refreshDerivedComponents(stack)`. **`GearTags.mutate` calls it for you** — that is the whole point of the seam, so never pair a raw read with a raw write. `GearTags.write` is the escape hatch that skips the refresh (only the migration gametest wants it); if you build a gear stack by hand, call `refreshDerivedComponents` yourself like `CloneItem` does. `migrateDerivedComponents` in inventoryTick upgrades pre-component items but **bails as soon as ATTRIBUTE_MODIFIERS exists**, so it cannot rescue a stack that was stamped once and then mutated. These replaced NeoForge's dynamic `getDefaultAttributeModifiers`/`getMaxDamage` item overrides — never reintroduce loader-only dynamic item methods for stats.
 - **Hook contract**: `platform/GameHook` names every game event a loader must route into a common dispatcher; each shim calls `GameHooks.bind(...)` and the `loader_hooks_all_bound` gametest fails if either loader forgot one. Add a hook → add the enum constant → wire AND bind on both loaders. It checks the hook was declared wired, not that a Fabric mixin actually applied.
 - **Loot injection**: NeoForge = GLM (`CaseLootModifier` + `data/randomloot/loot_modifiers/`, lives in `neoforge/`); Fabric = `LootTableEvents.MODIFY` pools in `RandomLootFabric` (chances baked at datapack load; `/reload` picks up config changes).
-- **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
+- **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). MC 26.3 renamed `ModConfig.Type.COMMON` to `LOCAL` on NeoForge (FCAP still exposes `COMMON`), so the file name is pinned explicitly in each `registerConfig`/`register` call to keep it identical across loaders. Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
 - **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
 - **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration), `AxeItem.STRIPPABLES`, `ShovelItem.FLATTENABLES`.
 - **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (41 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (39 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).

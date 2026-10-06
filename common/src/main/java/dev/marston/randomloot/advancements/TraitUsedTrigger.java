@@ -2,10 +2,10 @@ package dev.marston.randomloot.advancements;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.predicates.ContextAwarePredicate;
-import net.minecraft.advancements.predicates.entity.EntityPredicate;
 import net.minecraft.advancements.triggers.SimpleCriterionTrigger;
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
 import java.util.Optional;
 
@@ -25,11 +25,11 @@ public class TraitUsedTrigger extends SimpleCriterionTrigger<TraitUsedTrigger.Tr
 		this.trigger(player, t -> t.trait().isEmpty() || t.trait().get().equals(trait));
 	}
 
-	public record TriggerInstance(Optional<ContextAwarePredicate> player,
+	public record TriggerInstance(Optional<Holder<LootItemCondition>> player,
 			Optional<String> trait) implements SimpleCriterionTrigger.SimpleInstance {
 
 		public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(i -> i.group(
-				EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+				LootItemCondition.CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
 				Codec.STRING.optionalFieldOf("trait").forGetter(TriggerInstance::trait))
 				.apply(i, TriggerInstance::new));
 	}
