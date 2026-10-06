@@ -118,7 +118,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	private static void spawnMarker(Level level, BlockPos p) {
 		Shulker se = new Shulker(EntityTypes.SHULKER, level);
 		se.setGlowingTag(true);
-		se.setInvulnerable(true);
+		se.setPermanentlyInvulnerable(true);
 		se.setInvisible(true);
 		se.setPos(p.getX(), p.getY(), p.getZ());
 		se.setNoAi(true);
