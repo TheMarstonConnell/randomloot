@@ -315,7 +315,7 @@ public class LootItem extends LootGearItem {
 		// Try stripping logs
 		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
 		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_STRIP.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
@@ -327,7 +327,7 @@ public class LootItem extends LootGearItem {
 		// Try scraping oxidation
 		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
 		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_SCRAPE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
@@ -339,7 +339,7 @@ public class LootItem extends LootGearItem {
 		// Try removing wax
 		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
 		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
@@ -362,7 +362,7 @@ public class LootItem extends LootGearItem {
 		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
 		if (flattened != null) {
 			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));

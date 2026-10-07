@@ -20,7 +20,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.BlockTransformer;
+import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -32,6 +33,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.StatType;
@@ -45,6 +47,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.EquipmentAsset;
@@ -184,11 +187,12 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// Runs from inventoryTick for every loot item, every tick: bail as soon as the
+		// stack already carries an ATTRIBUTE_MODIFIERS patch entry (set or removed).
+		DataComponentPatch.SplitResult patch = stack.getComponentsPatch().split();
+		if (patch.added().has(DataComponents.ATTRIBUTE_MODIFIERS)
+				|| patch.removed().contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,7 +313,7 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
 	}
@@ -947,6 +951,36 @@ public class LootUtils {
 			}
 		}
 		return s.toString();
+	}
+
+	/**
+	 * First block state the given vanilla tool {@link BlockTransformer} transforms would
+	 * produce at the clicked position, evaluated without applying anything. Mirrors the
+	 * state lookup in {@link BlockTransformer#transformBlock}. The axe transformer bundles
+	 * strip/scrape/wax entries, so {@code sound} selects the one a given tool action means.
+	 * Returns {@code null} when none match.
+	 *
+	 * <p>Shared by both loaders' {@code getToolModifiedState} (MC 26.3 moved these from the
+	 * removed {@code AxeItem.STRIPPABLES} / {@code ShovelItem.FLATTENABLES} maps to the
+	 * data-driven {@code block_transformer} registry). NeoForge passes the datamap-augmented
+	 * transform list so other mods' registrations are honored; Fabric passes the vanilla
+	 * transforms.
+	 */
+	@Nullable
+	public static BlockState firstToolTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
+			Holder<SoundEvent> sound, UseOnContext ctx) {
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+		for (BlockTransformer.BlockTransformData transform : transforms) {
+			if (transform.sound().value() != sound.value()) {
+				continue;
+			}
+			BlockState result = transform.blockStateProvider().value().getOptionalState(level, level.getRandom(), pos);
+			if (result != null) {
+				return result;
+			}
+		}
+		return null;
 	}
 
 }
