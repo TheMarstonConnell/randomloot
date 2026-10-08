@@ -6,16 +6,16 @@
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. **Multiloader**: one shared codebase (`common/`) shipping both a NeoForge jar and a Fabric jar.
 
 ## Current Version
-- **Minecraft**: 26.2 (fabric/NeoForm artifacts use `26.2`; NeoForge builds are `26.2.0.x`)
-- **NeoForge**: 26.2.0.12-beta · **ModDevGradle**: 2.0.141
-- **Fabric**: loader 0.19.3, fabric-api 0.154.2+26.2, fabric-loom 1.17.14
-- **Forge Config API Port**: 26.2.1 (NeoForge config API on Fabric; bundled jar-in-jar)
-- **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4
-- **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)
+- **Minecraft**: 26.3 (fabric/NeoForm artifacts use `26.3`; NeoForge builds are `26.3.0.x`)
+- **NeoForge**: 26.3.0.57-beta · **ModDevGradle**: 2.0.148
+- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.18.3
+- **Forge Config API Port**: 26.3.1 (NeoForge config API on Fabric; bundled jar-in-jar)
+- **Gradle**: 9.8.1 (wrapper) — fabric-loom 1.18 requires Gradle ≥9.7 and a Java 25 launcher JVM
+- **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0; loom 1.18 also requires the Gradle launcher JVM itself to be 25)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.12-beta` = MC `26.2`, build `12`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.3.0.57-beta` = MC `26.3`, build `57`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.3`, NeoForm `26.3-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
 
 ## Multiloader Architecture
 - `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
@@ -27,7 +27,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 - **Loot injection**: NeoForge = GLM (`CaseLootModifier` + `data/randomloot/loot_modifiers/`, lives in `neoforge/`); Fabric = `LootTableEvents.MODIFY` pools in `RandomLootFabric` (chances baked at datapack load; `/reload` picks up config changes).
 - **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
 - **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
-- **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration), `AxeItem.STRIPPABLES`, `ShovelItem.FLATTENABLES`.
+- **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration). (26.3 removed the `AxeItem.STRIPPABLES`/`ShovelItem.FLATTENABLES` maps — strip/flatten now resolve through the datapack `BLOCK_TRANSFORMER` registry in `FabricPlatformHelper.getToolModifiedState`, so those AW entries are gone.)
 - **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (41 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (39 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).
 
 ## Useful Links
