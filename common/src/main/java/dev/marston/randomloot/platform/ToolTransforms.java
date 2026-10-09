@@ -1,10 +1,12 @@
 package dev.marston.randomloot.platform;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
@@ -21,21 +23,25 @@ public final class ToolTransforms {
     }
 
     /**
-     * Returns the first non-null target state produced for the block at {@code pos},
-     * mirroring {@code BlockTransformer#transformBlock}'s resolution without the side
-     * effects. When {@code soundFilter} is non-null only transforms carrying that sound
-     * are considered, which separates strip / scrape / wax-off (all merged under the one
-     * AXE transformer) back into the mod's individual tool actions.
+     * Returns the resulting state for the block at {@code pos}, mirroring
+     * {@code BlockTransformer#transformBlock}'s resolution (sub-transform selection,
+     * disallowed-face skipping and neighbour-shape fixup) without the side effects, or
+     * {@code null} when no sub-transform applies. When {@code soundFilter} is non-null only
+     * transforms carrying that sound are considered, which separates strip / scrape /
+     * wax-off (all merged under the one AXE transformer) back into the mod's tool actions.
      */
     public static BlockState firstTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
-            Level level, BlockPos pos, Holder<SoundEvent> soundFilter) {
+            Level level, BlockPos pos, Direction clickedFace, Holder<SoundEvent> soundFilter) {
         for (BlockTransformer.BlockTransformData transform : transforms) {
             if (soundFilter != null && transform.sound().value() != soundFilter.value()) {
                 continue;
             }
+            if (transform.disallowedFaces().contains(clickedFace)) {
+                continue;
+            }
             BlockState newState = transform.blockStateProvider().value().getOptionalState(level, level.getRandom(), pos);
             if (newState != null) {
-                return newState;
+                return transform.updateFromNeighbors() ? Block.updateFromNeighbourShapes(newState, level, pos) : newState;
             }
         }
         return null;

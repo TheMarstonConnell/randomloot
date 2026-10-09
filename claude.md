@@ -8,7 +8,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 ## Current Version
 - **Minecraft**: 26.3 (fabric/NeoForm artifacts use `26.3`; NeoForge builds are `26.3.0.x`)
 - **NeoForge**: 26.3.0.58-beta · **ModDevGradle**: 2.0.148
-- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.18.3
+- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.17.21
 - **Forge Config API Port**: 26.3.1 (NeoForge config API on Fabric; bundled jar-in-jar)
 - **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4
 - **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)

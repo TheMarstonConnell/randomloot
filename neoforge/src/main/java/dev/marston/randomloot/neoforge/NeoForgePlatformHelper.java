@@ -61,6 +61,6 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
             case AXE_WAX_OFF -> SoundEvents.AXE_WAX_OFF;
             case SHOVEL_FLATTEN -> SoundEvents.SHOVEL_FLATTEN;
         };
-        return ToolTransforms.firstTransform(DataMapHooks.getAllTransformers(holder), level, ctx.getClickedPos(), sound);
+        return ToolTransforms.firstTransform(DataMapHooks.getAllTransformers(holder), level, ctx.getClickedPos(), ctx.getClickedFace(), sound);
     }
 }

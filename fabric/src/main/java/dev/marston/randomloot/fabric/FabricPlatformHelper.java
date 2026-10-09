@@ -15,13 +15,10 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.HoneycombItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class FabricPlatformHelper implements IPlatformHelper {
@@ -49,38 +46,29 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public BlockState getToolModifiedState(UseOnContext ctx, ToolAction action) {
-        BlockState state = ctx.getLevel().getBlockState(ctx.getClickedPos());
-        Block block = state.getBlock();
-
         // 26.3 replaced the static AxeItem.STRIPPABLES / ShovelItem.FLATTENABLES maps (and
         // Fabric API's StrippableBlockRegistry) with the data-driven BlockTransformer datapack
-        // registry, so we resolve the registered AXE/SHOVEL transformers and ask them for the
-        // resulting state (modded blocks register their transforms there too). Scrape and
-        // wax-off still expose their own public maps, so we keep reading those directly to
-        // keep each action on its own branch/sound.
+        // registry. Every action resolves through the registered AXE/SHOVEL transformer so
+        // vanilla, Fabric-API and datapack entries all apply. The AXE transformer merges
+        // strip + scrape + wax-off under one key, so we filter its sub-transforms by sound.
         return switch (action) {
-            // The AXE transformer bundles strip + scrape + wax-off under one key; restrict to
-            // the strip sub-transforms (by sound) so scrape/wax keep their own branches.
             case AXE_STRIP -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_STRIP);
-            case AXE_SCRAPE -> WeatheringCopper.getPrevious(state).orElse(null);
-            case AXE_WAX_OFF -> {
-                Block unwaxed = HoneycombItem.WAX_OFF_BY_BLOCK.get().get(block);
-                yield unwaxed == null ? null : unwaxed.withPropertiesOf(state);
-            }
-            case SHOVEL_FLATTEN -> transformedState(ctx, BlockTransformers.SHOVEL, null);
+            case AXE_SCRAPE -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_SCRAPE);
+            case AXE_WAX_OFF -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_WAX_OFF);
+            case SHOVEL_FLATTEN -> transformedState(ctx, BlockTransformers.SHOVEL, SoundEvents.SHOVEL_FLATTEN);
         };
     }
 
     /**
      * Resolves the registered vanilla {@link BlockTransformer} for {@code key} and returns the
-     * first non-null target state it produces for the clicked block (see {@link ToolTransforms}).
-     * Fabric API's content registries feed the vanilla transforms, so modded blocks registered
-     * the standard Fabric way resolve here too.
+     * resulting state for the clicked block (see {@link ToolTransforms}). Fabric API's content
+     * registries feed the vanilla transforms, so modded blocks registered the standard Fabric
+     * way resolve here too.
      */
     private static BlockState transformedState(UseOnContext ctx, ResourceKey<BlockTransformer> key, Holder<SoundEvent> soundFilter) {
         Level level = ctx.getLevel();
         BlockTransformer transformer = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getValueOrThrow(key);
-        return ToolTransforms.firstTransform(transformer.transforms(), level, ctx.getClickedPos(), soundFilter);
+        return ToolTransforms.firstTransform(transformer.transforms(), level, ctx.getClickedPos(), ctx.getClickedFace(), soundFilter);
     }
 
     @Override
