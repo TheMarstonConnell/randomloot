@@ -51,24 +51,16 @@ public class FabricPlatformHelper implements IPlatformHelper {
         // registry. Every action resolves through the registered AXE/SHOVEL transformer so
         // vanilla, Fabric-API and datapack entries all apply. The AXE transformer merges
         // strip + scrape + wax-off under one key, so we filter its sub-transforms by sound.
-        return switch (action) {
-            case AXE_STRIP -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_STRIP);
-            case AXE_SCRAPE -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_SCRAPE);
-            case AXE_WAX_OFF -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_WAX_OFF);
-            case SHOVEL_FLATTEN -> transformedState(ctx, BlockTransformers.SHOVEL, SoundEvents.SHOVEL_FLATTEN);
+        ResourceKey<BlockTransformer> key = action == ToolAction.SHOVEL_FLATTEN ? BlockTransformers.SHOVEL : BlockTransformers.AXE;
+        Holder<SoundEvent> sound = switch (action) {
+            case AXE_STRIP -> SoundEvents.AXE_STRIP;
+            case AXE_SCRAPE -> SoundEvents.AXE_SCRAPE;
+            case AXE_WAX_OFF -> SoundEvents.AXE_WAX_OFF;
+            case SHOVEL_FLATTEN -> SoundEvents.SHOVEL_FLATTEN;
         };
-    }
-
-    /**
-     * Resolves the registered vanilla {@link BlockTransformer} for {@code key} and returns the
-     * resulting state for the clicked block (see {@link ToolTransforms}). Fabric API's content
-     * registries feed the vanilla transforms, so modded blocks registered the standard Fabric
-     * way resolve here too.
-     */
-    private static BlockState transformedState(UseOnContext ctx, ResourceKey<BlockTransformer> key, Holder<SoundEvent> soundFilter) {
         Level level = ctx.getLevel();
         BlockTransformer transformer = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getValueOrThrow(key);
-        return ToolTransforms.firstTransform(transformer.transforms(), level, ctx.getClickedPos(), ctx.getClickedFace(), soundFilter);
+        return ToolTransforms.firstTransform(transformer.transforms(), level, ctx.getClickedPos(), ctx.getClickedFace(), sound);
     }
 
     @Override
