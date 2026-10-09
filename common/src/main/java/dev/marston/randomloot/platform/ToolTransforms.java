@@ -9,26 +9,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-/**
- * Shared vanilla resolution for the data-driven tool block transforms introduced in
- * 26.3 ({@code net.minecraft.core.component.BlockTransformer}, keyed in the
- * {@code BLOCK_TRANSFORMER} datapack registry). It replaces the removed static
- * {@code AxeItem.STRIPPABLES} / {@code ShovelItem.FLATTENABLES} maps. Both loaders feed
- * in the transform list for the relevant key (each loader adding its own modded entries
- * first) and get back the resulting block state without running the full interaction.
- */
+/** Shared pure-query resolution of vanilla {@link BlockTransformer}s for both loaders. */
 public final class ToolTransforms {
 
     private ToolTransforms() {
     }
 
     /**
-     * Returns the resulting state for the block at {@code pos}, mirroring
-     * {@code BlockTransformer#transformBlock}'s resolution (sub-transform selection,
-     * disallowed-face skipping and neighbour-shape fixup) without the side effects, or
-     * {@code null} when no sub-transform applies. Only transforms carrying {@code soundFilter}
-     * are considered, which separates strip / scrape / wax-off (all merged under the one AXE
-     * transformer) back into the mod's individual tool actions.
+     * Returns the state the first transform carrying {@code soundFilter} produces for the block
+     * at {@code pos}, mirroring {@code BlockTransformer#transformBlock} (disallowed-face skip,
+     * neighbour-shape fixup) without side effects, or {@code null} if none applies.
      */
     public static BlockState firstTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
             Level level, BlockPos pos, Direction clickedFace, Holder<SoundEvent> soundFilter) {
