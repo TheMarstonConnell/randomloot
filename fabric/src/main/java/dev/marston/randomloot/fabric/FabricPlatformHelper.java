@@ -3,20 +3,17 @@ package dev.marston.randomloot.fabric;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.platform.ToolAction;
+import dev.marston.randomloot.platform.ToolTransforms;
 import dev.marston.randomloot.platform.services.IPlatformHelper;
 import net.fabricmc.api.EnvType;
-import net.fabricmc.fabric.api.registry.StrippableBlockRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.BlockTransformer;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.HoneycombItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class FabricPlatformHelper implements IPlatformHelper {
@@ -44,30 +41,13 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public BlockState getToolModifiedState(UseOnContext ctx, ToolAction action) {
-        BlockState state = ctx.getLevel().getBlockState(ctx.getClickedPos());
-        Block block = state.getBlock();
-
-        // Vanilla conversion maps (AxeItem/ShovelItem expose them to us via access
-        // widener). Fabric API's content registries feed the same maps
-        // (StrippableBlockRegistry/FlattenableBlockRegistry/OxidizableBlocksRegistry),
-        // so modded blocks registered the standard Fabric way work here too.
-        return switch (action) {
-            case AXE_STRIP -> {
-                // Transformer-based registrations live outside the vanilla map.
-                BlockState custom = StrippableBlockRegistry.getStrippedBlockState(state);
-                if (custom != null) {
-                    yield custom;
-                }
-                Block stripped = AxeItem.STRIPPABLES.get(block);
-                yield stripped == null ? null : stripped.withPropertiesOf(state);
-            }
-            case AXE_SCRAPE -> WeatheringCopper.getPrevious(state).orElse(null);
-            case AXE_WAX_OFF -> {
-                Block unwaxed = HoneycombItem.WAX_OFF_BY_BLOCK.get().get(block);
-                yield unwaxed == null ? null : unwaxed.withPropertiesOf(state);
-            }
-            case SHOVEL_FLATTEN -> ShovelItem.FLATTENABLES.get(block);
-        };
+        // 26.3 replaced the static AxeItem.STRIPPABLES / ShovelItem.FLATTENABLES maps (and
+        // Fabric API's StrippableBlockRegistry) with the data-driven BlockTransformer datapack
+        // registry. Resolve the action's registered transformer (ToolAction holds the key +
+        // sound) so vanilla, Fabric-API and datapack entries all apply.
+        Level level = ctx.getLevel();
+        BlockTransformer transformer = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getValueOrThrow(action.transformerKey());
+        return ToolTransforms.firstTransform(transformer.transforms(), level, ctx.getClickedPos(), ctx.getClickedFace(), action.sound());
     }
 
     @Override
