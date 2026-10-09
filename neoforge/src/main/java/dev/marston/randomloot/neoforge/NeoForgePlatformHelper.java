@@ -9,12 +9,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -52,15 +48,9 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
         // 26.3 moved strip/scrape/wax-off/flatten out of ItemAbilities and into the vanilla
         // BlockTransformer datapack registry; DataMapHooks.getAllTransformers folds NeoForge's
         // modded datamap entries into the vanilla transforms so modded blocks still resolve.
+        // ToolAction holds the registry key + sound shared with the Fabric helper.
         Level level = ctx.getLevel();
-        ResourceKey<BlockTransformer> key = action == ToolAction.SHOVEL_FLATTEN ? BlockTransformers.SHOVEL : BlockTransformers.AXE;
-        Holder<BlockTransformer> holder = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getOrThrow(key);
-        Holder<SoundEvent> sound = switch (action) {
-            case AXE_STRIP -> SoundEvents.AXE_STRIP;
-            case AXE_SCRAPE -> SoundEvents.AXE_SCRAPE;
-            case AXE_WAX_OFF -> SoundEvents.AXE_WAX_OFF;
-            case SHOVEL_FLATTEN -> SoundEvents.SHOVEL_FLATTEN;
-        };
-        return ToolTransforms.firstTransform(DataMapHooks.getAllTransformers(holder), level, ctx.getClickedPos(), ctx.getClickedFace(), sound);
+        Holder<BlockTransformer> holder = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getOrThrow(action.transformerKey());
+        return ToolTransforms.firstTransform(DataMapHooks.getAllTransformers(holder), level, ctx.getClickedPos(), ctx.getClickedFace(), action.sound());
     }
 }
