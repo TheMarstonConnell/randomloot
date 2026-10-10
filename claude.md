@@ -57,7 +57,7 @@ common/src/main/java/dev/marston/randomloot/
 ├── RandomLoot.java              # Loader-neutral core: MODID, LOGGER, init(), commonSetup()
 ├── Config.java                  # ModConfigSpec config (FCAP stub makes this common)
 ├── GenWiki.java                 # Wiki generation utility
-├── platform/                    # Services, IPlatformHelper, RegHelper, ToolAction
+├── platform/                    # Services, IPlatformHelper, RegHelper
 ├── component/                   # Data components
 ├── items/                       # ModItems (registers via Services.REG/PLATFORM)
 ├── gametest/GameTestBodies.java # Shared gametest bodies (both loaders run them)
@@ -321,7 +321,7 @@ git worktree list
 - **`EffectModifier`** — also holds the trait's `ChatFormatting` color; pass it in the constructor (see the `Effect`/`HurtEffect` registrations in `ModifierRegistry`).
 - **`LootTooltips`** (`loot/`) — shared `appendHoverText` body for `LootItem`/`LootArmorItem`; only the shift-expanded stats block differs, passed as a lambda.
 - **`LootUtils.getModifiers`** already filters config-disabled traits — never re-check `Config.traitEnabled` on its results.
-- **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `invulnerableTime` (otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
+- **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `damageCooldownTime` (the 26.3 hurt-cooldown field; otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
 - **`LootUtils.breakBlockAsPlayer(stack, pos, player, level, state)`** — breaks a block as the player (drops + stats) and returns whether it was actually destroyed; only spend durability when it returns `true`.
 - **Leveled traits** persist their level under `ModifierConstants.LEVEL` (`"trait_level"`); classes migrated from the old `"level"` key read both for back-compat.
 
