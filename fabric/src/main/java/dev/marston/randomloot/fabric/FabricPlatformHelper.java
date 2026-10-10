@@ -3,12 +3,13 @@ package dev.marston.randomloot.fabric;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.platform.ToolAction;
 import dev.marston.randomloot.platform.services.IPlatformHelper;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
@@ -39,16 +40,16 @@ public class FabricPlatformHelper implements IPlatformHelper {
     }
 
     @Override
-    public BlockState getToolModifiedState(UseOnContext ctx, ToolAction action) {
+    public LootUtils.ToolTransform resolveToolTransform(UseOnContext ctx, ResourceKey<BlockTransformer> transformer) {
         // 26.3 moved the strip/scrape/flatten/wax-off maps into the data-driven
         // BlockTransformer registry; Fabric mods add entries via datapack, so iterating the
         // registry entry directly already picks them up.
         Level level = ctx.getLevel();
-        var transformer = level.registryAccess()
+        BlockTransformer entry = level.registryAccess()
                 .lookupOrThrow(Registries.BLOCK_TRANSFORMER)
-                .getValueOrThrow(LootUtils.transformerKey(action));
-        return LootUtils.resolveBlockTransform(transformer.transforms(), level,
-                ctx.getClickedPos(), ctx.getClickedFace(), LootUtils.transformerSoundFilter(action));
+                .getValueOrThrow(transformer);
+        return LootUtils.resolveToolTransform(entry.transforms(), level,
+                ctx.getClickedPos(), ctx.getClickedFace());
     }
 
     @Override

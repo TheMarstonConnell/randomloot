@@ -14,7 +14,6 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import dev.marston.randomloot.platform.Services;
-import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.BlockPos;
@@ -49,7 +48,6 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.BlockTransformers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.EquipmentAsset;
@@ -320,54 +318,30 @@ public class LootUtils {
 		return true;
 	}
 
-	/**
-	 * The vanilla {@link BlockTransformer} registry key backing a tool action. 26.3 replaced
-	 * the old per-item strip/scrape/flatten maps (and NeoForge's tool-ability hooks) with the
-	 * data-driven block-transformer registry; the axe transformer bundles strip, scrape and
-	 * wax-off, the shovel transformer carries flatten.
-	 */
-	public static ResourceKey<BlockTransformer> transformerKey(ToolAction action) {
-		return switch (action) {
-			case AXE_STRIP, AXE_SCRAPE, AXE_WAX_OFF -> BlockTransformers.AXE;
-			case SHOVEL_FLATTEN -> BlockTransformers.SHOVEL;
-		};
-	}
+	/** The state a block transformer produces at a position, paired with the sound to play. */
+	public record ToolTransform(BlockState state, Holder<SoundEvent> sound) {}
 
 	/**
-	 * The sound a tool action's transformer entries carry, used to pick one action out of a
-	 * transformer that bundles several (the axe transformer holds all three axe actions). Null
-	 * when the transformer only serves this action (shovel = flatten only).
+	 * Resolve the first block-transformer entry that applies at the clicked position, returning
+	 * the state it produces together with its own sound (null if none applies). 26.3 replaced the
+	 * old per-item strip/scrape/flatten maps (and NeoForge's tool-ability hooks) with the
+	 * data-driven {@link BlockTransformer} registry, where a single axe transformer bundles
+	 * strip/scrape/wax-off entries (each disjoint per block) and the shovel transformer carries
+	 * flatten. Matching is by provider + face only — never by sound — so modded entries that
+	 * carry a custom sound are still applied. Callers pass the transform list for their loader:
+	 * Fabric uses the registry entry directly, NeoForge appends its data-map transformers so
+	 * modded strippables/flattenables keep working.
 	 */
 	@Nullable
-	public static Holder<SoundEvent> transformerSoundFilter(ToolAction action) {
-		return switch (action) {
-			case AXE_STRIP -> SoundEvents.AXE_STRIP;
-			case AXE_SCRAPE -> SoundEvents.AXE_SCRAPE;
-			case AXE_WAX_OFF -> SoundEvents.AXE_WAX_OFF;
-			case SHOVEL_FLATTEN -> null;
-		};
-	}
-
-	/**
-	 * Compute the state a block transformer would produce at the clicked position without
-	 * applying it (the caller performs the world change). Callers pass the transform list for
-	 * their loader: Fabric uses the registry entry directly, NeoForge appends its data-map
-	 * transformers so modded strippables/flattenables keep working. When soundFilter is
-	 * non-null only entries carrying that sound are considered.
-	 */
-	@Nullable
-	public static BlockState resolveBlockTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
-			Level level, BlockPos pos, Direction face, @Nullable Holder<SoundEvent> soundFilter) {
+	public static ToolTransform resolveToolTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
+			Level level, BlockPos pos, Direction face) {
 		for (BlockTransformer.BlockTransformData data : transforms) {
-			if (soundFilter != null && data.sound().value() != soundFilter.value()) {
-				continue;
-			}
 			if (data.disallowedFaces().contains(face)) {
 				continue;
 			}
 			BlockState result = data.blockStateProvider().value().getOptionalState(level, level.getRandom(), pos);
 			if (result != null) {
-				return result;
+				return new ToolTransform(result, data.sound());
 			}
 		}
 		return null;
