@@ -2,8 +2,10 @@ package dev.marston.randomloot.platform.services;
 
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.platform.ToolAction;
+import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.BlockTransformer;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.context.UseOnContext;
@@ -43,12 +45,12 @@ public interface IPlatformHelper {
     Level tooltipLevel(Item.TooltipContext ctx);
 
     /**
-     * The state a block turns into when the given tool action is applied
-     * (axe strip/scrape/wax-off, shovel flatten), or null when the action
-     * does not apply. NeoForge routes through getToolModifiedState so other
-     * mods' blocks participate; Fabric falls back to the vanilla conversion
-     * maps.
+     * Resolve the given vanilla block transformer ({@code BlockTransformers.AXE} /
+     * {@code .SHOVEL}) at the clicked position: the state the block turns into plus the
+     * sound to play, or null when nothing applies. NeoForge folds in its data-map
+     * transformers so other mods' blocks participate; Fabric reads the registry entry
+     * directly (Fabric mods add entries via datapack).
      */
     @Nullable
-    BlockState getToolModifiedState(UseOnContext ctx, ToolAction action);
+    LootUtils.ToolTransform resolveToolTransform(UseOnContext ctx, ResourceKey<BlockTransformer> transformer);
 }

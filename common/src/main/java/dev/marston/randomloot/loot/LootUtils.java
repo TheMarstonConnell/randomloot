@@ -17,9 +17,11 @@ import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
+import net.minecraft.core.component.BlockTransformer;
 import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
@@ -32,6 +34,7 @@ import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.StatType;
@@ -184,11 +187,12 @@ public class LootUtils {
 	 * (no patch entry), derive them now. Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		// Runs from inventoryTick for every loot item, every tick: skip once the
+		// attribute-modifiers component has been stamped onto the patch (set or removed).
+		var patch = stack.getComponentsPatch().split();
+		if (patch.added().has(DataComponents.ATTRIBUTE_MODIFIERS)
+				|| patch.removed().contains(DataComponents.ATTRIBUTE_MODIFIERS)) {
+			return;
 		}
 		refreshDerivedComponents(stack);
 	}
@@ -309,9 +313,38 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy(level, player, pos, state, null, itemstack);
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
 		level.removeBlock(pos, false);
 		return true;
+	}
+
+	/** The state a block transformer produces at a position, paired with the sound to play. */
+	public record ToolTransform(BlockState state, Holder<SoundEvent> sound) {}
+
+	/**
+	 * Resolve the first block-transformer entry that applies at the clicked position, returning
+	 * the state it produces together with its own sound (null if none applies). 26.3 replaced the
+	 * old per-item strip/scrape/flatten maps (and NeoForge's tool-ability hooks) with the
+	 * data-driven {@link BlockTransformer} registry, where a single axe transformer bundles
+	 * strip/scrape/wax-off entries (each disjoint per block) and the shovel transformer carries
+	 * flatten. Matching is by provider + face only — never by sound — so modded entries that
+	 * carry a custom sound are still applied. Callers pass the transform list for their loader:
+	 * Fabric uses the registry entry directly, NeoForge appends its data-map transformers so
+	 * modded strippables/flattenables keep working.
+	 */
+	@Nullable
+	public static ToolTransform resolveToolTransform(Iterable<BlockTransformer.BlockTransformData> transforms,
+			Level level, BlockPos pos, Direction face) {
+		for (BlockTransformer.BlockTransformData data : transforms) {
+			if (data.disallowedFaces().contains(face)) {
+				continue;
+			}
+			BlockState result = data.blockStateProvider().value().getOptionalState(level, level.getRandom(), pos);
+			if (result != null) {
+				return new ToolTransform(result, data.sound());
+			}
+		}
+		return null;
 	}
 
 	public static void addLoreLine(ListTag lore, String text, String color) {

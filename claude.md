@@ -6,28 +6,29 @@
 An RPG-style loot system mod for Minecraft that generates randomized tools with modifiers/traits. **Multiloader**: one shared codebase (`common/`) shipping both a NeoForge jar and a Fabric jar.
 
 ## Current Version
-- **Minecraft**: 26.2 (fabric/NeoForm artifacts use `26.2`; NeoForge builds are `26.2.0.x`)
-- **NeoForge**: 26.2.0.12-beta · **ModDevGradle**: 2.0.141
-- **Fabric**: loader 0.19.3, fabric-api 0.154.2+26.2, fabric-loom 1.17.14
-- **Forge Config API Port**: 26.2.1 (NeoForge config API on Fabric; bundled jar-in-jar)
-- **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4
+- **Minecraft**: 26.3 (fabric/NeoForm artifacts use `26.3`; NeoForge builds are `26.3.0.x`)
+- **NeoForge**: 26.3.0.64-beta · **ModDevGradle**: 2.0.148
+- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.17.20
+- **NeoForm**: 26.3-1
+- **Forge Config API Port**: 26.3.1 (NeoForge config API on Fabric; bundled jar-in-jar)
+- **Gradle**: 9.5.0 (wrapper) — fabric-loom 1.17 requires ≥9.4 (loom 1.18 would need Gradle ≥9.7)
 - **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.2.0.12-beta` = MC `26.2`, build `12`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.2`, NeoForm `26.2-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.3.0.64-beta` = MC `26.3`, build `64`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.3`, NeoForm `26.3-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
 
 ## Multiloader Architecture
 - `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
 - `neoforge/`, `fabric/` — loader projects compile the **common sources** into their jars (`commonJava`/`commonResources` configurations from `build-logic/`), so each shipped jar is self-contained.
-- **Platform seam** (`dev.marston.randomloot.platform`): `Services.PLATFORM`/`Services.REG` resolved via Java `ServiceLoader` (bindings in each loader's `META-INF/services/`). `RegHelper` = registration (NeoForge: DeferredRegisters attached in the mod ctor; Fabric: immediate `Registry.register`). `IPlatformHelper` = item factories (NeoForge subclasses add `canPerformAction`/`supportsEnchantment`/`isCombineRepairable` extension overrides), `getToolModifiedState` (strip/scrape/wax/flatten), `canHarvestBlock`, `tooltipLevel`.
+- **Platform seam** (`dev.marston.randomloot.platform`): `Services.PLATFORM`/`Services.REG` resolved via Java `ServiceLoader` (bindings in each loader's `META-INF/services/`). `RegHelper` = registration (NeoForge: DeferredRegisters attached in the mod ctor; Fabric: immediate `Registry.register`). `IPlatformHelper` = item factories (NeoForge subclasses add `supportsEnchantment`/`isCombineRepairable` extension overrides), `resolveToolTransform` (strip/scrape/wax/flatten — resolves a `BlockTransformer` registry entry since 26.3, returning the produced state + its sound, with NeoForge also folding in its data-map transformers via `DataMapHooks`), `canHarvestBlock`, `tooltipLevel`.
 - **Event seam**: dispatchers in common are plain static methods (`KillDispatcher.onLivingDeath`, `ArmorDispatcher.onLivingDamagePre/Post/onArmorHurt`, `Soulbound.modifyBreakSpeed`, `BlockHighlighter.onServerTick/onServerStopping`, `ModCommands.register`, `Config.onLoad`). NeoForge shim: `neoforge/.../NeoForgeEvents` (+`NeoForgeClientEvents`). Fabric shim: `RandomLootFabric` (Fabric API events) + 3 mixins for hooks Fabric lacks (`PlayerMixin` break speed, `LivingEntityMixin` pre-damage armor traits, `ItemStackMixin` armor durability skip).
 - **Derived data components**: per-stack attributes (attack / armor+toughness) and MAX_DAMAGE are vanilla components rebuilt by `LootUtils.refreshDerivedComponents(stack)`. **`GearTags.mutate` calls it for you** — that is the whole point of the seam, so never pair a raw read with a raw write. `GearTags.write` is the escape hatch that skips the refresh (only the migration gametest wants it); if you build a gear stack by hand, call `refreshDerivedComponents` yourself like `CloneItem` does. `migrateDerivedComponents` in inventoryTick upgrades pre-component items but **bails as soon as ATTRIBUTE_MODIFIERS exists**, so it cannot rescue a stack that was stamped once and then mutated. These replaced NeoForge's dynamic `getDefaultAttributeModifiers`/`getMaxDamage` item overrides — never reintroduce loader-only dynamic item methods for stats.
 - **Hook contract**: `platform/GameHook` names every game event a loader must route into a common dispatcher; each shim calls `GameHooks.bind(...)` and the `loader_hooks_all_bound` gametest fails if either loader forgot one. Add a hook → add the enum constant → wire AND bind on both loaders. It checks the hook was declared wired, not that a Fabric mixin actually applied.
 - **Loot injection**: NeoForge = GLM (`CaseLootModifier` + `data/randomloot/loot_modifiers/`, lives in `neoforge/`); Fabric = `LootTableEvents.MODIFY` pools in `RandomLootFabric` (chances baked at datapack load; `/reload` picks up config changes).
 - **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
 - **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
-- **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration), `AxeItem.STRIPPABLES`, `ShovelItem.FLATTENABLES`.
+- **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration). (The old `AxeItem.STRIPPABLES`/`ShovelItem.FLATTENABLES` entries were dropped in 26.3 — those maps moved to the data-driven `BlockTransformer` registry, now read through `resolveToolTransform`.)
 - **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (41 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (39 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).
 
 ## Useful Links
@@ -56,7 +57,7 @@ common/src/main/java/dev/marston/randomloot/
 ├── RandomLoot.java              # Loader-neutral core: MODID, LOGGER, init(), commonSetup()
 ├── Config.java                  # ModConfigSpec config (FCAP stub makes this common)
 ├── GenWiki.java                 # Wiki generation utility
-├── platform/                    # Services, IPlatformHelper, RegHelper, ToolAction
+├── platform/                    # Services, IPlatformHelper, RegHelper
 ├── component/                   # Data components
 ├── items/                       # ModItems (registers via Services.REG/PLATFORM)
 ├── gametest/GameTestBodies.java # Shared gametest bodies (both loaders run them)
@@ -183,7 +184,7 @@ Big jump — Minecraft adopted calendar versioning and shipped deobfuscated. See
 - `Recipe#assemble()` lost the `HolderLookup.Provider` param → `assemble(T input)`.
 - `Recipe#group()` and `Recipe#showNotification()` are no longer default — must be implemented (`SmithingRecipe` does NOT provide them; it does provide `getType()` and `recipeBookCategory()`).
 - `CustomRecipe` constructor takes **no args** now (no `CraftingBookCategory`); it provides `group()`/`category()`/`showNotification()`/`placementInfo()`. For a no-data custom recipe, mirror vanilla `RepairItemRecipe`: a singleton `INSTANCE` + `MapCodec.unit(INSTANCE)` + `StreamCodec.unit(INSTANCE)` (share the same instance — `StreamCodec.unit` does a reference-equality check on encode).
-- NeoForge `LootModifier` constructor is now `(LootItemCondition[] conditions, int priority)` and `codecStart()` returns a P2 that adds an optional `"priority"` int → subclass constructor needs a `priority` param: `super(conditions, priority)`.
+- NeoForge `LootModifier` constructor is `(Optional<Holder<LootItemCondition>> condition, int priority)` (26.3; was `LootItemCondition[] conditions`) and `codecStart()` returns a P2 that adds an optional `"priority"` int → subclass constructor needs a `priority` param: `super(condition, priority)`.
 - `IItemExtension#canPerformAction` first param changed `ItemStack` → `ItemInstance` (the shared read-only interface implemented by both `ItemStack` and `ItemStackTemplate`). Cast to `ItemStack` inside if you need stack-only utils.
 - `Player.displayClientMessage(Component, boolean)` removed → `player.sendSystemMessage(Component)`.
 - `ItemStackTemplate` is the new immutable stack for data/recipe contexts; `ItemStack.CODEC`/`STREAM_CODEC` still exist and work for recipe deserialization (registries are loaded by recipe-load time).
@@ -320,7 +321,7 @@ git worktree list
 - **`EffectModifier`** — also holds the trait's `ChatFormatting` color; pass it in the constructor (see the `Effect`/`HurtEffect` registrations in `ModifierRegistry`).
 - **`LootTooltips`** (`loot/`) — shared `appendHoverText` body for `LootItem`/`LootArmorItem`; only the shift-expanded stats block differs, passed as a lambda.
 - **`LootUtils.getModifiers`** already filters config-disabled traits — never re-check `Config.traitEnabled` on its results.
-- **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `invulnerableTime` (otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
+- **`EntityHurtModifier.dealBonusDamage(hurtee, hurter, amount)`** — use this for any post-hit bonus melee damage. It resets `damageCooldownTime` (the 26.3 hurt-cooldown field; otherwise the bonus is swallowed by i-frames) and picks the correct `playerAttack`/`mobAttack` source. Never call `hurtee.hurt(...)` directly for a follow-up bonus.
 - **`LootUtils.breakBlockAsPlayer(stack, pos, player, level, state)`** — breaks a block as the player (drops + stats) and returns whether it was actually destroyed; only spend durability when it returns `true`.
 - **Leveled traits** persist their level under `ModifierConstants.LEVEL` (`"trait_level"`); classes migrated from the old `"level"` key read both for back-compat.
 
