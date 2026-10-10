@@ -3,13 +3,13 @@
   "criteria": {
     "crafted_case": {
       "conditions": {
-        "recipe_id": "randomloot:case_from_essence"
+        "recipes": "randomloot:case_from_essence"
       },
       "trigger": "minecraft:recipe_crafted"
     },
     "crafter_crafted_case": {
       "conditions": {
-        "recipe_id": "randomloot:case_from_essence"
+        "recipes": "randomloot:case_from_essence"
       },
       "trigger": "minecraft:crafter_recipe_crafted"
     }

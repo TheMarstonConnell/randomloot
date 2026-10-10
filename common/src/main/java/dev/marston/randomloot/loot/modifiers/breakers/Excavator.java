@@ -107,7 +107,7 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 			}
 
 			// Break the block with drops
-			state.getBlock().playerDestroy(level, player, blockPos, state, null, itemstack);
+			state.getBlock().playerDestroy((net.minecraft.server.level.ServerLevel) level, player, blockPos, state, null, itemstack);
 			level.removeBlock(blockPos, false);
 
 			// Apply durability damage for each block
