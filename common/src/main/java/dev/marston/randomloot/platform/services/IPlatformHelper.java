@@ -18,9 +18,8 @@ public interface IPlatformHelper {
 
     /**
      * Creates the main tool item. Loaders may return a subclass that hooks
-     * their item extension points (NeoForge's canPerformAction,
-     * supportsEnchantment, isCombineRepairable) into the loader-neutral
-     * methods on {@link LootItem}.
+     * their item extension points (NeoForge's supportsEnchantment,
+     * isCombineRepairable) into the loader-neutral methods on {@link LootItem}.
      */
     LootItem createLootItem(Item.Properties props);
 
@@ -45,9 +44,9 @@ public interface IPlatformHelper {
     /**
      * The state a block turns into when the given tool action is applied
      * (axe strip/scrape/wax-off, shovel flatten), or null when the action
-     * does not apply. NeoForge routes through getToolModifiedState so other
-     * mods' blocks participate; Fabric falls back to the vanilla conversion
-     * maps.
+     * does not apply. Since 26.3 both loaders share one vanilla path
+     * ({@link dev.marston.randomloot.platform.ToolTransforms}); this seam
+     * remains only so a loader could override it if its APIs diverge again.
      */
     @Nullable
     BlockState getToolModifiedState(UseOnContext ctx, ToolAction action);

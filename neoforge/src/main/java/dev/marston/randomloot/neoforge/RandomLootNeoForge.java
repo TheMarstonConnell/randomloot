@@ -27,7 +27,9 @@ public class RandomLootNeoForge {
 
         modEventBus.addListener(this::commonSetup);
 
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
+        // 26.3 renamed ModConfig.Type.COMMON to LOCAL; pin the file name so the config stays
+        // randomloot-common.toml (FCAP still calls it COMMON on Fabric, so both loaders match).
+        modContainer.registerConfig(ModConfig.Type.LOCAL, Config.SPEC, "randomloot-common.toml");
     }
 
     private void commonSetup(final FMLCommonSetupEvent event) {
