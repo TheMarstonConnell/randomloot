@@ -21,7 +21,7 @@ public interface EntityHurtModifier extends Modifier {
 		if (amount <= 0.0f) {
 			return;
 		}
-		hurtee.invulnerableTime = 0;
+		hurtee.damageCooldownTime = 0;
 		if (hurter instanceof Player player) {
 			hurtee.hurt(hurter.damageSources().playerAttack(player), amount);
 		} else {

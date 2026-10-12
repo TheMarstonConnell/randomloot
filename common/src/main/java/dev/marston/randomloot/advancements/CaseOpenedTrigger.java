@@ -2,11 +2,11 @@ package dev.marston.randomloot.advancements;
 
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
-import net.minecraft.advancements.predicates.ContextAwarePredicate;
-import net.minecraft.advancements.predicates.entity.EntityPredicate;
 import net.minecraft.advancements.predicates.MinMaxBounds;
 import net.minecraft.advancements.triggers.SimpleCriterionTrigger;
+import net.minecraft.core.Holder;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.storage.loot.predicates.LootItemCondition;
 
 import java.util.Optional;
 
@@ -25,11 +25,11 @@ public class CaseOpenedTrigger extends SimpleCriterionTrigger<CaseOpenedTrigger.
 		this.trigger(player, t -> t.matches(count, toolType));
 	}
 
-	public record TriggerInstance(Optional<ContextAwarePredicate> player, MinMaxBounds.Ints count,
+	public record TriggerInstance(Optional<Holder<LootItemCondition>> player, MinMaxBounds.Ints count,
 			Optional<String> toolType) implements SimpleCriterionTrigger.SimpleInstance {
 
 		public static final Codec<TriggerInstance> CODEC = RecordCodecBuilder.create(i -> i.group(
-				EntityPredicate.ADVANCEMENT_CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
+				LootItemCondition.CODEC.optionalFieldOf("player").forGetter(TriggerInstance::player),
 				MinMaxBounds.Ints.CODEC.optionalFieldOf("count", MinMaxBounds.Ints.ANY).forGetter(TriggerInstance::count),
 				Codec.STRING.optionalFieldOf("tool_type").forGetter(TriggerInstance::toolType))
 				.apply(i, TriggerInstance::new));
