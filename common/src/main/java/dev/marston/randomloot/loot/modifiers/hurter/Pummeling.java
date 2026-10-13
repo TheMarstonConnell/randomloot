@@ -66,7 +66,7 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
         
         hurtee.teleportTo(pos.x, pos.y - slamDepth, pos.z);
         hurtee.setDeltaMovement(0, 0, 0);
-        hurtee.hurtMarked = true;
+        hurtee.syncVelocity = true;
 
         return false;
     }

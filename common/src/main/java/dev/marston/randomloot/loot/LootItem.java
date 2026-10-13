@@ -15,6 +15,12 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.BlockTransformer;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.world.item.HoneycombItem;
+import net.minecraft.world.item.component.BlockTransformers;
+import net.minecraft.world.level.block.WeatheringCopper;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -39,7 +45,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
-import dev.marston.randomloot.platform.Services;
 import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
@@ -313,9 +318,9 @@ public class LootItem extends LootGearItem {
 		ItemStack stack = ctx.getItemInHand();
 
 		// Try stripping logs
-		BlockState stripped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_STRIP);
+		BlockState stripped = getToolModifiedState(ctx, ToolAction.AXE_STRIP);
 		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_STRIP.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
@@ -325,9 +330,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		// Try scraping oxidation
-		BlockState scraped = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
+		BlockState scraped = getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
 		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_SCRAPE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
@@ -337,9 +342,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		// Try removing wax
-		BlockState unwaxed = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
+		BlockState unwaxed = getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
 		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
@@ -359,10 +364,10 @@ public class LootItem extends LootGearItem {
 
 		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
 
-		BlockState flattened = Services.PLATFORM.getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
+		BlockState flattened = getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
 		if (flattened != null) {
 			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN, SoundSource.BLOCKS, 1.0F, 1.0F);
+			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
@@ -467,6 +472,52 @@ public class LootItem extends LootGearItem {
 
 		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
 		// supported-items definition; null = defer to the loader's default check.
+		return null;
+	}
+
+	/**
+	 * The state a block turns into under a tool action (axe strip/scrape/wax-off,
+	 * shovel flatten), or null when the action does not apply. 26.3 moved strip and
+	 * flatten into the datapack {@code BLOCK_TRANSFORMER} registry (both loaders read
+	 * it, and datapacks can extend it); scrape and wax-off are still standalone vanilla
+	 * lookups. This is pure vanilla API, so it lives in common rather than the platform
+	 * seam.
+	 */
+	private static BlockState getToolModifiedState(UseOnContext ctx, ToolAction action) {
+		BlockState state = ctx.getLevel().getBlockState(ctx.getClickedPos());
+		Block block = state.getBlock();
+		return switch (action) {
+			case AXE_STRIP -> transformedState(ctx, BlockTransformers.AXE, SoundEvents.AXE_STRIP);
+			case AXE_SCRAPE -> WeatheringCopper.getPrevious(state).orElse(null);
+			case AXE_WAX_OFF -> {
+				Block unwaxed = HoneycombItem.WAX_OFF_BY_BLOCK.get().get(block);
+				yield unwaxed == null ? null : unwaxed.withPropertiesOf(state);
+			}
+			case SHOVEL_FLATTEN -> transformedState(ctx, BlockTransformers.SHOVEL, SoundEvents.SHOVEL_FLATTEN);
+		};
+	}
+
+	/**
+	 * The block state the given vanilla block transformer produces at the clicked
+	 * position, or null when none applies. The AXE transformer bundles strip + scrape +
+	 * wax-off, so match only the transform tagged with the action's own sound to keep
+	 * AXE_STRIP strip-only.
+	 */
+	private static BlockState transformedState(UseOnContext ctx, ResourceKey<BlockTransformer> key,
+			Holder<SoundEvent> sound) {
+		Level level = ctx.getLevel();
+		BlockPos pos = ctx.getClickedPos();
+		Direction face = ctx.getClickedFace();
+		BlockTransformer transformer = level.registryAccess().lookupOrThrow(Registries.BLOCK_TRANSFORMER).getValueOrThrow(key);
+		for (BlockTransformer.BlockTransformData data : transformer.transforms()) {
+			if (!data.sound().equals(sound) || data.disallowedFaces().contains(face)) {
+				continue;
+			}
+			BlockState newState = data.blockStateProvider().value().getOptionalState(level, level.getRandom(), pos);
+			if (newState != null) {
+				return data.updateFromNeighbors() ? Block.updateFromNeighbourShapes(newState, level, pos) : newState;
+			}
+		}
 		return null;
 	}
 
