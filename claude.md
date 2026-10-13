@@ -7,15 +7,15 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 
 ## Current Version
 - **Minecraft**: 26.3 (fabric/NeoForm artifacts use `26.3`; NeoForge builds are `26.3.0.x`)
-- **NeoForge**: 26.3.0.57-beta · **ModDevGradle**: 2.0.148
-- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.18.3
+- **NeoForge**: 26.3.0.76 · **ModDevGradle**: 2.0.148
+- **Fabric**: loader 0.19.5, fabric-api 0.162.0+26.3, fabric-loom 1.18.4
 - **Forge Config API Port**: 26.3.1 (NeoForge config API on Fabric; bundled jar-in-jar)
 - **Gradle**: 9.8.1 (wrapper) — fabric-loom 1.18 requires Gradle ≥9.7 and a Java 25 launcher JVM
 - **Java**: 25 (toolchain auto-provisioned via foojay-resolver-convention 1.0.0; loom 1.18 also requires the Gradle launcher JVM itself to be 25)
 - **Mod ID**: `randomloot`
 - **Package**: `dev.marston.randomloot`
 
-> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.3.0.57-beta` = MC `26.3`, build `57`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.3`, NeoForm `26.3-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
+> **Versioning note:** Minecraft moved to calendar versioning. NeoForge `26.3.0.76` = MC `26.3`, build `76`. The vanilla version string has NO trailing `.0` — `com.mojang:minecraft:26.3`, NeoForm `26.3-1`. Parchment is no longer used: MC ships deobfuscated with official Mojang names, which is also why Fabric needs no intermediary remapping anymore (loom has no `mappings`/`modImplementation` — use plain `implementation`).
 
 ## Multiloader Architecture
 - `common/` — 95% of the code; compiles against vanilla only (ModDevGradle `neoFormVersion`) + a `compileOnly` stub of `fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi` so `Config` (ModConfigSpec) lives here.
