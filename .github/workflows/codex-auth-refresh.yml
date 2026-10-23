@@ -1,0 +1,62 @@
+name: Refresh Codex auth
+
+# codex-review.yml restores CODEX_AUTH_JSON on every run and discards whatever
+# codex refreshes. Codex refreshes once last_refresh is ~8 days old and refresh
+# tokens are single-use, so the first review past that point would burn the
+# secret. Refreshing here daily, and saving the result, keeps every review on
+# a login too fresh to refresh. This must stay the only refresher: any other
+# copy of the login (a laptop, a concurrent job) rotates the same token.
+on:
+  schedule:
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: codex-auth-refresh
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install codex
+        run: npm install -g @openai/codex
+
+      # CODEX_AUTH_WRITE_TOKEN is a fine-grained PAT for this repository with
+      # "Secrets: Read and write"; GITHUB_TOKEN cannot write secrets.
+      - name: Refresh and save the login
+        env:
+          CODEX_AUTH_JSON: ${{ secrets.CODEX_AUTH_JSON }}
+          GH_TOKEN: ${{ secrets.CODEX_AUTH_WRITE_TOKEN }}
+        run: |
+          umask 077
+          # Prove the token can write the secret before rotating anything: a
+          # refreshed login that cannot be saved is a dead login.
+          printf '%s' "$CODEX_AUTH_JSON" |
+            gh secret set CODEX_AUTH_JSON --repo "$GITHUB_REPOSITORY"
+
+          # There is no refresh command, so backdate last_refresh: codex then
+          # refreshes at startup and writes the new tokens back to auth.json.
+          stale=1970-01-01T00:00:00Z
+          mkdir -p ~/.codex
+          printf '%s' "$CODEX_AUTH_JSON" |
+            jq --arg t "$stale" '.last_refresh = $t' > ~/.codex/auth.json
+          unset CODEX_AUTH_JSON
+          trap 'rm -f ~/.codex/auth.json' EXIT
+
+          # Any authenticated run triggers the refresh; the reply is irrelevant.
+          codex exec --skip-git-repo-check --ephemeral --sandbox read-only \
+            "Reply with OK." < /dev/null > /dev/null || true
+
+          if ! jq -e --arg t "$stale" '.last_refresh != $t' \
+            ~/.codex/auth.json > /dev/null; then
+            echo "::error::Codex token refresh failed; CODEX_AUTH_JSON is unchanged. If this persists, reseed it from a fresh codex login."
+            exit 1
+          fi
+          gh secret set CODEX_AUTH_JSON --repo "$GITHUB_REPOSITORY" < ~/.codex/auth.json

@@ -95,6 +95,7 @@ jobs:
       # Auth comes from the CODEX_AUTH_JSON repository secret (a codex
       # ChatGPT login). Each codex step restores it only for that process and
       # removes it before any repository-controlled github-script runs.
+      # codex-auth-refresh.yml renews it daily, so these steps never refresh.
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
