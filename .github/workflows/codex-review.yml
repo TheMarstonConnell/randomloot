@@ -103,18 +103,23 @@ jobs:
       - name: Install codex
         run: npm install -g @openai/codex
 
-      # Ubuntu 24.04 restricts unprivileged user namespaces. Bubblewrap alone
+      # Ubuntu 24.04+ restricts unprivileged user namespaces. Bubblewrap alone
       # is not enough: Codex's documented AppArmor profile must also be loaded
       # or every sandboxed command fails with `bwrap: loopback: Failed
-      # RTM_NEWADDR` while codex itself still exits 0.
+      # RTM_NEWADDR` while codex itself still exits 0. Ubuntu 26.04 ships the
+      # profile in the apparmor package; 24.04 only as an apparmor-profiles
+      # extra.
       - name: Configure codex sandbox
         run: |
           sudo apt-get update
           sudo apt-get install -y bubblewrap apparmor-profiles
-          sudo install -m 0644 \
-            /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
-            /etc/apparmor.d/bwrap-userns-restrict
-          sudo apparmor_parser -r /etc/apparmor.d/bwrap-userns-restrict
+          profile=/etc/apparmor.d/bwrap-userns-restrict
+          if [ ! -e "$profile" ]; then
+            sudo install -m 0644 \
+              /usr/share/apparmor/extra-profiles/bwrap-userns-restrict \
+              "$profile"
+          fi
+          sudo apparmor_parser -r "$profile"
 
       # Clearing findings the code has since answered must never cost the PR
       # its review.
