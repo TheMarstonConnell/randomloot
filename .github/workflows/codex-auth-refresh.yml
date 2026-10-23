@@ -56,7 +56,7 @@ jobs:
 
           if ! jq -e --arg t "$stale" '.last_refresh != $t' \
             ~/.codex/auth.json > /dev/null; then
-            echo "::error::Codex token refresh failed; CODEX_AUTH_JSON is unchanged. If this persists, reseed it from a fresh codex login."
+            echo "::error::Codex token refresh failed; CODEX_AUTH_JSON is unchanged. If this persists, reseed it with scripts/reseed-codex-auth.sh."
             exit 1
           fi
           gh secret set CODEX_AUTH_JSON --repo "$GITHUB_REPOSITORY" < ~/.codex/auth.json
