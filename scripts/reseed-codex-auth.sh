@@ -19,8 +19,9 @@ export CODEX_HOME
 trap 'rm -rf "${CODEX_HOME:?}"' EXIT
 printf 'cli_auth_credentials_store = "file"\n' > "$CODEX_HOME/config.toml"
 
-# Opens a browser; pass --device-auth to this script when there isn't one.
-codex login "$@"
+# Prints a URL and a one-time code to enter in any browser, so this also
+# works over SSH or on a machine without one.
+codex login --device-auth
 
 jq -e '.tokens.refresh_token' "$CODEX_HOME/auth.json" > /dev/null 2>&1 ||
   { echo "codex login did not leave a ChatGPT login in auth.json" >&2; exit 1; }
