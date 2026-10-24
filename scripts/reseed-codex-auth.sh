@@ -8,7 +8,7 @@ set -euo pipefail
 
 repo=TheMarstonConnell/randomloot
 
-for cmd in codex gh jq; do
+for cmd in codex gh; do
   command -v "$cmd" > /dev/null || { echo "$cmd not on PATH" >&2; exit 1; }
 done
 gh auth status --hostname github.com > /dev/null ||
@@ -23,7 +23,5 @@ printf 'cli_auth_credentials_store = "file"\n' > "$CODEX_HOME/config.toml"
 # works over SSH or on a machine without one.
 codex login --device-auth
 
-jq -e '.tokens.refresh_token' "$CODEX_HOME/auth.json" > /dev/null 2>&1 ||
-  { echo "codex login did not leave a ChatGPT login in auth.json" >&2; exit 1; }
 gh secret set CODEX_AUTH_JSON --repo "$repo" < "$CODEX_HOME/auth.json"
 echo "CODEX_AUTH_JSON replaced; re-run the failed Codex review jobs."
