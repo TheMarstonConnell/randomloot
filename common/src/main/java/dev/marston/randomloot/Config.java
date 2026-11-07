@@ -28,6 +28,8 @@ public class Config
 
     private static ModConfigSpec.DoubleValue DISPENSER_GOODNESS;
 
+    private static ModConfigSpec.DoubleValue LEVEL_UP_TRAIT_CHANCE;
+
     private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
     /**
@@ -52,6 +54,8 @@ public class Config
             "chance that a loot case contains an armor piece instead of a tool.");
     public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
             "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
+    public static final Option LEVEL_UP_TRAIT_CHANCE_OPTION = new Option("levelUpTraitChance", 0.5, 0.0, 1.0,
+            "chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up.");
 
     /** The loot-chance options, in the order CONFIG.md lists them. */
     public static List<Option> lootChanceOptions() {
@@ -60,7 +64,7 @@ public class Config
 
     /** The progression options, in the order CONFIG.md lists them. */
     public static List<Option> progressionOptions() {
-        return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION);
+        return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION, LEVEL_UP_TRAIT_CHANCE_OPTION);
     }
 
     // These mirror the spec so reads that land before the first ModConfigEvent.Loading
@@ -70,6 +74,7 @@ public class Config
     public static double Goodness = GOODNESS_OPTION.defaultValue();
     public static double ArmorChance = ARMOR_CHANCE_OPTION.defaultValue();
     public static double DispenserGoodness = DISPENSER_GOODNESS_OPTION.defaultValue();
+    public static double LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE_OPTION.defaultValue();
     public static List<? extends String> LootTableMatches = List.of("chest");
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
@@ -113,6 +118,7 @@ public class Config
         GOODNESS = define(GOODNESS_OPTION);
         ARMOR_CHANCE = define(ARMOR_CHANCE_OPTION);
         DISPENSER_GOODNESS = define(DISPENSER_GOODNESS_OPTION);
+        LEVEL_UP_TRAIT_CHANCE = define(LEVEL_UP_TRAIT_CHANCE_OPTION);
         BUILDER.pop();
     }
 
@@ -127,6 +133,7 @@ public class Config
         Goodness = GOODNESS.get();
         ArmorChance = ARMOR_CHANCE.get();
         DispenserGoodness = DISPENSER_GOODNESS.get();
+        LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE.get();
         LootTableMatches = LOOT_TABLE_MATCHES.get();
 
         ModsEnabled = new HashMap<String, Boolean>();

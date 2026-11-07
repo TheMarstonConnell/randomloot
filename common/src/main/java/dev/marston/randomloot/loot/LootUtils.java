@@ -373,7 +373,30 @@ public class LootUtils {
 		holder.level().playSound(null, holder.getX(), holder.getY(), holder.getZ(), SoundEvents.PLAYER_LEVELUP,
 				holder.getSoundSource(), 1.0f, 1.0f);
 
+		if (holder.level() instanceof ServerLevel serverLevel
+				&& holder.getRandom().nextDouble() < Config.LevelUpTraitChance) {
+			rollLevelUpTrait(item, holder, serverLevel.getSeed());
+		}
+
 		return item;
+	}
+
+	/** Rolls the bonus trait a level-up can grant and tells the holder what it was. */
+	private static void rollLevelUpTrait(ItemStack item, LivingEntity holder, long worldSeed) {
+		Set<String> before = Set.copyOf(rawTraitNames(item));
+
+		Modifier rolled = generateNewTrait(item, holder.getRandom(), worldSeed);
+		if (rolled == null || !(holder instanceof ServerPlayer player)) {
+			return;
+		}
+
+		String key = before.contains(rolled.tagName())
+				? "message.randomloot.level_up_trait_leveled"
+				: "message.randomloot.level_up_trait";
+		Component trait = rolled.displayName().copy().withStyle(rolled.color());
+		player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
+
+		ModCriteria.traitsObtained(player, item, TraitObtainedTrigger.SOURCE_LEVELED);
 	}
 	
 	/**
@@ -713,8 +736,11 @@ public class LootUtils {
 		return item;
 	}
 
-	/** Rolls one eligible trait onto the gear, or does nothing when none are eligible. */
-	public static void generateNewTrait(ItemStack stack, RandomSource random, long worldSeed) {
+	/**
+	 * Rolls one eligible trait onto the gear and returns it, or does nothing and returns
+	 * null when none are eligible.
+	 */
+	public static @Nullable Modifier generateNewTrait(ItemStack stack, RandomSource random, long worldSeed) {
 
 		// One context for the whole sweep: the gear doesn't change while we pick.
 		TraitEligibility.GearContext ctx = TraitEligibility.contextOf(stack);
@@ -733,7 +759,7 @@ public class LootUtils {
 		int size = allowedMods.size();
 
 		if (size == 0) {
-			return;
+			return null;
 		}
 
 		int choice = random.nextInt(size);
@@ -742,6 +768,7 @@ public class LootUtils {
 
 		addModifier(stack, m);
 
+		return m;
 	}
 
 	public static void generateInitialTraits(ItemStack stack, int count, RandomSource random, long worldSeed) {

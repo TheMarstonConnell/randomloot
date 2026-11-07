@@ -31,6 +31,8 @@ Each tool has a "goodness" value that determines its base stats. Higher goodness
 
 Tools gain XP from mining blocks and attacking enemies. Each level grants a **10% stat boost**.
 
+Each level-up also has a **50%** chance to roll a bonus trait, or to level up a trait the gear already has (`levelUpTraitChance` in [CONFIG.md](CONFIG.md)).
+
 **XP Required per Level:** `500 × 2^level`
 
 | Level | XP Required | Total XP | Stat Multiplier |

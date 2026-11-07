@@ -74,6 +74,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void levelUpRollsTrait(GameTestHelper helper) {
+        GameTestBodies.levelUpRollsTrait(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void killTraitHooks(GameTestHelper helper) {
         GameTestBodies.killTraitHooks(helper);
     }

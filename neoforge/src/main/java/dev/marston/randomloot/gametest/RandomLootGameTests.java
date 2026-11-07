@@ -80,6 +80,7 @@ public final class RandomLootGameTests {
 		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
 		register(event, env, "advancements_load", GameTestBodies::advancementsLoad);
 		register(event, env, "xp_level_curve", GameTestBodies::xpLevelCurve);
+		register(event, env, "level_up_rolls_trait", GameTestBodies::levelUpRollsTrait);
 		register(event, env, "kill_trait_hooks", GameTestBodies::killTraitHooks);
 		register(event, env, "catalyst_extends_effects", GameTestBodies::catalystExtendsEffects);
 		register(event, env, "stench_debuffs_mobs", GameTestBodies::stenchDebuffsMobs);

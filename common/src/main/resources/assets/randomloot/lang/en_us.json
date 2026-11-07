@@ -43,6 +43,8 @@
   "item.randomloot.mod_add": "Trait Addition Template",
   "item.randomloot.mod_sub": "Trait Subtraction Template",
   "item.randomloot.tool": "Random Tool",
+  "message.randomloot.level_up_trait": "%s learned %s!",
+  "message.randomloot.level_up_trait_leveled": "%s's %s grew stronger!",
   "modifier.randomloot.absorption.name": "Appley",
   "modifier.randomloot.adrenaline.name": "Adrenaline",
   "modifier.randomloot.aquatic.name": "Aquatic",

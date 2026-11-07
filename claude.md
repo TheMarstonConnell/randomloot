@@ -28,7 +28,7 @@ An RPG-style loot system mod for Minecraft that generates randomized tools with 
 - **Config**: same `randomloot-common.toml` on both loaders (FCAP on Fabric). Register: NeoForge `modContainer.registerConfig`, Fabric `ConfigRegistry.INSTANCE.register` + `ModConfigEvents.loading/reloading`.
 - **Known Fabric gaps**: anvil-combining two loot items isn't blocked (NeoForge `isCombineRepairable=false` has no Fabric hook); enchant gating goes through `EnchantmentEvents.ALLOW_ENCHANTING` (hooks EnchantmentHelper paths, not `ItemStack.supportsEnchantment` which is NeoForge-only).
 - **Fabric access widener** (`fabric/src/main/resources/randomloot.accesswidener`, namespace `official` — NOT `named` — since 26.x): `RangeSelectItemModelProperties.ID_MAPPER` (texture property registration). (26.3 removed the `AxeItem.STRIPPABLES`/`ShovelItem.FLATTENABLES` maps — strip/flatten now resolve through the datapack `BLOCK_TRANSFORMER` registry in common `LootItem` (vanilla API, no longer a platform method), so those AW entries are gone.)
-- **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (41 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (39 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).
+- **GameTests**: bodies shared in `common/.../gametest/GameTestBodies.java` (vanilla APIs only). NeoForge registers via `RegisterGameTestsEvent`+`RLTestInstance` (43 tests incl. GLM + supportsEnchantment tests); Fabric via `@GameTest` methods in `RandomLootFabricGameTests` + `fabric-gametest` entrypoint (41 tests incl. loot-injection test). Unit tests: `./gradlew :neoforge:test` (38 across `GearStatsTest`, `TraitEligibilityTest`, `ArmorTraitGatingTest`, `ModifierLevelTest`, `LootUtilsMathTest`, `ForgerWorldConstantTest`).
 
 ## Useful Links
 - [NeoForge Versions](https://projects.neoforged.net/neoforged/neoforge) - Find latest NeoForge versions
@@ -439,6 +439,8 @@ Key wiring:
 
 GenWiki reads from the code rather than restating it: config rows come from `Config.lootChanceOptions()/progressionOptions()`, the progression tables from `GearStats`, texture counts from `LootUtils.textureCount`, and the biome table from `describeRestriction()`. Its resource paths are rooted at `common/src/main/resources/` (the `RESOURCES` constant) — they were left pointing at the pre-multiloader `src/` for a whole release, which silently made all 68 `MODIFIERS.md` recipe entries read `n/a`. The failures are caught and logged as warnings, so **check the diff after regenerating**, not just the exit code.
 
-Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` (and
-optionally `RL_WIKI_DIR=<repo root>`), e.g.
-`RL_PROD=false RL_WIKI_DIR=$PWD ./gradlew runGameTestServer`.
+Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` and
+`RL_WIKI_DIR=<repo root>`, e.g.
+`RL_PROD=false RL_WIKI_DIR=$PWD ./gradlew :neoforge:runGameTestServer`.
+`RL_WIKI_DIR` is not optional: without it the root defaults to `..` of the run dir, so the docs land
+in `neoforge/` and every recipe column reads `n/a`.

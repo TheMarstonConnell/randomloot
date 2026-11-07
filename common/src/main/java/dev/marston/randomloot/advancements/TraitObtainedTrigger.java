@@ -13,14 +13,16 @@ import java.util.Optional;
 
 /**
  * Fired when a player ends up with a Random Tool whose trait set changed:
- * either freshly generated from a Loot Case ({@link #SOURCE_GENERATED}) or
- * taken from a smithing table after a trait recipe ({@link #SOURCE_CRAFTED}).
+ * freshly generated from a Loot Case ({@link #SOURCE_GENERATED}), taken from a
+ * smithing table after a trait recipe ({@link #SOURCE_CRAFTED}), or rolled by a
+ * level-up ({@link #SOURCE_LEVELED}).
  * Carries the tool's full list of trait tag names.
  */
 public class TraitObtainedTrigger extends SimpleCriterionTrigger<TraitObtainedTrigger.TriggerInstance> {
 
 	public static final String SOURCE_GENERATED = "generated";
 	public static final String SOURCE_CRAFTED = "crafted";
+	public static final String SOURCE_LEVELED = "leveled";
 
 	@Override
 	public Codec<TriggerInstance> codec() {
