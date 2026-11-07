@@ -118,10 +118,19 @@ public class GenWiki {
 
     /** One CONFIG.md row, rendered from the spec definition rather than restated. */
     private static void writeOptionRow(Config.Option option, FileWriter f) throws IOException {
-        String description = Character.toUpperCase(option.comment().charAt(0))
-                + option.comment().substring(1).replaceAll("\\.$", "");
         write("| `" + option.name() + "` | " + trimNumber(option.defaultValue()) + " | "
-                + trimNumber(option.min()) + "-" + trimNumber(option.max()) + " | " + description + " |", f);
+                + trimNumber(option.min()) + "-" + trimNumber(option.max()) + " | "
+                + optionDescription(option.comment()) + " |", f);
+    }
+
+    private static void writeOptionRow(Config.IntOption option, FileWriter f) throws IOException {
+        write("| `" + option.name() + "` | " + option.defaultValue() + " | "
+                + option.min() + "-" + option.max() + " | " + optionDescription(option.comment()) + " |", f);
+    }
+
+    /** The spec comment as a table cell: capitalized, trailing period dropped. */
+    private static String optionDescription(String comment) {
+        return Character.toUpperCase(comment.charAt(0)) + comment.substring(1).replaceAll("\\.$", "");
     }
 
     /** 0.25 not 0.25000000000000001; 1.0 stays 1.0 so ranges read as decimals. */
@@ -154,6 +163,17 @@ public class GenWiki {
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
         for (Config.Option option : Config.progressionOptions()) {
+            writeOptionRow(option, f);
+        }
+        write("", f);
+
+        write("## Modifier Settings", f);
+        write("", f);
+        write("These settings tune how individual modifiers behave.", f);
+        write("", f);
+        write("| Option | Default | Range | Description |", f);
+        write("|--------|---------|-------|-------------|", f);
+        for (Config.IntOption option : Config.modifierSettingOptions()) {
             writeOptionRow(option, f);
         }
         write("", f);
