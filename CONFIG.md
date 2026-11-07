@@ -28,7 +28,7 @@ These settings tune how individual modifiers behave.
 
 | Option | Default | Range | Description |
 |--------|---------|-------|-------------|
-| `livingWhispersPerMinute` | 1 | 0-1200 | Max "pssst..." messages per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them |
+| `livingWhispersPerMinute` | 1 | 0-1200 | Max whispers ("pssst...", "hi...", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them |
 
 ## Modifier Toggles
 
