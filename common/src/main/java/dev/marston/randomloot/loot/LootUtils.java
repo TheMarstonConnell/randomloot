@@ -375,28 +375,21 @@ public class LootUtils {
 
 		if (holder.level() instanceof ServerLevel serverLevel
 				&& holder.getRandom().nextDouble() < Config.LevelUpTraitChance) {
-			rollLevelUpTrait(item, holder, serverLevel.getSeed());
+			Set<String> before = Set.copyOf(rawTraitNames(item));
+
+			Modifier rolled = generateNewTrait(item, holder.getRandom(), serverLevel.getSeed());
+			if (rolled != null && holder instanceof ServerPlayer player) {
+				String key = before.contains(rolled.tagName())
+						? "message.randomloot.level_up_trait_leveled"
+						: "message.randomloot.level_up_trait";
+				Component trait = rolled.displayName().copy().withStyle(rolled.color());
+				player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
+
+				ModCriteria.traitsObtained(player, item, TraitObtainedTrigger.SOURCE_LEVELED);
+			}
 		}
 
 		return item;
-	}
-
-	/** Rolls the bonus trait a level-up can grant and tells the holder what it was. */
-	private static void rollLevelUpTrait(ItemStack item, LivingEntity holder, long worldSeed) {
-		Set<String> before = Set.copyOf(rawTraitNames(item));
-
-		Modifier rolled = generateNewTrait(item, holder.getRandom(), worldSeed);
-		if (rolled == null || !(holder instanceof ServerPlayer player)) {
-			return;
-		}
-
-		String key = before.contains(rolled.tagName())
-				? "message.randomloot.level_up_trait_leveled"
-				: "message.randomloot.level_up_trait";
-		Component trait = rolled.displayName().copy().withStyle(rolled.color());
-		player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
-
-		ModCriteria.traitsObtained(player, item, TraitObtainedTrigger.SOURCE_LEVELED);
 	}
 	
 	/**
