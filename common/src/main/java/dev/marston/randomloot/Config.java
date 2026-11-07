@@ -30,6 +30,8 @@ public class Config
 
     private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
+    private static ModConfigSpec.IntValue LIVING_WHISPERS;
+
     /**
      * A documented numeric option: one source for the spec definition, for the plain
      * static field's pre-load default, and for the CONFIG.md table {@link GenWiki}
@@ -42,6 +44,10 @@ public class Config
     public record Option(String name, double defaultValue, double min, double max, String comment) {
     }
 
+    /** {@link Option} for whole-number settings, so the spec and CONFIG.md don't show them as decimals. */
+    public record IntOption(String name, int defaultValue, int min, int max, String comment) {
+    }
+
     public static final Option CASE_CHANCE_OPTION = new Option("caseChance", 0.25, 0.0, 1.0,
             "chance to find a case in a chest.");
     public static final Option MOD_CHANCE_OPTION = new Option("modChance", 0.15, 0.0, 1.0,
@@ -52,6 +58,8 @@ public class Config
             "chance that a loot case contains an armor piece instead of a tool.");
     public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
             "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
+    public static final IntOption LIVING_WHISPERS_OPTION = new IntOption("livingWhispersPerMinute", 1, 0, 1200,
+            "max \"pssst...\" messages per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");
 
     /** The loot-chance options, in the order CONFIG.md lists them. */
     public static List<Option> lootChanceOptions() {
@@ -63,6 +71,11 @@ public class Config
         return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION);
     }
 
+    /** The per-modifier tuning options, in the order CONFIG.md lists them. */
+    public static List<IntOption> modifierSettingOptions() {
+        return List.of(LIVING_WHISPERS_OPTION);
+    }
+
     // These mirror the spec so reads that land before the first ModConfigEvent.Loading
     // (e.g. early world gen) see sane values, not 0.0.
     public static double CaseChance = CASE_CHANCE_OPTION.defaultValue();
@@ -71,6 +84,7 @@ public class Config
     public static double ArmorChance = ARMOR_CHANCE_OPTION.defaultValue();
     public static double DispenserGoodness = DISPENSER_GOODNESS_OPTION.defaultValue();
     public static List<? extends String> LootTableMatches = List.of("chest");
+    public static int LivingWhispersPerMinute = LIVING_WHISPERS_OPTION.defaultValue();
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
     private static Map<String, Boolean> ModsEnabled = new HashMap<>();
@@ -83,6 +97,11 @@ public class Config
     }
 
     private static ModConfigSpec.DoubleValue define(Option option) {
+        return BUILDER.comment(option.comment())
+                .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
+    }
+
+    private static ModConfigSpec.IntValue define(IntOption option) {
         return BUILDER.comment(option.comment())
                 .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
     }
@@ -109,6 +128,10 @@ public class Config
         }
         BUILDER.pop();
 
+        BUILDER.push("Modifier Settings");
+        LIVING_WHISPERS = define(LIVING_WHISPERS_OPTION);
+        BUILDER.pop();
+
         BUILDER.push("Misc");
         GOODNESS = define(GOODNESS_OPTION);
         ARMOR_CHANCE = define(ARMOR_CHANCE_OPTION);
@@ -128,6 +151,7 @@ public class Config
         ArmorChance = ARMOR_CHANCE.get();
         DispenserGoodness = DISPENSER_GOODNESS.get();
         LootTableMatches = LOOT_TABLE_MATCHES.get();
+        LivingWhispersPerMinute = LIVING_WHISPERS.get();
 
         ModsEnabled = new HashMap<String, Boolean>();
         for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {

@@ -22,6 +22,14 @@ These settings affect how tools improve over time.
 | `armorChance` | 0.15 | 0.0-1.0 | Chance that a loot case contains an armor piece instead of a tool |
 | `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |
 
+## Modifier Settings
+
+These settings tune how individual modifiers behave.
+
+| Option | Default | Range | Description |
+|--------|---------|-------|-------------|
+| `livingWhispersPerMinute` | 1 | 0-1200 | Max "pssst..." messages per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them |
+
 ## Modifier Toggles
 
 Each modifier can be individually enabled or disabled. Set to `false` to disable a modifier.
