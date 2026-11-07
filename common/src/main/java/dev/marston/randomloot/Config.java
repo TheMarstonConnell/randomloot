@@ -59,7 +59,7 @@ public class Config
     public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
             "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
     public static final IntOption LIVING_WHISPERS_OPTION = new IntOption("livingWhispersPerMinute", 1, 0, 1200,
-            "max \"pssst...\" messages per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");
+            "max whispers (\"pssst...\", \"hi...\", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");
 
     /** The loot-chance options, in the order CONFIG.md lists them. */
     public static List<Option> lootChanceOptions() {
