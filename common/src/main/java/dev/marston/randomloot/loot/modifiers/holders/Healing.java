@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import dev.marston.randomloot.Config;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
@@ -9,13 +10,30 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.util.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import java.util.List;
+
 
 public class Healing extends LeveledModifier implements HoldModifier {
+
+	/** Shared by every Living item, so wearing several doesn't multiply the whispers. */
+	private static final WhisperLimiter WHISPERS = new WhisperLimiter();
+
+	/** What a Living item mutters while it mends itself; one is picked at random per whisper. */
+	private static final List<String> WHISPER_LINES = List.of(
+			"pssst...",
+			"hi...",
+			"hissss...",
+			"shhhh...",
+			"hey...",
+			"over here...",
+			"...hello?",
+			"mmm...");
 
 	public Healing(String name, int level) {
 		this.name = name;
@@ -78,17 +96,15 @@ public class Healing extends LeveledModifier implements HoldModifier {
 
 			stack.setDamageValue(Math.max(stack.getDamageValue() - 1, 0));
 
-			if (f < power / 5) {
+			if (f < power / 5 && holder instanceof Player p
+					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LivingWhispersPerMinute)) {
 				MutableComponent comp = Component.empty();
 
-				comp.append("pssst...");
+				comp.append(Util.getRandom(WHISPER_LINES, level.getRandom()));
 				comp = comp.withStyle(ChatFormatting.GRAY);
 				comp = comp.withStyle(ChatFormatting.ITALIC);
 
-				if (holder instanceof Player) {
-					Player p = (Player) holder;
-					p.sendSystemMessage(comp);
-				}
+				p.sendSystemMessage(comp);
 			}
 
 		}

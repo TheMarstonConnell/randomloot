@@ -32,6 +32,8 @@ public class Config
 
     private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
+    private static ModConfigSpec.IntValue LIVING_WHISPERS;
+
     /**
      * A documented numeric option: one source for the spec definition, for the plain
      * static field's pre-load default, and for the CONFIG.md table {@link GenWiki}
@@ -42,6 +44,10 @@ public class Config
      * order, and {@code SPEC = build()} reads them.
      */
     public record Option(String name, double defaultValue, double min, double max, String comment) {
+    }
+
+    /** {@link Option} for whole-number settings, so the spec and CONFIG.md don't show them as decimals. */
+    public record IntOption(String name, int defaultValue, int min, int max, String comment) {
     }
 
     public static final Option CASE_CHANCE_OPTION = new Option("caseChance", 0.25, 0.0, 1.0,
@@ -56,6 +62,8 @@ public class Config
             "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
     public static final Option LEVEL_UP_TRAIT_CHANCE_OPTION = new Option("levelUpTraitChance", 0.5, 0.0, 1.0,
             "chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up.");
+    public static final IntOption LIVING_WHISPERS_OPTION = new IntOption("livingWhispersPerMinute", 1, 0, 1200,
+            "max whispers (\"pssst...\", \"hi...\", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");
 
     /** The loot-chance options, in the order CONFIG.md lists them. */
     public static List<Option> lootChanceOptions() {
@@ -67,6 +75,11 @@ public class Config
         return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION, LEVEL_UP_TRAIT_CHANCE_OPTION);
     }
 
+    /** The per-modifier tuning options, in the order CONFIG.md lists them. */
+    public static List<IntOption> modifierSettingOptions() {
+        return List.of(LIVING_WHISPERS_OPTION);
+    }
+
     // These mirror the spec so reads that land before the first ModConfigEvent.Loading
     // (e.g. early world gen) see sane values, not 0.0.
     public static double CaseChance = CASE_CHANCE_OPTION.defaultValue();
@@ -76,6 +89,7 @@ public class Config
     public static double DispenserGoodness = DISPENSER_GOODNESS_OPTION.defaultValue();
     public static double LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE_OPTION.defaultValue();
     public static List<? extends String> LootTableMatches = List.of("chest");
+    public static int LivingWhispersPerMinute = LIVING_WHISPERS_OPTION.defaultValue();
 
     private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
     private static Map<String, Boolean> ModsEnabled = new HashMap<>();
@@ -88,6 +102,11 @@ public class Config
     }
 
     private static ModConfigSpec.DoubleValue define(Option option) {
+        return BUILDER.comment(option.comment())
+                .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
+    }
+
+    private static ModConfigSpec.IntValue define(IntOption option) {
         return BUILDER.comment(option.comment())
                 .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
     }
@@ -114,6 +133,10 @@ public class Config
         }
         BUILDER.pop();
 
+        BUILDER.push("Modifier Settings");
+        LIVING_WHISPERS = define(LIVING_WHISPERS_OPTION);
+        BUILDER.pop();
+
         BUILDER.push("Misc");
         GOODNESS = define(GOODNESS_OPTION);
         ARMOR_CHANCE = define(ARMOR_CHANCE_OPTION);
@@ -135,6 +158,7 @@ public class Config
         DispenserGoodness = DISPENSER_GOODNESS.get();
         LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE.get();
         LootTableMatches = LOOT_TABLE_MATCHES.get();
+        LivingWhispersPerMinute = LIVING_WHISPERS.get();
 
         ModsEnabled = new HashMap<String, Boolean>();
         for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {

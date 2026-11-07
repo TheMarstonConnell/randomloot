@@ -23,6 +23,14 @@ These settings affect how tools improve over time.
 | `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |
 | `levelUpTraitChance` | 0.5 | 0.0-1.0 | Chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up |
 
+## Modifier Settings
+
+These settings tune how individual modifiers behave.
+
+| Option | Default | Range | Description |
+|--------|---------|-------|-------------|
+| `livingWhispersPerMinute` | 1 | 0-1200 | Max whispers ("pssst...", "hi...", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them |
+
 ## Modifier Toggles
 
 Each modifier can be individually enabled or disabled. Set to `false` to disable a modifier.
