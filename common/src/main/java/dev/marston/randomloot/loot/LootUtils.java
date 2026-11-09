@@ -330,9 +330,8 @@ public class LootUtils {
 			return;
 		}
 
-		if (hasEnabledModifier(stack, UNBREAKING_TAG)) {
-			Modifier mod = ModifierRegistry.loadModifier(UNBREAKING_TAG,
-					GearTags.read(stack, Modifier.MODTAG).getCompoundOrEmpty(UNBREAKING_TAG));
+		// getModifiers already drops config-disabled traits, and a trait appears at most once.
+		for (Modifier mod : getModifiers(stack)) {
 			if (mod instanceof Unbreaking unbreaking) {
 				int spent = 0;
 				for (int i = 0; i < amount; i++) {
@@ -341,6 +340,7 @@ public class LootUtils {
 					}
 				}
 				amount = spent;
+				break;
 			}
 		}
 
@@ -348,8 +348,6 @@ public class LootUtils {
 			stack.hurtAndBreak(amount, holder, slot);
 		}
 	}
-
-	private static final String UNBREAKING_TAG = "unbreaking";
 
 	public static void addLoreLine(ListTag lore, String text, String color) {
 		JsonObject value = new JsonObject();
