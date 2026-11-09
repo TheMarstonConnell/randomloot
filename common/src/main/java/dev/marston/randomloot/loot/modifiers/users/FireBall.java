@@ -81,10 +81,6 @@ public class FireBall extends AbstractModifier implements UseModifier {
 			return false;
 		}
 
-		if (UseModifier.yieldsToOffhand(player, hand)) {
-			return false;
-		}
-
 		double d1 = 2.5D;
 		Vec3 vec3 = player.getLookAngle();
 

@@ -13,10 +13,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.HitResult;
 
 /**
- * Whether an off-hand item would do something with a right-click, for
- * {@link UseModifier#yieldsToOffhand}.
+ * Whether the off-hand item would do something with a right-click. {@code LootItem.use}
+ * asks before running right-click-anywhere traits: the client always predicts PASS for
+ * those and goes on to use the off-hand item as well, so without standing down a shield
+ * raise also threw a fireball and placing an off-hand torch also teleported.
  *
  * <p>There is no vanilla query for "is this item usable", so this mirrors how a click is
  * routed: {@code Item.use} / {@code Item.useOn} act on a handful of data components, and
@@ -26,9 +29,33 @@ import net.minecraft.world.level.Level;
  * "usable": an override that happens to pass still makes the trait stand down, which is
  * the cheap direction to be wrong in.
  */
-final class OffhandUse {
+public final class OffhandUse {
 
 	private OffhandUse() {
+	}
+
+	/**
+	 * True when {@code hand} is the main hand and the off-hand item would act on this
+	 * click: anything usable in the air (shield, food, bow, ender pearl, snowball,
+	 * bucket, ...), or anything usable on a block (a block to place, flint and steel,
+	 * bone meal, ...) while the player is aiming at one.
+	 */
+	public static boolean wouldUse(Player player, InteractionHand hand) {
+		if (hand != InteractionHand.MAIN_HAND) {
+			return false;
+		}
+
+		ItemStack offhand = player.getOffhandItem();
+		if (offhand.isEmpty()) {
+			return false;
+		}
+
+		if (actsInAir(offhand, player)) {
+			return true;
+		}
+
+		return actsOnBlock(offhand)
+				&& player.pick(player.blockInteractionRange(), 1.0f, false).getType() == HitResult.Type.BLOCK;
 	}
 
 	/** Item classes that override {@code Item.use}: they act on a plain right-click. */
@@ -53,7 +80,7 @@ final class OffhandUse {
 	}
 
 	/** Whether right-clicking at nothing in particular would use the stack. */
-	static boolean actsInAir(ItemStack stack, Player player) {
+	private static boolean actsInAir(ItemStack stack, Player player) {
 		// Our own tools override use() for every stack; only right-click-anywhere traits act.
 		if (stack.getItem() instanceof LootItem) {
 			for (Modifier mod : LootUtils.getModifiers(stack)) {
@@ -84,7 +111,7 @@ final class OffhandUse {
 	}
 
 	/** Whether right-clicking a block would use the stack on it. */
-	static boolean actsOnBlock(ItemStack stack) {
+	private static boolean actsOnBlock(ItemStack stack) {
 		// Our own tools: only axes and shovels have a block action, plus any right-click trait.
 		if (stack.getItem() instanceof LootItem) {
 			ToolType type = LootUtils.getToolType(stack);

@@ -389,6 +389,11 @@ public class LootItem extends LootGearItem {
 		for (Modifier mod : mods) {
 
 			if (mod instanceof UseModifier um && um.useAnywhere()) {
+				// Checked here rather than in each trait: every right-click-anywhere
+				// trait stands down when the off-hand item would act on the click.
+				if (OffhandUse.wouldUse(player, hand)) {
+					return InteractionResult.PASS;
+				}
 				used = used || um.use(level, player, hand);
 			}
 

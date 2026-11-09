@@ -22,7 +22,7 @@ import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.UseModifier;
+import dev.marston.randomloot.loot.modifiers.OffhandUse;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -1537,13 +1537,13 @@ public final class GameTestBodies {
 		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.BOW, Items.ENDER_PEARL, Items.SNOWBALL,
 				Items.EGG, Items.BUCKET, Items.FISHING_ROD)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertTrue(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+			helper.assertTrue(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
 					"a right-click trait should yield to an off-hand " + item);
 		}
 
 		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.ARROW, Items.FIREWORK_ROCKET)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+			helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
 					"a right-click trait should not yield to an off-hand " + item);
 		}
 
@@ -1554,24 +1554,40 @@ public final class GameTestBodies {
 			player.setItemInHand(InteractionHand.OFF_HAND, blockUser);
 
 			player.setPos(onFloor.add(0.0, 60.0, 0.0));
-			helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+			helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
 					"with no block targeted, a right-click trait should not yield to " + blockUser.getItem());
 
 			player.setPos(onFloor);
 			player.setXRot(90.0f);
-			helper.assertTrue(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+			helper.assertTrue(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
 					"aiming at a block, a right-click trait should yield to " + blockUser.getItem());
 		}
 
 		// A trait-less loot pickaxe has no right-click action of its own, even on a block.
 		player.setItemInHand(InteractionHand.OFF_HAND, newTool(ToolType.PICKAXE));
-		helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+		helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
 				"a right-click trait should not yield to a plain loot pickaxe");
 
 		// The arbitration is about the main hand; a tool used from the off hand never yields.
 		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
-		helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.OFF_HAND),
+		helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.OFF_HAND),
 				"an off-hand use should never yield to itself");
+
+		// And through the real dispatch: LootItem.use makes the check once for every
+		// right-click-anywhere trait. Flame Thrower costs 20 durability when it fires.
+		player.setPos(onFloor.add(0.0, 60.0, 0.0));
+		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
+		helper.assertTrue(player.getMainHandItem().getDamageValue() == 0,
+				"Flame Thrower should not fire while a shield is in the off hand");
+
+		player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
+		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
+		helper.assertTrue(player.getMainHandItem().getDamageValue() == 20,
+				"Flame Thrower should fire with an empty off hand, got damage "
+						+ player.getMainHandItem().getDamageValue());
+		// Don't leave a live fireball flying through the other tests.
+		helper.getLevel().getEntities(EntityTypes.FIREBALL, player.getBoundingBox().inflate(8.0), e -> true)
+				.forEach(e -> e.discard());
 
 		helper.succeed();
 	}

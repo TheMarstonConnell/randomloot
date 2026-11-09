@@ -92,10 +92,6 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 	public boolean use(Level level, Player player, InteractionHand hand) {
 		if (level.isClientSide()) return false;
 
-		if (UseModifier.yieldsToOffhand(player, hand)) {
-			return false;
-		}
-
 		float distance = 8.0f + (this.level * 4.0f);
 		Vec3 lookVec = player.getLookAngle();
 		Vec3 destination = player.position().add(
