@@ -1,8 +1,7 @@
-package dev.marston.randomloot.loot.modifiers;
+package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.ToolType;
+import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.UseModifier;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +15,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.HitResult;
 
 /**
- * Whether the off-hand item would do something with a right-click. {@code LootItem.use}
+ * Whether the off-hand item would do something with a right-click. {@link LootItem#use}
  * asks before running right-click-anywhere traits: the client always predicts PASS for
  * those and goes on to use the off-hand item as well, so without standing down a shield
  * raise also threw a fireball and placing an off-hand torch also teleported.
@@ -29,7 +28,7 @@ import net.minecraft.world.phys.HitResult;
  * "usable": an override that happens to pass still makes the trait stand down, which is
  * the cheap direction to be wrong in.
  */
-public final class OffhandUse {
+final class OffhandUse {
 
 	private OffhandUse() {
 	}
@@ -40,7 +39,7 @@ public final class OffhandUse {
 	 * bucket, ...), or anything usable on a block (a block to place, flint and steel,
 	 * bone meal, ...) while the player is aiming at one.
 	 */
-	public static boolean wouldUse(Player player, InteractionHand hand) {
+	static boolean wouldUse(Player player, InteractionHand hand) {
 		if (hand != InteractionHand.MAIN_HAND) {
 			return false;
 		}

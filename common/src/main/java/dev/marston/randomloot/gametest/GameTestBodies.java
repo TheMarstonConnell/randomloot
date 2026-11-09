@@ -22,7 +22,6 @@ import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.OffhandUse;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -1524,71 +1523,78 @@ public final class GameTestBodies {
 	 * A right-click-anywhere trait on the main-hand tool stands down whenever the
 	 * off-hand item would act on the click. That has to cover every usable item, not
 	 * only the ones with a use animation: ender pearls, snowballs and buckets have none.
+	 * Driven through the real right-click path; Flame Thrower costs durability when it
+	 * fires, so the sword's damage says which way the click went.
 	 */
 	public static void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
 		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD), "flame_thrower");
 		BlockPos floor = new BlockPos(1, 0, 1);
 		helper.setBlock(floor, Blocks.STONE);
 		Vec3 onFloor = helper.absoluteVec(new Vec3(1.5, 1.0, 1.5));
-
 		// High above the test, so no block is within reach in any direction.
-		player.setPos(onFloor.add(0.0, 60.0, 0.0));
+		Vec3 inTheAir = onFloor.add(0.0, 60.0, 0.0);
+
+		player.setPos(inTheAir);
+		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
+				"Flame Thrower should fire with an empty off hand");
 
 		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.BOW, Items.ENDER_PEARL, Items.SNOWBALL,
 				Items.EGG, Items.BUCKET, Items.FISHING_ROD)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertTrue(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
+			helper.assertFalse(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
 					"a right-click trait should yield to an off-hand " + item);
 		}
 
 		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.ARROW, Items.FIREWORK_ROCKET)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
+			helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
 					"a right-click trait should not yield to an off-hand " + item);
 		}
 
 		// Items that only act on a block yield only while the player is aiming at one.
-		ItemStack lootAxe = newTool(ToolType.AXE);
 		for (ItemStack blockUser : List.of(new ItemStack(Items.TORCH), new ItemStack(Items.FLINT_AND_STEEL),
-				new ItemStack(Items.BONE_MEAL), lootAxe)) {
+				new ItemStack(Items.BONE_MEAL), newTool(ToolType.AXE))) {
 			player.setItemInHand(InteractionHand.OFF_HAND, blockUser);
 
-			player.setPos(onFloor.add(0.0, 60.0, 0.0));
-			helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
+			player.setPos(inTheAir);
+			helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
 					"with no block targeted, a right-click trait should not yield to " + blockUser.getItem());
 
 			player.setPos(onFloor);
 			player.setXRot(90.0f);
-			helper.assertTrue(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
+			helper.assertFalse(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
 					"aiming at a block, a right-click trait should yield to " + blockUser.getItem());
 		}
 
 		// A trait-less loot pickaxe has no right-click action of its own, even on a block.
 		player.setItemInHand(InteractionHand.OFF_HAND, newTool(ToolType.PICKAXE));
-		helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.MAIN_HAND),
+		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
 				"a right-click trait should not yield to a plain loot pickaxe");
 
-		// The arbitration is about the main hand; a tool used from the off hand never yields.
-		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
-		helper.assertFalse(OffhandUse.wouldUse(player, InteractionHand.OFF_HAND),
-				"an off-hand use should never yield to itself");
+		// The arbitration is about the main hand: used from the off hand, the tool never
+		// yields, whatever the main hand holds.
+		player.setPos(inTheAir);
+		ItemStack sword = player.getMainHandItem();
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.SHIELD));
+		player.setItemInHand(InteractionHand.OFF_HAND, sword);
+		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.OFF_HAND),
+				"a right-click trait used from the off hand should still fire");
 
-		// And through the real dispatch: LootItem.use makes the check once for every
-		// right-click-anywhere trait. Flame Thrower costs 20 durability when it fires.
-		player.setPos(onFloor.add(0.0, 60.0, 0.0));
-		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
-		helper.assertTrue(player.getMainHandItem().getDamageValue() == 0,
-				"Flame Thrower should not fire while a shield is in the off hand");
+		helper.succeed();
+	}
 
-		player.setItemInHand(InteractionHand.OFF_HAND, ItemStack.EMPTY);
-		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
-		helper.assertTrue(player.getMainHandItem().getDamageValue() == 20,
-				"Flame Thrower should fire with an empty off hand, got damage "
-						+ player.getMainHandItem().getDamageValue());
+	/**
+	 * Right-clicks with the Flame Thrower tool in {@code hand} through the server's real
+	 * use path and reports whether the trait fired (it costs durability when it does).
+	 */
+	private static boolean flameThrowerFires(GameTestHelper helper, ServerPlayer player, InteractionHand hand) {
+		player.getItemInHand(hand).setDamageValue(0);
+		player.gameMode.useItem(player, helper.getLevel(), player.getItemInHand(hand), hand);
+		boolean fired = player.getItemInHand(hand).getDamageValue() > 0;
+
 		// Don't leave a live fireball flying through the other tests.
 		helper.getLevel().getEntities(EntityTypes.FIREBALL, player.getBoundingBox().inflate(8.0), e -> true)
 				.forEach(e -> e.discard());
-
-		helper.succeed();
+		return fired;
 	}
 }
