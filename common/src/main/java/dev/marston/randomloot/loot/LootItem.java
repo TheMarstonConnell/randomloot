@@ -4,6 +4,7 @@ import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.*;
+import dev.marston.randomloot.loot.modifiers.hurter.EarlyBird;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -202,6 +203,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
+		// Early Bird judges the target's health from before this hit, recorded by the
+		// pre-damage hook. Run it first: another trait's bonus hit would overwrite that.
+		mods.sort(Comparator.comparing(mod -> !(mod instanceof EarlyBird)));
 
 		boolean shouldSkipBreak = false;
 		for (Modifier mod : mods) {

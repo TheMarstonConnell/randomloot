@@ -30,15 +30,10 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 	 * Called from the pre-damage hook, before the incoming damage is applied. Every hit
 	 * either sets or clears the victim's entry, so it always describes the latest one: a
 	 * full-health hit earlier in the same tick must not vouch for a later hit on the
-	 * now-wounded target. A trait's own follow-up damage is part of the swing being
-	 * judged rather than a new hit, so it leaves the entry alone - otherwise a bonus
-	 * from a trait that happens to run first would clear it before Early Bird looked.
+	 * now-wounded target. Other traits' bonus hits count as hits here too, which is why
+	 * {@code LootItem.hurtEnemy} runs Early Bird before the tool's other traits.
 	 */
 	public static void notePreDamage(LivingEntity victim) {
-		if (EntityHurtModifier.isFollowUp()) {
-			return;
-		}
-
 		// Exactly full. The old 95% allowance only existed to absorb the error in
 		// estimating pre-hit health after the fact; this is the real value.
 		if (victim.getHealth() >= victim.getMaxHealth()) {
