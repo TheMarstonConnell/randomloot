@@ -1273,6 +1273,11 @@ public final class GameTestBodies {
 		ItemEntity raw = new ItemEntity(helper.getLevel(), absolute.getX() + 0.5, absolute.getY() + 0.5,
 				absolute.getZ() + 0.5, new ItemStack(Items.RAW_COPPER, 5));
 		raw.setDeltaMovement(Vec3.ZERO);
+		// Melting waits 50 ms of wall-clock time and then skips drops older than 10
+		// ticks. The gametest server ticks flat out, so that can be hundreds of ticks
+		// and the pass came down to how long the rest of the batch took. An ageless
+		// item takes the tick rate out of it.
+		raw.setUnlimitedLifetime();
 		helper.getLevel().addFreshEntity(raw);
 
 		((BlockBreakModifier) ModifierRegistry.getModifier("melting")).startBreak(pick,
