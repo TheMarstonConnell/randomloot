@@ -149,11 +149,6 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
-    public void smithingCountGating(GameTestHelper helper) {
-        GameTestBodies.smithingCountGating(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
     public void smithingTakeConsumesCount(GameTestHelper helper) {
         GameTestBodies.smithingTakeConsumesCount(helper);
     }

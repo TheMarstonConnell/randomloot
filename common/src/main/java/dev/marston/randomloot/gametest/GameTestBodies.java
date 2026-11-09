@@ -1070,7 +1070,7 @@ public final class GameTestBodies {
 	 * (mirrors the case-roll and command gates); the subtraction template stays ungated.
 	 */
 	public static void smithingTraitGating(GameTestHelper helper) {
-		// Counts of one: this test is about the type gate. smithingCountGating covers the price.
+		// Counts of one: this test is about the type gate. smithingTakeConsumesCount covers the price.
 		TraitAdditionRecipe thorny = new TraitAdditionRecipe(
 				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), 1, "thorny");
 		TraitAdditionRecipe critical = new TraitAdditionRecipe(
@@ -1186,39 +1186,6 @@ public final class GameTestBodies {
 				.orElseThrow(() -> helper.assertionException(Component.literal("trait recipe should load: " + id)));
 	}
 
-	/**
-	 * The add template needs the recipe's full count in the addition slot; the removal
-	 * template needs one. Stripping a trait for the full price again would make undoing
-	 * Spelunking cost a second stack of torches.
-	 */
-	public static void smithingCountGating(GameTestHelper helper) {
-		TraitAdditionRecipe thorny = traitRecipe(helper, "thorny");
-		Level level = helper.getLevel();
-
-		ItemStack addTemplate = new ItemStack(ModItems.MOD_ADD.get());
-		ItemStack subTemplate = new ItemStack(ModItems.MOD_SUB.get());
-		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
-
-		helper.assertFalse(
-				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 3)), level),
-				"3 cactus must not buy a trait that costs 4");
-		helper.assertTrue(
-				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 4)), level),
-				"exactly the listed count should match");
-		helper.assertTrue(
-				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 64)), level),
-				"more than the listed count should match");
-
-		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
-		helper.assertTrue(
-				thorny.matches(new SmithingRecipeInput(subTemplate, thornyChestplate, new ItemStack(Items.CACTUS)),
-						level),
-				"the removal template should need a single item");
-
-		helper.succeed();
-	}
-
 	/** A smithing table with the given inputs in it, opened by the player. */
 	private static SmithingMenu openSmithing(GameTestHelper helper, ServerPlayer player, ItemStack template,
 			ItemStack base, ItemStack addition) {
@@ -1298,7 +1265,11 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/** Through a real menu, the removal template previews with one item and takes one. */
+	/**
+	 * Through a real menu, the removal template previews with one item and takes one.
+	 * Stripping a trait for the full price again would make undoing Spelunking cost a
+	 * second stack of torches.
+	 */
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
