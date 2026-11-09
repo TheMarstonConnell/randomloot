@@ -1491,15 +1491,28 @@ public final class GameTestBodies {
 		helper.assertTrue(hitTwice.getHealth() == hitTwiceAfter,
 				"Early Bird should not reuse an earlier same-tick full-health hit for a wounded target");
 
-		// ...but another trait's bonus damage from the same swing is not a new hit, so it
-		// must not clear the record when that trait happens to run before Early Bird.
-		LivingEntity multiTrait = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-		helper.hurt(multiTrait, multiTrait.damageSources().playerAttack(player), 6.0f);
-		((EntityHurtModifier) ModifierRegistry.getModifier("critical")).hurtEnemy(sword, multiTrait, player);
-		float multiTraitAfterBonus = multiTrait.getHealth();
-		earlyBird.hurtEnemy(sword, multiTrait, player);
-		helper.assertTrue(multiTrait.getHealth() < multiTraitAfterBonus,
-				"Early Bird should still trigger after another trait's bonus hit in the same swing");
+		// Another trait's bonus hit overwrites that record too, so the tool runs Early
+		// Bird before its other traits. Through the real LootItem.hurtEnemy: a sword with
+		// Feasting and Early Bird must out-damage one with Feasting alone. (Feasting's key
+		// iterates ahead of Early Bird's in the trait tag, so it would otherwise go first.)
+		float[] lost = new float[2];
+		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
+		for (int i = 0; i < traitSets.length; i++) {
+			ItemStack traited = newTool(ToolType.SWORD);
+			LootUtils.setStats(traited, 4.0f);
+			for (String trait : traitSets[i]) {
+				LootUtils.addModifier(traited, ModifierRegistry.getModifier(trait));
+			}
+			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
+			float afterHit = target.getHealth();
+			((LootItem) traited.getItem()).hurtEnemy(traited, target, player);
+			lost[i] = afterHit - target.getHealth();
+		}
+		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
+		helper.assertTrue(lost[0] > lost[1],
+				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
+						+ lost[0] + " vs " + lost[1]);
 
 		helper.succeed();
 	}
