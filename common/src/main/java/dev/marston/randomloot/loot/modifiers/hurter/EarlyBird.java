@@ -18,9 +18,6 @@ import java.util.WeakHashMap;
 
 public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 
-	/** A target counts as "full health" at or above this share of its max health. */
-	private static final float FULL_HEALTH_RATIO = 0.95f;
-
 	/**
 	 * Entities whose latest hit found them at full health, with the game time it
 	 * happened. {@code hurtEnemy} runs after the hit has landed, so the health it sees
@@ -42,7 +39,9 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 			return;
 		}
 
-		if (victim.getHealth() >= victim.getMaxHealth() * FULL_HEALTH_RATIO) {
+		// Exactly full. The old 95% allowance only existed to absorb the error in
+		// estimating pre-hit health after the fact; this is the real value.
+		if (victim.getHealth() >= victim.getMaxHealth()) {
 			FULL_HEALTH_HITS.put(victim, victim.level().getGameTime());
 		} else {
 			FULL_HEALTH_HITS.remove(victim);

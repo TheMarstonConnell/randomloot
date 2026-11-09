@@ -1471,9 +1471,9 @@ public final class GameTestBodies {
 		helper.assertTrue(fresh.getHealth() < freshAfterHit,
 				"Early Bird should add bonus damage to a target that was at full health before the hit");
 
-		// Already-wounded target: no bonus.
+		// Already-wounded target: no bonus, even when it is only a scratch short of full.
 		LivingEntity wounded = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-		wounded.setHealth(wounded.getMaxHealth() * 0.8f);
+		wounded.setHealth(wounded.getMaxHealth() * 0.97f);
 		helper.hurt(wounded, wounded.damageSources().playerAttack(player), 4.0f);
 		float woundedAfterHit = wounded.getHealth();
 		earlyBird.hurtEnemy(sword, wounded, player);
