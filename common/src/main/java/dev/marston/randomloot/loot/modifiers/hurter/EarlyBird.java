@@ -22,17 +22,30 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 	private static final float FULL_HEALTH_RATIO = 0.95f;
 
 	/**
-	 * Entities that were at full health when damage last reached them, with the game
-	 * time it happened. {@code hurtEnemy} runs after the hit has landed, so the health it
-	 * sees is already reduced; this is recorded from the pre-damage hook instead.
-	 * Server thread only; weak keys let dead and unloaded entities go.
+	 * Entities whose latest hit found them at full health, with the game time it
+	 * happened. {@code hurtEnemy} runs after the hit has landed, so the health it sees
+	 * is already reduced; this is recorded from the pre-damage hook instead. Server
+	 * thread only; weak keys let dead and unloaded entities go.
 	 */
 	private static final Map<LivingEntity, Long> FULL_HEALTH_HITS = new WeakHashMap<>();
 
-	/** Called from the pre-damage hook, before the incoming damage is applied. */
+	/**
+	 * Called from the pre-damage hook, before the incoming damage is applied. Every hit
+	 * either sets or clears the victim's entry, so it always describes the latest one: a
+	 * full-health hit earlier in the same tick must not vouch for a later hit on the
+	 * now-wounded target. A trait's own follow-up damage is part of the swing being
+	 * judged rather than a new hit, so it leaves the entry alone - otherwise a bonus
+	 * from a trait that happens to run first would clear it before Early Bird looked.
+	 */
 	public static void notePreDamage(LivingEntity victim) {
+		if (EntityHurtModifier.isFollowUp()) {
+			return;
+		}
+
 		if (victim.getHealth() >= victim.getMaxHealth() * FULL_HEALTH_RATIO) {
 			FULL_HEALTH_HITS.put(victim, victim.level().getGameTime());
+		} else {
+			FULL_HEALTH_HITS.remove(victim);
 		}
 	}
 

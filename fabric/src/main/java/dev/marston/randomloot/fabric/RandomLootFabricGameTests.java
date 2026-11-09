@@ -263,6 +263,11 @@ public class RandomLootFabricGameTests {
         GameTestBodies.statBoostTraitsBoostMelee(helper);
     }
 
+    @GameTest(maxTicks = MAX_TICKS)
+    public void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
+        GameTestBodies.rightClickTraitsYieldToUsableOffhand(helper);
+    }
+
     /**
      * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
      * NeoForge writes, and its values reached the Config fields.

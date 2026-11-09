@@ -112,7 +112,7 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 			lb.setVisualOnly(true);
 			level.addFreshEntity(lb);
 			hurtee.damageCooldownTime = 0;
-			hurtee.thunderHit(serverLevel, lb);
+			EntityHurtModifier.followUp(() -> hurtee.thunderHit(serverLevel, lb));
 
 			ModCriteria.traitUsed(hurter, this);
 

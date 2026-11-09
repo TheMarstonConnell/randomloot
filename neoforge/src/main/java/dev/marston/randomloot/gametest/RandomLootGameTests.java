@@ -120,6 +120,8 @@ public final class RandomLootGameTests {
 		register(event, env, "loot_injection_rolls_once_per_chest", GameTestBodies::lootInjectionRollsOncePerChest);
 		register(event, env, "early_bird_reads_pre_hit_health", GameTestBodies::earlyBirdReadsPreHitHealth);
 		register(event, env, "stat_boost_traits_boost_melee", GameTestBodies::statBoostTraitsBoostMelee);
+		register(event, env, "right_click_traits_yield_to_usable_offhand",
+				GameTestBodies::rightClickTraitsYieldToUsableOffhand);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,

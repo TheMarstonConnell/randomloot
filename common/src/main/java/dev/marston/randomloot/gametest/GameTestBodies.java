@@ -22,6 +22,7 @@ import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -51,6 +52,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
@@ -1474,6 +1476,27 @@ public final class GameTestBodies {
 		helper.assertTrue(wounded.getHealth() == woundedAfterHit,
 				"Early Bird should not trigger on a target that was already wounded");
 
+		// A full-health hit earlier in the same tick must not vouch for a later hit: the
+		// record describes the latest hit, and by then the target is wounded.
+		LivingEntity hitTwice = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(hitTwice, hitTwice.damageSources().generic(), 2.0f);
+		helper.hurt(hitTwice, hitTwice.damageSources().playerAttack(player), 8.0f);
+		float hitTwiceAfter = hitTwice.getHealth();
+		helper.assertTrue(hitTwiceAfter < hitTwice.getMaxHealth() - 2.0f, "the second hit should have landed");
+		earlyBird.hurtEnemy(sword, hitTwice, player);
+		helper.assertTrue(hitTwice.getHealth() == hitTwiceAfter,
+				"Early Bird should not reuse an earlier same-tick full-health hit for a wounded target");
+
+		// ...but another trait's bonus damage from the same swing is not a new hit, so it
+		// must not clear the record when that trait happens to run before Early Bird.
+		LivingEntity multiTrait = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(multiTrait, multiTrait.damageSources().playerAttack(player), 6.0f);
+		((EntityHurtModifier) ModifierRegistry.getModifier("critical")).hurtEnemy(sword, multiTrait, player);
+		float multiTraitAfterBonus = multiTrait.getHealth();
+		earlyBird.hurtEnemy(sword, multiTrait, player);
+		helper.assertTrue(multiTrait.getHealth() < multiTraitAfterBonus,
+				"Early Bird should still trigger after another trait's bonus hit in the same swing");
+
 		helper.succeed();
 	}
 
@@ -1493,6 +1516,62 @@ public final class GameTestBodies {
 			((EntityHurtModifier) ModifierRegistry.getModifier(trait)).hurtEnemy(sword, zombie, player);
 			helper.assertTrue(zombie.getHealth() < before, trait + " should add melee damage on a sword");
 		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * A right-click-anywhere trait on the main-hand tool stands down whenever the
+	 * off-hand item would act on the click. That has to cover every usable item, not
+	 * only the ones with a use animation: ender pearls, snowballs and buckets have none.
+	 */
+	public static void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD), "flame_thrower");
+		BlockPos floor = new BlockPos(1, 0, 1);
+		helper.setBlock(floor, Blocks.STONE);
+		Vec3 onFloor = helper.absoluteVec(new Vec3(1.5, 1.0, 1.5));
+
+		// High above the test, so no block is within reach in any direction.
+		player.setPos(onFloor.add(0.0, 60.0, 0.0));
+
+		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.BOW, Items.ENDER_PEARL, Items.SNOWBALL,
+				Items.EGG, Items.BUCKET, Items.FISHING_ROD)) {
+			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
+			helper.assertTrue(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+					"a right-click trait should yield to an off-hand " + item);
+		}
+
+		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.ARROW, Items.FIREWORK_ROCKET)) {
+			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
+			helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+					"a right-click trait should not yield to an off-hand " + item);
+		}
+
+		// Items that only act on a block yield only while the player is aiming at one.
+		ItemStack lootAxe = newTool(ToolType.AXE);
+		for (ItemStack blockUser : List.of(new ItemStack(Items.TORCH), new ItemStack(Items.FLINT_AND_STEEL),
+				new ItemStack(Items.BONE_MEAL), lootAxe)) {
+			player.setItemInHand(InteractionHand.OFF_HAND, blockUser);
+
+			player.setPos(onFloor.add(0.0, 60.0, 0.0));
+			helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+					"with no block targeted, a right-click trait should not yield to " + blockUser.getItem());
+
+			player.setPos(onFloor);
+			player.setXRot(90.0f);
+			helper.assertTrue(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+					"aiming at a block, a right-click trait should yield to " + blockUser.getItem());
+		}
+
+		// A trait-less loot pickaxe has no right-click action of its own, even on a block.
+		player.setItemInHand(InteractionHand.OFF_HAND, newTool(ToolType.PICKAXE));
+		helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.MAIN_HAND),
+				"a right-click trait should not yield to a plain loot pickaxe");
+
+		// The arbitration is about the main hand; a tool used from the off hand never yields.
+		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.SHIELD));
+		helper.assertFalse(UseModifier.yieldsToOffhand(player, InteractionHand.OFF_HAND),
+				"an off-hand use should never yield to itself");
 
 		helper.succeed();
 	}
