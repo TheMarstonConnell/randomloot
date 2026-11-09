@@ -106,20 +106,11 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	}
 
 	/**
-	 * Charges the part of {@link #additionCost} vanilla does not. {@code SmithingMenu.onTake}
-	 * shrinks every input slot by exactly one, so the other {@code cost - 1} come out of
-	 * the addition slot here, just before that happens. Both loaders route their
-	 * take-the-result hook in ({@link dev.marston.randomloot.platform.GameHook#SMITHING_TAKE})
-	 * and both fire it once per take, for a plain click and for a shift-click alike.
-	 *
-	 * <p>It has to be a menu hook rather than {@code Item.onCraftedBy} on the result: a
-	 * shift-click has already moved the result into the inventory by the time
-	 * {@code onTake} runs, so vanilla hands it an empty stack and no item callback fires.
-	 *
-	 * <p>The recipe is read back from the result container instead of being looked up
-	 * again, so the charge always belongs to the recipe that produced the result being
-	 * taken. Only the server records one, which makes this a no-op on the client: it
-	 * predicts a one-item shrink and is corrected by the slot sync that follows the click.
+	 * Consumes the part of {@link #additionCost} vanilla does not: {@code SmithingMenu.onTake}
+	 * shrinks every input by one, so the other {@code cost - 1} leave the addition slot here.
+	 * Call it once per take, before the inputs shrink
+	 * ({@link dev.marston.randomloot.platform.GameHook#SMITHING_TAKE}). Only the server
+	 * records the recipe used, so on the client this does nothing.
 	 */
 	public static void chargeAddition(SmithingMenu menu) {
 		if (!(menu.getSlot(SmithingMenu.RESULT_SLOT).container instanceof RecipeCraftingHolder results)) {
