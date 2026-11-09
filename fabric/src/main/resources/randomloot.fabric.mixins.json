@@ -7,7 +7,8 @@
         "AnvilMenuMixin",
         "ItemStackMixin",
         "LivingEntityMixin",
-        "PlayerMixin"
+        "PlayerMixin",
+        "SmithingMenuMixin"
     ],
     "injectors": {
         "defaultRequire": 1

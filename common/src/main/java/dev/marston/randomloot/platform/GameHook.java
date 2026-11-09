@@ -39,5 +39,7 @@ public enum GameHook {
 	/** Per-type/per-piece enchantment filtering. */
 	ENCHANT_GATE,
 	/** Inject cases and templates into chest loot. */
-	LOOT_INJECTION
+	LOOT_INJECTION,
+	/** A smithing result is being taken: trait recipes charge the rest of their item count. */
+	SMITHING_TAKE
 }

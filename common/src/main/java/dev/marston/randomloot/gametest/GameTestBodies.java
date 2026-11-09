@@ -1070,10 +1070,11 @@ public final class GameTestBodies {
 	 * (mirrors the case-roll and command gates); the subtraction template stays ungated.
 	 */
 	public static void smithingTraitGating(GameTestHelper helper) {
+		// Counts of one: this test is about the type gate. smithingCountGating covers the price.
 		TraitAdditionRecipe thorny = new TraitAdditionRecipe(
-				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), "thorny");
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), 1, "thorny");
 		TraitAdditionRecipe critical = new TraitAdditionRecipe(
-				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), "critical");
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), 1, "critical");
 
 		ItemStack sword = newTool(ToolType.SWORD);
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
@@ -1145,6 +1146,179 @@ public final class GameTestBodies {
 					&& menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().isEmpty(),
 				"taking the result should consume all three smithing inputs");
 		assertAdvancementDone(helper, player, "add_trait");
+
+		helper.succeed();
+	}
+
+	/**
+	 * The {@code count} in a trait recipe's JSON survives parsing. It was read and thrown
+	 * away, so every recipe cost one item whatever the file said. Also the net for a count
+	 * nobody could pay: the codec cannot check it against the item's max stack size
+	 * (components are not bound at datapack load), and a count above it would leave the
+	 * trait unobtainable with nothing in the log.
+	 */
+	public static void traitRecipeCountsLoad(GameTestHelper helper) {
+		helper.assertTrue(traitRecipe(helper, "torch_place").additionCount() == 64,
+				"Spelunking should cost the 64 torches its recipe lists");
+		helper.assertTrue(traitRecipe(helper, "thorny").additionCount() == 4,
+				"Thorny should cost the 4 cactus its recipe lists");
+		helper.assertTrue(traitRecipe(helper, "critical").additionCount() == 1,
+				"a recipe with no count should cost one item");
+
+		for (var holder : helper.getLevel().recipeAccess().getRecipes()) {
+			if (holder.value() instanceof TraitAdditionRecipe recipe) {
+				int stackSize = new ItemStack(recipe.additionItem()).getMaxStackSize();
+				helper.assertTrue(recipe.additionCount() <= stackSize, holder.id().identifier() + " asks for "
+						+ recipe.additionCount() + " but only " + stackSize + " fit in the smithing slot");
+			}
+		}
+
+		helper.succeed();
+	}
+
+	/** The datapack's recipe for a trait, as loaded. */
+	private static TraitAdditionRecipe traitRecipe(GameTestHelper helper, String trait) {
+		Identifier id = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + trait);
+		return helper.getLevel().recipeAccess().getRecipes().stream()
+				.filter(h -> h.id().identifier().equals(id) && h.value() instanceof TraitAdditionRecipe)
+				.map(h -> (TraitAdditionRecipe) h.value())
+				.findFirst()
+				.orElseThrow(() -> helper.assertionException(Component.literal("trait recipe should load: " + id)));
+	}
+
+	/**
+	 * The add template needs the recipe's full count in the addition slot; the removal
+	 * template needs one. Stripping a trait for the full price again would make undoing
+	 * Spelunking cost a second stack of torches.
+	 */
+	public static void smithingCountGating(GameTestHelper helper) {
+		TraitAdditionRecipe thorny = traitRecipe(helper, "thorny");
+		Level level = helper.getLevel();
+
+		ItemStack addTemplate = new ItemStack(ModItems.MOD_ADD.get());
+		ItemStack subTemplate = new ItemStack(ModItems.MOD_SUB.get());
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+
+		helper.assertFalse(
+				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 3)), level),
+				"3 cactus must not buy a trait that costs 4");
+		helper.assertTrue(
+				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 4)), level),
+				"exactly the listed count should match");
+		helper.assertTrue(
+				thorny.matches(new SmithingRecipeInput(addTemplate, chestplate, new ItemStack(Items.CACTUS, 64)), level),
+				"more than the listed count should match");
+
+		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+		helper.assertTrue(
+				thorny.matches(new SmithingRecipeInput(subTemplate, thornyChestplate, new ItemStack(Items.CACTUS)),
+						level),
+				"the removal template should need a single item");
+
+		helper.succeed();
+	}
+
+	/** A smithing table with the given inputs in it, opened by the player. */
+	private static SmithingMenu openSmithing(GameTestHelper helper, ServerPlayer player, ItemStack template,
+			ItemStack base, ItemStack addition) {
+		BlockPos tablePos = new BlockPos(1, 1, 1);
+		helper.setBlock(tablePos, Blocks.SMITHING_TABLE);
+
+		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
+		// NeoForge's take hook finds the menu through the player, as the game does.
+		player.containerMenu = menu;
+		menu.getSlot(SmithingMenu.TEMPLATE_SLOT).set(template);
+		menu.getSlot(SmithingMenu.BASE_SLOT).set(base);
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(addition);
+		return menu;
+	}
+
+	/**
+	 * Taking the result uses up the recipe's whole count. Vanilla's onTake shrinks each
+	 * input by one, so the other three cactus here only go if the loader's SMITHING_TAKE
+	 * hook really runs - loader_hooks_all_bound can only say it was declared. Also checks
+	 * the preview, which has to vanish the moment the slot can no longer pay.
+	 */
+	public static void smithingTakeConsumesCount(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 3));
+
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"3 cactus should not preview a trait that costs 4");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 4));
+		helper.assertTrue(hasTrait(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem(), "thorny"),
+				"4 cactus should preview thorny");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).remove(1);
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"the preview should clear when the stack drops below the count");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 10));
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		helper.assertTrue(hasTrait(menu.getCarried(), "thorny"), "the taken result should contain thorny");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
+				"taking the result should consume exactly 4 of 10 cactus, left " + left.getCount());
+		helper.assertTrue(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem().isEmpty()
+						&& menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty(),
+				"the template and the gear should still be consumed once each");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Shift-clicking the result pays the same price. It is its own path through the menu:
+	 * the result is moved into the inventory first and onTake is then handed an empty
+	 * stack, so anything hung off the crafted item never runs for it.
+	 */
+	public static void smithingShiftClickConsumesCount(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 10));
+
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
+
+		boolean delivered = false;
+		Inventory inventory = player.getInventory();
+		for (int i = 0; i < inventory.getContainerSize(); i++) {
+			delivered |= hasTrait(inventory.getItem(i), "thorny");
+		}
+		helper.assertTrue(delivered, "shift-clicking should move the thorny chestplate into the inventory");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
+				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"nothing should be left to take once the gear is gone");
+
+		helper.succeed();
+	}
+
+	/** Through a real menu, the removal template previews with one item and takes one. */
+	public static void smithingRemovalCostsOne(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
+				new ItemStack(Items.CACTUS));
+
+		ItemStack preview = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem();
+		helper.assertTrue(!preview.isEmpty() && !hasTrait(preview, "thorny"),
+				"one cactus should be enough to preview the removal");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 10));
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		helper.assertTrue(!menu.getCarried().isEmpty() && !hasTrait(menu.getCarried(), "thorny"),
+				"the taken result should have lost thorny");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
+				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
 
 		helper.succeed();
 	}

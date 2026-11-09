@@ -61,12 +61,14 @@ To add or remove traits:
 1. Open a **Smithing Table**
 2. Place a **Trait Template** in the template slot
 3. Place your **Random Tool** in the base slot
-4. Place the **required item** for the trait in the addition slot
+4. Place the **required item** for the trait in the addition slot - the full count from the table below when adding, a single one when removing
 5. Preview and take your modified tool
 
 ## Trait Recipes
 
 Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIERS.md) for the full list.
+
+**Count** is what the Addition Template needs in the slot and uses up, and a leveled trait pays it again for every level. The Subtraction Template only ever takes one.
 
 | Trait | Required Item | Count |
 |-------|---------------|-------|

@@ -144,6 +144,31 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void traitRecipeCountsLoad(GameTestHelper helper) {
+        GameTestBodies.traitRecipeCountsLoad(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingCountGating(GameTestHelper helper) {
+        GameTestBodies.smithingCountGating(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingTakeConsumesCount(GameTestHelper helper) {
+        GameTestBodies.smithingTakeConsumesCount(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingShiftClickConsumesCount(GameTestHelper helper) {
+        GameTestBodies.smithingShiftClickConsumesCount(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingRemovalCostsOne(GameTestHelper helper) {
+        GameTestBodies.smithingRemovalCostsOne(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void clonePreservesEnchantments(GameTestHelper helper) {
         GameTestBodies.clonePreservesEnchantments(helper);
     }
