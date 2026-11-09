@@ -206,12 +206,10 @@ public class LootItem extends LootGearItem {
 				}
 			}
 
-			if (mod instanceof Unbreaking unbreaking && unbreaking.test(hurtee.level())) {
-				shouldSkipBreak = true;
-			}
 		}
 		if (!shouldSkipBreak) {
-			itemstack.hurtAndBreak(1, hurter, EquipmentSlot.MAINHAND);
+			// damageGear gives the Unbreaking trait its roll.
+			LootUtils.damageGear(itemstack, 1, hurter, EquipmentSlot.MAINHAND);
 		}
 	}
 
@@ -252,17 +250,15 @@ public class LootItem extends LootGearItem {
 			boolean shouldSkipBreak = false;
 			for (Modifier mod : mods) {
 
-				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, pos, player)) {
+				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, blockState, pos, player)) {
 					shouldSkipBreak = true;
 				}
 
-				if (mod instanceof Unbreaking unbreaking && unbreaking.test(level)) {
-					shouldSkipBreak = true;
-				}
 			}
 
 			if (!shouldSkipBreak) {
-				stack.hurtAndBreak(1, player,EquipmentSlot.MAINHAND);
+				// damageGear gives the Unbreaking trait its roll.
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 
 			LootUtils.addXp(stack, player, 1);
@@ -324,7 +320,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -336,7 +332,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -348,7 +344,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -371,7 +367,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}

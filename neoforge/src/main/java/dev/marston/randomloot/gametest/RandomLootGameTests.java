@@ -110,6 +110,16 @@ public final class RandomLootGameTests {
 		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
 		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);
+		register(event, env, "lumbering_fells_tree", GameTestBodies::lumberingFellsTree);
+		register(event, env, "veiny_breaks_vein", GameTestBodies::veinyBreaksVein);
+		register(event, env, "melting_keeps_stack_count", GameTestBodies::meltingKeepsStackCount);
+		register(event, env, "area_break_keeps_shulker_contents", GameTestBodies::areaBreakKeepsShulkerContents);
+		register(event, env, "detecting_markers_are_discarded", GameTestBodies::detectingMarkersAreDiscarded);
+		register(event, env, "armor_xp_is_capped", GameTestBodies::armorXpIsCapped);
+		register(event, env, "unbreakable_tool_keeps_durability", GameTestBodies::unbreakableToolKeepsDurability);
+		register(event, env, "loot_injection_rolls_once_per_chest", GameTestBodies::lootInjectionRollsOncePerChest);
+		register(event, env, "early_bird_reads_pre_hit_health", GameTestBodies::earlyBirdReadsPreHitHealth);
+		register(event, env, "stat_boost_traits_boost_melee", GameTestBodies::statBoostTraitsBoostMelee);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,

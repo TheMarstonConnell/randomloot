@@ -96,7 +96,9 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		// Adding runs the same gate as the case roll and /randomloot trait add: type,
 		// biome, config toggle, compatibility and the level cap. Skipping any of them
 		// here used to eat the template and the addition for an unchanged tool. The
-		// subtraction template stays ungated so mismatched traits can always be stripped.
+		// subtraction template stays ungated so mismatched traits can always be stripped -
+		// but the trait does have to be on the gear, or it has the same problem: the
+		// materials are consumed and an identical item comes back.
 		if (input.template().is(ModItems.MOD_ADD.get())) {
 			TraitEligibility.Result verdict = TraitEligibility.check(input.base(), modToAdd);
 			if (!verdict.allowed()) {
@@ -104,6 +106,9 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 						verdict.verdict());
 				return false;
 			}
+		} else if (input.template().is(ModItems.MOD_SUB.get())
+				&& !LootUtils.hasRawTrait(input.base(), this.trait)) {
+			return false;
 		}
 
         return this.template.get().test(input.template());

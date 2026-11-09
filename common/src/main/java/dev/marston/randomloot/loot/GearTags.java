@@ -45,9 +45,10 @@ public final class GearTags {
 	public static final String ROLLING = "rolling";
 
 	/**
-	 * The stack's {@code namespace} element, or an empty tag when absent. The returned
-	 * tag is detached - editing it does nothing unless it is written back, which is why
-	 * callers should use {@link #mutate} rather than pairing this with {@link #write}.
+	 * The stack's {@code namespace} element, or an empty tag when absent. Treat the
+	 * result as read-only: when the namespace exists this is the very tag stored inside
+	 * the data component, which every {@code ItemStack.copy()} of the stack shares. Go
+	 * through {@link #mutate} to change it.
 	 */
 	public static CompoundTag read(ItemStack stack, String namespace) {
 		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
@@ -75,7 +76,11 @@ public final class GearTags {
 
 	/** Applies {@code edit} to the stack's {@code namespace} element and refreshes derived components. */
 	public static void mutate(ItemStack stack, String namespace, Consumer<CompoundTag> edit) {
-		CompoundTag tag = read(stack, namespace);
+		// Edit a copy, never the stored tag. Component values are shared between a stack
+		// and its copies, including the copy the server keeps to decide whether a slot
+		// needs re-sending; editing in place changed that copy too, so a trait-only
+		// change looked like "nothing changed" and never reached remote clients.
+		CompoundTag tag = read(stack, namespace).copy();
 		edit.accept(tag);
 		write(stack, namespace, tag);
 		LootUtils.refreshDerivedComponents(stack);

@@ -16,6 +16,10 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.GearTags;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
+import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
+import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.platform.GameHook;
@@ -35,6 +39,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -42,12 +47,15 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
@@ -69,6 +77,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
@@ -699,7 +708,7 @@ public final class GameTestBodies {
 	/**
 	 * Chest-type loot tables actually produce cases/templates at the configured
 	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
-	 * LootTableEvents.MODIFY pools. 200 rolls at the default 25% miss with
+	 * LootTableEvents.MODIFY_DROPS. 200 rolls at the default 25% miss with
 	 * probability ~1e-25.
 	 */
 	public static void lootInjectionAddsCases(GameTestHelper helper) {
@@ -1081,7 +1090,14 @@ public final class GameTestBodies {
 				"weapon-only trait must not smith onto a chestplate");
 		helper.assertTrue(critical.matches(new SmithingRecipeInput(addTemplate, sword, ghastTear), level),
 				"critical should smith onto a sword");
-		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
+		// The subtraction template is ungated by type so a mismatched trait can always be
+		// stripped - but only when the trait is actually on the gear. Matching without it
+		// consumed the template and the addition and handed back an identical item.
+		helper.assertFalse(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
+				"the subtraction template must not match gear that lacks the trait");
+		ItemStack mismatched = newTool(ToolType.SWORD);
+		LootUtils.addModifier(mismatched, ModifierRegistry.getModifier("thorny"));
+		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
 
 		helper.succeed();
@@ -1187,5 +1203,297 @@ public final class GameTestBodies {
 		} catch (CommandSyntaxException e) {
 			throw new IllegalStateException("command failed to parse: " + command, e);
 		}
+	}
+
+	/** A survival mock player holding a fresh tool of the given type with the given traits. */
+	private static ServerPlayer survivalPlayerHolding(GameTestHelper helper, ItemStack tool, String... traits) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+		for (String trait : traits) {
+			LootUtils.addModifier(tool, ModifierRegistry.getModifier(trait));
+		}
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		return player;
+	}
+
+	/**
+	 * Lumbering fells the logs above the one the player broke, through the real
+	 * game-mode path. NeoForge calls Item.mineBlock before it removes the block and
+	 * vanilla/Fabric after, so a trait that re-read the broken position from the world
+	 * saw air on Fabric and silently never fired.
+	 */
+	public static void lumberingFellsTree(GameTestHelper helper) {
+		for (int y = 0; y < 3; y++) {
+			helper.setBlock(new BlockPos(1, y, 1), Blocks.OAK_LOG);
+		}
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.AXE), "lumbering");
+
+		helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(new BlockPos(1, 0, 1))),
+				"the bottom log should break");
+		helper.assertBlockNotPresent(Blocks.OAK_LOG, new BlockPos(1, 1, 1));
+		helper.assertBlockNotPresent(Blocks.OAK_LOG, new BlockPos(1, 2, 1));
+
+		helper.succeed();
+	}
+
+	/** Veiny follows the vein out from the block the player broke; same ordering trap as Lumbering. */
+	public static void veinyBreaksVein(GameTestHelper helper) {
+		for (int x = 0; x < 3; x++) {
+			helper.setBlock(new BlockPos(x, 1, 1), Blocks.IRON_ORE);
+		}
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick, "veiny");
+		// Veiny only spreads while crouching; a mock player never ticks its own pose.
+		player.setShiftKeyDown(true);
+		player.setPose(Pose.CROUCHING);
+
+		helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(new BlockPos(0, 1, 1))),
+				"the first ore should break");
+		helper.assertBlockNotPresent(Blocks.IRON_ORE, new BlockPos(1, 1, 1));
+		helper.assertBlockNotPresent(Blocks.IRON_ORE, new BlockPos(2, 1, 1));
+		helper.assertTrue(pick.getDamageValue() == 3,
+				"each ore in the vein should cost one durability, got " + pick.getDamageValue());
+
+		helper.succeed();
+	}
+
+	/**
+	 * Melting smelts the whole dropped stack. A smelting recipe's result is for one
+	 * input item, so replacing the drop with it turned copper ore's 2-5 raw copper (or
+	 * any Fortune stack) into a single ingot.
+	 */
+	public static void meltingKeepsStackCount(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.STONE);
+		BlockPos absolute = helper.absolutePos(relative);
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
+
+		ItemEntity raw = new ItemEntity(helper.getLevel(), absolute.getX() + 0.5, absolute.getY() + 0.5,
+				absolute.getZ() + 0.5, new ItemStack(Items.RAW_COPPER, 5));
+		raw.setDeltaMovement(Vec3.ZERO);
+		helper.getLevel().addFreshEntity(raw);
+
+		((BlockBreakModifier) ModifierRegistry.getModifier("melting")).startBreak(pick,
+				Blocks.COPPER_ORE.defaultBlockState(), absolute, player);
+
+		// Melting runs a moment after the break so the drops exist; poll for it.
+		helper.succeedWhen(() -> {
+			int ingots = 0;
+			int stillRaw = 0;
+			for (ItemEntity item : helper.getEntities(EntityTypes.ITEM, relative, 2.0)) {
+				if (item.getItem().is(Items.COPPER_INGOT)) {
+					ingots += item.getItem().getCount();
+				} else if (item.getItem().is(Items.RAW_COPPER)) {
+					stillRaw += item.getItem().getCount();
+				}
+			}
+			helper.assertTrue(stillRaw == 0, "the raw copper should have been smelted");
+			helper.assertTrue(ingots == 5, "5 raw copper should smelt into 5 ingots, got " + ingots);
+		});
+	}
+
+	/**
+	 * Blocks broken on the player's behalf (Excavator, Veiny, Lumbering) hand their
+	 * block entity to the drop logic the way vanilla does. A shulker box's loot copies
+	 * its contents from the block entity, so without it the box dropped empty.
+	 */
+	public static void areaBreakKeepsShulkerContents(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.STONE);
+		helper.setBlock(relative, Blocks.SHULKER_BOX);
+		helper.getBlockEntity(relative, ShulkerBoxBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
+
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
+		BlockPos absolute = helper.absolutePos(relative);
+
+		helper.assertTrue(LootUtils.breakBlockAsPlayer(pick, absolute, player, helper.getLevel(),
+				helper.getLevel().getBlockState(absolute)), "the shulker box should break");
+
+		ItemStack dropped = ItemStack.EMPTY;
+		for (ItemEntity item : helper.getEntities(EntityTypes.ITEM, relative, 2.0)) {
+			if (item.getItem().is(Items.SHULKER_BOX)) {
+				dropped = item.getItem();
+			}
+		}
+		helper.assertFalse(dropped.isEmpty(), "the shulker box should drop as an item");
+		ItemContainerContents contents = dropped.get(DataComponents.CONTAINER);
+		helper.assertTrue(contents != null && contents.nonEmptyItems().iterator().hasNext(),
+				"the dropped shulker box should still hold its contents");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A Detecting marker is tagged-ore driven, is never saved, and is discarded outright
+	 * when its block goes away. Markers used to be "killed" by teleporting them to
+	 * (0, -256, 0) with zero health, where - that chunk being unloaded - they stopped
+	 * ticking and were written to disk instead.
+	 */
+	public static void detectingMarkersAreDiscarded(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(relative, Blocks.COAL_ORE);
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick, "detecting");
+		player.setPos(helper.absoluteVec(new Vec3(1.5, 2.0, 1.5)));
+
+		ServerLevel level = helper.getLevel();
+		HoldModifier detecting = (HoldModifier) ModifierRegistry.getModifier("detecting");
+		boolean[] scanning = { true };
+		// hold() only scans on every 20th game tick, so offer it every tick.
+		helper.onEachTick(() -> {
+			if (scanning[0]) {
+				detecting.hold(pick, level, player);
+			}
+		});
+
+		helper.runAfterDelay(21, () -> {
+			List<Shulker> markers = helper.getEntities(EntityTypes.SHULKER, relative, 1.0);
+			helper.assertTrue(markers.size() == 1, "one marker should highlight the ore, got " + markers.size());
+			Shulker marker = markers.get(0);
+			helper.assertFalse(marker.shouldBeSaved(), "markers must never be written to disk");
+
+			scanning[0] = false;
+			helper.setBlock(relative, Blocks.AIR);
+			// The lifecycle sweep runs every 10 ticks.
+			helper.runAfterDelay(12, () -> {
+				helper.assertTrue(marker.isRemoved(), "the marker should be discarded once its ore is gone");
+				helper.succeed();
+			});
+		});
+	}
+
+	/**
+	 * Armor XP per hit is capped at the wearer's max health. The reported damage is not
+	 * capped at the wearer's health - /kill and Executioner pass Float.MAX_VALUE - which
+	 * used to round to Integer.MAX_VALUE XP: ~22 levels at once, or a negative total.
+	 */
+	public static void armorXpIsCapped(GameTestHelper helper) {
+		ItemStack chest = newArmor(ToolType.CHESTPLATE);
+		LootUtils.setLevelAndXP(chest, 0, 5);
+
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
+
+		ArmorDispatcher.onLivingDamagePost(zombie, Float.MAX_VALUE);
+
+		ItemStack worn = zombie.getItemBySlot(EquipmentSlot.CHEST);
+		int expected = 5 + Math.round(zombie.getMaxHealth());
+		helper.assertTrue(LootUtils.getLevel(worn) == 0 && LootUtils.getXP(worn) == expected,
+				"a huge hit should grant at most a health bar of XP (" + expected + "), got level "
+						+ LootUtils.getLevel(worn) + " xp " + LootUtils.getXP(worn));
+
+		helper.succeed();
+	}
+
+	/**
+	 * A maxed ("Unbreakable") Unbreaking trait covers every durability cost a tool
+	 * pays, not just block breaks and hits: here the shared helper and a log strip.
+	 */
+	public static void unbreakableToolKeepsDurability(GameTestHelper helper) {
+		ItemStack axe = newTool(ToolType.AXE);
+		Modifier unbreaking = ModifierRegistry.getModifier("unbreaking");
+		// First add lands at the base level; every repeat levels it up until maxed.
+		for (int i = 0; i < 16; i++) {
+			LootUtils.addModifier(axe, unbreaking);
+		}
+		ServerPlayer player = survivalPlayerHolding(helper, axe);
+
+		LootUtils.damageGear(axe, 25, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() == 0, "damageGear should spend nothing on an Unbreakable tool");
+
+		BlockPos logPos = new BlockPos(1, 1, 1);
+		helper.setBlock(logPos, Blocks.OAK_LOG);
+		useOnBlock(helper, player, logPos);
+		helper.assertBlockPresent(Blocks.STRIPPED_OAK_LOG, logPos);
+		helper.assertTrue(player.getMainHandItem().getDamageValue() == 0,
+				"stripping a log should not wear an Unbreakable axe");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A chest-type table that rolls other chest-type tables still gets one injection
+	 * roll. The trial vault's reward table rolls reward_common/_rare/_unique; on Fabric
+	 * every one of those used to carry its own injected pool.
+	 */
+	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
+		var key = ResourceKey.create(Registries.LOOT_TABLE,
+				Identifier.withDefaultNamespace("chests/trial_chambers/reward"));
+		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+		helper.assertTrue(table != LootTable.EMPTY, "trial chamber reward loot table should exist");
+
+		var params = new LootParams.Builder(helper.getLevel())
+				.create(LootContextParamSets.EMPTY);
+
+		for (int i = 0; i < 300; i++) {
+			int cases = 0;
+			int templates = 0;
+			for (ItemStack drop : table.getRandomItems(params)) {
+				if (drop.is(ModItems.CASE.get())) {
+					cases += drop.getCount();
+				} else if (drop.is(ModItems.MOD_ADD.get())) {
+					templates += drop.getCount();
+				}
+			}
+			helper.assertTrue(cases <= 1 && templates <= 1,
+					"one vault roll should inject at most one case and one template, got " + cases + " and "
+							+ templates);
+		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * Early Bird keys off the target's health before the hit, read from the pre-damage
+	 * hook. It used to add the tool's base damage back onto the post-hit health, which
+	 * undercounts any hit bigger than that (a crit, Sharpness, Strength) and so missed
+	 * genuinely untouched targets.
+	 */
+	public static void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
+		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.setStats(sword, 4.0f);
+		ServerPlayer player = survivalPlayerHolding(helper, sword);
+		EntityHurtModifier earlyBird = (EntityHurtModifier) ModifierRegistry.getModifier("early_bird");
+
+		// Untouched target, hit for far more than the tool's own base damage.
+		LivingEntity fresh = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(fresh, fresh.damageSources().playerAttack(player), 12.0f);
+		float freshAfterHit = fresh.getHealth();
+		earlyBird.hurtEnemy(sword, fresh, player);
+		helper.assertTrue(fresh.getHealth() < freshAfterHit,
+				"Early Bird should add bonus damage to a target that was at full health before the hit");
+
+		// Already-wounded target: no bonus.
+		LivingEntity wounded = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		wounded.setHealth(wounded.getMaxHealth() * 0.8f);
+		helper.hurt(wounded, wounded.damageSources().playerAttack(player), 4.0f);
+		float woundedAfterHit = wounded.getHealth();
+		earlyBird.hurtEnemy(sword, wounded, player);
+		helper.assertTrue(wounded.getHealth() == woundedAfterHit,
+				"Early Bird should not trigger on a target that was already wounded");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Fragile ("25% more damage and speed") and Munchies ("15% stat boost") pay out in
+	 * melee too. Their stat multiplier only reaches mining speed, so on a sword they
+	 * used to be pure penalties.
+	 */
+	public static void statBoostTraitsBoostMelee(GameTestHelper helper) {
+		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.setStats(sword, 4.0f);
+		ServerPlayer player = survivalPlayerHolding(helper, sword);
+
+		for (String trait : new String[] { "fragile", "munchies" }) {
+			LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			float before = zombie.getHealth();
+			((EntityHurtModifier) ModifierRegistry.getModifier(trait)).hurtEnemy(sword, zombie, player);
+			helper.assertTrue(zombie.getHealth() < before, trait + " should add melee damage on a sword");
+		}
+
+		helper.succeed();
 	}
 }

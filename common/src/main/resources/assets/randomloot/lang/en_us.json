@@ -55,7 +55,7 @@
   "modifier.randomloot.busted.description": "Dig speed is increased as tool durability drops.",
   "modifier.randomloot.busted.name": "Busted",
   "modifier.randomloot.catalyst.name": "Catalyst",
-  "modifier.randomloot.chaotic.description": "Stats randomly fluctuate every 5 seconds",
+  "modifier.randomloot.chaotic.description": "Melee damage bonus randomly fluctuates every 5 seconds, up to +50%",
   "modifier.randomloot.chaotic.name": "Chaotic",
   "modifier.randomloot.charged.description": "After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter.",
   "modifier.randomloot.charged.name": "Charged",

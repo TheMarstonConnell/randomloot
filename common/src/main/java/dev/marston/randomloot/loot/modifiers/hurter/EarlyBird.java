@@ -12,8 +12,34 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Map;
+import java.util.WeakHashMap;
+
 
 public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
+
+	/** A target counts as "full health" at or above this share of its max health. */
+	private static final float FULL_HEALTH_RATIO = 0.95f;
+
+	/**
+	 * Entities that were at full health when damage last reached them, with the game
+	 * time it happened. {@code hurtEnemy} runs after the hit has landed, so the health it
+	 * sees is already reduced; this is recorded from the pre-damage hook instead.
+	 * Server thread only; weak keys let dead and unloaded entities go.
+	 */
+	private static final Map<LivingEntity, Long> FULL_HEALTH_HITS = new WeakHashMap<>();
+
+	/** Called from the pre-damage hook, before the incoming damage is applied. */
+	public static void notePreDamage(LivingEntity victim) {
+		if (victim.getHealth() >= victim.getMaxHealth() * FULL_HEALTH_RATIO) {
+			FULL_HEALTH_HITS.put(victim, victim.level().getGameTime());
+		}
+	}
+
+	private static boolean wasAtFullHealth(LivingEntity victim) {
+		Long time = FULL_HEALTH_HITS.get(victim);
+		return time != null && time == victim.level().getGameTime();
+	}
 
 	public EarlyBird(String name, int level) {
 		this.name = name;
@@ -75,13 +101,12 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 			return false;
 		}
 
-		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-		float currentHealth = hurtee.getHealth();
-		float maxHealth = hurtee.getMaxHealth();
-
-		// Check if target was at full health before this attack
-		// Since damage is already applied, check if current health + base damage >= max health
-		if (currentHealth + dmg >= maxHealth * 0.95f) {
+		// The hit has already landed, so ask what the pre-damage hook saw. Adding the
+		// tool's base damage back onto the current health used to stand in for this, but
+		// that undercounts any hit that crits or carries Sharpness/Strength, and those
+		// then failed the check against a genuinely untouched target.
+		if (wasAtFullHealth(hurtee)) {
+			float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 			dealBonusDamage(hurtee, hurter, dmg * getBonusDamage());
 		}
 

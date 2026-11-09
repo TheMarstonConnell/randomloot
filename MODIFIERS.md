@@ -147,7 +147,7 @@ These effects are applied when hurting enemies.
 ### Chaotic
 **id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
 
-**Description:** Stats randomly fluctuate every 5 seconds
+**Description:** Melee damage bonus randomly fluctuates every 5 seconds, up to +50%
 ### Charged
 **id:** `charged` | **crafting:** `minecraft:lightning_rod` ![lightning_rod](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lightning_rod.png)
 
@@ -267,7 +267,7 @@ These effects are used to calculate stats for tools.
 ### Chaotic
 **id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
 
-**Description:** Stats randomly fluctuate every 5 seconds
+**Description:** Melee damage bonus randomly fluctuates every 5 seconds, up to +50%
 ### Fierce
 **id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
 

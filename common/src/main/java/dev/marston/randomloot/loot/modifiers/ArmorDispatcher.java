@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.loot.modifiers.hurter.EarlyBird;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -55,6 +56,10 @@ public final class ArmorDispatcher {
 			return damage;
 		}
 
+		// This is the one place both loaders call before damage lands on any living
+		// entity, so Early Bird records the victim's untouched health from here.
+		EarlyBird.notePreDamage(wearer);
+
 		// getModifiers already filters config-disabled traits.
 		for (ItemStack stack : wornLootArmor(wearer)) {
 			for (Modifier mod : LootUtils.getModifiers(stack)) {
@@ -77,7 +82,10 @@ public final class ArmorDispatcher {
 			return;
 		}
 
-		int xp = Math.max(1, Math.round(inflictedDamage));
+		// One hit teaches the armor at most a full health bar. The reported damage is
+		// not capped at the wearer's health: /kill and Executioner's finishing blow pass
+		// Float.MAX_VALUE, which used to round to Integer.MAX_VALUE XP.
+		int xp = Math.max(1, Math.round(Math.min(inflictedDamage, wearer.getMaxHealth())));
 		for (ItemStack stack : wornLootArmor(wearer)) {
 			LootUtils.addXp(stack, wearer, xp);
 		}

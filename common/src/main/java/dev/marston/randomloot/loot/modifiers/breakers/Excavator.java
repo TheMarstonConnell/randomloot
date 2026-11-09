@@ -1,16 +1,15 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -70,7 +69,7 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
 			return false;
@@ -99,20 +98,16 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 				continue;
 			}
 
-			if (!Services.PLATFORM.canHarvestBlock(state, level, blockPos, player)) {
-				continue;
-			}
-
 			if (!li.isCorrectToolForDrops(itemstack, state)) {
 				continue;
 			}
 
-			// Break the block with drops
-			state.getBlock().playerDestroy((ServerLevel) level, player, blockPos, state, null, itemstack);
-			level.removeBlock(blockPos, false);
-
-			// Apply durability damage for each block
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			// breakBlockAsPlayer checks harvestability and carries the block entity
+			// along (so a shulker box keeps its contents); only real breaks cost
+			// durability.
+			if (LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, level, state)) {
+				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+			}
 		}
 
 		return false;

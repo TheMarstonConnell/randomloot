@@ -17,7 +17,7 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * <p>The two enchant-filtering tests are NeoForge-only (they exercise the
  * supportsEnchantment item extension; Fabric wires the same common logic through
  * EnchantmentEvents.ALLOW_ENCHANTING), as is loot_modifiers_load (GLMs are a
- * NeoForge system - Fabric injects loot through LootTableEvents.MODIFY instead).
+ * NeoForge system - Fabric injects loot through LootTableEvents.MODIFY_DROPS instead).
  */
 public class RandomLootFabricGameTests {
 
@@ -211,6 +211,56 @@ public class RandomLootFabricGameTests {
     @GameTest(maxTicks = MAX_TICKS)
     public void anvilCannotCombineLootGear(GameTestHelper helper) {
         GameTestBodies.anvilCannotCombineLootGear(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void lumberingFellsTree(GameTestHelper helper) {
+        GameTestBodies.lumberingFellsTree(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void veinyBreaksVein(GameTestHelper helper) {
+        GameTestBodies.veinyBreaksVein(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void meltingKeepsStackCount(GameTestHelper helper) {
+        GameTestBodies.meltingKeepsStackCount(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void areaBreakKeepsShulkerContents(GameTestHelper helper) {
+        GameTestBodies.areaBreakKeepsShulkerContents(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void detectingMarkersAreDiscarded(GameTestHelper helper) {
+        GameTestBodies.detectingMarkersAreDiscarded(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void armorXpIsCapped(GameTestHelper helper) {
+        GameTestBodies.armorXpIsCapped(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void unbreakableToolKeepsDurability(GameTestHelper helper) {
+        GameTestBodies.unbreakableToolKeepsDurability(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void lootInjectionRollsOncePerChest(GameTestHelper helper) {
+        GameTestBodies.lootInjectionRollsOncePerChest(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
+        GameTestBodies.earlyBirdReadsPreHitHealth(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void statBoostTraitsBoostMelee(GameTestHelper helper) {
+        GameTestBodies.statBoostTraitsBoostMelee(helper);
     }
 
     /**

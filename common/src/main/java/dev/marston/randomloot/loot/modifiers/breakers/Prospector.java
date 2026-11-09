@@ -77,14 +77,13 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity entity) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
 		Level level = entity.level();
 		if (level.isClientSide()) {
 			return false;
 		}
 
-		BlockState state = level.getBlockState(pos);
-		if (!isStoneBlock(state)) {
+		if (!isStoneBlock(broken)) {
 			return false;
 		}
 
