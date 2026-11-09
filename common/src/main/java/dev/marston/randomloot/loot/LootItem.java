@@ -16,6 +16,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.BlockTransformer;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.HoneycombItem;
@@ -35,16 +36,20 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemUseAnimation;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
+import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.phys.HitResult;
 import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
@@ -391,7 +396,7 @@ public class LootItem extends LootGearItem {
 			if (mod instanceof UseModifier um && um.useAnywhere()) {
 				// Checked here rather than in each trait: every right-click-anywhere
 				// trait stands down when the off-hand item would act on the click.
-				if (OffhandUse.wouldUse(player, hand)) {
+				if (offhandWouldUse(player, hand)) {
 					return InteractionResult.PASS;
 				}
 				used = used || um.use(level, player, hand);
@@ -410,6 +415,99 @@ public class LootItem extends LootGearItem {
 		}
 
 		return InteractionResult.PASS;
+	}
+
+	/**
+	 * Whether the off-hand item would act on a right-click made with the main-hand
+	 * tool: anything usable in the air (shield, food, bow, ender pearl, snowball,
+	 * bucket, ...), or anything usable on a block (a block to place, flint and steel,
+	 * bone meal, ...) while the player is aiming at one. The client always predicts PASS
+	 * for right-click-anywhere traits and goes on to use the off-hand item as well, so
+	 * without standing down a shield raise also threw a fireball and placing an off-hand
+	 * torch also teleported.
+	 */
+	private static boolean offhandWouldUse(Player player, InteractionHand hand) {
+		if (hand != InteractionHand.MAIN_HAND) {
+			return false;
+		}
+
+		ItemStack offhand = player.getOffhandItem();
+		if (offhand.isEmpty()) {
+			return false;
+		}
+
+		if (actsInAir(offhand, player)) {
+			return true;
+		}
+
+		return actsOnBlock(offhand)
+				&& player.pick(player.blockInteractionRange(), 1.0f, false).getType() == HitResult.Type.BLOCK;
+	}
+
+	/**
+	 * Whether right-clicking at nothing in particular would use the stack. There is no
+	 * vanilla query for "is this item usable", so this mirrors how a click is routed:
+	 * the base Item.use acts on a handful of data components, and every other usable
+	 * item is a class that overrides it. It errs toward "usable": an override that
+	 * happens to pass still makes the trait stand down, the cheap direction to be wrong.
+	 */
+	private static boolean actsInAir(ItemStack stack, Player player) {
+		// Our own tools override use() for every stack; only right-click-anywhere traits act.
+		if (stack.getItem() instanceof LootItem) {
+			for (Modifier mod : LootUtils.getModifiers(stack)) {
+				if (mod instanceof UseModifier use && use.useAnywhere()) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// Rockets are the one item players park in the off-hand that only acts mid-flight.
+		if (stack.is(Items.FIREWORK_ROCKET)) {
+			return player.isFallFlying();
+		}
+
+		if (stack.getUseAnimation() != ItemUseAnimation.NONE) {
+			return true;
+		}
+
+		// The component-driven uses the base Item.use handles itself.
+		Equippable equippable = stack.get(DataComponents.EQUIPPABLE);
+		if (stack.has(DataComponents.CONSUMABLE) || (equippable != null && equippable.swappable())
+				|| stack.has(DataComponents.BLOCKS_ATTACKS) || stack.has(DataComponents.KINETIC_WEAPON)) {
+			return true;
+		}
+
+		return overrides(stack.getItem(), "use", Level.class, Player.class, InteractionHand.class);
+	}
+
+	/** Whether right-clicking a block would use the stack on it; same approach as {@link #actsInAir}. */
+	private static boolean actsOnBlock(ItemStack stack) {
+		// Our own tools: only axes and shovels have a block action, plus any right-click trait.
+		if (stack.getItem() instanceof LootItem) {
+			ToolType type = LootUtils.getToolType(stack);
+			if (type == ToolType.AXE || type == ToolType.SHOVEL) {
+				return true;
+			}
+			for (Modifier mod : LootUtils.getModifiers(stack)) {
+				if (mod instanceof UseModifier) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		// BLOCK_TRANSFORMER is the component the base Item.useOn handles (strip, flatten).
+		return stack.has(DataComponents.BLOCK_TRANSFORMER) || overrides(stack.getItem(), "useOn", UseOnContext.class);
+	}
+
+	/** Whether the item's class overrides the named {@link Item} method (the game ships with official names). */
+	private static boolean overrides(Item item, String method, Class<?>... parameters) {
+		try {
+			return item.getClass().getMethod(method, parameters).getDeclaringClass() != Item.class;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
 	}
 
 	@Override
