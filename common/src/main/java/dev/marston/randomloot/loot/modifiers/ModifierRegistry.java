@@ -64,7 +64,7 @@ public class ModifierRegistry {
 	public static Modifier DRAINING = register(new Draining());
 	public static Modifier POISONOUS = register(new HurtEffect("Poisonous", "poison", 5, MobEffects.POISON, ChatFormatting.DARK_GREEN));
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER, ChatFormatting.DARK_GRAY));
-	public static Modifier BLINDING = register(HurtEffect.singleLevel("Blinding", "blinding", 4, MobEffects.BLINDNESS, ChatFormatting.BLUE));
+	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS, ChatFormatting.BLUE));
 	public static Modifier BEZERK = register(new Bezerk());
 	public static Modifier NEMESIS = register(new Nemesis());
 	public static Modifier SOULBOUND = register(new Soulbound());
@@ -87,7 +87,7 @@ public class ModifierRegistry {
 	public static Modifier REGENERATING = register(new Effect("Healing", "regeneration", 3, MobEffects.REGENERATION, ChatFormatting.LIGHT_PURPLE));
 	public static Modifier RESISTANT = register(new Effect("Resistant", "resistance", 1, MobEffects.RESISTANCE, ChatFormatting.GRAY));
 	public static Modifier FIRE_RESISTANT = register(
-			Effect.singleLevel("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE, ChatFormatting.GOLD));
+			new Effect("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE, ChatFormatting.GOLD));
 	public static Modifier RAINY = register(new Rainy());
 	public static Modifier NATURALIST = register(new Naturalist());
 	public static Modifier ORE_FINDER = register(new OreFinder());

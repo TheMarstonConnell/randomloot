@@ -6,6 +6,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * Base for modifiers that apply a vanilla {@link MobEffect} and level up by raising the
@@ -27,28 +28,26 @@ public abstract class EffectModifier extends AbstractModifier {
 	protected final Holder<MobEffect> effect;
 	protected final int duration;
 	protected final ChatFormatting format;
-	/**
-	 * Highest power this trait levels to. Below {@link #MAX_POWER} for an effect whose
-	 * amplifier vanilla never reads, where another level would be paid for and change nothing.
-	 */
-	protected final int maxPower;
 	protected int power;
 
 	protected EffectModifier(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
 			ChatFormatting format) {
-		this(name, tagname, power, MAX_POWER, duration, effect, format);
-	}
-
-	protected EffectModifier(String name, String tagname, int power, int maxPower, int duration,
-			Holder<MobEffect> effect, ChatFormatting format) {
 		this.name = name;
 		this.tagname = tagname;
-		this.maxPower = maxPower;
-		// Gear leveled before the trait had a lower cap reads back at the cap.
-		this.power = Math.min(power, maxPower);
 		this.duration = duration;
 		this.effect = effect;
 		this.format = format;
+		// Gear leveled before an effect was capped reads back at the cap.
+		this.power = Math.min(power, maxPower());
+	}
+
+	/**
+	 * Highest power this trait levels to. Vanilla only calls {@code hasEffect} for Blindness
+	 * and Fire Resistance and never reads their amplifier, so those stay at level I: another
+	 * level would be paid for and change nothing.
+	 */
+	private int maxPower() {
+		return effect.is(MobEffects.BLINDNESS) || effect.is(MobEffects.FIRE_RESISTANCE) ? 0 : MAX_POWER;
 	}
 
 	/** The effect instance this modifier applies: duration is in seconds, no particles. */
@@ -86,7 +85,7 @@ public abstract class EffectModifier extends AbstractModifier {
 
 	@Override
 	public boolean canLevel() {
-		return this.power < this.maxPower;
+		return this.power < maxPower();
 	}
 
 	@Override
