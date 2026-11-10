@@ -11,7 +11,9 @@ import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
 import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
+import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -48,6 +50,8 @@ public final class NeoForgeEvents {
         GameHooks.bind(GameHook.DAMAGE_POST);
         GameHooks.bind(GameHook.ARMOR_HURT);
         GameHooks.bind(GameHook.BREAK_SPEED);
+        // Wired by mixin, not an event: mixin/ServerPlayerGameModeMixin (useItem RETURN).
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
         GameHooks.bind(GameHook.SERVER_TICK);
         GameHooks.bind(GameHook.SERVER_STOPPING);
         GameHooks.bind(GameHook.COMMANDS);
@@ -58,6 +62,7 @@ public final class NeoForgeEvents {
         GameHooks.bind(GameHook.ENCHANT_GATE);
         // The case_item global loot modifier; see data/randomloot/loot_modifiers/.
         GameHooks.bind(GameHook.LOOT_INJECTION);
+        GameHooks.bind(GameHook.SMITHING_TAKE);
     }
 
     @SubscribeEvent
@@ -99,6 +104,21 @@ public final class NeoForgeEvents {
     public static void onAnvilUpdate(AnvilUpdateEvent event) {
         if (LootUtils.isLootGear(event.getLeft()) && LootUtils.isLootGear(event.getRight())) {
             event.setCanceled(true);
+        }
+    }
+
+    /**
+     * Fired once per take, before the inputs shrink, for a click (from onTake) and for a
+     * shift-click (from onQuickCraft) alike. The event's javadoc warns against touching
+     * the inputs because vanilla is about to decrement them; shrinking the addition
+     * further is exactly the point here, and vanilla re-reads the slot before its own
+     * shrink. getResult() is no use to the hook: on a shift-click it is a copy of gear
+     * that is already in the inventory. Fabric mirrors this in SmithingMenuMixin.
+     */
+    @SubscribeEvent
+    public static void onItemSmithed(PlayerEvent.ItemSmithedEvent event) {
+        if (event.getEntity().containerMenu instanceof SmithingMenu menu) {
+            TraitAdditionRecipe.onTake(menu, event.getEntity());
         }
     }
 

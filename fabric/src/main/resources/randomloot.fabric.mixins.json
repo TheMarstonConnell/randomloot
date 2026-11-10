@@ -6,8 +6,10 @@
     "mixins": [
         "AnvilMenuMixin",
         "ItemStackMixin",
+        "ServerPlayerGameModeMixin",
         "LivingEntityMixin",
-        "PlayerMixin"
+        "PlayerMixin",
+        "SmithingMenuMixin"
     ],
     "injectors": {
         "defaultRequire": 1

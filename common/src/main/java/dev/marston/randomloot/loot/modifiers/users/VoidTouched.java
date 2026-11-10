@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -115,7 +116,7 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 				32, 0.5, 0.5, 0.5, 0.1);
 		}
 
-		player.getItemInHand(hand).hurtAndBreak(10, player, EquipmentSlot.MAINHAND);
+		LootUtils.damageGear(player.getItemInHand(hand), 10, player, EquipmentSlot.MAINHAND);
 		player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
 		ModCriteria.traitUsed(player, this);

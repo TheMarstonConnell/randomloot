@@ -7,7 +7,7 @@ These effects are applied when breaking blocks.
 
 **Description:** Breaking blocks while crouching mines a 3x3 area perpendicular to the surface.
 ### Explosive
-**id:** `explode` | **crafting:** `minecraft:tnt` ![tnt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/tnt.png)
+**id:** `explode` | **crafting:** `minecraft:tnt` ×8 ![tnt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/tnt.png)
 
 **Description:** Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks.
 ### Fragile
@@ -15,7 +15,7 @@ These effects are applied when breaking blocks.
 
 **Description:** 25% more damage and speed, but loses durability 2.0x as fast
 ### Learning
-**id:** `learning` | **crafting:** `minecraft:book` ![book](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/book.png)
+**id:** `learning` | **crafting:** `minecraft:book` ×12 ![book](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/book.png)
 
 **Description:** After breaking 10 blocks as allowed by this tool, gain 3 experience points.
 ### Lumbering
@@ -53,7 +53,7 @@ These effects are applied when holding the tool.
 
 **Description:** Grants water breathing and Haste II when underwater.
 ### Catalyst
-**id:** `catalyst` | **crafting:** `minecraft:cinnabar` ![cinnabar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cinnabar.png)
+**id:** `catalyst` | **crafting:** `minecraft:cinnabar` ×4 ![cinnabar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cinnabar.png)
 
 **Description:** While held or worn, your beneficial status effects last up to 2x longer.
 ### Clunky
@@ -73,11 +73,11 @@ These effects are applied when holding the tool.
 
 **Description:** While holding or wearing this item, get the saturation I effect.
 ### Hasty
-**id:** `hasty` | **crafting:** `minecraft:sugar` ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
+**id:** `hasty` | **crafting:** `minecraft:sugar` ×16 ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
 
 **Description:** While holding or wearing this item, get the Haste I effect.
 ### Healing
-**id:** `regeneration` | **crafting:** `minecraft:glowstone` ![glowstone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glowstone.png)
+**id:** `regeneration` | **crafting:** `minecraft:glowstone` ×8 ![glowstone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/glowstone.png)
 
 **Description:** While holding or wearing this item, get the regeneration I effect.
 ### Heat Resistant
@@ -89,7 +89,7 @@ These effects are applied when holding the tool.
 
 **Description:** Nearby hostile mobs get the glowing effect
 ### Living
-**id:** `living` | **crafting:** `minecraft:moss_block` ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
+**id:** `living` | **crafting:** `minecraft:moss_block` ×4 ![moss_block](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/moss_block.png)
 
 **Description:** While held or worn, 0.5% chance per tick to repair itself
 ### Naturalist
@@ -101,15 +101,15 @@ These effects are applied when holding the tool.
 
 **Description:** While holding or wearing this item in the rain, mine faster!
 ### Resistant
-**id:** `resistance` | **crafting:** `minecraft:turtle_scute` ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
+**id:** `resistance` | **crafting:** `minecraft:turtle_scute` ×5 ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
 
 **Description:** While holding or wearing this item, get the resistance I effect.
 ### Stench
-**id:** `stench` | **crafting:** `minecraft:sulfur` ![sulfur](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sulfur.png)
+**id:** `stench` | **crafting:** `minecraft:sulfur` ×4 ![sulfur](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sulfur.png)
 
 **Description:** Hostile mobs within 6 blocks are afflicted with Slowness and Weakness.
 ### Tomb Raider
-**id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
+**id:** `spawner` | **crafting:** `minecraft:mossy_cobblestone` ×12 ![mossy_cobblestone](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/mossy_cobblestone.png)
 
 **Description:** While held or worn, spawners around you will glow.
 ## Users
@@ -119,15 +119,15 @@ These effects are applied when right clicking.
 
 **Description:** Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points.
 ### Flame Thrower
-**id:** `flame_thrower` | **crafting:** `minecraft:fire_charge` ![fire_charge](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fire_charge.png)
+**id:** `flame_thrower` | **crafting:** `minecraft:fire_charge` ×12 ![fire_charge](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/fire_charge.png)
 
 **Description:** Right clicking throws a fire ball.
 ### Forger's Grace
-**id:** `dirt_place` | **crafting:** `minecraft:dirt` ![dirt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/dirt.png)
+**id:** `dirt_place` | **crafting:** `minecraft:dirt` ×64 ![dirt](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/dirt.png)
 
 **Description:** Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points.
 ### Spelunking
-**id:** `torch_place` | **crafting:** `minecraft:torch` ![torch](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/torch.png)
+**id:** `torch_place` | **crafting:** `minecraft:torch` ×64 ![torch](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/torch.png)
 
 **Description:** Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points.
 ### Void-Touched
@@ -137,17 +137,17 @@ These effects are applied when right clicking.
 ## Hurters
 These effects are applied when hurting enemies.
 ### Bezerk
-**id:** `bezerk` | **crafting:** `minecraft:beef` ![beef](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/beef.png)
+**id:** `bezerk` | **crafting:** `minecraft:beef` ×16 ![beef](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/beef.png)
 
 **Description:** Deals more damage at lower player health.
 ### Blinding
-**id:** `blinding` | **crafting:** `minecraft:carrot` ![carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/carrot.png)
+**id:** `blinding` | **crafting:** `minecraft:carrot` ×24 ![carrot](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/carrot.png)
 
 **Description:** When attacking with tool, apply the blindness I effect to the target for 4 seconds.
 ### Chaotic
 **id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
 
-**Description:** Stats randomly fluctuate every 5 seconds
+**Description:** Melee damage bonus randomly fluctuates every 5 seconds, up to +50%
 ### Charged
 **id:** `charged` | **crafting:** `minecraft:lightning_rod` ![lightning_rod](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/lightning_rod.png)
 
@@ -239,7 +239,7 @@ These effects are applied when hurting enemies.
 ## Wearers
 These effects are exclusive to armor and trigger while worn.
 ### Adrenaline
-**id:** `adrenaline` | **crafting:** `minecraft:sugar` ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
+**id:** `adrenaline` | **crafting:** `minecraft:sugar` ×16 ![sugar](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/sugar.png)
 
 **Description:** Taking damage grants speed I for 5 seconds.
 ### Bulwark
@@ -247,7 +247,7 @@ These effects are exclusive to armor and trigger while worn.
 
 **Description:** Has a 10% chance of halving damage taken.
 ### Featherweight
-**id:** `featherweight` | **crafting:** `minecraft:feather` ![feather](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/feather.png)
+**id:** `featherweight` | **crafting:** `minecraft:feather` ×16 ![feather](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/feather.png)
 
 **Description:** Reduces fall damage by 25%.
 ### Magnetized
@@ -255,19 +255,19 @@ These effects are exclusive to armor and trigger while worn.
 
 **Description:** While worn, nearby items are pulled toward you.
 ### Thorny
-**id:** `thorny` | **crafting:** `minecraft:cactus` ![cactus](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cactus.png)
+**id:** `thorny` | **crafting:** `minecraft:cactus` ×4 ![cactus](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cactus.png)
 
 **Description:** Reflects 15% of damage taken back at the attacker.
 ## Stats
 These effects are used to calculate stats for tools.
 ### Busted
-**id:** `busted` | **crafting:** `minecraft:cracked_stone_bricks` ![cracked_stone_bricks](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cracked_stone_bricks.png)
+**id:** `busted` | **crafting:** `minecraft:cracked_stone_bricks` ×3 ![cracked_stone_bricks](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/cracked_stone_bricks.png)
 
 **Description:** Dig speed is increased as tool durability drops.
 ### Chaotic
 **id:** `chaotic` | **crafting:** `minecraft:amethyst_shard` ![amethyst_shard](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/amethyst_shard.png)
 
-**Description:** Stats randomly fluctuate every 5 seconds
+**Description:** Melee damage bonus randomly fluctuates every 5 seconds, up to +50%
 ### Fierce
 **id:** `fierce` | **crafting:** `minecraft:flint` ![flint](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/flint.png)
 
@@ -283,6 +283,6 @@ These effects are used to calculate stats for tools.
 ## Misc.
 These effects are general and don't fit into any other categories.
 ### Unbreaking
-**id:** `unbreaking` | **crafting:** `minecraft:obsidian` ![obsidian](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/obsidian.png)
+**id:** `unbreaking` | **crafting:** `minecraft:obsidian` ×8 ![obsidian](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/obsidian.png)
 
 **Description:** This tool has a 20% chance of not taking damage.

@@ -46,7 +46,7 @@ Each modifier can be individually enabled or disabled. Set to `false` to disable
 | `bulwark_enabled` | [Bulwark](MODIFIERS.md#bulwark) | Has a 10% chance of halving damage taken. |
 | `busted_enabled` | [Busted](MODIFIERS.md#busted) | Dig speed is increased as tool durability drops. |
 | `catalyst_enabled` | [Catalyst](MODIFIERS.md#catalyst) | While held or worn, your beneficial status effects last up to 2x longer. |
-| `chaotic_enabled` | [Chaotic](MODIFIERS.md#chaotic) | Stats randomly fluctuate every 5 seconds |
+| `chaotic_enabled` | [Chaotic](MODIFIERS.md#chaotic) | Melee damage bonus randomly fluctuates every 5 seconds, up to +50% |
 | `charged_enabled` | [Charged](MODIFIERS.md#charged) | After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. |
 | `clunky_enabled` | [Clunky](MODIFIERS.md#clunky) | Applies slowness to holder but extra knockback on hit |
 | `combo_enabled` | [Dexterous](MODIFIERS.md#dexterous) | Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. |

@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
+import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -13,6 +15,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class Munchies extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
@@ -85,6 +88,11 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 			return false;
 		}
 
+		// The melee half of the "15% stat boost". getStats only reaches mining speed,
+		// so without this a Munchies sword drained hunger for nothing.
+		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
+		dealBonusDamage(hurtee, hurter, baseDamage * STAT_BOOST);
+
 		// Chance to consume hunger
 		tryConsumeHunger(hurter);
 
@@ -92,7 +100,7 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 		if (player.level().isClientSide()) {
 			return false;
 		}

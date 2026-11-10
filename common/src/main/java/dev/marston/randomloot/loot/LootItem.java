@@ -4,6 +4,7 @@ import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.*;
+import dev.marston.randomloot.loot.modifiers.hurter.EarlyBird;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -197,6 +198,9 @@ public class LootItem extends LootGearItem {
 		}
 
 		List<Modifier> mods = LootUtils.getModifiers(itemstack);
+		// Early Bird judges the target's health from before this hit, recorded by the
+		// pre-damage hook. Run it first: another trait's bonus hit would overwrite that.
+		mods.sort(Comparator.comparing(mod -> !(mod instanceof EarlyBird)));
 
 		boolean shouldSkipBreak = false;
 		for (Modifier mod : mods) {
@@ -206,12 +210,10 @@ public class LootItem extends LootGearItem {
 				}
 			}
 
-			if (mod instanceof Unbreaking unbreaking && unbreaking.test(hurtee.level())) {
-				shouldSkipBreak = true;
-			}
 		}
 		if (!shouldSkipBreak) {
-			itemstack.hurtAndBreak(1, hurter, EquipmentSlot.MAINHAND);
+			// damageGear gives the Unbreaking trait its roll.
+			LootUtils.damageGear(itemstack, 1, hurter, EquipmentSlot.MAINHAND);
 		}
 	}
 
@@ -252,17 +254,15 @@ public class LootItem extends LootGearItem {
 			boolean shouldSkipBreak = false;
 			for (Modifier mod : mods) {
 
-				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, pos, player)) {
+				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, blockState, pos, player)) {
 					shouldSkipBreak = true;
 				}
 
-				if (mod instanceof Unbreaking unbreaking && unbreaking.test(level)) {
-					shouldSkipBreak = true;
-				}
 			}
 
 			if (!shouldSkipBreak) {
-				stack.hurtAndBreak(1, player,EquipmentSlot.MAINHAND);
+				// damageGear gives the Unbreaking trait its roll.
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 
 			LootUtils.addXp(stack, player, 1);
@@ -324,7 +324,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -336,7 +336,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -348,7 +348,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				stack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -371,12 +371,19 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				ctx.getItemInHand().hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
 		return InteractionResult.PASS;
 	}
+
+	/**
+	 * Main-hand clicks whose right-click-anywhere trait is waiting on the off-hand item,
+	 * by player, with the game time of the click. Server thread only; weak keys let
+	 * logged-out players go.
+	 */
+	private static final Map<ServerPlayer, Long> DEFERRED_USES = new WeakHashMap<>();
 
 	@Override
 	public @NotNull InteractionResult use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
@@ -386,29 +393,77 @@ public class LootItem extends LootGearItem {
 			return InteractionResult.PASS;
 		}
 
+		// A right-click-anywhere trait in the main hand gives the off-hand item the click
+		// first. The client always predicts PASS for these traits and goes on to use the
+		// off hand as well, so firing here would do both: raise the shield AND throw the
+		// fireball. Whether the off-hand item acts can't be known without using it, so
+		// wait for its real result: afterUseItem fires the trait if that use passes.
+		if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer serverPlayer
+				&& !player.getOffhandItem().isEmpty() && LootUtils.getModifiers(toolItem).stream()
+						.anyMatch(mod -> mod instanceof UseModifier um && um.useAnywhere())) {
+			DEFERRED_USES.put(serverPlayer, level.getGameTime());
+			return InteractionResult.PASS;
+		}
+
+		return useAnywhereTraits(level, player, hand, toolItem) ? InteractionResult.SUCCESS : InteractionResult.PASS;
+	}
+
+	/**
+	 * Called by each loader after the server has finished an item use, with its result.
+	 * If the player's main-hand tool deferred a right-click-anywhere trait on this click
+	 * and the off-hand use that followed did nothing, the trait fires now.
+	 *
+	 * <p>The client sends the off-hand use right behind the main-hand one, so the two
+	 * normally land in the same tick; one tick of slack covers a tick boundary between
+	 * them. A click that ends on the off-hand block use instead is settled by
+	 * {@link #afterUseItemOn}; a deferral nothing answers at all simply goes stale.
+	 */
+	public static void afterUseItem(ServerPlayer player, InteractionHand hand, InteractionResult result) {
+		if (hand != InteractionHand.OFF_HAND) {
+			return;
+		}
+
+		Long deferredAt = DEFERRED_USES.remove(player);
+		if (deferredAt == null || result.consumesAction() || player.level().getGameTime() - deferredAt > 1) {
+			return;
+		}
+
+		ItemStack tool = player.getMainHandItem();
+		if (tool.getItem() instanceof LootItem item && !LootUtils.isRolling(tool)) {
+			item.useAnywhereTraits(player.level(), player, InteractionHand.MAIN_HAND, tool);
+		}
+	}
+
+	/**
+	 * Called by each loader after the server has finished using an item on a block. An
+	 * off-hand block use that succeeds or fails ends the click - the client sends no
+	 * off-hand item use after it - so a trait deferred on this click is dropped here
+	 * rather than left for some later, unrelated off-hand use to set off.
+	 */
+	public static void afterUseItemOn(ServerPlayer player, InteractionHand hand, InteractionResult result) {
+		if (hand == InteractionHand.OFF_HAND
+				&& (result instanceof InteractionResult.Success || result instanceof InteractionResult.Fail)) {
+			DEFERRED_USES.remove(player);
+		}
+	}
+
+	/** Runs the tool's right-click-anywhere traits; true when one of them acted. */
+	private boolean useAnywhereTraits(Level level, Player player, InteractionHand hand, ItemStack toolItem) {
 		boolean used = false;
 
-		List<Modifier> mods = LootUtils.getModifiers(toolItem);
-
-		for (Modifier mod : mods) {
-
+		for (Modifier mod : LootUtils.getModifiers(toolItem)) {
 			if (mod instanceof UseModifier um && um.useAnywhere()) {
 				used = used || um.use(level, player, hand);
 			}
-
 		}
 
-		if (used) {
-			// Award the tool's ITEM_USED stat exactly once, server-side. awardStat also
-			// updates scoreboard objectives, unlike a bare getStats().increment().
-			if (player instanceof ServerPlayer sPlayer) {
-				sPlayer.awardStat(Stats.ITEM_USED.get(this));
-			}
-
-			return InteractionResult.SUCCESS;
+		// Award the tool's ITEM_USED stat exactly once, server-side. awardStat also
+		// updates scoreboard objectives, unlike a bare getStats().increment().
+		if (used && player instanceof ServerPlayer sPlayer) {
+			sPlayer.awardStat(Stats.ITEM_USED.get(this));
 		}
 
-		return InteractionResult.PASS;
+		return used;
 	}
 
 	@Override

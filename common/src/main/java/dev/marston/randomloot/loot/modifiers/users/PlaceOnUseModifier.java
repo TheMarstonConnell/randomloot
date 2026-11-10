@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -44,7 +45,7 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 		InteractionResult result = place(ctx);
 
 		if (result == InteractionResult.SUCCESS) {
-			ctx.getItemInHand().hurtAndBreak(this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
+			LootUtils.damageGear(ctx.getItemInHand(), this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
 		}
 
 		return result;

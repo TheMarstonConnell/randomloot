@@ -59,14 +59,20 @@ public class GenWiki {
     private static void writeMod(Modifier m, FileWriter f) throws IOException {
         String tag = m.tagName();
         String recipe = "n/a";
+        // The count is what the Addition Template charges; one item is implied.
+        String cost = "";
         try {
-            recipe = readRecipe(tag);
+            RecipeCost read = readRecipe(tag);
+            recipe = read.itemId();
+            if (read.count() > 1) {
+                cost = " \u00d7" + read.count();
+            }
         } catch (Exception e) {
             RandomLoot.LOGGER.warn("failed to find recipe for " + tag + ".");
         }
         write("### " + docName(m), f);
 
-        write("**id:** `" + tag + "` | **crafting:** `" + recipe + "` ![" + stripItemName(recipe)
+        write("**id:** `" + tag + "` | **crafting:** `" + recipe + "`" + cost + " ![" + stripItemName(recipe)
                 + "](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/"
                 + stripItemName(recipe) + ".png)", f);
         write("", f);
@@ -516,13 +522,15 @@ public class GenWiki {
         write("1. Open a **Smithing Table**", f);
         write("2. Place a **Trait Template** in the template slot", f);
         write("3. Place your **Random Tool** in the base slot", f);
-        write("4. Place the **required item** for the trait in the addition slot", f);
+        write("4. Place the **required item** for the trait in the addition slot - the full count from the table below when adding, a single one when removing", f);
         write("5. Preview and take your modified tool", f);
         write("", f);
 
         write("## Trait Recipes", f);
         write("", f);
         write("Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIERS.md) for the full list.", f);
+        write("", f);
+        write("**Count** is what the Addition Template needs in the slot and uses up, and a leveled trait pays it again for every level. The Subtraction Template only ever takes one.", f);
         write("", f);
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
@@ -533,22 +541,16 @@ public class GenWiki {
         if (recipeFiles != null) {
             Arrays.sort(recipeFiles);
             for (File recipeFile : recipeFiles) {
-                try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
+                try {
                     String traitName = recipeFile.getName().replace("trait_", "").replace(".json", "");
-                    JsonObject obj = new Gson().fromJson(bufferedReader, JsonObject.class);
-                    JsonObject item = obj.get("item").getAsJsonObject();
-                    String itemId = item.get("id").getAsString();
-                    int count = 1;
-                    if (item.has("count")) {
-                        count = item.get("count").getAsInt();
-                    }
+                    RecipeCost cost = readRecipe(recipeFile);
                     // The recipe's tag name and the trait's display name can differ
                     // (e.g. trait_necrotic.json is the "Draining" trait), so resolve
                     // through the registry and only fall back to the filename.
                     Modifier mod = ModifierRegistry.getModifier(traitName);
                     String displayName = mod != null ? docName(mod)
                             : traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
-                    write("| " + displayName + " | `" + itemId + "` | " + count + " |", f);
+                    write("| " + displayName + " | `" + cost.itemId() + "` | " + cost.count() + " |", f);
                 } catch (Exception e) {
                     RandomLoot.LOGGER.warn("Failed to read recipe: " + recipeFile.getName());
                 }
@@ -681,11 +683,18 @@ public class GenWiki {
 
     }
 
-    public static String readRecipe(String trait) throws IOException {
-        File recipeFile = repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json");
+    /** A trait recipe's addition item and how many of it the Addition Template charges. */
+    private record RecipeCost(String itemId, int count) {
+    }
+
+    private static RecipeCost readRecipe(String trait) throws IOException {
+        return readRecipe(repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json"));
+    }
+
+    private static RecipeCost readRecipe(File recipeFile) throws IOException {
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
-            JsonObject obj = new Gson().fromJson(bufferedReader, JsonObject.class);
-            return obj.get("item").getAsJsonObject().get("id").getAsString();
+            JsonObject item = new Gson().fromJson(bufferedReader, JsonObject.class).get("item").getAsJsonObject();
+            return new RecipeCost(item.get("id").getAsString(), item.has("count") ? item.get("count").getAsInt() : 1);
         }
     }
 
