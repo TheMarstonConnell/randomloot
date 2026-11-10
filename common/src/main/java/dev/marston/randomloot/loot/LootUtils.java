@@ -790,8 +790,8 @@ public class LootUtils {
 
 	/**
 	 * Re-resolves world-dependent traits (see {@link Modifier#forWorld}) against this
-	 * world. Called when gear leaves a smithing table, where the recipe itself has no
-	 * world access.
+	 * world. Called as a trait recipe builds its result, so smithed gear carries the
+	 * world's forger however it is taken out of the table.
 	 */
 	public static void applyWorldForgers(ItemStack stack, long worldSeed) {
 		for (Modifier mod : getModifiers(stack)) {

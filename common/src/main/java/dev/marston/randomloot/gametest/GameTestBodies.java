@@ -23,6 +23,7 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -1119,6 +1120,7 @@ public final class GameTestBodies {
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
+		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
 
 		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
@@ -1145,9 +1147,23 @@ public final class GameTestBodies {
 					&& menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty()
 					&& menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().isEmpty(),
 				"taking the result should consume all three smithing inputs");
+		assertWorldForger(helper, crafted);
 		assertAdvancementDone(helper, player, "add_trait");
 
 		helper.succeed();
+	}
+
+	/**
+	 * The gear's DirtPlace is named after this world's forger. Callers smith gear that
+	 * starts with a made-up forger: the registry prototype's random one matches the
+	 * world's one time in six, which would let a missing stamp pass.
+	 */
+	private static void assertWorldForger(GameTestHelper helper, ItemStack gear) {
+		String expected = NameGenerator.forgerForWorld(helper.getLevel().getSeed(), 0.5f) + "'s Grace";
+		String forged = LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals("dirt_place"))
+				.map(Modifier::name).findFirst().orElse("nothing");
+		helper.assertTrue(expected.equals(forged),
+				"smithed gear should credit this world's forger, got " + forged + " expected " + expected);
 	}
 
 	/**
@@ -1239,28 +1255,35 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Shift-clicking the result pays the same price. It is its own path through the menu:
-	 * the result is moved into the inventory first and onTake is then handed an empty
-	 * stack, so anything hung off the crafted item never runs for it.
+	 * Shift-clicking the result pays the same price and has the same effects as a click:
+	 * the gear credits this world's forger and counts as a crafted trait. It is its own
+	 * path through the menu: the result is moved into the inventory first and onTake is
+	 * then handed an empty stack, so anything hung off the crafted item never runs for it.
 	 */
 	public static void smithingShiftClickConsumesCount(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
-				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 10));
+		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(chestplate, new DirtPlace("Nobody's Grace", 1));
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
+				new ItemStack(Items.CACTUS, 10));
 
 		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
 
-		boolean delivered = false;
+		ItemStack taken = ItemStack.EMPTY;
 		Inventory inventory = player.getInventory();
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
-			delivered |= hasTrait(inventory.getItem(i), "thorny");
+		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "thorny"); i++) {
+			taken = inventory.getItem(i);
 		}
-		helper.assertTrue(delivered, "shift-clicking should move the thorny chestplate into the inventory");
+		helper.assertTrue(hasTrait(taken, "thorny"),
+				"shift-clicking should move the thorny chestplate into the inventory");
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
 		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
 				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
 		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
 				"nothing should be left to take once the gear is gone");
+		assertWorldForger(helper, taken);
+		assertAdvancementDone(helper, player, "add_trait");
 
 		helper.succeed();
 	}
