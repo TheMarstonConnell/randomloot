@@ -677,10 +677,10 @@ public class GenWiki {
     }
 
     /** A trait recipe's addition item and how many of it the Addition Template charges. */
-    public record RecipeCost(String itemId, int count) {
+    private record RecipeCost(String itemId, int count) {
     }
 
-    public static RecipeCost readRecipe(String trait) throws IOException {
+    private static RecipeCost readRecipe(String trait) throws IOException {
         return readRecipe(repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json"));
     }
 
