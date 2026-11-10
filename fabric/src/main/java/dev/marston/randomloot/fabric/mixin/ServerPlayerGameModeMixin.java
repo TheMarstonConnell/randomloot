@@ -7,14 +7,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Reports the result of every server-side item use, so a right-click trait that
- * deferred to the off-hand item learns whether that item actually did anything.
+ * Reports the result of every server-side item use and block use, so a right-click
+ * trait that deferred to the off-hand item learns whether that item actually did anything.
  * No loader has an event for the result; NeoForge carries the same mixin.
  */
 @Mixin(ServerPlayerGameMode.class)
@@ -24,5 +25,11 @@ public abstract class ServerPlayerGameModeMixin {
     private void randomloot$afterUseItem(ServerPlayer player, Level level, ItemStack itemStack, InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir) {
         LootItem.afterUseItem(player, hand, cir.getReturnValue());
+    }
+
+    @Inject(method = "useItemOn", at = @At("RETURN"))
+    private void randomloot$afterUseItemOn(ServerPlayer player, Level level, ItemStack itemStack, InteractionHand hand,
+            BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
+        LootItem.afterUseItemOn(player, hand, cir.getReturnValue());
     }
 }

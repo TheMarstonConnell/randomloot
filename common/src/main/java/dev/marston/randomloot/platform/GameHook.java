@@ -24,7 +24,7 @@ public enum GameHook {
 	ARMOR_HURT,
 	/** Block-breaking speed: Soulbound's owner bonus. */
 	BREAK_SPEED,
-	/** The server finished an item use: a right-click trait deferred behind the off hand may fire. */
+	/** The server finished an item or block use: a right-click trait deferred behind the off hand may fire. */
 	AFTER_USE_ITEM,
 	/** Per-tick server work: the block-highlighter finder traits. */
 	SERVER_TICK,

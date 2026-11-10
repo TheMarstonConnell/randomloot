@@ -415,8 +415,8 @@ public class LootItem extends LootGearItem {
 	 *
 	 * <p>The client sends the off-hand use right behind the main-hand one, so the two
 	 * normally land in the same tick; one tick of slack covers a tick boundary between
-	 * them. A deferral nothing answers (the off-hand item was used on a block instead,
-	 * which ends the click) is simply left to go stale.
+	 * them. A click that ends on the off-hand block use instead is settled by
+	 * {@link #afterUseItemOn}; a deferral nothing answers at all simply goes stale.
 	 */
 	public static void afterUseItem(ServerPlayer player, InteractionHand hand, InteractionResult result) {
 		if (hand != InteractionHand.OFF_HAND) {
@@ -431,6 +431,19 @@ public class LootItem extends LootGearItem {
 		ItemStack tool = player.getMainHandItem();
 		if (tool.getItem() instanceof LootItem item && !LootUtils.isRolling(tool)) {
 			item.useAnywhereTraits(player.level(), player, InteractionHand.MAIN_HAND, tool);
+		}
+	}
+
+	/**
+	 * Called by each loader after the server has finished using an item on a block. An
+	 * off-hand block use that succeeds or fails ends the click - the client sends no
+	 * off-hand item use after it - so a trait deferred on this click is dropped here
+	 * rather than left for some later, unrelated off-hand use to set off.
+	 */
+	public static void afterUseItemOn(ServerPlayer player, InteractionHand hand, InteractionResult result) {
+		if (hand == InteractionHand.OFF_HAND
+				&& (result instanceof InteractionResult.Success || result instanceof InteractionResult.Fail)) {
+			DEFERRED_USES.remove(player);
 		}
 	}
 

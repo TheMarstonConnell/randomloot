@@ -1607,16 +1607,23 @@ public final class GameTestBodies {
 		helper.assertTrue(flameThrowerFires(helper, player, sword, null),
 				"a right-click trait used from the off hand should fire");
 
-		// A deferral that was never answered (the off hand used a block instead) goes
-		// stale: an unrelated off-hand use a few ticks later must not set it off.
+		// A click the off hand settled on a block leaves nothing pending: an unrelated
+		// off-hand item use right behind it, in the same tick, must not set the trait off.
 		player.setItemInHand(InteractionHand.MAIN_HAND, sword);
 		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
 		player.setPos(onFloor);
 		helper.assertFalse(flameThrowerFires(helper, player, sword, floor), "the torch should take the click");
 		helper.setBlock(floor.above(), Blocks.AIR);
+		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.STICK));
+		player.gameMode.useItem(player, helper.getLevel(), player.getOffhandItem(), InteractionHand.OFF_HAND);
+		helper.assertTrue(sword.getDamageValue() == 0,
+				"a click the off hand used on a block must not leave the trait pending");
+
+		// And a deferral nothing answers at all goes stale: the main-hand use arrives
+		// alone, then an unrelated off-hand use a few ticks later must not fire it.
+		player.setPos(inTheAir);
+		player.gameMode.useItem(player, helper.getLevel(), sword, InteractionHand.MAIN_HAND);
 		helper.runAfterDelay(3, () -> {
-			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.STICK));
-			sword.setDamageValue(0);
 			player.gameMode.useItem(player, helper.getLevel(), player.getOffhandItem(), InteractionHand.OFF_HAND);
 			helper.assertTrue(sword.getDamageValue() == 0, "a stale deferral must not fire the trait later");
 			helper.succeed();
