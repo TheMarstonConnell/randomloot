@@ -1255,53 +1255,33 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Shift-clicking the result pays the same price. It is its own path through the menu:
-	 * the result is moved into the inventory first and onTake is then handed an empty
-	 * stack, so anything hung off the crafted item never runs for it.
+	 * Shift-clicking the result pays the same price and has the same effects as a click:
+	 * the gear credits this world's forger and counts as a crafted trait. It is its own
+	 * path through the menu: the result is moved into the inventory first and onTake is
+	 * then handed an empty stack, so anything hung off the crafted item never runs for it.
 	 */
 	public static void smithingShiftClickConsumesCount(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
-				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 10));
-
-		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
-
-		boolean delivered = false;
-		Inventory inventory = player.getInventory();
-		for (int i = 0; i < inventory.getContainerSize(); i++) {
-			delivered |= hasTrait(inventory.getItem(i), "thorny");
-		}
-		helper.assertTrue(delivered, "shift-clicking should move the thorny chestplate into the inventory");
-		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
-		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
-				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
-		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
-				"nothing should be left to take once the gear is gone");
-
-		helper.succeed();
-	}
-
-	/**
-	 * A shift-click leaves the world's forger on the gear and counts as a crafted trait,
-	 * like the click in smithingCraftSequence. Both effects used to hang off the crafted
-	 * item, which this path never reaches (see smithingShiftClickConsumesCount).
-	 */
-	public static void smithingShiftClickRunsCraftEffects(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack sword = newTool(ToolType.SWORD);
-		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
-		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), sword,
-				new ItemStack(Items.GHAST_TEAR));
+		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(chestplate, new DirtPlace("Nobody's Grace", 1));
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
+				new ItemStack(Items.CACTUS, 10));
 
 		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
 
 		ItemStack taken = ItemStack.EMPTY;
 		Inventory inventory = player.getInventory();
-		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "critical"); i++) {
+		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "thorny"); i++) {
 			taken = inventory.getItem(i);
 		}
-		helper.assertTrue(hasTrait(taken, "critical"),
-				"shift-clicking should move the critical sword into the inventory");
+		helper.assertTrue(hasTrait(taken, "thorny"),
+				"shift-clicking should move the thorny chestplate into the inventory");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
+				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"nothing should be left to take once the gear is gone");
 		assertWorldForger(helper, taken);
 		assertAdvancementDone(helper, player, "add_trait");
 
