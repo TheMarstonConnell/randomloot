@@ -5,20 +5,19 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.advancements.TraitObtainedTrigger;
+import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentMap;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.TypedDataComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -84,17 +83,39 @@ public abstract class LootGearItem extends Item {
 		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
 	}
 
-	@Override
-	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Level level, @NotNull Player player) {
-		super.onCraftedBy(stack, level, player);
-		// Taking gear out of a smithing table means a trait recipe ran; crafting-table
-		// takes are the texture-change recipe, which doesn't alter traits.
-		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
-			if (player.level() instanceof ServerLevel serverLevel) {
-				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
-			}
-			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
+	/**
+	 * True when two stacks are the same piece of gear apart from its {@code tool_mod}
+	 * component, which is each loader's cue to skip the hand re-equip animation
+	 * (NeoForge {@code shouldCauseReequipAnimation}, Fabric
+	 * {@code allowComponentsUpdateAnimation}). {@code tool_mod} changes on nearly every
+	 * use - XP per block and per hit, trait state - and vanilla 1.21.1 replays the
+	 * animation for any component change on the held stack. Durability is deliberately
+	 * still compared: a tool that takes damage dips exactly like a vanilla tool does on
+	 * this version. Two different pieces of gear differ in name, attributes or max
+	 * damage, so swapping between them still animates.
+	 */
+	public static boolean sameApartFromToolMod(ItemStack oldStack, ItemStack newStack) {
+		if (oldStack == newStack) {
+			return true;
 		}
+		if (!ItemStack.isSameItem(oldStack, newStack) || oldStack.getCount() != newStack.getCount()) {
+			return false;
+		}
+
+		DataComponentType<?> toolMod = ModDataComponents.TOOL_MODIFIER.get();
+		DataComponentMap oldComponents = oldStack.getComponents();
+		DataComponentMap newComponents = newStack.getComponents();
+		for (TypedDataComponent<?> component : oldComponents) {
+			if (component.type() != toolMod && !component.value().equals(newComponents.get(component.type()))) {
+				return false;
+			}
+		}
+		for (DataComponentType<?> type : newComponents.keySet()) {
+			if (type != toolMod && !oldComponents.has(type)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	@Override

@@ -22,6 +22,9 @@ import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.item.v1.EnchantmentEvents;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.util.TriState;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.storage.loot.LootPool;
@@ -41,6 +44,10 @@ public class RandomLootFabric implements ModInitializer {
         // Dispenser behavior; mod init is single-threaded on Fabric so no deferral needed.
         RandomLoot.commonSetup();
 
+        // The condition the injected loot pools carry; see the loot injection below.
+        Registry.register(BuiltInRegistries.LOOT_CONDITION_TYPE,
+                ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "once_per_loot_roll"), OncePerLootRoll.TYPE);
+
         // NeoForge-style TOML config via Forge Config API Port; same file name on both loaders.
         NeoForgeConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
         NeoForgeModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
@@ -58,11 +65,13 @@ public class RandomLootFabric implements ModInitializer {
 
         // Wired by mixin rather than a Fabric API callback - see randomloot.fabric.mixins.json.
         // LivingEntityMixin (@WrapOperation on the actuallyHurt call inside hurtServer),
-        // ItemStackMixin (hurtAndBreak), PlayerMixin (getDestroySpeed), AnvilMenuMixin.
+        // ItemStackMixin (hurtAndBreak), PlayerMixin (getDestroySpeed), AnvilMenuMixin,
+        // SmithingMenuMixin (onTake).
         GameHooks.bind(GameHook.DAMAGE_PRE);
         GameHooks.bind(GameHook.ARMOR_HURT);
         GameHooks.bind(GameHook.BREAK_SPEED);
         GameHooks.bind(GameHook.ANVIL_COMBINE);
+        GameHooks.bind(GameHook.SMITHING_TAKE);
 
         // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin.
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
@@ -71,6 +80,9 @@ public class RandomLootFabric implements ModInitializer {
             }
         });
         GameHooks.bind(GameHook.DAMAGE_POST);
+        // ServerPlayerGameModeMixin (useItem and useItemOn RETURN): off-hand arbitration
+        // for right-click traits.
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> BlockHighlighter.onServerTick());
         GameHooks.bind(GameHook.SERVER_TICK);
@@ -97,7 +109,14 @@ public class RandomLootFabric implements ModInitializer {
         GameHooks.bind(GameHook.ENCHANT_GATE);
 
         // Loot injection: the LootInjection policy is common; pools are Fabric's
-        // delivery mechanism (NeoForge uses the case_item global loot modifier).
+        // delivery mechanism (NeoForge uses the case_item global loot modifier). Every
+        // matching table gets the pools, including tables that are only ever rolled
+        // from inside another matching table - the trial vault's "reward" rolls
+        // reward_common/_rare/_unique - so each pool is gated on OncePerLootRoll: nested
+        // tables share the parent's LootContext, and only the first pool to reach it
+        // rolls. Without that gate vaults paid out several times NeoForge's rate.
+        // (26.x appends to the finished drops through LootTableEvents.MODIFY_DROPS
+        // instead; Fabric API for 1.21.1 has no such event.)
         LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
             if (!LootInjection.matchesTable(key.location().getPath())) {
                 return;
@@ -106,6 +125,9 @@ public class RandomLootFabric implements ModInitializer {
             for (LootInjection.Entry entry : LootInjection.entries()) {
                 tableBuilder.withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0f))
+                        // Order matters: the gate goes first so a context's one roll is
+                        // spent whether or not the chance then comes up.
+                        .when(() -> new OncePerLootRoll(entry.item()))
                         .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
                         .add(lootTableItem(entry.item())));
             }

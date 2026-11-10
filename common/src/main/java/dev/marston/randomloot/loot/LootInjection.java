@@ -10,7 +10,8 @@ import java.util.List;
  * The loot-injection policy - which tables receive cases/templates and at what
  * chance. Owned by common so the loaders only differ in delivery mechanism:
  * NeoForge applies it per-roll via the case_item global loot modifier, Fabric
- * bakes pools into the tables via LootTableEvents.MODIFY.
+ * bakes pools into the tables via LootTableEvents.MODIFY, each gated to one roll
+ * per loot context.
  */
 public final class LootInjection {
 

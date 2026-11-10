@@ -28,7 +28,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
     @Override
     public LootItem createLootItem(Item.Properties props) {
         // Fabric has no item-ability hook; LootItem's own useOn handles strip/scrape/flatten.
-        return new LootItem(props);
+        return new FabricLootItem(props);
     }
 
     @Override
@@ -39,7 +39,7 @@ public class FabricPlatformHelper implements IPlatformHelper {
             net.minecraft.world.entity.EquipmentSlot slot = dev.marston.randomloot.loot.LootUtils.wearableSlot(stack);
             return slot != null ? slot : net.minecraft.world.entity.EquipmentSlot.MAINHAND;
         });
-        return new LootArmorItem(props);
+        return new FabricLootArmorItem(props);
     }
 
     @Override

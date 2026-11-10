@@ -52,13 +52,13 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 			return;
 		}
 
-		BlockState startingState = level.getBlockState(pos);
-
-		if (!startingState.is(blockType)) {
-			return;
-		}
-
+		// The origin (index 0) is the block the player broke: it is still in the world
+		// on NeoForge but already gone on Fabric, so only the spread is checked.
 		if (index > 0) {
+			if (!level.getBlockState(pos).is(blockType)) {
+				return;
+			}
+
 			tobreak.add(pos.immutable());
 		}
 
@@ -74,7 +74,7 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
 			return false;
@@ -92,15 +92,13 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 			return false;
 		}
 
-		BlockState state = l.getBlockState(pos);
-
 		LootItem li = (LootItem) itemstack.getItem();
 
-		if (!li.isCorrectToolForDrops(itemstack, state)) {
+		if (!li.isCorrectToolForDrops(itemstack, broken)) {
 			return false;
 		}
 
-		Block b = state.getBlock();
+		Block b = broken.getBlock();
 
 		Set<BlockPos> toBreak = new HashSet<BlockPos>();
 
@@ -110,7 +108,7 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 			boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, l, l.getBlockState(blockPos));
 
 			if (destroyed) {
-				itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
 				if (itemstack.isEmpty()) {
 					break;
 				}

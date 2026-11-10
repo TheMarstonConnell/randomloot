@@ -9,6 +9,10 @@ import java.util.function.Supplier;
 
 public class ModDataComponents {
 
+    // This component changes on nearly every use (XP per block and per hit, trait state),
+    // and the client replays the hand re-equip animation whenever a component on the held
+    // stack changes. 26.x opts the type out with ignoreSwapAnimation(); 1.21.1 has no such
+    // flag, so each loader's gear item answers through LootGearItem.sameApartFromToolMod.
     public static final Supplier<DataComponentType<ToolModifier>> TOOL_MODIFIER =
             Services.REG.register(Registries.DATA_COMPONENT_TYPE, "tool_mod",
                     () -> DataComponentType.<ToolModifier>builder().persistent(ToolModifier.CODEC).build());

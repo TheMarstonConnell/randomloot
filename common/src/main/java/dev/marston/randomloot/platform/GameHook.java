@@ -24,6 +24,8 @@ public enum GameHook {
 	ARMOR_HURT,
 	/** Block-breaking speed: Soulbound's owner bonus. */
 	BREAK_SPEED,
+	/** The server finished an item or block use: a right-click trait deferred behind the off hand may fire. */
+	AFTER_USE_ITEM,
 	/** Per-tick server work: the block-highlighter finder traits. */
 	SERVER_TICK,
 	/** Server shutdown: clean up highlighter markers. */
@@ -39,5 +41,10 @@ public enum GameHook {
 	/** Per-type/per-piece enchantment filtering. */
 	ENCHANT_GATE,
 	/** Inject cases and templates into chest loot. */
-	LOOT_INJECTION
+	LOOT_INJECTION,
+	/**
+	 * A smithing result is being taken: trait recipes charge the rest of their item count
+	 * and count as a crafted trait for advancements.
+	 */
+	SMITHING_TAKE
 }
