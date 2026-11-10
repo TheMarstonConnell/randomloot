@@ -6,6 +6,7 @@
     "mixins": [
         "AnvilMenuMixin",
         "ItemStackMixin",
+        "ServerPlayerGameModeMixin",
         "LivingEntityMixin",
         "PlayerMixin"
     ],

@@ -80,6 +80,8 @@ public class RandomLootFabric implements ModInitializer {
             }
         });
         GameHooks.bind(GameHook.DAMAGE_POST);
+        // ServerPlayerGameModeMixin (useItem RETURN): off-hand arbitration for right-click traits.
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> BlockHighlighter.onServerTick());
         GameHooks.bind(GameHook.SERVER_TICK);

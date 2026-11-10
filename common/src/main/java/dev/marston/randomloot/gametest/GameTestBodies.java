@@ -42,6 +42,7 @@ import net.minecraft.server.permissions.PermissionSet;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityTypes;
@@ -82,6 +83,7 @@ import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Loader-neutral gametest bodies, shared by the NeoForge registration
@@ -1538,14 +1540,15 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * A right-click-anywhere trait on the main-hand tool stands down whenever the
-	 * off-hand item would act on the click. That has to cover every usable item, not
-	 * only the ones with a use animation: ender pearls, snowballs and buckets have none.
-	 * Driven through the real right-click path; Flame Thrower costs durability when it
-	 * fires, so the sword's damage says which way the click went.
+	 * A right-click-anywhere trait on the main-hand tool gives the off-hand item the
+	 * click first and fires only when that item really did nothing with it - decided by
+	 * the off-hand use's actual result, not by what kind of item it is. Driven the way
+	 * the client sends a click; Flame Thrower costs durability when it fires, so the
+	 * sword's damage says which way the click went.
 	 */
 	public static void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
-		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD), "flame_thrower");
+		ItemStack sword = newTool(ToolType.SWORD);
+		ServerPlayer player = survivalPlayerHolding(helper, sword, "flame_thrower");
 		BlockPos floor = new BlockPos(1, 0, 1);
 		helper.setBlock(floor, Blocks.STONE);
 		Vec3 onFloor = helper.absoluteVec(new Vec3(1.5, 1.0, 1.5));
@@ -1553,66 +1556,109 @@ public final class GameTestBodies {
 		Vec3 inTheAir = onFloor.add(0.0, 60.0, 0.0);
 
 		player.setPos(inTheAir);
-		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
+		helper.assertTrue(flameThrowerFires(helper, player, sword, null),
 				"Flame Thrower should fire with an empty off hand");
 
-		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.BOW, Items.ENDER_PEARL, Items.SNOWBALL,
-				Items.EGG, Items.BUCKET, Items.FISHING_ROD)) {
+		// Off-hand items that act on a click in the air take it; the trait stays quiet.
+		player.getFoodData().setFoodLevel(10);
+		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.ENDER_PEARL, Items.SNOWBALL, Items.EGG,
+				Items.FISHING_ROD)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertFalse(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
+			helper.assertFalse(flameThrowerFires(helper, player, sword, null),
 					"a right-click trait should yield to an off-hand " + item);
 		}
 
-		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.ARROW, Items.FIREWORK_ROCKET)) {
+		// Off-hand items that do nothing with this click leave it to the trait - including
+		// usable ones that have nothing to act on: an empty bucket aimed at the sky, bread
+		// on a full stomach, a bow with no arrows.
+		player.getFoodData().setFoodLevel(20);
+		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.FIREWORK_ROCKET, Items.BUCKET,
+				Items.BREAD, Items.BOW, Items.TORCH)) {
 			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
-			helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
-					"a right-click trait should not yield to an off-hand " + item);
+			helper.assertTrue(flameThrowerFires(helper, player, sword, null),
+					"a right-click trait should fire when an off-hand " + item + " does nothing");
 		}
 
-		// Items that only act on a block yield only while the player is aiming at one.
-		for (ItemStack blockUser : List.of(new ItemStack(Items.TORCH), new ItemStack(Items.FLINT_AND_STEEL),
-				new ItemStack(Items.BONE_MEAL), newTool(ToolType.AXE))) {
-			player.setItemInHand(InteractionHand.OFF_HAND, blockUser);
-
-			player.setPos(inTheAir);
-			helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
-					"with no block targeted, a right-click trait should not yield to " + blockUser.getItem());
-
-			player.setPos(onFloor);
-			player.setXRot(90.0f);
-			helper.assertFalse(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
-					"aiming at a block, a right-click trait should yield to " + blockUser.getItem());
+		// On a targeted block the same rule holds: the torch and the flint and steel act on
+		// the stone, so the trait yields; bone meal and a loot axe cannot, so it fires.
+		player.setPos(onFloor);
+		for (ItemStack acts : List.of(new ItemStack(Items.TORCH), new ItemStack(Items.FLINT_AND_STEEL))) {
+			player.setItemInHand(InteractionHand.OFF_HAND, acts);
+			helper.assertFalse(flameThrowerFires(helper, player, sword, floor),
+					"a right-click trait should yield while an off-hand " + acts.getItem() + " acts on the block");
+			helper.setBlock(floor.above(), Blocks.AIR);
 		}
+		for (ItemStack cannot : List.of(new ItemStack(Items.BONE_MEAL), newTool(ToolType.AXE))) {
+			player.setItemInHand(InteractionHand.OFF_HAND, cannot);
+			helper.assertTrue(flameThrowerFires(helper, player, sword, floor),
+					"a right-click trait should fire when an off-hand " + cannot.getItem()
+							+ " cannot act on the block");
+		}
+		// ...and the same loot axe does take the click on a log it can strip.
+		helper.setBlock(floor, Blocks.OAK_LOG);
+		helper.assertFalse(flameThrowerFires(helper, player, sword, floor),
+				"a right-click trait should yield while an off-hand loot axe strips the log");
+		helper.setBlock(floor, Blocks.STONE);
 
-		// A trait-less loot pickaxe has no right-click action of its own, even on a block.
-		player.setItemInHand(InteractionHand.OFF_HAND, newTool(ToolType.PICKAXE));
-		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.MAIN_HAND),
-				"a right-click trait should not yield to a plain loot pickaxe");
-
-		// The arbitration is about the main hand: used from the off hand, the tool never
-		// yields, whatever the main hand holds.
+		// Held in the off hand, the tool has nothing to yield to once the main hand passes.
 		player.setPos(inTheAir);
-		ItemStack sword = player.getMainHandItem();
-		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.SHIELD));
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
 		player.setItemInHand(InteractionHand.OFF_HAND, sword);
-		helper.assertTrue(flameThrowerFires(helper, player, InteractionHand.OFF_HAND),
-				"a right-click trait used from the off hand should still fire");
+		helper.assertTrue(flameThrowerFires(helper, player, sword, null),
+				"a right-click trait used from the off hand should fire");
 
-		helper.succeed();
+		// A deferral that was never answered (the off hand used a block instead) goes
+		// stale: an unrelated off-hand use a few ticks later must not set it off.
+		player.setItemInHand(InteractionHand.MAIN_HAND, sword);
+		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
+		player.setPos(onFloor);
+		helper.assertFalse(flameThrowerFires(helper, player, sword, floor), "the torch should take the click");
+		helper.setBlock(floor.above(), Blocks.AIR);
+		helper.runAfterDelay(3, () -> {
+			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.STICK));
+			sword.setDamageValue(0);
+			player.gameMode.useItem(player, helper.getLevel(), player.getOffhandItem(), InteractionHand.OFF_HAND);
+			helper.assertTrue(sword.getDamageValue() == 0, "a stale deferral must not fire the trait later");
+			helper.succeed();
+		});
 	}
 
 	/**
-	 * Right-clicks with the Flame Thrower tool in {@code hand} through the server's real
-	 * use path and reports whether the trait fired (it costs durability when it does).
+	 * Right-clicks the way the client sends it and reports whether the Flame Thrower
+	 * sword fired. For each hand in turn: the block use when a block is targeted, then
+	 * the item use, stopping at the first that succeeds (or, for a block use, fails).
 	 */
-	private static boolean flameThrowerFires(GameTestHelper helper, ServerPlayer player, InteractionHand hand) {
-		player.getItemInHand(hand).setDamageValue(0);
-		player.gameMode.useItem(player, helper.getLevel(), player.getItemInHand(hand), hand);
-		boolean fired = player.getItemInHand(hand).getDamageValue() > 0;
+	private static boolean flameThrowerFires(GameTestHelper helper, ServerPlayer player, ItemStack sword,
+			@Nullable BlockPos target) {
+		sword.setDamageValue(0);
+		rightClick(helper, player, target);
+		boolean fired = sword.getDamageValue() > 0;
 
-		// Don't leave a live fireball flying through the other tests.
-		helper.getLevel().getEntities(EntityTypes.FIREBALL, player.getBoundingBox().inflate(8.0), e -> true)
+		// Leave nothing behind for the next case or the neighbouring tests: thrown
+		// projectiles, fireballs, a raised shield.
+		player.stopUsingItem();
+		helper.getLevel().getEntities(player, player.getBoundingBox().inflate(8.0), e -> !(e instanceof ServerPlayer))
 				.forEach(e -> e.discard());
 		return fired;
+	}
+
+	private static void rightClick(GameTestHelper helper, ServerPlayer player, @Nullable BlockPos target) {
+		for (InteractionHand hand : InteractionHand.values()) {
+			ItemStack held = player.getItemInHand(hand);
+
+			if (target != null) {
+				BlockPos absolute = helper.absolutePos(target);
+				var hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+				InteractionResult onBlock = player.gameMode.useItemOn(player, helper.getLevel(), held, hand, hit);
+				if (onBlock instanceof InteractionResult.Success || onBlock instanceof InteractionResult.Fail) {
+					return;
+				}
+			}
+
+			if (!held.isEmpty() && player.gameMode.useItem(player, helper.getLevel(), held,
+					hand) instanceof InteractionResult.Success) {
+				return;
+			}
+		}
 	}
 }

@@ -48,6 +48,8 @@ public final class NeoForgeEvents {
         GameHooks.bind(GameHook.DAMAGE_POST);
         GameHooks.bind(GameHook.ARMOR_HURT);
         GameHooks.bind(GameHook.BREAK_SPEED);
+        // Wired by mixin, not an event: mixin/ServerPlayerGameModeMixin (useItem RETURN).
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
         GameHooks.bind(GameHook.SERVER_TICK);
         GameHooks.bind(GameHook.SERVER_STOPPING);
         GameHooks.bind(GameHook.COMMANDS);
