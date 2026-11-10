@@ -138,15 +138,10 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		if (player instanceof ServerPlayer serverPlayer) {
 			ModCriteria.traitsObtained(serverPlayer, recipe.assemble(input), TraitObtainedTrigger.SOURCE_CRAFTED);
 		}
-		recipe.chargeAddition(input);
-	}
 
-	/**
-	 * Consumes the part of {@link #additionCost} vanilla does not: {@code SmithingMenu.onTake}
-	 * shrinks every input by one, so the other {@code cost - 1} leave the addition slot here.
-	 */
-	private void chargeAddition(SmithingRecipeInput input) {
-		int extra = additionCost(input.template()) - 1;
+		// Vanilla's onTake shrinks every input by one; the rest of additionCost leaves the
+		// addition slot here.
+		int extra = recipe.additionCost(input.template()) - 1;
 		if (extra > 0) {
 			// No setChanged: vanilla's own shrink of this slot follows immediately and
 			// re-runs createResult against the final contents.
