@@ -110,12 +110,13 @@ public final class NeoForgeEvents {
      * shift-click (from onQuickCraft) alike. The event's javadoc warns against touching
      * the inputs because vanilla is about to decrement them; shrinking the addition
      * further is exactly the point here, and vanilla re-reads the slot before its own
-     * shrink. Fabric mirrors this in SmithingMenuMixin.
+     * shrink. getResult() is no use to the hook: on a shift-click it is a copy of gear
+     * that is already in the inventory. Fabric mirrors this in SmithingMenuMixin.
      */
     @SubscribeEvent
     public static void onItemSmithed(PlayerEvent.ItemSmithedEvent event) {
         if (event.getEntity().containerMenu instanceof SmithingMenu menu) {
-            TraitAdditionRecipe.chargeAddition(menu);
+            TraitAdditionRecipe.onTake(menu, event.getEntity());
         }
     }
 

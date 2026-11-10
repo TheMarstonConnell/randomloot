@@ -8,6 +8,8 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.advancements.ModCriteria;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.TraitEligibility;
@@ -18,7 +20,10 @@ import net.minecraft.core.component.DataComponentPatch;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.ByteBufCodecs;
 import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.ExtraCodecs;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.RecipeCraftingHolder;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
@@ -41,6 +46,12 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	final String trait;
 	@Nullable
 	private PlacementInfo placementInfo;
+	/**
+	 * The seed of the server world this recipe last matched in, which is the world its
+	 * next {@link #assemble} is for. One server has one seed, so it never changes once set.
+	 */
+	@Nullable
+	private Long worldSeed;
 
 	/** The recipe JSON's {@code "item"} object: the addition and how many of it adding costs. */
 	private record Addition(Holder<Item> item, int count) {
@@ -106,13 +117,12 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	}
 
 	/**
-	 * Consumes the part of {@link #additionCost} vanilla does not: {@code SmithingMenu.onTake}
-	 * shrinks every input by one, so the other {@code cost - 1} leave the addition slot here.
-	 * Call it once per take, before the inputs shrink
-	 * ({@link dev.marston.randomloot.platform.GameHook#SMITHING_TAKE}). Only the server
-	 * records the recipe used, so on the client this does nothing.
+	 * What a trait recipe does when its result leaves the table, by a click or a
+	 * shift-click ({@link dev.marston.randomloot.platform.GameHook#SMITHING_TAKE}). Call
+	 * it once per take, before the inputs shrink. Only the server records the recipe
+	 * used, so on the client this does nothing.
 	 */
-	public static void chargeAddition(SmithingMenu menu) {
+	public static void onTake(SmithingMenu menu, Player player) {
 		if (!(menu.getSlot(SmithingMenu.RESULT_SLOT).container instanceof RecipeCraftingHolder results)) {
 			return;
 		}
@@ -120,11 +130,27 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		if (used == null || !(used.value() instanceof TraitAdditionRecipe recipe)) {
 			return;
 		}
-		int extra = recipe.additionCost(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem()) - 1;
+		SmithingRecipeInput input = new SmithingRecipeInput(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem(),
+				menu.getSlot(SmithingMenu.BASE_SLOT).getItem(), menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem());
+
+		// A shift-click has already moved the taken stack into the inventory, out of
+		// reach. The inputs are still whole and assemble to the same gear.
+		if (player instanceof ServerPlayer serverPlayer) {
+			ModCriteria.traitsObtained(serverPlayer, recipe.assemble(input), TraitObtainedTrigger.SOURCE_CRAFTED);
+		}
+		recipe.chargeAddition(input);
+	}
+
+	/**
+	 * Consumes the part of {@link #additionCost} vanilla does not: {@code SmithingMenu.onTake}
+	 * shrinks every input by one, so the other {@code cost - 1} leave the addition slot here.
+	 */
+	private void chargeAddition(SmithingRecipeInput input) {
+		int extra = additionCost(input.template()) - 1;
 		if (extra > 0) {
 			// No setChanged: vanilla's own shrink of this slot follows immediately and
 			// re-runs createResult against the final contents.
-			menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().shrink(extra);
+			input.addition().shrink(extra);
 		}
 	}
 
@@ -176,8 +202,16 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-        return this.template.get().test(input.template());
-    }
+		if (!this.template.get().test(input.template())) {
+			return false;
+		}
+
+		// assemble() is handed no level, so the match leaves it the world to forge for.
+		if (level instanceof ServerLevel serverLevel) {
+			this.worldSeed = serverLevel.getSeed();
+		}
+		return true;
+	}
 
 	private ItemStack getResult(SmithingRecipeInput input) {
 
@@ -200,6 +234,12 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 				LootUtils.removeModifier(stack, modToAdd);
 			}
 
+			// Stamped as the result is built, not as it is taken: nothing can get at the
+			// stack a shift-click takes (see onTake), and the preview now shows the name
+			// the player will actually get.
+			if (this.worldSeed != null) {
+				LootUtils.applyWorldForgers(stack, this.worldSeed);
+			}
 
 			return stack;
 	}

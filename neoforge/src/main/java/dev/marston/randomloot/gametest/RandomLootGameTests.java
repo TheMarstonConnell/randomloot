@@ -111,6 +111,9 @@ public final class RandomLootGameTests {
 		register(event, env, "trait_recipe_counts_load", GameTestBodies::traitRecipeCountsLoad);
 		register(event, env, "smithing_take_consumes_count", GameTestBodies::smithingTakeConsumesCount);
 		register(event, env, "smithing_shift_click_consumes_count", GameTestBodies::smithingShiftClickConsumesCount);
+		register(event, env, "smithing_take_runs_craft_effects", GameTestBodies::smithingTakeRunsCraftEffects);
+		register(event, env, "smithing_shift_click_runs_craft_effects",
+				GameTestBodies::smithingShiftClickRunsCraftEffects);
 		register(event, env, "smithing_removal_costs_one", GameTestBodies::smithingRemovalCostsOne);
 		register(event, env, "blinding_stops_at_level_one", GameTestBodies::blindingStopsAtLevelOne);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);

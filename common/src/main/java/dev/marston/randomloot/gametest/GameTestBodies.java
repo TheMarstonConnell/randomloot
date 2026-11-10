@@ -23,6 +23,7 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -1261,6 +1262,48 @@ public final class GameTestBodies {
 				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
 		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
 				"nothing should be left to take once the gear is gone");
+
+		helper.succeed();
+	}
+
+	/** A plain click leaves the world's forger on the gear and counts as a crafted trait. */
+	public static void smithingTakeRunsCraftEffects(GameTestHelper helper) {
+		assertSmithingCraftEffects(helper, ContainerInput.PICKUP);
+	}
+
+	/**
+	 * So does a shift-click. Both effects used to hang off the crafted item, which this
+	 * path never reaches (see smithingShiftClickConsumesCount).
+	 */
+	public static void smithingShiftClickRunsCraftEffects(GameTestHelper helper) {
+		assertSmithingCraftEffects(helper, ContainerInput.QUICK_MOVE);
+	}
+
+	private static void assertSmithingCraftEffects(GameTestHelper helper, ContainerInput take) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		// A forger no world has. The registry prototype's random one matches this world's
+		// one time in six, which would let a missing stamp pass.
+		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), sword,
+				new ItemStack(Items.GHAST_TEAR));
+
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, take, player);
+
+		// On the cursor after a click, somewhere in the inventory after a shift-click.
+		ItemStack taken = menu.getCarried();
+		Inventory inventory = player.getInventory();
+		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "critical"); i++) {
+			taken = inventory.getItem(i);
+		}
+		helper.assertTrue(hasTrait(taken, "critical"), "the take should deliver the critical sword");
+
+		String expected = NameGenerator.forgerForWorld(helper.getLevel().getSeed(), 0.5f) + "'s Grace";
+		String forged = LootUtils.getModifiers(taken).stream().filter(m -> m.tagName().equals("dirt_place"))
+				.map(Modifier::name).findFirst().orElse("nothing");
+		helper.assertTrue(expected.equals(forged),
+				"smithed gear should credit this world's forger, got " + forged + " expected " + expected);
+		assertAdvancementDone(helper, player, "add_trait");
 
 		helper.succeed();
 	}

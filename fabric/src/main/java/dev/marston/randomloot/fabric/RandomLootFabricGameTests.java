@@ -159,6 +159,16 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void smithingTakeRunsCraftEffects(GameTestHelper helper) {
+        GameTestBodies.smithingTakeRunsCraftEffects(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void smithingShiftClickRunsCraftEffects(GameTestHelper helper) {
+        GameTestBodies.smithingShiftClickRunsCraftEffects(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void smithingRemovalCostsOne(GameTestHelper helper) {
         GameTestBodies.smithingRemovalCostsOne(helper);
     }
