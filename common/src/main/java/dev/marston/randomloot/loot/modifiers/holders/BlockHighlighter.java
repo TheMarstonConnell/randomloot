@@ -44,24 +44,6 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	/** True for blocks this trait should highlight. */
 	protected abstract boolean isTarget(BlockState state);
 
-	/**
-	 * The marker entity. It is never written to disk: a marker only means something
-	 * while this class is tracking it, and a saved copy would come back as an
-	 * untracked, invulnerable, AI-less shulker stuck inside the block forever.
-	 * Unsaved entities are also left in memory when their chunk unloads, so the
-	 * lifecycle sweep can still discard them properly.
-	 */
-	private static final class Marker extends Shulker {
-		Marker(Level level) {
-			super(EntityTypes.SHULKER, level);
-		}
-
-		@Override
-		public boolean shouldBeSaved() {
-			return false;
-		}
-	}
-
 	public static void onServerStopping() {
 		for (Shulker shulker : shulkers) {
 			kill(shulker);
@@ -141,7 +123,16 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	}
 
 	private static void spawnMarker(Level level, BlockPos p) {
-		Shulker se = new Marker(level);
+		// Never written to disk: a marker only means something while this class is
+		// tracking it, and a saved copy would come back as an untracked, invulnerable,
+		// AI-less shulker stuck inside the block forever. Unsaved entities are also left
+		// in memory when their chunk unloads, so the lifecycle sweep can still discard them.
+		Shulker se = new Shulker(EntityTypes.SHULKER, level) {
+			@Override
+			public boolean shouldBeSaved() {
+				return false;
+			}
+		};
 		se.setGlowingTag(true);
 		se.setPermanentlyInvulnerable(true);
 		se.setInvisible(true);
