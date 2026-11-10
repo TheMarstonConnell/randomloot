@@ -399,7 +399,8 @@ public class LootItem extends LootGearItem {
 		// fireball. Whether the off-hand item acts can't be known without using it, so
 		// wait for its real result: afterUseItem fires the trait if that use passes.
 		if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer serverPlayer
-				&& !player.getOffhandItem().isEmpty() && hasUseAnywhereTrait(toolItem)) {
+				&& !player.getOffhandItem().isEmpty() && LootUtils.getModifiers(toolItem).stream()
+						.anyMatch(mod -> mod instanceof UseModifier um && um.useAnywhere())) {
 			DEFERRED_USES.put(serverPlayer, level.getGameTime());
 			return InteractionResult.PASS;
 		}
@@ -431,15 +432,6 @@ public class LootItem extends LootGearItem {
 		if (tool.getItem() instanceof LootItem item && !LootUtils.isRolling(tool)) {
 			item.useAnywhereTraits(player.level(), player, InteractionHand.MAIN_HAND, tool);
 		}
-	}
-
-	private static boolean hasUseAnywhereTrait(ItemStack tool) {
-		for (Modifier mod : LootUtils.getModifiers(tool)) {
-			if (mod instanceof UseModifier um && um.useAnywhere()) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/** Runs the tool's right-click-anywhere traits; true when one of them acted. */
