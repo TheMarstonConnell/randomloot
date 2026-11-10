@@ -12,19 +12,20 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Map;
+import java.util.Collections;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 
 public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 
 	/**
-	 * Entities whose latest hit found them at full health, with the game time it
-	 * happened. {@code hurtEnemy} runs after the hit has landed, so the health it sees
-	 * is already reduced; this is recorded from the pre-damage hook instead. Server
-	 * thread only; weak keys let dead and unloaded entities go.
+	 * Entities whose latest hit found them at full health. {@code hurtEnemy} runs after
+	 * the hit has landed, so the health it sees is already reduced; this is recorded
+	 * from the pre-damage hook instead. Server thread only; weak keys let dead and
+	 * unloaded entities go.
 	 */
-	private static final Map<LivingEntity, Long> FULL_HEALTH_HITS = new WeakHashMap<>();
+	private static final Set<LivingEntity> FULL_HEALTH_HITS = Collections.newSetFromMap(new WeakHashMap<>());
 
 	/**
 	 * Called from the pre-damage hook, before the incoming damage is applied. Every hit
@@ -37,15 +38,15 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 		// Exactly full. The old 95% allowance only existed to absorb the error in
 		// estimating pre-hit health after the fact; this is the real value.
 		if (victim.getHealth() >= victim.getMaxHealth()) {
-			FULL_HEALTH_HITS.put(victim, victim.level().getGameTime());
+			FULL_HEALTH_HITS.add(victim);
 		} else {
 			FULL_HEALTH_HITS.remove(victim);
 		}
 	}
 
+	/** Reads and clears the mark: one full-health hit vouches for one swing. */
 	private static boolean wasAtFullHealth(LivingEntity victim) {
-		Long time = FULL_HEALTH_HITS.get(victim);
-		return time != null && time == victim.level().getGameTime();
+		return FULL_HEALTH_HITS.remove(victim);
 	}
 
 	public EarlyBird(String name, int level) {

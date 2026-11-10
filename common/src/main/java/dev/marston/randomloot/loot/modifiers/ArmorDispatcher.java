@@ -52,13 +52,14 @@ public final class ArmorDispatcher {
 			return damage;
 		}
 
+		// This is the one place both loaders call before damage lands on any living
+		// entity, so Early Bird records the victim's untouched health from here - for
+		// every hit, since each one has to set or clear that record.
+		EarlyBird.notePreDamage(wearer);
+
 		if (damage <= 0.0f) {
 			return damage;
 		}
-
-		// This is the one place both loaders call before damage lands on any living
-		// entity, so Early Bird records the victim's untouched health from here.
-		EarlyBird.notePreDamage(wearer);
 
 		// getModifiers already filters config-disabled traits.
 		for (ItemStack stack : wornLootArmor(wearer)) {
