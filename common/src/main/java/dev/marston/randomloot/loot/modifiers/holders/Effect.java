@@ -26,10 +26,21 @@ public class Effect extends EffectModifier implements HoldModifier {
 		this(name, tagname, 0, duration, effect, format);
 	}
 
+	private Effect(String name, String tagname, int power, int maxPower, int duration, Holder<MobEffect> effect,
+			ChatFormatting format) {
+		super(name, tagname, power, maxPower, duration, effect, format);
+	}
+
+	/** A held effect that stays at level I, for an effect whose amplifier does nothing (Fire Resistance). */
+	public static Effect singleLevel(String name, String tagname, int duration, Holder<MobEffect> effect,
+			ChatFormatting format) {
+		return new Effect(name, tagname, 0, 0, duration, effect, format);
+	}
+
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration,
-				this.effect, this.format);
+		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.maxPower,
+				this.duration, this.effect, this.format);
 	}
 
 	@Override

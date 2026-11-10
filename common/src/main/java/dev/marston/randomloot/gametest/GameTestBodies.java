@@ -1295,37 +1295,47 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Blinding has a single level: vanilla never reads Blindness's amplifier, so a second
-	 * one would take another 24 carrots and change nothing. Poisonous is the control - the
-	 * same setup has to keep leveling a trait whose amplifier does count.
+	 * Blinding and Heat Resistant have a single level: vanilla only asks whether Blindness
+	 * and Fire Resistance are present and never reads their amplifier, so a second level
+	 * would take the recipe's items again and change nothing. Poisonous and Healing are the
+	 * controls - the same setup has to keep leveling a trait whose amplifier does count.
 	 */
-	public static void blindingStopsAtLevelOne(GameTestHelper helper) {
+	public static void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack template = new ItemStack(ModItems.MOD_ADD.get());
 
-		SmithingMenu menu = openSmithing(helper, player, template, newTool(ToolType.SWORD),
-				new ItemStack(Items.CARROT, 64));
-		ItemStack blinding = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().copy();
-		helper.assertTrue(hasTrait(blinding, "blinding"), "a fresh sword should still take Blinding");
+		for (Modifier trait : List.of(ModifierRegistry.BLINDING, ModifierRegistry.FIRE_RESISTANT)) {
+			ItemStack once = previewAdd(helper, player, newTool(gearFor(trait)), trait);
+			helper.assertTrue(hasTrait(once, trait.tagName()), "fresh gear should still take " + trait.name());
+			helper.assertTrue(previewAdd(helper, player, once, trait).isEmpty(),
+					"gear that already has " + trait.name() + " should not preview a second level");
 
-		menu = openSmithing(helper, player, template, blinding, new ItemStack(Items.CARROT, 64));
-		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
-				"a sword that already has Blinding should not preview a second level");
+			// Gear that bought levels before the cap existed reads back at level I.
+			var saved = trait.toNBT();
+			saved.putInt(ModifierConstants.POWER, 3);
+			Modifier restored = trait.fromNBT(saved);
+			helper.assertTrue(restored.name().equals(trait.name()) && !restored.canLevel(),
+					trait.name() + " saved at a higher level should read back at level I, got " + restored.name());
+		}
 
-		ItemStack poisonous = newTool(ToolType.SWORD);
-		LootUtils.addModifier(poisonous, ModifierRegistry.POISONOUS);
-		menu = openSmithing(helper, player, template, poisonous, new ItemStack(Items.POISONOUS_POTATO, 64));
-		helper.assertTrue(!menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
-				"a Poisonous sword should still preview its next level");
-
-		// Gear that bought levels before the cap existed reads back as plain Blinding.
-		var saved = ModifierRegistry.BLINDING.toNBT();
-		saved.putInt(ModifierConstants.POWER, 3);
-		Modifier restored = ModifierRegistry.BLINDING.fromNBT(saved);
-		helper.assertTrue(restored.name().equals("Blinding") && !restored.canLevel(),
-				"Blinding saved at a higher level should read back at level I, got " + restored.name());
+		for (Modifier trait : List.of(ModifierRegistry.POISONOUS, ModifierRegistry.REGENERATING)) {
+			ItemStack once = previewAdd(helper, player, newTool(gearFor(trait)), trait);
+			helper.assertTrue(!previewAdd(helper, player, once, trait).isEmpty(),
+					trait.name() + " should still preview its next level");
+		}
 
 		helper.succeed();
+	}
+
+	/** Hurt effects go on weapons, held effects on mining tools. */
+	private static ToolType gearFor(Modifier trait) {
+		return trait.forTool(ToolType.SWORD) ? ToolType.SWORD : ToolType.PICKAXE;
+	}
+
+	/** The smithing preview for adding the trait to this gear, paid with a full stack so the price does not matter. */
+	private static ItemStack previewAdd(GameTestHelper helper, ServerPlayer player, ItemStack gear, Modifier trait) {
+		ItemStack payment = new ItemStack(traitRecipe(helper, trait.tagName()).additionItem(), 64);
+		return openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), gear, payment)
+				.getSlot(SmithingMenu.RESULT_SLOT).getItem().copy();
 	}
 
 	/**

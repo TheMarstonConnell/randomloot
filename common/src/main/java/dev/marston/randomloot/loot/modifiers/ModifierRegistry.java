@@ -87,7 +87,7 @@ public class ModifierRegistry {
 	public static Modifier REGENERATING = register(new Effect("Healing", "regeneration", 3, MobEffects.REGENERATION, ChatFormatting.LIGHT_PURPLE));
 	public static Modifier RESISTANT = register(new Effect("Resistant", "resistance", 1, MobEffects.RESISTANCE, ChatFormatting.GRAY));
 	public static Modifier FIRE_RESISTANT = register(
-			new Effect("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE, ChatFormatting.GOLD));
+			Effect.singleLevel("Heat Resistant", "fire_resistance", 1, MobEffects.FIRE_RESISTANCE, ChatFormatting.GOLD));
 	public static Modifier RAINY = register(new Rainy());
 	public static Modifier NATURALIST = register(new Naturalist());
 	public static Modifier ORE_FINDER = register(new OreFinder());

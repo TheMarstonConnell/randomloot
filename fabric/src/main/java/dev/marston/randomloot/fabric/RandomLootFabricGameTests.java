@@ -164,8 +164,8 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
-    public void blindingStopsAtLevelOne(GameTestHelper helper) {
-        GameTestBodies.blindingStopsAtLevelOne(helper);
+    public void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
+        GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
     }
 
     @GameTest(maxTicks = MAX_TICKS)
