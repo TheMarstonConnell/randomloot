@@ -1,7 +1,7 @@
 {
   "type": "randomloot:trait_change",
   "item": {
-    "count": 4,
+    "count": 1,
     "id": "minecraft:poisonous_potato"
   },
   "trait": "poison"

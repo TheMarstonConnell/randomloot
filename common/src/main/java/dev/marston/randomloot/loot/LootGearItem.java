@@ -5,19 +5,14 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.Holder;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -69,19 +64,6 @@ public abstract class LootGearItem extends Item {
 	/** Durability derived from goodness; stored as the vanilla MAX_DAMAGE component. */
 	public static int computeMaxDamage(ItemStack stack) {
 		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
-	}
-
-	@Override
-	public void onCraftedBy(@NotNull ItemStack stack, @NotNull Player player) {
-		super.onCraftedBy(stack, player);
-		// Taking gear out of a smithing table means a trait recipe ran; crafting-table
-		// takes are the texture-change recipe, which doesn't alter traits.
-		if (player instanceof ServerPlayer sPlayer && player.containerMenu instanceof SmithingMenu) {
-			if (player.level() instanceof ServerLevel serverLevel) {
-				LootUtils.applyWorldForgers(stack, serverLevel.getSeed());
-			}
-			ModCriteria.traitsObtained(sPlayer, stack, TraitObtainedTrigger.SOURCE_CRAFTED);
-		}
 	}
 
 	@Override
