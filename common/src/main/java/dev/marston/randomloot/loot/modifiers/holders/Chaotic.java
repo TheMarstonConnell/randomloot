@@ -46,7 +46,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
 
     @Override
     public String description() {
-        return "Stats randomly fluctuate every 5 seconds";
+        return "Melee damage bonus randomly fluctuates every 5 seconds, up to +50%";
     }
 
     @Override
@@ -66,7 +66,9 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
 
     @Override
     public boolean forTool(ToolType type) {
-        return true; // Works with all tool types
+        // The swing only ever shows up as bonus melee damage, so on armor it would be
+        // a dead trait with a tooltip that fluctuates for no reason.
+        return !type.isArmor();
     }
 
     /**
@@ -100,14 +102,13 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
         
         String stateText;
         ChatFormatting stateColor;
+        // A low roll adds no bonus (it cannot be applied as a penalty after the hit has
+        // landed), so show what the player actually gets rather than a negative number.
         if (percentage > 0) {
             stateText = "+" + percentage + "%";
             stateColor = ChatFormatting.GREEN;
-        } else if (percentage < 0) {
-            stateText = percentage + "%";
-            stateColor = ChatFormatting.RED;
         } else {
-            stateText = "0%";
+            stateText = "+0%";
             stateColor = ChatFormatting.GRAY;
         }
         

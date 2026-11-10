@@ -18,6 +18,7 @@ import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.Collection;
 import java.util.List;
@@ -35,7 +36,7 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 
 		Level level = player.level();
 
@@ -85,18 +86,27 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 						continue;
 					}
 
-					// Capture motion before modifying original item
+					// The recipe result is for ONE input item, but a drop is often a
+					// stack (2-5 raw copper, Fortune), so smelt the whole stack rather
+					// than replacing it with a single result.
+					int remaining = result.getCount() * stack.getCount();
+
+					// Capture position and motion before removing the original item
 					var motion = i.getDeltaMovement();
+					double x = i.getX();
+					double y = i.getY();
+					double z = i.getZ();
+					i.discard();
 
-					ItemEntity k = new ItemEntity(level, i.getX(), i.getY(), i.getZ(), result);
+					while (remaining > 0) {
+						int count = Math.min(remaining, result.getMaxStackSize());
+						ItemEntity k = new ItemEntity(level, x, y, z, result.copyWithCount(count));
+						level.addFreshEntity(k);
 
-					i.setPos(i.position().x, -1, i.position().z);
-					i.kill(serverLevel);
-
-					level.addFreshEntity(k);
-
-					// Set motion after spawn to prevent it being reset
-					k.setDeltaMovement(motion);
+						// Set motion after spawn to prevent it being reset
+						k.setDeltaMovement(motion);
+						remaining -= count;
+					}
 
 					break;
 				}

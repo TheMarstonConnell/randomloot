@@ -16,8 +16,14 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.GearTags;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
+import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
+import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
+import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -35,19 +41,25 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.ServerAdvancementManager;
 import net.minecraft.server.permissions.PermissionSet;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
+import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
@@ -69,9 +81,11 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.RotatedPillarBlock;
 import net.minecraft.world.level.block.DispenserBlock;
 import net.minecraft.world.level.block.entity.DispenserBlockEntity;
+import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Loader-neutral gametest bodies, shared by the NeoForge registration
@@ -699,7 +713,7 @@ public final class GameTestBodies {
 	/**
 	 * Chest-type loot tables actually produce cases/templates at the configured
 	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
-	 * LootTableEvents.MODIFY pools. 200 rolls at the default 25% miss with
+	 * LootTableEvents.MODIFY_DROPS. 200 rolls at the default 25% miss with
 	 * probability ~1e-25.
 	 */
 	public static void lootInjectionAddsCases(GameTestHelper helper) {
@@ -1059,10 +1073,11 @@ public final class GameTestBodies {
 	 * (mirrors the case-roll and command gates); the subtraction template stays ungated.
 	 */
 	public static void smithingTraitGating(GameTestHelper helper) {
+		// Counts of one: this test is about the type gate. smithingTakeConsumesCount covers the price.
 		TraitAdditionRecipe thorny = new TraitAdditionRecipe(
-				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), "thorny");
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.CACTUS), 1, "thorny");
 		TraitAdditionRecipe critical = new TraitAdditionRecipe(
-				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), "critical");
+				BuiltInRegistries.ITEM.wrapAsHolder(Items.GHAST_TEAR), 1, "critical");
 
 		ItemStack sword = newTool(ToolType.SWORD);
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
@@ -1081,7 +1096,14 @@ public final class GameTestBodies {
 				"weapon-only trait must not smith onto a chestplate");
 		helper.assertTrue(critical.matches(new SmithingRecipeInput(addTemplate, sword, ghastTear), level),
 				"critical should smith onto a sword");
-		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
+		// The subtraction template is ungated by type so a mismatched trait can always be
+		// stripped - but only when the trait is actually on the gear. Matching without it
+		// consumed the template and the addition and handed back an identical item.
+		helper.assertFalse(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
+				"the subtraction template must not match gear that lacks the trait");
+		ItemStack mismatched = newTool(ToolType.SWORD);
+		LootUtils.addModifier(mismatched, ModifierRegistry.getModifier("thorny"));
+		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
 
 		helper.succeed();
@@ -1100,6 +1122,7 @@ public final class GameTestBodies {
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
+		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
 
 		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
@@ -1126,9 +1149,218 @@ public final class GameTestBodies {
 					&& menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty()
 					&& menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem().isEmpty(),
 				"taking the result should consume all three smithing inputs");
+		assertWorldForger(helper, crafted);
 		assertAdvancementDone(helper, player, "add_trait");
 
 		helper.succeed();
+	}
+
+	/**
+	 * The gear's DirtPlace is named after this world's forger. Callers smith gear that
+	 * starts with a made-up forger: the registry prototype's random one matches the
+	 * world's one time in six, which would let a missing stamp pass.
+	 */
+	private static void assertWorldForger(GameTestHelper helper, ItemStack gear) {
+		String expected = NameGenerator.forgerForWorld(helper.getLevel().getSeed(), 0.5f) + "'s Grace";
+		String forged = LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals("dirt_place"))
+				.map(Modifier::name).findFirst().orElse("nothing");
+		helper.assertTrue(expected.equals(forged),
+				"smithed gear should credit this world's forger, got " + forged + " expected " + expected);
+	}
+
+	/**
+	 * The {@code count} in a trait recipe's JSON survives parsing. It was read and thrown
+	 * away, so every recipe cost one item whatever the file said. Also the net for a count
+	 * nobody could pay: the codec cannot check it against the item's max stack size
+	 * (components are not bound at datapack load), and a count above it would leave the
+	 * trait unobtainable with nothing in the log.
+	 */
+	public static void traitRecipeCountsLoad(GameTestHelper helper) {
+		helper.assertTrue(traitRecipe(helper, "torch_place").additionCount() == 64,
+				"Spelunking should cost the 64 torches its recipe lists");
+		helper.assertTrue(traitRecipe(helper, "thorny").additionCount() == 4,
+				"Thorny should cost the 4 cactus its recipe lists");
+		helper.assertTrue(traitRecipe(helper, "critical").additionCount() == 1,
+				"a recipe with no count should cost one item");
+
+		for (var holder : helper.getLevel().recipeAccess().getRecipes()) {
+			if (holder.value() instanceof TraitAdditionRecipe recipe) {
+				int stackSize = new ItemStack(recipe.additionItem()).getMaxStackSize();
+				helper.assertTrue(recipe.additionCount() <= stackSize, holder.id().identifier() + " asks for "
+						+ recipe.additionCount() + " but only " + stackSize + " fit in the smithing slot");
+			}
+		}
+
+		helper.succeed();
+	}
+
+	/** The datapack's recipe for a trait, as loaded. */
+	private static TraitAdditionRecipe traitRecipe(GameTestHelper helper, String trait) {
+		Identifier id = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + trait);
+		return helper.getLevel().recipeAccess().getRecipes().stream()
+				.filter(h -> h.id().identifier().equals(id) && h.value() instanceof TraitAdditionRecipe)
+				.map(h -> (TraitAdditionRecipe) h.value())
+				.findFirst()
+				.orElseThrow(() -> helper.assertionException(Component.literal("trait recipe should load: " + id)));
+	}
+
+	/** A smithing table with the given inputs in it, opened by the player. */
+	private static SmithingMenu openSmithing(GameTestHelper helper, ServerPlayer player, ItemStack template,
+			ItemStack base, ItemStack addition) {
+		BlockPos tablePos = new BlockPos(1, 1, 1);
+		helper.setBlock(tablePos, Blocks.SMITHING_TABLE);
+
+		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
+		// NeoForge's take hook finds the menu through the player, as the game does.
+		player.containerMenu = menu;
+		menu.getSlot(SmithingMenu.TEMPLATE_SLOT).set(template);
+		menu.getSlot(SmithingMenu.BASE_SLOT).set(base);
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(addition);
+		return menu;
+	}
+
+	/**
+	 * Taking the result uses up the recipe's whole count. Vanilla's onTake shrinks each
+	 * input by one, so the other three cactus here only go if the loader's SMITHING_TAKE
+	 * hook really runs - loader_hooks_all_bound can only say it was declared. Also checks
+	 * the preview, which has to vanish the moment the slot can no longer pay.
+	 */
+	public static void smithingTakeConsumesCount(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 3));
+
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"3 cactus should not preview a trait that costs 4");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 4));
+		helper.assertTrue(hasTrait(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem(), "thorny"),
+				"4 cactus should preview thorny");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).remove(1);
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"the preview should clear when the stack drops below the count");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 10));
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		helper.assertTrue(hasTrait(menu.getCarried(), "thorny"), "the taken result should contain thorny");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
+				"taking the result should consume exactly 4 of 10 cactus, left " + left.getCount());
+		helper.assertTrue(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem().isEmpty()
+						&& menu.getSlot(SmithingMenu.BASE_SLOT).getItem().isEmpty(),
+				"the template and the gear should still be consumed once each");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Shift-clicking the result pays the same price and has the same effects as a click:
+	 * the gear credits this world's forger and counts as a crafted trait. It is its own
+	 * path through the menu: the result is moved into the inventory first and onTake is
+	 * then handed an empty stack, so anything hung off the crafted item never runs for it.
+	 */
+	public static void smithingShiftClickConsumesCount(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(chestplate, new DirtPlace("Nobody's Grace", 1));
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
+				new ItemStack(Items.CACTUS, 10));
+
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
+
+		ItemStack taken = ItemStack.EMPTY;
+		Inventory inventory = player.getInventory();
+		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "thorny"); i++) {
+			taken = inventory.getItem(i);
+		}
+		helper.assertTrue(hasTrait(taken, "thorny"),
+				"shift-clicking should move the thorny chestplate into the inventory");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 6,
+				"a shift-click take should consume exactly 4 of 10 cactus, left " + left.getCount());
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"nothing should be left to take once the gear is gone");
+		assertWorldForger(helper, taken);
+		assertAdvancementDone(helper, player, "add_trait");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Through a real menu, the removal template previews with one item and takes one.
+	 * Stripping a trait for the full price again would make undoing Spelunking cost a
+	 * second stack of torches.
+	 */
+	public static void smithingRemovalCostsOne(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
+				new ItemStack(Items.CACTUS));
+
+		ItemStack preview = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem();
+		helper.assertTrue(!preview.isEmpty() && !hasTrait(preview, "thorny"),
+				"one cactus should be enough to preview the removal");
+
+		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.CACTUS, 10));
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		helper.assertTrue(!menu.getCarried().isEmpty() && !hasTrait(menu.getCarried(), "thorny"),
+				"the taken result should have lost thorny");
+		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
+		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
+				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
+
+		helper.succeed();
+	}
+
+	/**
+	 * Blinding and Heat Resistant have a single level: vanilla only asks whether Blindness
+	 * and Fire Resistance are present and never reads their amplifier, so a second level
+	 * would take the recipe's items again and change nothing. Poisonous and Healing are the
+	 * controls - the same setup has to keep leveling a trait whose amplifier does count.
+	 */
+	public static void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		for (Modifier trait : List.of(ModifierRegistry.BLINDING, ModifierRegistry.FIRE_RESISTANT)) {
+			ItemStack once = previewAdd(helper, player, newTool(gearFor(trait)), trait);
+			helper.assertTrue(hasTrait(once, trait.tagName()), "fresh gear should still take " + trait.name());
+			helper.assertTrue(previewAdd(helper, player, once, trait).isEmpty(),
+					"gear that already has " + trait.name() + " should not preview a second level");
+
+			// Gear that bought levels before the cap existed reads back at level I.
+			var saved = trait.toNBT();
+			saved.putInt(ModifierConstants.POWER, 3);
+			Modifier restored = trait.fromNBT(saved);
+			helper.assertTrue(restored.name().equals(trait.name()) && !restored.canLevel(),
+					trait.name() + " saved at a higher level should read back at level I, got " + restored.name());
+		}
+
+		for (Modifier trait : List.of(ModifierRegistry.POISONOUS, ModifierRegistry.REGENERATING)) {
+			ItemStack once = previewAdd(helper, player, newTool(gearFor(trait)), trait);
+			helper.assertTrue(!previewAdd(helper, player, once, trait).isEmpty(),
+					trait.name() + " should still preview its next level");
+		}
+
+		helper.succeed();
+	}
+
+	/** Hurt effects go on weapons, held effects on mining tools. */
+	private static ToolType gearFor(Modifier trait) {
+		return trait.forTool(ToolType.SWORD) ? ToolType.SWORD : ToolType.PICKAXE;
+	}
+
+	/** The smithing preview for adding the trait to this gear, paid with a full stack so the price does not matter. */
+	private static ItemStack previewAdd(GameTestHelper helper, ServerPlayer player, ItemStack gear, Modifier trait) {
+		ItemStack payment = new ItemStack(traitRecipe(helper, trait.tagName()).additionItem(), 64);
+		return openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), gear, payment)
+				.getSlot(SmithingMenu.RESULT_SLOT).getItem().copy();
 	}
 
 	/**
@@ -1186,6 +1418,467 @@ public final class GameTestBodies {
 			return commands.execute(command, source);
 		} catch (CommandSyntaxException e) {
 			throw new IllegalStateException("command failed to parse: " + command, e);
+		}
+	}
+
+	/** A survival mock player holding a fresh tool of the given type with the given traits. */
+	private static ServerPlayer survivalPlayerHolding(GameTestHelper helper, ItemStack tool, String... traits) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+		for (String trait : traits) {
+			LootUtils.addModifier(tool, ModifierRegistry.getModifier(trait));
+		}
+		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		return player;
+	}
+
+	/**
+	 * Lumbering fells the logs above the one the player broke, through the real
+	 * game-mode path. NeoForge calls Item.mineBlock before it removes the block and
+	 * vanilla/Fabric after, so a trait that re-read the broken position from the world
+	 * saw air on Fabric and silently never fired.
+	 */
+	public static void lumberingFellsTree(GameTestHelper helper) {
+		for (int y = 0; y < 3; y++) {
+			helper.setBlock(new BlockPos(1, y, 1), Blocks.OAK_LOG);
+		}
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.AXE), "lumbering");
+
+		helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(new BlockPos(1, 0, 1))),
+				"the bottom log should break");
+		helper.assertBlockNotPresent(Blocks.OAK_LOG, new BlockPos(1, 1, 1));
+		helper.assertBlockNotPresent(Blocks.OAK_LOG, new BlockPos(1, 2, 1));
+
+		helper.succeed();
+	}
+
+	/** Veiny follows the vein out from the block the player broke; same ordering trap as Lumbering. */
+	public static void veinyBreaksVein(GameTestHelper helper) {
+		for (int x = 0; x < 3; x++) {
+			helper.setBlock(new BlockPos(x, 1, 1), Blocks.IRON_ORE);
+		}
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick, "veiny");
+		// Veiny only spreads while crouching; a mock player never ticks its own pose.
+		player.setShiftKeyDown(true);
+		player.setPose(Pose.CROUCHING);
+
+		helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(new BlockPos(0, 1, 1))),
+				"the first ore should break");
+		helper.assertBlockNotPresent(Blocks.IRON_ORE, new BlockPos(1, 1, 1));
+		helper.assertBlockNotPresent(Blocks.IRON_ORE, new BlockPos(2, 1, 1));
+		helper.assertTrue(pick.getDamageValue() == 3,
+				"each ore in the vein should cost one durability, got " + pick.getDamageValue());
+
+		helper.succeed();
+	}
+
+	/**
+	 * Melting smelts the whole dropped stack. A smelting recipe's result is for one
+	 * input item, so replacing the drop with it turned copper ore's 2-5 raw copper (or
+	 * any Fortune stack) into a single ingot.
+	 */
+	public static void meltingKeepsStackCount(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.STONE);
+		BlockPos absolute = helper.absolutePos(relative);
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
+
+		ItemEntity raw = new ItemEntity(helper.getLevel(), absolute.getX() + 0.5, absolute.getY() + 0.5,
+				absolute.getZ() + 0.5, new ItemStack(Items.RAW_COPPER, 5));
+		raw.setDeltaMovement(Vec3.ZERO);
+		// Melting waits 50 ms of wall-clock time and then skips drops older than 10
+		// ticks. The gametest server ticks flat out, so that can be hundreds of ticks
+		// and the pass came down to how long the rest of the batch took. An ageless
+		// item takes the tick rate out of it.
+		raw.setUnlimitedLifetime();
+		helper.getLevel().addFreshEntity(raw);
+
+		((BlockBreakModifier) ModifierRegistry.getModifier("melting")).startBreak(pick,
+				Blocks.COPPER_ORE.defaultBlockState(), absolute, player);
+
+		// Melting runs a moment after the break so the drops exist; poll for it.
+		helper.succeedWhen(() -> {
+			int ingots = 0;
+			int stillRaw = 0;
+			for (ItemEntity item : helper.getEntities(EntityTypes.ITEM, relative, 2.0)) {
+				if (item.getItem().is(Items.COPPER_INGOT)) {
+					ingots += item.getItem().getCount();
+				} else if (item.getItem().is(Items.RAW_COPPER)) {
+					stillRaw += item.getItem().getCount();
+				}
+			}
+			helper.assertTrue(stillRaw == 0, "the raw copper should have been smelted");
+			helper.assertTrue(ingots == 5, "5 raw copper should smelt into 5 ingots, got " + ingots);
+		});
+	}
+
+	/**
+	 * Blocks broken on the player's behalf (Excavator, Veiny, Lumbering) hand their
+	 * block entity to the drop logic the way vanilla does. A shulker box's loot copies
+	 * its contents from the block entity, so without it the box dropped empty.
+	 */
+	public static void areaBreakKeepsShulkerContents(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(new BlockPos(1, 0, 1), Blocks.STONE);
+		helper.setBlock(relative, Blocks.SHULKER_BOX);
+		helper.getBlockEntity(relative, ShulkerBoxBlockEntity.class).setItem(0, new ItemStack(Items.DIAMOND, 3));
+
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
+		BlockPos absolute = helper.absolutePos(relative);
+
+		helper.assertTrue(LootUtils.breakBlockAsPlayer(pick, absolute, player, helper.getLevel(),
+				helper.getLevel().getBlockState(absolute)), "the shulker box should break");
+
+		ItemStack dropped = ItemStack.EMPTY;
+		for (ItemEntity item : helper.getEntities(EntityTypes.ITEM, relative, 2.0)) {
+			if (item.getItem().is(Items.SHULKER_BOX)) {
+				dropped = item.getItem();
+			}
+		}
+		helper.assertFalse(dropped.isEmpty(), "the shulker box should drop as an item");
+		ItemContainerContents contents = dropped.get(DataComponents.CONTAINER);
+		helper.assertTrue(contents != null && contents.nonEmptyItems().iterator().hasNext(),
+				"the dropped shulker box should still hold its contents");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A Detecting marker is tagged-ore driven, is never saved, and is discarded outright
+	 * when its block goes away. Markers used to be "killed" by teleporting them to
+	 * (0, -256, 0) with zero health, where - that chunk being unloaded - they stopped
+	 * ticking and were written to disk instead.
+	 */
+	public static void detectingMarkersAreDiscarded(GameTestHelper helper) {
+		BlockPos relative = new BlockPos(1, 1, 1);
+		helper.setBlock(relative, Blocks.COAL_ORE);
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		ServerPlayer player = survivalPlayerHolding(helper, pick, "detecting");
+		player.setPos(helper.absoluteVec(new Vec3(1.5, 2.0, 1.5)));
+
+		ServerLevel level = helper.getLevel();
+		HoldModifier detecting = (HoldModifier) ModifierRegistry.getModifier("detecting");
+		boolean[] scanning = { true };
+		// hold() only scans on every 20th game tick, so offer it every tick.
+		helper.onEachTick(() -> {
+			if (scanning[0]) {
+				detecting.hold(pick, level, player);
+			}
+		});
+
+		helper.runAfterDelay(21, () -> {
+			List<Shulker> markers = helper.getEntities(EntityTypes.SHULKER, relative, 1.0);
+			helper.assertTrue(markers.size() == 1, "one marker should highlight the ore, got " + markers.size());
+			Shulker marker = markers.get(0);
+			helper.assertFalse(marker.shouldBeSaved(), "markers must never be written to disk");
+
+			scanning[0] = false;
+			helper.setBlock(relative, Blocks.AIR);
+			// The lifecycle sweep runs every 10 ticks.
+			helper.runAfterDelay(12, () -> {
+				helper.assertTrue(marker.isRemoved(), "the marker should be discarded once its ore is gone");
+				helper.succeed();
+			});
+		});
+	}
+
+	/**
+	 * Armor XP per hit is capped at the wearer's max health. The reported damage is not
+	 * capped at the wearer's health - /kill and Executioner pass Float.MAX_VALUE - which
+	 * used to round to Integer.MAX_VALUE XP: ~22 levels at once, or a negative total.
+	 */
+	public static void armorXpIsCapped(GameTestHelper helper) {
+		ItemStack chest = newArmor(ToolType.CHESTPLATE);
+		LootUtils.setLevelAndXP(chest, 0, 5);
+
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		zombie.setItemSlot(EquipmentSlot.CHEST, chest);
+
+		ArmorDispatcher.onLivingDamagePost(zombie, Float.MAX_VALUE);
+
+		ItemStack worn = zombie.getItemBySlot(EquipmentSlot.CHEST);
+		int expected = 5 + Math.round(zombie.getMaxHealth());
+		helper.assertTrue(LootUtils.getLevel(worn) == 0 && LootUtils.getXP(worn) == expected,
+				"a huge hit should grant at most a health bar of XP (" + expected + "), got level "
+						+ LootUtils.getLevel(worn) + " xp " + LootUtils.getXP(worn));
+
+		helper.succeed();
+	}
+
+	/**
+	 * A maxed ("Unbreakable") Unbreaking trait covers every durability cost a tool
+	 * pays, not just block breaks and hits: here the shared helper and a log strip.
+	 */
+	public static void unbreakableToolKeepsDurability(GameTestHelper helper) {
+		ItemStack axe = newTool(ToolType.AXE);
+		Modifier unbreaking = ModifierRegistry.getModifier("unbreaking");
+		// First add lands at the base level; every repeat levels it up until maxed.
+		for (int i = 0; i < 16; i++) {
+			LootUtils.addModifier(axe, unbreaking);
+		}
+		ServerPlayer player = survivalPlayerHolding(helper, axe);
+
+		LootUtils.damageGear(axe, 25, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() == 0, "damageGear should spend nothing on an Unbreakable tool");
+
+		BlockPos logPos = new BlockPos(1, 1, 1);
+		helper.setBlock(logPos, Blocks.OAK_LOG);
+		useOnBlock(helper, player, logPos);
+		helper.assertBlockPresent(Blocks.STRIPPED_OAK_LOG, logPos);
+		helper.assertTrue(player.getMainHandItem().getDamageValue() == 0,
+				"stripping a log should not wear an Unbreakable axe");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A chest-type table that rolls other chest-type tables still gets one injection
+	 * roll. The trial vault's reward table rolls reward_common/_rare/_unique; on Fabric
+	 * every one of those used to carry its own injected pool.
+	 */
+	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
+		var key = ResourceKey.create(Registries.LOOT_TABLE,
+				Identifier.withDefaultNamespace("chests/trial_chambers/reward"));
+		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
+		helper.assertTrue(table != LootTable.EMPTY, "trial chamber reward loot table should exist");
+
+		var params = new LootParams.Builder(helper.getLevel())
+				.create(LootContextParamSets.EMPTY);
+
+		for (int i = 0; i < 300; i++) {
+			int cases = 0;
+			int templates = 0;
+			for (ItemStack drop : table.getRandomItems(params)) {
+				if (drop.is(ModItems.CASE.get())) {
+					cases += drop.getCount();
+				} else if (drop.is(ModItems.MOD_ADD.get())) {
+					templates += drop.getCount();
+				}
+			}
+			helper.assertTrue(cases <= 1 && templates <= 1,
+					"one vault roll should inject at most one case and one template, got " + cases + " and "
+							+ templates);
+		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * Early Bird keys off the target's health before the hit, read from the pre-damage
+	 * hook. It used to add the tool's base damage back onto the post-hit health, which
+	 * undercounts any hit bigger than that (a crit, Sharpness, Strength) and so missed
+	 * genuinely untouched targets.
+	 */
+	public static void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
+		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.setStats(sword, 4.0f);
+		ServerPlayer player = survivalPlayerHolding(helper, sword);
+		EntityHurtModifier earlyBird = (EntityHurtModifier) ModifierRegistry.getModifier("early_bird");
+
+		// Untouched target, hit for far more than the tool's own base damage.
+		LivingEntity fresh = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(fresh, fresh.damageSources().playerAttack(player), 12.0f);
+		float freshAfterHit = fresh.getHealth();
+		earlyBird.hurtEnemy(sword, fresh, player);
+		helper.assertTrue(fresh.getHealth() < freshAfterHit,
+				"Early Bird should add bonus damage to a target that was at full health before the hit");
+
+		// Already-wounded target: no bonus, even when it is only a scratch short of full.
+		LivingEntity wounded = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		wounded.setHealth(wounded.getMaxHealth() * 0.97f);
+		helper.hurt(wounded, wounded.damageSources().playerAttack(player), 4.0f);
+		float woundedAfterHit = wounded.getHealth();
+		earlyBird.hurtEnemy(sword, wounded, player);
+		helper.assertTrue(wounded.getHealth() == woundedAfterHit,
+				"Early Bird should not trigger on a target that was already wounded");
+
+		// A full-health hit earlier in the same tick must not vouch for a later hit: the
+		// record describes the latest hit, and by then the target is wounded.
+		LivingEntity hitTwice = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(hitTwice, hitTwice.damageSources().generic(), 2.0f);
+		helper.hurt(hitTwice, hitTwice.damageSources().playerAttack(player), 8.0f);
+		float hitTwiceAfter = hitTwice.getHealth();
+		helper.assertTrue(hitTwiceAfter < hitTwice.getMaxHealth() - 2.0f, "the second hit should have landed");
+		earlyBird.hurtEnemy(sword, hitTwice, player);
+		helper.assertTrue(hitTwice.getHealth() == hitTwiceAfter,
+				"Early Bird should not reuse an earlier same-tick full-health hit for a wounded target");
+
+		// Another trait's bonus hit overwrites that record too, so the tool runs Early
+		// Bird before its other traits. Through the real LootItem.hurtEnemy: a sword with
+		// Feasting and Early Bird must out-damage one with Feasting alone. (Feasting's key
+		// iterates ahead of Early Bird's in the trait tag, so it would otherwise go first.)
+		float[] lost = new float[2];
+		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
+		for (int i = 0; i < traitSets.length; i++) {
+			ItemStack traited = newTool(ToolType.SWORD);
+			LootUtils.setStats(traited, 4.0f);
+			for (String trait : traitSets[i]) {
+				LootUtils.addModifier(traited, ModifierRegistry.getModifier(trait));
+			}
+			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
+			float afterHit = target.getHealth();
+			((LootItem) traited.getItem()).hurtEnemy(traited, target, player);
+			lost[i] = afterHit - target.getHealth();
+		}
+		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
+		helper.assertTrue(lost[0] > lost[1],
+				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
+						+ lost[0] + " vs " + lost[1]);
+
+		helper.succeed();
+	}
+
+	/**
+	 * Fragile ("25% more damage and speed") and Munchies ("15% stat boost") pay out in
+	 * melee too. Their stat multiplier only reaches mining speed, so on a sword they
+	 * used to be pure penalties.
+	 */
+	public static void statBoostTraitsBoostMelee(GameTestHelper helper) {
+		ItemStack sword = newTool(ToolType.SWORD);
+		LootUtils.setStats(sword, 4.0f);
+		ServerPlayer player = survivalPlayerHolding(helper, sword);
+
+		for (String trait : new String[] { "fragile", "munchies" }) {
+			LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			float before = zombie.getHealth();
+			((EntityHurtModifier) ModifierRegistry.getModifier(trait)).hurtEnemy(sword, zombie, player);
+			helper.assertTrue(zombie.getHealth() < before, trait + " should add melee damage on a sword");
+		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * A right-click-anywhere trait on the main-hand tool gives the off-hand item the
+	 * click first and fires only when that item really did nothing with it - decided by
+	 * the off-hand use's actual result, not by what kind of item it is. Driven the way
+	 * the client sends a click; Flame Thrower costs durability when it fires, so the
+	 * sword's damage says which way the click went.
+	 */
+	public static void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
+		ItemStack sword = newTool(ToolType.SWORD);
+		ServerPlayer player = survivalPlayerHolding(helper, sword, "flame_thrower");
+		BlockPos floor = new BlockPos(1, 0, 1);
+		helper.setBlock(floor, Blocks.STONE);
+		Vec3 onFloor = helper.absoluteVec(new Vec3(1.5, 1.0, 1.5));
+		// High above the test, so no block is within reach in any direction.
+		Vec3 inTheAir = onFloor.add(0.0, 60.0, 0.0);
+
+		player.setPos(inTheAir);
+		helper.assertTrue(flameThrowerFires(helper, player, sword, null),
+				"Flame Thrower should fire with an empty off hand");
+
+		// Off-hand items that act on a click in the air take it; the trait stays quiet.
+		player.getFoodData().setFoodLevel(10);
+		for (Item item : List.of(Items.SHIELD, Items.BREAD, Items.ENDER_PEARL, Items.SNOWBALL, Items.EGG,
+				Items.FISHING_ROD)) {
+			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
+			helper.assertFalse(flameThrowerFires(helper, player, sword, null),
+					"a right-click trait should yield to an off-hand " + item);
+		}
+
+		// Off-hand items that do nothing with this click leave it to the trait - including
+		// usable ones that have nothing to act on: an empty bucket aimed at the sky, bread
+		// on a full stomach, a bow with no arrows.
+		player.getFoodData().setFoodLevel(20);
+		for (Item item : List.of(Items.TOTEM_OF_UNDYING, Items.STICK, Items.FIREWORK_ROCKET, Items.BUCKET,
+				Items.BREAD, Items.BOW, Items.TORCH)) {
+			player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(item));
+			helper.assertTrue(flameThrowerFires(helper, player, sword, null),
+					"a right-click trait should fire when an off-hand " + item + " does nothing");
+		}
+
+		// On a targeted block the same rule holds: the torch and the flint and steel act on
+		// the stone, so the trait yields; bone meal and a loot axe cannot, so it fires.
+		player.setPos(onFloor);
+		for (ItemStack acts : List.of(new ItemStack(Items.TORCH), new ItemStack(Items.FLINT_AND_STEEL))) {
+			player.setItemInHand(InteractionHand.OFF_HAND, acts);
+			helper.assertFalse(flameThrowerFires(helper, player, sword, floor),
+					"a right-click trait should yield while an off-hand " + acts.getItem() + " acts on the block");
+			helper.setBlock(floor.above(), Blocks.AIR);
+		}
+		for (ItemStack cannot : List.of(new ItemStack(Items.BONE_MEAL), newTool(ToolType.AXE))) {
+			player.setItemInHand(InteractionHand.OFF_HAND, cannot);
+			helper.assertTrue(flameThrowerFires(helper, player, sword, floor),
+					"a right-click trait should fire when an off-hand " + cannot.getItem()
+							+ " cannot act on the block");
+		}
+		// ...and the same loot axe does take the click on a log it can strip.
+		helper.setBlock(floor, Blocks.OAK_LOG);
+		helper.assertFalse(flameThrowerFires(helper, player, sword, floor),
+				"a right-click trait should yield while an off-hand loot axe strips the log");
+		helper.setBlock(floor, Blocks.STONE);
+
+		// Held in the off hand, the tool has nothing to yield to once the main hand passes.
+		player.setPos(inTheAir);
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+		player.setItemInHand(InteractionHand.OFF_HAND, sword);
+		helper.assertTrue(flameThrowerFires(helper, player, sword, null),
+				"a right-click trait used from the off hand should fire");
+
+		// A click the off hand settled on a block leaves nothing pending: an unrelated
+		// off-hand item use right behind it, in the same tick, must not set the trait off.
+		player.setItemInHand(InteractionHand.MAIN_HAND, sword);
+		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.TORCH));
+		player.setPos(onFloor);
+		helper.assertFalse(flameThrowerFires(helper, player, sword, floor), "the torch should take the click");
+		helper.setBlock(floor.above(), Blocks.AIR);
+		player.setItemInHand(InteractionHand.OFF_HAND, new ItemStack(Items.STICK));
+		player.gameMode.useItem(player, helper.getLevel(), player.getOffhandItem(), InteractionHand.OFF_HAND);
+		helper.assertTrue(sword.getDamageValue() == 0,
+				"a click the off hand used on a block must not leave the trait pending");
+
+		// And a deferral nothing answers at all goes stale: the main-hand use arrives
+		// alone, then an unrelated off-hand use a few ticks later must not fire it.
+		player.setPos(inTheAir);
+		player.gameMode.useItem(player, helper.getLevel(), sword, InteractionHand.MAIN_HAND);
+		helper.runAfterDelay(3, () -> {
+			player.gameMode.useItem(player, helper.getLevel(), player.getOffhandItem(), InteractionHand.OFF_HAND);
+			helper.assertTrue(sword.getDamageValue() == 0, "a stale deferral must not fire the trait later");
+			helper.succeed();
+		});
+	}
+
+	/**
+	 * Right-clicks the way the client sends it and reports whether the Flame Thrower
+	 * sword fired. For each hand in turn: the block use when a block is targeted, then
+	 * the item use, stopping at the first that succeeds (or, for a block use, fails).
+	 */
+	private static boolean flameThrowerFires(GameTestHelper helper, ServerPlayer player, ItemStack sword,
+			@Nullable BlockPos target) {
+		sword.setDamageValue(0);
+		rightClick(helper, player, target);
+		boolean fired = sword.getDamageValue() > 0;
+
+		// Leave nothing behind for the next case or the neighbouring tests: thrown
+		// projectiles, fireballs, a raised shield.
+		player.stopUsingItem();
+		helper.getLevel().getEntities(player, player.getBoundingBox().inflate(8.0), e -> !(e instanceof ServerPlayer))
+				.forEach(e -> e.discard());
+		return fired;
+	}
+
+	private static void rightClick(GameTestHelper helper, ServerPlayer player, @Nullable BlockPos target) {
+		for (InteractionHand hand : InteractionHand.values()) {
+			ItemStack held = player.getItemInHand(hand);
+
+			if (target != null) {
+				BlockPos absolute = helper.absolutePos(target);
+				var hit = new BlockHitResult(Vec3.atCenterOf(absolute), Direction.UP, absolute, false);
+				InteractionResult onBlock = player.gameMode.useItemOn(player, helper.getLevel(), held, hand, hit);
+				if (onBlock instanceof InteractionResult.Success || onBlock instanceof InteractionResult.Fail) {
+					return;
+				}
+			}
+
+			if (!held.isEmpty() && player.gameMode.useItem(player, helper.getLevel(), held,
+					hand) instanceof InteractionResult.Success) {
+				return;
+			}
 		}
 	}
 }

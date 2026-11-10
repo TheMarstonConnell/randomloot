@@ -24,14 +24,23 @@ import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.util.TriState;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
-import net.minecraft.world.level.storage.loot.providers.number.ints.ContextIntProviders;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
 import net.neoforged.fml.config.ModConfig;
 
-import static net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem;
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 
 public class RandomLootFabric implements ModInitializer {
+
+    /**
+     * Loot contexts that have already had their injection roll. A table that rolls other
+     * tables hands them its own context, so this is what keeps one chest (or vault) to
+     * one roll. Weak keys: a context is garbage once its generation finishes.
+     */
+    private static final Set<LootContext> INJECTED_CONTEXTS =
+            Collections.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
     @Override
     public void onInitialize() {
@@ -58,11 +67,13 @@ public class RandomLootFabric implements ModInitializer {
 
         // Wired by mixin rather than a Fabric API callback - see randomloot.fabric.mixins.json.
         // LivingEntityMixin (@WrapOperation on the actuallyHurt call inside hurtServer),
-        // ItemStackMixin (hurtAndBreak), PlayerMixin (getDestroySpeed), AnvilMenuMixin.
+        // ItemStackMixin (hurtAndBreak), PlayerMixin (getDestroySpeed), AnvilMenuMixin,
+        // SmithingMenuMixin (onTake).
         GameHooks.bind(GameHook.DAMAGE_PRE);
         GameHooks.bind(GameHook.ARMOR_HURT);
         GameHooks.bind(GameHook.BREAK_SPEED);
         GameHooks.bind(GameHook.ANVIL_COMBINE);
+        GameHooks.bind(GameHook.SMITHING_TAKE);
 
         // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin.
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
@@ -71,6 +82,8 @@ public class RandomLootFabric implements ModInitializer {
             }
         });
         GameHooks.bind(GameHook.DAMAGE_POST);
+        // ServerPlayerGameModeMixin (useItem RETURN): off-hand arbitration for right-click traits.
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
 
         ServerTickEvents.END_SERVER_TICK.register(server -> BlockHighlighter.onServerTick());
         GameHooks.bind(GameHook.SERVER_TICK);
@@ -96,18 +109,27 @@ public class RandomLootFabric implements ModInitializer {
         });
         GameHooks.bind(GameHook.ENCHANT_GATE);
 
-        // Loot injection: the LootInjection policy is common; pools are Fabric's
-        // delivery mechanism (NeoForge uses the case_item global loot modifier).
-        LootTableEvents.MODIFY.register((key, tableBuilder, source, registries) -> {
-            if (!LootInjection.matchesTable(key.identifier().getPath())) {
+        // Loot injection: the LootInjection policy is common; NeoForge delivers it with
+        // the case_item global loot modifier, Fabric by appending to a table's finished
+        // drops. This used to add a pool to every matching table at load time, but then
+        // a table that rolls other matching tables injected once per nested roll - the
+        // trial vault's "reward" rolls reward_common/_rare/_unique, so vaults paid out
+        // several times NeoForge's rate. MODIFY_DROPS fires for nested tables too, and
+        // they share the parent's LootContext, hence one roll per context.
+        LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> {
+            var key = table.unwrapKey();
+            if (key.isEmpty() || !LootInjection.matchesTable(key.get().identifier().getPath())) {
+                return;
+            }
+
+            if (!INJECTED_CONTEXTS.add(context)) {
                 return;
             }
 
             for (LootInjection.Entry entry : LootInjection.entries()) {
-                tableBuilder.withPool(LootPool.lootPool()
-                        .setRolls(ContextIntProviders.exactly(1))
-                        .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
-                        .add(lootTableItem(entry.item())));
+                if (context.getRandom().nextDouble() < entry.chance()) {
+                    drops.add(new ItemStack(entry.item()));
+                }
             }
         });
         GameHooks.bind(GameHook.LOOT_INJECTION);

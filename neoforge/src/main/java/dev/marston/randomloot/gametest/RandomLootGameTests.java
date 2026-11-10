@@ -108,8 +108,25 @@ public final class RandomLootGameTests {
 		register(event, env, "admin_commands", GameTestBodies::adminCommands);
 		register(event, env, "smithing_trait_gating", GameTestBodies::smithingTraitGating);
 		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
+		register(event, env, "trait_recipe_counts_load", GameTestBodies::traitRecipeCountsLoad);
+		register(event, env, "smithing_take_consumes_count", GameTestBodies::smithingTakeConsumesCount);
+		register(event, env, "smithing_shift_click_consumes_count", GameTestBodies::smithingShiftClickConsumesCount);
+		register(event, env, "smithing_removal_costs_one", GameTestBodies::smithingRemovalCostsOne);
+		register(event, env, "single_level_effects_stop_at_level_one", GameTestBodies::singleLevelEffectsStopAtLevelOne);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
 		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);
+		register(event, env, "lumbering_fells_tree", GameTestBodies::lumberingFellsTree);
+		register(event, env, "veiny_breaks_vein", GameTestBodies::veinyBreaksVein);
+		register(event, env, "melting_keeps_stack_count", GameTestBodies::meltingKeepsStackCount);
+		register(event, env, "area_break_keeps_shulker_contents", GameTestBodies::areaBreakKeepsShulkerContents);
+		register(event, env, "detecting_markers_are_discarded", GameTestBodies::detectingMarkersAreDiscarded);
+		register(event, env, "armor_xp_is_capped", GameTestBodies::armorXpIsCapped);
+		register(event, env, "unbreakable_tool_keeps_durability", GameTestBodies::unbreakableToolKeepsDurability);
+		register(event, env, "loot_injection_rolls_once_per_chest", GameTestBodies::lootInjectionRollsOncePerChest);
+		register(event, env, "early_bird_reads_pre_hit_health", GameTestBodies::earlyBirdReadsPreHitHealth);
+		register(event, env, "stat_boost_traits_boost_melee", GameTestBodies::statBoostTraitsBoostMelee);
+		register(event, env, "right_click_traits_yield_to_usable_offhand",
+				GameTestBodies::rightClickTraitsYieldToUsableOffhand);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,

@@ -12,8 +12,42 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
+
 
 public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
+
+	/**
+	 * Entities whose latest hit found them at full health. {@code hurtEnemy} runs after
+	 * the hit has landed, so the health it sees is already reduced; this is recorded
+	 * from the pre-damage hook instead. Server thread only; weak keys let dead and
+	 * unloaded entities go.
+	 */
+	private static final Set<LivingEntity> FULL_HEALTH_HITS = Collections.newSetFromMap(new WeakHashMap<>());
+
+	/**
+	 * Called from the pre-damage hook, before the incoming damage is applied. Every hit
+	 * either sets or clears the victim's entry, so it always describes the latest one: a
+	 * full-health hit earlier in the same tick must not vouch for a later hit on the
+	 * now-wounded target. Other traits' bonus hits count as hits here too, which is why
+	 * {@code LootItem.hurtEnemy} runs Early Bird before the tool's other traits.
+	 */
+	public static void notePreDamage(LivingEntity victim) {
+		// Exactly full. The old 95% allowance only existed to absorb the error in
+		// estimating pre-hit health after the fact; this is the real value.
+		if (victim.getHealth() >= victim.getMaxHealth()) {
+			FULL_HEALTH_HITS.add(victim);
+		} else {
+			FULL_HEALTH_HITS.remove(victim);
+		}
+	}
+
+	/** Reads and clears the mark: one full-health hit vouches for one swing. */
+	private static boolean wasAtFullHealth(LivingEntity victim) {
+		return FULL_HEALTH_HITS.remove(victim);
+	}
 
 	public EarlyBird(String name, int level) {
 		this.name = name;
@@ -75,13 +109,12 @@ public class EarlyBird extends LeveledModifier implements EntityHurtModifier {
 			return false;
 		}
 
-		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-		float currentHealth = hurtee.getHealth();
-		float maxHealth = hurtee.getMaxHealth();
-
-		// Check if target was at full health before this attack
-		// Since damage is already applied, check if current health + base damage >= max health
-		if (currentHealth + dmg >= maxHealth * 0.95f) {
+		// The hit has already landed, so ask what the pre-damage hook saw. Adding the
+		// tool's base damage back onto the current health used to stand in for this, but
+		// that undercounts any hit that crits or carries Sharpness/Strength, and those
+		// then failed the check against a genuinely untouched target.
+		if (wasAtFullHealth(hurtee)) {
+			float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 			dealBonusDamage(hurtee, hurter, dmg * getBonusDamage());
 		}
 

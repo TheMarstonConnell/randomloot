@@ -13,6 +13,7 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
+import dev.marston.randomloot.loot.modifiers.Unbreaking;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
@@ -38,6 +39,7 @@ import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -309,9 +311,42 @@ public class LootUtils {
 			return false;
 		}
 
-		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, null, itemstack);
+		// Pass the block entity like vanilla does: block loot that copies from it
+		// (a shulker box's contents, a banner's pattern) drops empty without one.
+		state.getBlock().playerDestroy((ServerLevel) level, player, pos, state, level.getBlockEntity(pos), itemstack);
 		level.removeBlock(pos, false);
 		return true;
+	}
+
+	/**
+	 * Spends durability on a loot tool, giving its Unbreaking trait a roll per point
+	 * first. Every durability cost a tool pays goes through here - block breaks, hits,
+	 * stripping and pathing, the right-click traits, and the extra blocks area traits
+	 * break - so a maxed "Unbreakable" tool really is. (Worn armor takes damage inside
+	 * vanilla and is covered by {@code ArmorDispatcher.onArmorHurt} instead.)
+	 */
+	public static void damageGear(ItemStack stack, int amount, @Nullable LivingEntity holder, EquipmentSlot slot) {
+		if (holder == null || amount <= 0 || stack.isEmpty()) {
+			return;
+		}
+
+		// getModifiers already drops config-disabled traits, and a trait appears at most once.
+		for (Modifier mod : getModifiers(stack)) {
+			if (mod instanceof Unbreaking unbreaking) {
+				int spent = 0;
+				for (int i = 0; i < amount; i++) {
+					if (!unbreaking.test(holder.level())) {
+						spent++;
+					}
+				}
+				amount = spent;
+				break;
+			}
+		}
+
+		if (amount > 0) {
+			stack.hurtAndBreak(amount, holder, slot);
+		}
 	}
 
 	public static void addLoreLine(ListTag lore, String text, String color) {
@@ -406,7 +441,9 @@ public class LootUtils {
 
 		int level = tag.getIntOr("level", 0);
 
-		int xp = tag.getIntOr("xp", 0);
+		// long, and floored at zero: a huge grant used to wrap the int negative, leaving
+		// gear that could never level again. The floor repairs stacks that already did.
+		long xp = Math.max(0, tag.getIntOr("xp", 0));
 
 		xp += amount;
 
@@ -425,7 +462,8 @@ public class LootUtils {
 			ModCriteria.toolLeveled(holder, level);
 		}
 
-		setLevelAndXP(item, level, xp);
+		// The loop leaves xp below max, which is an int.
+		setLevelAndXP(item, level, (int) xp);
 	}
 
 	public static int getLevel(ItemStack item) {
@@ -752,8 +790,8 @@ public class LootUtils {
 
 	/**
 	 * Re-resolves world-dependent traits (see {@link Modifier#forWorld}) against this
-	 * world. Called when gear leaves a smithing table, where the recipe itself has no
-	 * world access.
+	 * world. Called as a trait recipe builds its result, so smithed gear carries the
+	 * world's forger however it is taken out of the table.
 	 */
 	public static void applyWorldForgers(ItemStack stack, long worldSeed) {
 		for (Modifier mod : getModifiers(stack)) {

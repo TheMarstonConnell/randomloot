@@ -76,8 +76,14 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 
 		found.add(pos);
 
-		// Check upward and adjacent directions to follow tree structure
-		BlockPos[] neighbors = new BlockPos[] {
+		for (BlockPos neighbor : treeNeighbors(pos)) {
+			findConnectedLogs(level, neighbor, found);
+		}
+	}
+
+	/** Upward and sideways neighbours, to follow a tree's structure without digging down. */
+	private static BlockPos[] treeNeighbors(BlockPos pos) {
+		return new BlockPos[] {
 			pos.above(),
 			pos.above().north(),
 			pos.above().south(),
@@ -88,14 +94,10 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			pos.east(),
 			pos.west(),
 		};
-
-		for (BlockPos neighbor : neighbors) {
-			findConnectedLogs(level, neighbor, found);
-		}
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity p) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 		if (!(p instanceof ServerPlayer player)) {
 			return false;
 		}
@@ -105,15 +107,18 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			return false;
 		}
 
-		BlockState state = level.getBlockState(pos);
-		if (!isLog(state)) {
+		if (!isLog(broken)) {
 			return false;
 		}
 
+		// Seed the search with the block the player broke instead of re-reading it:
+		// it is still in the world on NeoForge but already gone on Fabric. It counts
+		// toward MAX_BLOCKS either way and is broken by the normal path, not here.
 		Set<BlockPos> logsToBreak = new HashSet<>();
-		findConnectedLogs(level, pos, logsToBreak);
-
-		// Remove the original block since it will be broken normally
+		logsToBreak.add(pos);
+		for (BlockPos neighbor : treeNeighbors(pos)) {
+			findConnectedLogs(level, neighbor, logsToBreak);
+		}
 		logsToBreak.remove(pos);
 
 		for (BlockPos logPos : logsToBreak) {
@@ -121,7 +126,7 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			if (isLog(logState)) {
 				boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, logPos, player, level, logState);
 				if (destroyed) {
-					itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+					LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
 
 					if (itemstack.isEmpty()) {
 						break;
