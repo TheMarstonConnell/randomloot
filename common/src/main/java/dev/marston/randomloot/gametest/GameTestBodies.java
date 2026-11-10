@@ -21,6 +21,7 @@ import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
@@ -1289,6 +1290,40 @@ public final class GameTestBodies {
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
 		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
 				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
+
+		helper.succeed();
+	}
+
+	/**
+	 * Blinding has a single level: vanilla never reads Blindness's amplifier, so a second
+	 * one would take another 24 carrots and change nothing. Poisonous is the control - the
+	 * same setup has to keep leveling a trait whose amplifier does count.
+	 */
+	public static void blindingStopsAtLevelOne(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack template = new ItemStack(ModItems.MOD_ADD.get());
+
+		SmithingMenu menu = openSmithing(helper, player, template, newTool(ToolType.SWORD),
+				new ItemStack(Items.CARROT, 64));
+		ItemStack blinding = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().copy();
+		helper.assertTrue(hasTrait(blinding, "blinding"), "a fresh sword should still take Blinding");
+
+		menu = openSmithing(helper, player, template, blinding, new ItemStack(Items.CARROT, 64));
+		helper.assertTrue(menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"a sword that already has Blinding should not preview a second level");
+
+		ItemStack poisonous = newTool(ToolType.SWORD);
+		LootUtils.addModifier(poisonous, ModifierRegistry.POISONOUS);
+		menu = openSmithing(helper, player, template, poisonous, new ItemStack(Items.POISONOUS_POTATO, 64));
+		helper.assertTrue(!menu.getSlot(SmithingMenu.RESULT_SLOT).getItem().isEmpty(),
+				"a Poisonous sword should still preview its next level");
+
+		// Gear that bought levels before the cap existed reads back as plain Blinding.
+		var saved = ModifierRegistry.BLINDING.toNBT();
+		saved.putInt(ModifierConstants.POWER, 3);
+		Modifier restored = ModifierRegistry.BLINDING.fromNBT(saved);
+		helper.assertTrue(restored.name().equals("Blinding") && !restored.canLevel(),
+				"Blinding saved at a higher level should read back at level I, got " + restored.name());
 
 		helper.succeed();
 	}

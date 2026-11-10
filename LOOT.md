@@ -116,7 +116,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Necrotic | `minecraft:wither_skeleton_skull` | 1 |
 | Nemesis | `minecraft:ender_eye` | 1 |
 | Overgrown | `minecraft:vine` | 1 |
-| Poisonous | `minecraft:poisonous_potato` | 4 |
+| Poisonous | `minecraft:poisonous_potato` | 1 |
 | Prospector | `minecraft:raw_gold` | 1 |
 | Pummeling | `minecraft:anvil` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |

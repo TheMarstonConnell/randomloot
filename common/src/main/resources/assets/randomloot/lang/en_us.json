@@ -50,6 +50,7 @@
   "modifier.randomloot.attracting.name": "Magnetic",
   "modifier.randomloot.bezerk.description": "Deals more damage at lower player health.",
   "modifier.randomloot.bezerk.name": "Bezerk",
+  "modifier.randomloot.blinding.description": "When attacking with tool, apply the blindness I effect to the target for 4 seconds.",
   "modifier.randomloot.blinding.name": "Blinding",
   "modifier.randomloot.bulwark.name": "Bulwark",
   "modifier.randomloot.busted.description": "Dig speed is increased as tool durability drops.",

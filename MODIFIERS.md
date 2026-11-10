@@ -217,7 +217,7 @@ These effects are applied when hurting enemies.
 
 **Description:** Grants poison immunity. Deals 2.5 bonus damage to arthropods.
 ### Poisonous
-**id:** `poison` | **crafting:** `minecraft:poisonous_potato` ×4 ![poisonous_potato](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/poisonous_potato.png)
+**id:** `poison` | **crafting:** `minecraft:poisonous_potato` ![poisonous_potato](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/poisonous_potato.png)
 
 **Description:** When attacking with tool, apply the poison I effect to the target for 5 seconds.
 ### Pummeling

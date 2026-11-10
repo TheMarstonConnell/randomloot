@@ -164,6 +164,11 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void blindingStopsAtLevelOne(GameTestHelper helper) {
+        GameTestBodies.blindingStopsAtLevelOne(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void clonePreservesEnchantments(GameTestHelper helper) {
         GameTestBodies.clonePreservesEnchantments(helper);
     }

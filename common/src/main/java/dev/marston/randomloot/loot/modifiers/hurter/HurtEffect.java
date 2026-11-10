@@ -23,9 +23,18 @@ public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 		this(name, tagname, 0, duration, effect, format);
 	}
 
+	private HurtEffect(String name, String tagname, int power, int maxPower, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+		super(name, tagname, power, maxPower, duration, effect, format);
+	}
+
+	/** A hurt effect that stays at level I, for an effect whose amplifier does nothing (Blindness). */
+	public static HurtEffect singleLevel(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+		return new HurtEffect(name, tagname, 0, 0, duration, effect, format);
+	}
+
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
-		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration, this.effect, this.format);
+		return new HurtEffect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.maxPower, this.duration, this.effect, this.format);
 	}
 
 	@Override

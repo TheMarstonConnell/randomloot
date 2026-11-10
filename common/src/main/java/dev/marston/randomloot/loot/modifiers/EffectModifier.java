@@ -27,13 +27,25 @@ public abstract class EffectModifier extends AbstractModifier {
 	protected final Holder<MobEffect> effect;
 	protected final int duration;
 	protected final ChatFormatting format;
+	/**
+	 * Highest power this trait levels to. Below {@link #MAX_POWER} for an effect whose
+	 * amplifier vanilla never reads, where another level would be paid for and change nothing.
+	 */
+	protected final int maxPower;
 	protected int power;
 
 	protected EffectModifier(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
 			ChatFormatting format) {
+		this(name, tagname, power, MAX_POWER, duration, effect, format);
+	}
+
+	protected EffectModifier(String name, String tagname, int power, int maxPower, int duration,
+			Holder<MobEffect> effect, ChatFormatting format) {
 		this.name = name;
 		this.tagname = tagname;
-		this.power = power;
+		this.maxPower = maxPower;
+		// Gear leveled before the trait had a lower cap reads back at the cap.
+		this.power = Math.min(power, maxPower);
 		this.duration = duration;
 		this.effect = effect;
 		this.format = format;
@@ -74,7 +86,7 @@ public abstract class EffectModifier extends AbstractModifier {
 
 	@Override
 	public boolean canLevel() {
-		return this.power < MAX_POWER;
+		return this.power < this.maxPower;
 	}
 
 	@Override

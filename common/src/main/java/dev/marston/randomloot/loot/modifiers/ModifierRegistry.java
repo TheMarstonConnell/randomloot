@@ -64,7 +64,7 @@ public class ModifierRegistry {
 	public static Modifier DRAINING = register(new Draining());
 	public static Modifier POISONOUS = register(new HurtEffect("Poisonous", "poison", 5, MobEffects.POISON, ChatFormatting.DARK_GREEN));
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER, ChatFormatting.DARK_GRAY));
-	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS, ChatFormatting.BLUE));
+	public static Modifier BLINDING = register(HurtEffect.singleLevel("Blinding", "blinding", 4, MobEffects.BLINDNESS, ChatFormatting.BLUE));
 	public static Modifier BEZERK = register(new Bezerk());
 	public static Modifier NEMESIS = register(new Nemesis());
 	public static Modifier SOULBOUND = register(new Soulbound());
