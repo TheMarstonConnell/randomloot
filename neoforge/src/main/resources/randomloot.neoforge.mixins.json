@@ -1,0 +1,13 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "dev.marston.randomloot.neoforge.mixin",
+    "compatibilityLevel": "JAVA_21",
+    "mixins": [
+        "ServerPlayerGameModeMixin",
+        "SmithingMenuMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

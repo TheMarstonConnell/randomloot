@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.Unbreaking;
+import dev.marston.randomloot.loot.modifiers.holders.Chaotic;
 import dev.marston.randomloot.loot.modifiers.hurter.Feasting;
 import dev.marston.randomloot.loot.modifiers.hurter.Fierce;
 import dev.marston.randomloot.loot.modifiers.hurter.Fragile;
@@ -71,7 +72,7 @@ class ArmorTraitGatingTest {
 	 */
 	@Test
 	void toolCombatTraitsStayOffArmor() {
-		Modifier[] toolTraits = { new Fierce(), new Fragile(), new Munchies(), new Feasting() };
+		Modifier[] toolTraits = { new Fierce(), new Fragile(), new Munchies(), new Feasting(), new Chaotic() };
 
 		for (Modifier trait : toolTraits) {
 			for (ToolType piece : new ToolType[] { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS }) {

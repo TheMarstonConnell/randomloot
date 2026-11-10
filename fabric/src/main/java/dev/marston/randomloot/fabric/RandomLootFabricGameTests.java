@@ -145,6 +145,31 @@ public class RandomLootFabricGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void traitRecipeCountsLoad(GameTestHelper helper) {
+        GameTestBodies.traitRecipeCountsLoad(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void smithingTakeConsumesCount(GameTestHelper helper) {
+        GameTestBodies.smithingTakeConsumesCount(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void smithingShiftClickConsumesCount(GameTestHelper helper) {
+        GameTestBodies.smithingShiftClickConsumesCount(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void smithingRemovalCostsOne(GameTestHelper helper) {
+        GameTestBodies.smithingRemovalCostsOne(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
+        GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
     public void clonePreservesEnchantments(GameTestHelper helper) {
         GameTestBodies.clonePreservesEnchantments(helper);
     }
@@ -212,6 +237,66 @@ public class RandomLootFabricGameTests implements FabricGameTest {
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
     public void anvilCannotCombineLootGear(GameTestHelper helper) {
         GameTestBodies.anvilCannotCombineLootGear(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void lumberingFellsTree(GameTestHelper helper) {
+        GameTestBodies.lumberingFellsTree(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void veinyBreaksVein(GameTestHelper helper) {
+        GameTestBodies.veinyBreaksVein(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void meltingKeepsStackCount(GameTestHelper helper) {
+        GameTestBodies.meltingKeepsStackCount(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void areaBreakKeepsShulkerContents(GameTestHelper helper) {
+        GameTestBodies.areaBreakKeepsShulkerContents(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void detectingMarkersAreDiscarded(GameTestHelper helper) {
+        GameTestBodies.detectingMarkersAreDiscarded(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void armorXpIsCapped(GameTestHelper helper) {
+        GameTestBodies.armorXpIsCapped(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void unbreakableToolKeepsDurability(GameTestHelper helper) {
+        GameTestBodies.unbreakableToolKeepsDurability(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void lootInjectionRollsOncePerChest(GameTestHelper helper) {
+        GameTestBodies.lootInjectionRollsOncePerChest(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
+        GameTestBodies.earlyBirdReadsPreHitHealth(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void statBoostTraitsBoostMelee(GameTestHelper helper) {
+        GameTestBodies.statBoostTraitsBoostMelee(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
+        GameTestBodies.rightClickTraitsYieldToUsableOffhand(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void toolModAloneDoesNotReequip(GameTestHelper helper) {
+        GameTestBodies.toolModAloneDoesNotReequip(helper);
     }
 
     /**

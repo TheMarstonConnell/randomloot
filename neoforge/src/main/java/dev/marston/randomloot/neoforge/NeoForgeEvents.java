@@ -42,6 +42,9 @@ public final class NeoForgeEvents {
         GameHooks.bind(GameHook.DAMAGE_POST);
         GameHooks.bind(GameHook.ARMOR_HURT);
         GameHooks.bind(GameHook.BREAK_SPEED);
+        // Wired by mixin, not an event: mixin/ServerPlayerGameModeMixin (useItem and
+        // useItemOn RETURN). No NeoForge event sees the result of a use.
+        GameHooks.bind(GameHook.AFTER_USE_ITEM);
         GameHooks.bind(GameHook.SERVER_TICK);
         GameHooks.bind(GameHook.SERVER_STOPPING);
         GameHooks.bind(GameHook.COMMANDS);
@@ -52,6 +55,9 @@ public final class NeoForgeEvents {
         GameHooks.bind(GameHook.ENCHANT_GATE);
         // The case_item global loot modifier; see data/randomloot/loot_modifiers/.
         GameHooks.bind(GameHook.LOOT_INJECTION);
+        // Wired by mixin: mixin/SmithingMenuMixin (onTake HEAD). NeoForge 21.1 has no
+        // ItemSmithedEvent (26.x routes this through it), so both loaders carry the mixin.
+        GameHooks.bind(GameHook.SMITHING_TAKE);
     }
 
     @SubscribeEvent

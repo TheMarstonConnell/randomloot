@@ -238,6 +238,31 @@ public class RandomLootGameTests {
 	}
 
 	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void trait_recipe_counts_load(GameTestHelper helper) {
+		GameTestBodies.traitRecipeCountsLoad(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void smithing_take_consumes_count(GameTestHelper helper) {
+		GameTestBodies.smithingTakeConsumesCount(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void smithing_shift_click_consumes_count(GameTestHelper helper) {
+		GameTestBodies.smithingShiftClickConsumesCount(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void smithing_removal_costs_one(GameTestHelper helper) {
+		GameTestBodies.smithingRemovalCostsOne(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void single_level_effects_stop_at_level_one(GameTestHelper helper) {
+		GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
 	public void clone_preserves_enchantments(GameTestHelper helper) {
 		GameTestBodies.clonePreservesEnchantments(helper);
 	}
@@ -245,6 +270,66 @@ public class RandomLootGameTests {
 	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
 	public void loader_hooks_all_bound(GameTestHelper helper) {
 		GameTestBodies.loaderHooksAllBound(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void lumbering_fells_tree(GameTestHelper helper) {
+		GameTestBodies.lumberingFellsTree(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void veiny_breaks_vein(GameTestHelper helper) {
+		GameTestBodies.veinyBreaksVein(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void melting_keeps_stack_count(GameTestHelper helper) {
+		GameTestBodies.meltingKeepsStackCount(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void area_break_keeps_shulker_contents(GameTestHelper helper) {
+		GameTestBodies.areaBreakKeepsShulkerContents(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void detecting_markers_are_discarded(GameTestHelper helper) {
+		GameTestBodies.detectingMarkersAreDiscarded(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void armor_xp_is_capped(GameTestHelper helper) {
+		GameTestBodies.armorXpIsCapped(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void unbreakable_tool_keeps_durability(GameTestHelper helper) {
+		GameTestBodies.unbreakableToolKeepsDurability(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void loot_injection_rolls_once_per_chest(GameTestHelper helper) {
+		GameTestBodies.lootInjectionRollsOncePerChest(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void early_bird_reads_pre_hit_health(GameTestHelper helper) {
+		GameTestBodies.earlyBirdReadsPreHitHealth(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void stat_boost_traits_boost_melee(GameTestHelper helper) {
+		GameTestBodies.statBoostTraitsBoostMelee(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void right_click_traits_yield_to_usable_offhand(GameTestHelper helper) {
+		GameTestBodies.rightClickTraitsYieldToUsableOffhand(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void tool_mod_alone_does_not_reequip(GameTestHelper helper) {
+		GameTestBodies.toolModAloneDoesNotReequip(helper);
 	}
 
 	// --- NeoForge-only test bodies -------------------------------------------

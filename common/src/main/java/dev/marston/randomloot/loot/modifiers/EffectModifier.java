@@ -6,6 +6,7 @@ import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 
 /**
  * Base for modifiers that apply a vanilla {@link MobEffect} and level up by raising the
@@ -33,10 +34,20 @@ public abstract class EffectModifier extends AbstractModifier {
 			ChatFormatting format) {
 		this.name = name;
 		this.tagname = tagname;
-		this.power = power;
 		this.duration = duration;
 		this.effect = effect;
 		this.format = format;
+		// Gear leveled before an effect was capped reads back at the cap.
+		this.power = Math.min(power, maxPower());
+	}
+
+	/**
+	 * Highest power this trait levels to. Vanilla only calls {@code hasEffect} for Blindness
+	 * and Fire Resistance and never reads their amplifier, so those stay at level I: another
+	 * level would be paid for and change nothing.
+	 */
+	private int maxPower() {
+		return effect.is(MobEffects.BLINDNESS) || effect.is(MobEffects.FIRE_RESISTANCE) ? 0 : MAX_POWER;
 	}
 
 	/** The effect instance this modifier applies: duration is in seconds, no particles. */
@@ -74,7 +85,7 @@ public abstract class EffectModifier extends AbstractModifier {
 
 	@Override
 	public boolean canLevel() {
-		return this.power < MAX_POWER;
+		return this.power < maxPower();
 	}
 
 	@Override

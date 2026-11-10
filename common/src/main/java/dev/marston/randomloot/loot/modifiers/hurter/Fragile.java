@@ -3,6 +3,8 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import dev.marston.randomloot.loot.NbtCompat;
 
 
+import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
@@ -17,6 +19,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class Fragile extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 
@@ -69,7 +72,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	/** Chance-based extra durability cost: 2.0x -> always, 1.6x -> 60%, 1.25x -> 25%. */
 	private void tryExtraDamage(ItemStack itemstack, ServerPlayer player) {
 		if (player.level().getRandom().nextFloat() < (getDurabilityMultiplier() - 1.0f)) {
-			itemstack.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+			LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
 		}
 	}
 
@@ -90,6 +93,11 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 			return false;
 		}
 
+		// The "25% more damage" half of the trait. getStats only reaches mining speed,
+		// so without this a Fragile sword paid the durability cost for nothing.
+		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
+		dealBonusDamage(hurtee, hurter, baseDamage * STAT_BOOST);
+
 		if (hurter instanceof ServerPlayer player) {
 			tryExtraDamage(itemstack, player);
 		}
@@ -98,7 +106,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity player) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 		if (player.level().isClientSide()) {
 			return false;
 		}

@@ -1,5 +1,6 @@
 package dev.marston.randomloot.neoforge;
 
+import dev.marston.randomloot.loot.LootGearItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.platform.ToolAction;
 import net.minecraft.core.Holder;
@@ -18,6 +19,12 @@ public class NeoForgeLootItem extends LootItem {
     public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
         Boolean common = supportsEnchantmentCommon(stack, enchantment);
         return common != null ? common : super.supportsEnchantment(stack, enchantment);
+    }
+
+    /** tool_mod changes on nearly every use (XP); it alone should not replay the re-equip animation. */
+    @Override
+    public boolean shouldCauseReequipAnimation(ItemStack oldStack, ItemStack newStack, boolean slotChanged) {
+        return slotChanged || !LootGearItem.sameApartFromToolMod(oldStack, newStack);
     }
 
     @Override

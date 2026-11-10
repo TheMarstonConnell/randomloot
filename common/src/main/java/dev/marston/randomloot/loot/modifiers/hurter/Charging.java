@@ -13,6 +13,7 @@ import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityType;
@@ -99,15 +100,21 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 
 		long time = level.getGameTime();
 
-		if (ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
+		if (level instanceof ServerLevel serverLevel && ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
 			LightningBolt lb = new LightningBolt(EntityType.LIGHTNING_BOLT, level);
 			lb.setPos(hurtee.position());
 			if (hurter instanceof ServerPlayer) {
 				lb.setCause((ServerPlayer) hurter);
 			}
 
-
+			// A real bolt strikes everything within 3 blocks - which, in melee, always
+			// includes the wielder. Show the bolt but apply the strike to the target
+			// alone. The primary hit has just started the target's damage cooldown, so
+			// clear it or the lightning damage would be swallowed.
+			lb.setVisualOnly(true);
 			level.addFreshEntity(lb);
+			hurtee.invulnerableTime = 0;
+			hurtee.thunderHit(serverLevel, lb);
 
 			ModCriteria.traitUsed(hurter, this);
 

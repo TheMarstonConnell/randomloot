@@ -6,8 +6,8 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 
 public class TreasureFinder extends BlockHighlighter {
 
@@ -45,7 +45,7 @@ public class TreasureFinder extends BlockHighlighter {
 	}
 
 	@Override
-	protected boolean isTarget(Block block) {
-		return block == Blocks.SPAWNER;
+	protected boolean isTarget(BlockState state) {
+		return state.is(Blocks.SPAWNER);
 	}
 }

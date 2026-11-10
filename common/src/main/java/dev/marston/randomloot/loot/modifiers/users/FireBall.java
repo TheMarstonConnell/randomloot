@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.NbtCompat;
 
+import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -91,7 +92,7 @@ public class FireBall extends AbstractModifier implements UseModifier {
 
 		level.addFreshEntity(largefireball);
 
-		player.getItemInHand(hand).hurtAndBreak(this.damage, player, EquipmentSlot.MAINHAND);
+		LootUtils.damageGear(player.getItemInHand(hand), this.damage, player, EquipmentSlot.MAINHAND);
 
 		return true;
 	}

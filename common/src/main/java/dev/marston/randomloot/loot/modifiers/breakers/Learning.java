@@ -15,6 +15,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 
 
 public class Learning extends AbstractModifier implements BlockBreakModifier {
@@ -38,7 +39,7 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockPos pos, LivingEntity entity) {
+	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
 
 		if (!(entity instanceof Player)) {
 			return false;
