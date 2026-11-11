@@ -8,6 +8,7 @@ import com.mojang.brigadier.ParseResults;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
 
+import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
@@ -953,6 +954,33 @@ public final class GameTestBodies {
 		helper.assertTrue(LootUtils.getXP(tool) == 100,
 				"100 XP should remain after leveling, got " + LootUtils.getXP(tool));
 		assertAdvancementDone(helper, player, "tool_level_1");
+
+		helper.succeed();
+	}
+
+	/**
+	 * levelUpTraitChance gates the bonus trait roll on every level-up: at 1.0 a single
+	 * level-up rolls exactly one trait onto a bare tool, at 0.0 two level-ups roll none.
+	 */
+	public static void levelUpRollsTrait(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		double saved = Config.LevelUpTraitChance;
+
+		try {
+			Config.LevelUpTraitChance = 1.0;
+			ItemStack rolled = newTool(ToolType.PICKAXE);
+			LootUtils.addXp(rolled, player, 500);
+			helper.assertTrue(LootUtils.rawTraitNames(rolled).size() == 1,
+					"one level-up at chance 1.0 should roll one trait, got " + LootUtils.rawTraitNames(rolled));
+
+			Config.LevelUpTraitChance = 0.0;
+			ItemStack plain = newTool(ToolType.PICKAXE);
+			LootUtils.addXp(plain, player, 1600);
+			helper.assertTrue(LootUtils.rawTraitNames(plain).isEmpty(),
+					"level-ups at chance 0.0 should roll no traits, got " + LootUtils.rawTraitNames(plain));
+		} finally {
+			Config.LevelUpTraitChance = saved;
+		}
 
 		helper.succeed();
 	}

@@ -239,6 +239,10 @@ public class GenWiki {
         write("", f);
         write("Tools gain XP from mining blocks and attacking enemies. Each level grants a **10% stat boost**.", f);
         write("", f);
+        write(String.format("Each level-up also has a **%d%%** chance to roll a bonus trait, or to level up a trait the gear already has"
+                + " (`%s` in [CONFIG.md](CONFIG.md)).",
+                Math.round(Config.LEVEL_UP_TRAIT_CHANCE_OPTION.defaultValue() * 100), Config.LEVEL_UP_TRAIT_CHANCE_OPTION.name()), f);
+        write("", f);
         write("**XP Required per Level:** `500 × 2^level`", f);
         write("", f);
         write("| Level | XP Required | Total XP | Stat Multiplier |", f);
@@ -589,6 +593,9 @@ public class GenWiki {
         entries.put("item.randomloot.case", "Loot Case");
         entries.put("item.randomloot.mod_add", "Trait Addition Template");
         entries.put("item.randomloot.mod_sub", "Trait Subtraction Template");
+
+        entries.put("message.randomloot.level_up_trait", "%s learned %s!");
+        entries.put("message.randomloot.level_up_trait_leveled", "%s's %s grew stronger!");
 
         entries.put("tooltip.randomloot.level", "Level: %s");
         entries.put("tooltip.randomloot.xp", "XP: %s / %s");

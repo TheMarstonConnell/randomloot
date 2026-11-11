@@ -21,6 +21,7 @@ These settings affect how tools improve over time.
 | `goodness_rate` | 1.0 | 0.01-10.0 | Rate of tool improvement per player |
 | `armorChance` | 0.15 | 0.0-1.0 | Chance that a loot case contains an armor piece instead of a tool |
 | `dispenserGoodness` | 0.75 | 0.0-1.0 | Goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player |
+| `levelUpTraitChance` | 0.2 | 0.0-1.0 | Chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up |
 
 ## Modifier Settings
 

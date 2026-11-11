@@ -450,6 +450,8 @@ Key wiring:
 
 GenWiki reads from the code rather than restating it: config rows come from `Config.lootChanceOptions()/progressionOptions()` (`Option`, doubles) and `Config.modifierSettingOptions()` (`IntOption`, whole numbers — add an int setting there so CONFIG.md doesn't render it as `1.0`), the progression tables from `GearStats`, texture counts from `LootUtils.textureCount`, and the biome table from `describeRestriction()`. Its resource paths are rooted at `common/src/main/resources/` (the `RESOURCES` constant) — they were left pointing at the pre-multiloader `src/` for a whole release, which silently made all 68 `MODIFIERS.md` recipe entries read `n/a`. The failures are caught and logged as warnings, so **check the diff after regenerating**, not just the exit code.
 
-Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` (and
-optionally `RL_WIKI_DIR=<repo root>`), e.g.
-`RL_PROD=false RL_WIKI_DIR=$PWD ./gradlew runGameTestServer`.
+Gotcha: GenWiki only regenerates the root *.md docs when run with env `RL_PROD=false` and
+`RL_WIKI_DIR=<repo root>`, e.g.
+`RL_PROD=false RL_WIKI_DIR=$PWD ./gradlew :neoforge:runGameTestServer`.
+`RL_WIKI_DIR` is not optional: without it the root defaults to `..` of the run dir, so the docs land
+in `neoforge/` and every recipe column reads `n/a`.
