@@ -5,14 +5,11 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.platform.Services;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponentMap;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.TypedDataComponent;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.entity.ai.attributes.Attribute;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
@@ -21,7 +18,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 
 /**
@@ -44,8 +40,16 @@ public abstract class LootGearItem extends Item {
 		super(p.stacksTo(1).durability(100));
 	}
 
-	/** The stack's attributes, derived from its goodness, type and traits. */
-	public abstract ItemAttributeModifiers buildAttributeModifiers(ItemStack stack);
+	/** One attribute modifier and the slot it applies in; see {@link #buildAttributeModifiers}. */
+	public record GearAttribute(Attribute attribute, AttributeModifier modifier, EquipmentSlot slot) {
+	}
+
+	/**
+	 * The stack's attributes, derived from its goodness, type and traits.
+	 * {@link LootUtils#refreshDerivedComponents} stamps them into the vanilla
+	 * {@code AttributeModifiers} stack NBT (1.20.1 has no ATTRIBUTE_MODIFIERS component).
+	 */
+	public abstract java.util.List<GearAttribute> buildAttributeModifiers(ItemStack stack);
 
 	/**
 	 * Whether hold-style traits should run this tick: the tool is the selected hotbar
@@ -58,19 +62,19 @@ public abstract class LootGearItem extends Item {
 
 	/**
 	 * The mod's per-type enchant filter: {@code true}/{@code false} to decide, or
-	 * {@code null} to defer to the loader's default check. Both gear items sit in every
-	 * relevant {@code minecraft:enchantable/*} tag, so the per-type split has to happen
-	 * here rather than in the tags.
+	 * {@code null} to defer to vanilla's {@code EnchantmentCategory} check. 1.20.1
+	 * categories gate on {@code instanceof SwordItem/DiggerItem/ArmorItem}, which the
+	 * single gear item can never satisfy, so the per-type split has to happen here.
 	 */
-	public abstract Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment);
+	public abstract Boolean supportsEnchantmentCommon(ItemStack stack, Enchantment enchantment);
 
-	/** 26.x sets this via Properties.enchantable(15); 1.21.1 reads the item method. */
+	/** 26.x sets this via Properties.enchantable(15); 1.20.1 reads the item method. */
 	@Override
 	public int getEnchantmentValue() {
 		return 15;
 	}
 
-	/** 26.x sets this via Properties.repairable(tag); 1.21.1 reads the item method. */
+	/** 26.x sets this via Properties.repairable(tag); 1.20.1 reads the item method. */
 	@Override
 	public boolean isValidRepairItem(@NotNull ItemStack stack, @NotNull ItemStack repairCandidate) {
 		return repairCandidate.is(this instanceof LootArmorItem
@@ -78,21 +82,46 @@ public abstract class LootGearItem extends Item {
 				: dev.marston.randomloot.items.ModItems.TOOL_REPAIR_MATERIALS);
 	}
 
-	/** Durability derived from goodness; stored as the vanilla MAX_DAMAGE component. */
+	/** Durability derived from goodness; cached on the stack by refreshDerivedComponents. */
 	public static int computeMaxDamage(ItemStack stack) {
 		return GearStats.maxDamage(LootUtils.getStats(stack), LootUtils.getToolType(stack));
 	}
 
 	/**
-	 * True when two stacks are the same piece of gear apart from its {@code tool_mod}
-	 * component, which is each loader's cue to skip the hand re-equip animation
-	 * (NeoForge {@code shouldCauseReequipAnimation}, Fabric
-	 * {@code allowComponentsUpdateAnimation}). {@code tool_mod} changes on nearly every
-	 * use - XP per block and per hit, trait state - and vanilla 1.21.1 replays the
-	 * animation for any component change on the held stack. Durability is deliberately
-	 * still compared: a tool that takes damage dips exactly like a vanilla tool does on
-	 * this version. Two different pieces of gear differ in name, attributes or max
-	 * damage, so swapping between them still animates.
+	 * The stack's max durability. 1.20.1 has no MAX_DAMAGE component and vanilla reads a
+	 * per-item constant, so each loader routes {@code ItemStack.getMaxDamage()} here:
+	 * Forge through its stack-aware {@code Item#getMaxDamage(ItemStack)}, Fabric through
+	 * {@code ItemStackMixin}. Reads the value {@link LootUtils#refreshDerivedComponents}
+	 * cached, so this stays a tag lookup rather than a trait fold.
+	 */
+	public static int maxDamageOf(ItemStack stack) {
+		CompoundTag derived = GearTags.read(stack, GearTags.DERIVED);
+		int cached = derived.getInt("maxDamage");
+		return cached > 0 ? cached : computeMaxDamage(stack);
+	}
+
+	// Vanilla's durability bar divides by the per-item constant; use the stack's value.
+	@Override
+	public int getBarWidth(@NotNull ItemStack stack) {
+		return Math.round(13.0F - (float) stack.getDamageValue() * 13.0F / (float) maxDamageOf(stack));
+	}
+
+	@Override
+	public int getBarColor(@NotNull ItemStack stack) {
+		float max = maxDamageOf(stack);
+		float f = Math.max(0.0F, (max - (float) stack.getDamageValue()) / max);
+		return net.minecraft.util.Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
+	}
+
+	/**
+	 * True when two stacks are the same piece of gear apart from the mod's own
+	 * {@link GearTags#ROOT} NBT, which is each loader's cue to skip the hand re-equip
+	 * animation (Forge {@code shouldCauseReequipAnimation}, Fabric
+	 * {@code allowNbtUpdateAnimation}). That tag changes on nearly every use - XP per
+	 * block and per hit, trait state - and vanilla replays the animation for any NBT
+	 * change on the held stack. Durability is deliberately still compared: a tool that
+	 * takes damage dips exactly like a vanilla tool does on this version. Two different
+	 * pieces of gear differ in name or attributes, so swapping between them still animates.
 	 */
 	public static boolean sameApartFromToolMod(ItemStack oldStack, ItemStack newStack) {
 		if (oldStack == newStack) {
@@ -102,16 +131,18 @@ public abstract class LootGearItem extends Item {
 			return false;
 		}
 
-		DataComponentType<?> toolMod = ModDataComponents.TOOL_MODIFIER.get();
-		DataComponentMap oldComponents = oldStack.getComponents();
-		DataComponentMap newComponents = newStack.getComponents();
-		for (TypedDataComponent<?> component : oldComponents) {
-			if (component.type() != toolMod && !component.value().equals(newComponents.get(component.type()))) {
+		CompoundTag oldTag = oldStack.getTag();
+		CompoundTag newTag = newStack.getTag();
+		if (oldTag == null || newTag == null) {
+			return oldTag == newTag;
+		}
+		for (String key : oldTag.getAllKeys()) {
+			if (!key.equals(GearTags.ROOT) && !oldTag.get(key).equals(newTag.get(key))) {
 				return false;
 			}
 		}
-		for (DataComponentType<?> type : newComponents.keySet()) {
-			if (type != toolMod && !oldComponents.has(type)) {
+		for (String key : newTag.getAllKeys()) {
+			if (!key.equals(GearTags.ROOT) && !oldTag.contains(key)) {
 				return false;
 			}
 		}
@@ -132,8 +163,8 @@ public abstract class LootGearItem extends Item {
 			return;
 		}
 
-		// Migrates items from before attributes/durability moved to data components
-		// (they were dynamic NeoForge item-method overrides).
+		// Stamps gear that reached the world without its derived stats (hand-built or
+		// edited stacks); a no-op once the DERIVED marker exists.
 		LootUtils.migrateDerivedComponents(stack);
 
 		// Runs in any slot, unlike the trait ticking below.
@@ -155,9 +186,9 @@ public abstract class LootGearItem extends Item {
 	}
 
 	@Override
-	public void appendHoverText(ItemStack item, TooltipContext pContext, java.util.List<Component> tipList,
+	public void appendHoverText(ItemStack item, @Nullable Level level, java.util.List<Component> tipList,
 			TooltipFlag pTooltipFlag) {
-		LootTooltips.appendHoverText(item, Services.PLATFORM.tooltipLevel(pContext), tipList::add,
+		LootTooltips.appendHoverText(item, level, tipList::add,
 				(type, tips) -> appendStatLines(item, type, tips));
 	}
 }

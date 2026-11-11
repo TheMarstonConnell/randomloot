@@ -21,10 +21,31 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # modloader: the Forge-family project in that branch (its Gradle project
+          # name, jar-name segment and CurseForge/Modrinth loader id are all the same
+          # word). manifest: the file that proves the jar is that loader's.
+          # java: the Minecraft version's Java (what the mod platforms list).
+          # build_java: the JDK Gradle itself runs on. fabric-loom needs a newer JDK
+          # than Minecraft 1.20.1's Java 17; the Gradle toolchain still compiles
+          # that branch for 17.
           - branch: "26.x"
             java: "25"
+            build_java: "25"
+            modloader: neoforge
+            modloader_name: NeoForge
+            manifest: META-INF/neoforge.mods.toml
           - branch: "1.21.1.x"
             java: "21"
+            build_java: "21"
+            modloader: neoforge
+            modloader_name: NeoForge
+            manifest: META-INF/neoforge.mods.toml
+          - branch: "1.20.1.x"
+            java: "17"
+            build_java: "21"
+            modloader: forge
+            modloader_name: Forge
+            manifest: META-INF/mods.toml
 
     steps:
       - uses: actions/checkout@v7
@@ -33,7 +54,11 @@ jobs:
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
-          java-version: ${{ matrix.java }}
+          # The last version listed becomes the default JDK (the one Gradle runs
+          # on); the first stays installed for the Gradle toolchain to find.
+          java-version: |
+            ${{ matrix.java }}
+            ${{ matrix.build_java }}
           distribution: 'temurin'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
@@ -80,37 +105,42 @@ jobs:
           grep '^mod_version=' gradle.properties
       - name: Build with Gradle
         run: ./gradlew clean build
-      - name: Run in-world GameTests (NeoForge)
-        run: ./gradlew :neoforge:runGameTestServer
+      - name: Run in-world GameTests (${{ matrix.modloader_name }})
+        run: ./gradlew :${{ matrix.modloader }}:runGameTestServer
       - name: Run in-world GameTests (Fabric)
         run: ./gradlew :fabric:runGametest
       - name: Stage and verify mod jars
         shell: bash
+        env:
+          MODLOADER: ${{ matrix.modloader }}
+          MANIFEST: ${{ matrix.manifest }}
         run: |
           set -euo pipefail
 
-          mapfile -t NEOFORGE_JARS < <(find neoforge/build/libs -maxdepth 1 -type f -name '*-neoforge-*.jar' ! -name '*-sources.jar')
+          # "-forge-" cannot match a "-neoforge-" jar name (and vice versa): the
+          # leading hyphen is part of the pattern.
+          mapfile -t MODLOADER_JARS < <(find "$MODLOADER/build/libs" -maxdepth 1 -type f -name "*-${MODLOADER}-*.jar" ! -name '*-sources.jar')
           mapfile -t FABRIC_JARS < <(find fabric/build/libs -maxdepth 1 -type f -name '*-fabric-*.jar' ! -name '*-sources.jar')
 
-          if (( ${#NEOFORGE_JARS[@]} != 1 || ${#FABRIC_JARS[@]} != 1 )); then
+          if (( ${#MODLOADER_JARS[@]} != 1 || ${#FABRIC_JARS[@]} != 1 )); then
             echo "::error::Expected exactly one publishable jar for each loader."
-            find neoforge/build/libs fabric/build/libs -maxdepth 1 -type f -name '*.jar' -print
+            find "$MODLOADER/build/libs" fabric/build/libs -maxdepth 1 -type f -name '*.jar' -print
             exit 1
           fi
 
-          NEOFORGE_JAR=${NEOFORGE_JARS[0]}
+          MODLOADER_JAR=${MODLOADER_JARS[0]}
           FABRIC_JAR=${FABRIC_JARS[0]}
-          jar tf "$NEOFORGE_JAR" > /tmp/neoforge-jar-contents.txt
+          jar tf "$MODLOADER_JAR" > /tmp/modloader-jar-contents.txt
           jar tf "$FABRIC_JAR" > /tmp/fabric-jar-contents.txt
 
-          grep -Fqx 'META-INF/neoforge.mods.toml' /tmp/neoforge-jar-contents.txt
-          grep -Fqx 'dev/marston/randomloot/RandomLoot.class' /tmp/neoforge-jar-contents.txt
+          grep -Fqx "$MANIFEST" /tmp/modloader-jar-contents.txt
+          grep -Fqx 'dev/marston/randomloot/RandomLoot.class' /tmp/modloader-jar-contents.txt
           grep -Fqx 'fabric.mod.json' /tmp/fabric-jar-contents.txt
           grep -Fqx 'dev/marston/randomloot/RandomLoot.class' /tmp/fabric-jar-contents.txt
           grep -Eq '^META-INF/jars/forgeconfigapiport-fabric-.*\.jar$' /tmp/fabric-jar-contents.txt
 
           mkdir -p dist
-          cp "$NEOFORGE_JAR" "$FABRIC_JAR" dist/
+          cp "$MODLOADER_JAR" "$FABRIC_JAR" dist/
           mapfile -t DIST_JARS < <(find dist -maxdepth 1 -type f -name '*.jar')
           if (( ${#DIST_JARS[@]} != 2 )); then
             echo "::error::Expected exactly two staged jars."
@@ -129,12 +159,13 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           MC_VERSION: ${{ steps.mc_version.outputs.MC_VERSION }}
+          MODLOADER: ${{ matrix.modloader }}
         run: |
           set -euo pipefail
           PREV_TAG=$(gh release list --exclude-drafts --limit 20 --json tagName --jq '.[].tagName' \
             | grep -v -Fx "${GITHUB_REF#refs/tags/}" | head -1 || true)
 
-          for LOADER in neoforge fabric; do
+          for LOADER in "$MODLOADER" fabric; do
             SKIP=false
             JAR=$(find dist -maxdepth 1 -name "*-${LOADER}-*.jar" | head -1)
             if [ -n "$PREV_TAG" ]; then
@@ -155,7 +186,9 @@ jobs:
             else
               echo "No previous release found; publishing everything."
             fi
-            echo "SKIP_${LOADER^^}=$SKIP" >> "$GITHUB_OUTPUT"
+            # SKIP_MODLOADER for the Forge-family jar, SKIP_FABRIC for the Fabric one.
+            if [ "$LOADER" = fabric ]; then KEY=SKIP_FABRIC; else KEY=SKIP_MODLOADER; fi
+            echo "${KEY}=$SKIP" >> "$GITHUB_OUTPUT"
           done
 
       # Every built jar still lands on the GitHub release (via the release job),
@@ -167,8 +200,8 @@ jobs:
           path: dist/*.jar
 
       # One version entry per loader so CurseForge/Modrinth tag them correctly.
-      - name: Publish NeoForge jar to CurseForge & Modrinth
-        if: steps.unchanged.outputs.SKIP_NEOFORGE != 'true'
+      - name: Publish ${{ matrix.modloader_name }} jar to CurseForge & Modrinth
+        if: steps.unchanged.outputs.SKIP_MODLOADER != 'true'
         uses: Kir-Antipov/mc-publish@v3.3
         with:
           modrinth-id: bM2Gf75C
@@ -176,12 +209,12 @@ jobs:
           curseforge-id: "301631"
           curseforge-token: ${{ secrets.CURSEFORGE }}
           changelog: "# Change Log\n\nClick [here](https://github.com/TheMarstonConnell/randomloot/releases/tag/v${{ steps.get_version.outputs.VERSION }}) for full list of changes."
-          files: dist/*-neoforge-*.jar
-          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (NeoForge ${{ steps.mc_version.outputs.MC_VERSION }})"
-          version: "${{ steps.get_version.outputs.VERSION }}+mc${{ steps.mc_version.outputs.MC_VERSION }}-neoforge"
+          files: dist/*-${{ matrix.modloader }}-*.jar
+          name: "Random Loot 2 - ${{ steps.get_version.outputs.VERSION }} (${{ matrix.modloader_name }} ${{ steps.mc_version.outputs.MC_VERSION }})"
+          version: "${{ steps.get_version.outputs.VERSION }}+mc${{ steps.mc_version.outputs.MC_VERSION }}-${{ matrix.modloader }}"
           version-type: ${{ steps.release.outputs.RELEASE_TYPE }}
           game-versions: "${{ steps.mc_version.outputs.MC_VERSION }}"
-          loaders: neoforge
+          loaders: ${{ matrix.modloader }}
           java: ${{ matrix.java }}
 
       - name: Publish Fabric jar to CurseForge & Modrinth

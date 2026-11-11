@@ -4,8 +4,7 @@ import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.platform.ToolAction;
 import dev.marston.randomloot.platform.services.IPlatformHelper;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.AxeItem;
@@ -33,12 +32,14 @@ public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
     public LootArmorItem createLootArmorItem(Item.Properties props) {
-        // Per-stack equipment slot (NeoForge overrides getEquipmentSlot instead);
-        // fabric-item-api-v1 injects equipmentSlot() into Item.Properties.
-        props.equipmentSlot((entity, stack) -> {
-            net.minecraft.world.entity.EquipmentSlot slot = dev.marston.randomloot.loot.LootUtils.wearableSlot(stack);
-            return slot != null ? slot : net.minecraft.world.entity.EquipmentSlot.MAINHAND;
-        });
+        // Per-stack equipment slot (Forge overrides getEquipmentSlot instead). The
+        // provider must return a slot, so rolling/unwearable stacks answer MAINHAND.
+        if (props instanceof FabricItemSettings settings) {
+            settings.equipmentSlot(stack -> {
+                net.minecraft.world.entity.EquipmentSlot slot = dev.marston.randomloot.loot.LootUtils.wearableSlot(stack);
+                return slot != null ? slot : net.minecraft.world.entity.EquipmentSlot.MAINHAND;
+            });
+        }
         return new FabricLootArmorItem(props);
     }
 
@@ -69,15 +70,5 @@ public class FabricPlatformHelper implements IPlatformHelper {
             }
             case SHOVEL_FLATTEN -> ShovelItem.FLATTENABLES.get(block);
         };
-    }
-
-    @Override
-    public Level tooltipLevel(Item.TooltipContext ctx) {
-        // Tooltips are only meaningfully built on the client; the indirection keeps
-        // client classes out of dedicated-server classloading.
-        if (FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-            return FabricClientLevelGetter.get();
-        }
-        return null;
     }
 }

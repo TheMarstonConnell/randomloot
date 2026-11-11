@@ -497,3 +497,96 @@ Port fixes across from 26.x; the mechanical API deltas are:
 - **Releases**: publish.yml (same file on 26.x) builds BOTH version branches per tag and
   skips CurseForge/Modrinth for a jar whose `scripts/modhash.sh` hash matches the
   previous release (reproducible archives are configured in build-logic).
+
+## 1.20.1 Backport Branch (1.20.1.x)
+
+This branch is the 1.21.1.x backport taken one step further, to MC 1.20.1 on **Forge**
+(47.x, not NeoForge) + Fabric, Java 17. Everything in the 1.21.1 section above still
+applies unless overridden here; the sections further up describe 26.x and are kept for
+cross-porting. **On this branch the loader project is `forge/`, not `neoforge/`.**
+
+```bash
+./gradlew build                      # both jars + unit tests (:common:test)
+./gradlew :forge:runGameTestServer   # 59 gametests
+./gradlew :fabric:runGametest        # 59 gametests
+./gradlew :forge:runClient           # / :fabric:runClient
+```
+
+- **Toolchain**: ModDevGradle's legacy plugin (`net.neoforged.moddev.legacyforge`,
+  `legacyForge { version / mcpVersion }`); the Forge jar is reobfuscated to SRG and its
+  mixins need the refmap + `MixinConfigs` manifest entry set up in `forge/build.gradle`
+  (no `[[mixins]]` in `mods.toml`). Forge 1.20.1 also needs a `pack.mcmeta`. Code compiles
+  for Java 17 (no pattern-matching `switch`, no `List.getFirst()`), but **Gradle itself
+  must run on JDK 21+** for fabric-loom; CI installs both.
+- **No data components at all.** Gear state is stack NBT: `GearTags.ROOT`
+  (`"randomloot"`) holds the same namespace → compound map the `tool_mod` component
+  holds on newer branches, so `GearTags.read/has/mutate/clear` are unchanged for callers.
+  `component/ToolModifier` + `ModDataComponents` are gone.
+- **Derived stats** (`LootUtils.refreshDerivedComponents`, still called by
+  `GearTags.mutate`): attributes are stamped into the vanilla `AttributeModifiers` stack
+  NBT (`LootGearItem.buildAttributeModifiers` returns `GearAttribute` records; attack
+  uses `Item.BASE_ATTACK_*_UUID` so the tooltip renders green item stats). Max damage
+  has no vanilla per-stack home: it is cached under `GearTags.DERIVED` and served by
+  `LootGearItem.maxDamageOf` through Forge's `Item#getMaxDamage(ItemStack)` override and
+  Fabric's `ItemStackMixin`. `DERIVED` is also the "already stamped" marker
+  `migrateDerivedComponents` checks. So the 26.x rule "never use loader-only dynamic item
+  methods for stats" has exactly one exception here: max damage.
+- **Stack-aware hooks vanilla lacks** (each loader subclass routes its own):
+  correct-tool check - Forge `isCorrectToolForDrops(ItemStack, BlockState)` (LootItem
+  declares that exact signature), Fabric `isSuitableFor`; equipment slot - Forge
+  `getEquipmentSlot`, Fabric `FabricItemSettings.equipmentSlot` (items are built from
+  `FabricItemSettings` in `FabricRegHelper` for this); re-equip animation - Forge
+  `shouldCauseReequipAnimation`, Fabric `allowNbtUpdateAnimation`.
+- **Enchant gating**: enchantments are hard-coded objects and `EnchantmentCategory`
+  gates on `instanceof SwordItem/DiggerItem/ArmorItem`, which the single gear item never
+  passes - so without the gate *nothing* type-specific can be applied (the opposite
+  failure to 26.x). `LootUtils.gearAcceptsEnchantment` is the one decision; wiring is
+  table = Forge `canApplyAtEnchantingTable` / Fabric `EnchantmentHelperMixin`, anvil =
+  an `AnvilMenuMixin` redirect of `Enchantment.canEnchant` on **both** loaders. The
+  `randomloot:*` enchantment tags still work (`data/randomloot/tags/enchantment/`,
+  resolved via `LootUtils.enchantIn`); the `minecraft:enchantable/*` item tags do not
+  exist. `sweeping_edge` is `minecraft:sweeping`; fields are `Enchantments.BLOCK_EFFICIENCY`,
+  `ALL_DAMAGE_PROTECTION`, `FALL_PROTECTION`.
+- **Damage hooks**: Forge has a single `LivingDamageEvent` (no Pre/Post) - pre runs at
+  normal priority, post at `LOWEST`. Fabric API has no `AFTER_DAMAGE`, so
+  `LivingEntityMixin` does both around the `actuallyHurt` call (post = health +
+  absorption lost). No `ArmorHurtEvent`: `ArmorDispatcher.onLivingDamagePost` spends
+  armor durability itself.
+- **Recipes**: serializers are `fromJson`/`fromNetwork`/`toNetwork`
+  (`TraitAdditionRecipe.Serializer`; the trait-recipe JSON shape is unchanged) and
+  recipes take the menu's `Container` - `TraitAdditionRecipe.Input` names the three
+  smithing slots. Recipes carry their own id. `TextureChangeRecipe` uses
+  `SimpleCraftingRecipeSerializer`.
+- **Advancement criteria** are JSON-serialized classes, registered through
+  `RegHelper.registerCriterion` (vanilla's `CriteriaTriggers.register` is private: Forge
+  ATs it, Fabric has `CriterionRegistry`). JSON differences: `icon.item` not `icon.id`,
+  item predicates take `"items": [..]` arrays, backgrounds are full
+  `textures/….png` paths, no `crafter_recipe_crafted`.
+- **Data folders are plural**: `recipes/`, `loot_tables/`, `advancements/`,
+  `structures/`, `tags/items/`, `tags/blocks/` (`tags/enchantment/` stays singular).
+  Smelting `result` is a bare string, crafting results use `"item"`. `turtle_scute` is
+  `scute`. Common ore tag is `#forge:ores` / `#c:ores` (both listed, optional).
+- **Config**: `ForgeConfigSpec` (`net.minecraftforge.common`), FCAP 8.x
+  (`forgeconfigapiport-common` stub; Fabric registers via
+  `fuzs.forgeconfigapiport.api.config.v2`).
+- **Loot**: tables come from `server.getLootData().getLootTable(ResourceLocation)`;
+  Fabric uses loot API **v2** (`MODIFY` gets `(resourceManager, lootManager, id, builder,
+  source)`) and `OncePerLootRoll` has a Gson `Serializer`. Vanilla 1.20.1 has no chest
+  table that rolls another, so `loot_injection_rolls_once_per_chest` uses the mod's own
+  `gametest/chest_outer` → `chest_inner` tables.
+- **Gametest gotchas**: (1) `helper.makeMockServerPlayerInLevel()` NPEs on Forge 1.20.1
+  (login hooks dereference the mock connection's null channel) - use
+  `GameTestBodies.mockPlayer`, which attaches an `EmbeddedChannel`. (2)
+  `helper.assertEntityPresent(type)` measures bounds from the structure block and stops
+  a block short at the top; search around a known position instead. (3) A creative
+  player bypasses the anvil's `canEnchant` check, so anvil-refusal tests must clear
+  `instabuild`.
+- **Unit tests live in `common/src/test`** (plain JUnit against vanilla): the legacy
+  plugin has no `unitTest {}` harness, and Forge-patched classes cannot bootstrap outside
+  FML. Tests touching registry-backed statics call `McBootstrap.init()` in `@BeforeAll`.
+- **Releases**: `publish.yml` (the copy on 26.x is the one a tag runs) has a matrix row
+  per branch with `modloader: forge|neoforge`; this branch's `scripts/modhash.sh`
+  normalizes `META-INF/mods.toml`.
+- **Not carried over / still open**: worlds upgraded from 1.20.1 to a newer branch keep
+  the gear's NBT under `minecraft:custom_data`, not `randomloot:tool_mod` - the newer
+  branches need a migrator before that upgrade path works.

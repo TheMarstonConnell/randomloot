@@ -10,15 +10,15 @@ base {
 version = mod_version
 group = mod_group_id
 
-// Minecraft 1.21.1 requires Java 21.
+// Minecraft 1.20.1 targets Java 17.
 java {
-    toolchain.languageVersion = JavaLanguageVersion.of(21)
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
     withSourcesJar()
 }
 
 repositories {
     mavenLocal()
-    // Forge Config API Port (NeoForge config API on Fabric + the common compile stub)
+    // Forge Config API Port (Forge config API on Fabric + the common compile stub)
     maven {
         name = 'Fuzs Mod Resources'
         url = 'https://raw.githubusercontent.com/Fuzss/modresources/main/maven/'
@@ -29,8 +29,8 @@ processResources {
     var expandProps = [
             minecraft_version      : minecraft_version,
             minecraft_version_range: minecraft_version_range,
-            neo_version            : neo_version,
-            neo_version_range      : neo_version_range,
+            forge_version          : forge_version,
+            forge_version_range    : forge_version_range,
             loader_version_range   : loader_version_range,
             fabric_version         : fabric_version,
             fabric_loader_version  : fabric_loader_version,
@@ -46,7 +46,7 @@ processResources {
         key, value -> [(key): value instanceof String ? value.replace('\n', '\\\\n') : value]
     }
 
-    filesMatching(['META-INF/neoforge.mods.toml']) {
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
         expand expandProps
     }
 
@@ -62,7 +62,7 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 // Tag every variant with which loader this project targets (the value is just the
-// project name: common/neoforge/fabric) so the loader projects' compileOnly
+// project name: common/forge/fabric) so the loader projects' compileOnly
 // dependency on :common resolves unambiguously.
 def loaderAttribute = Attribute.of('dev.marston.loader', String)
 ['apiElements', 'runtimeElements', 'sourcesElements'].each { variant ->

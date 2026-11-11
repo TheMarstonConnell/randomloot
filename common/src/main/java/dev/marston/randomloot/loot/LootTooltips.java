@@ -33,7 +33,7 @@ final class LootTooltips {
 	}
 
 	// The enchanting table's Standard Galactic Alphabet font.
-	private static final ResourceLocation ROLLING_FONT = ResourceLocation.fromNamespaceAndPath("minecraft", "alt");
+	private static final ResourceLocation ROLLING_FONT = new ResourceLocation("minecraft", "alt");
 
 	// Gibberish in the enchanting-table tradition; SGA only maps a-z, so letters only.
 	private static final String[] ROLLING_WORDS = { "klaatu", "berata", "niktu", "phnglui", "xyzzy", "azimuth",

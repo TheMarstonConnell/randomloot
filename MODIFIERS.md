@@ -101,7 +101,7 @@ These effects are applied when holding the tool.
 
 **Description:** While holding or wearing this item in the rain, mine faster!
 ### Resistant
-**id:** `resistance` | **crafting:** `minecraft:turtle_scute` ×5 ![turtle_scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/turtle_scute.png)
+**id:** `resistance` | **crafting:** `minecraft:scute` ×5 ![scute](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/scute.png)
 
 **Description:** While holding or wearing this item, get the resistance I effect.
 ### Stench

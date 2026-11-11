@@ -121,7 +121,7 @@ Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIE
 | Pummeling | `minecraft:anvil` | 1 |
 | Rainy | `minecraft:cauldron` | 1 |
 | Healing | `minecraft:glowstone` | 8 |
-| Resistant | `minecraft:turtle_scute` | 5 |
+| Resistant | `minecraft:scute` | 5 |
 | Scorched | `minecraft:blaze_powder` | 1 |
 | Soulbound | `minecraft:nether_star` | 1 |
 | Tomb Raider | `minecraft:mossy_cobblestone` | 12 |

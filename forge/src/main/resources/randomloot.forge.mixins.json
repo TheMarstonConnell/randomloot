@@ -1,0 +1,15 @@
+{
+    "required": true,
+    "minVersion": "0.8",
+    "package": "dev.marston.randomloot.forge.mixin",
+    "compatibilityLevel": "JAVA_17",
+    "refmap": "randomloot.refmap.json",
+    "mixins": [
+        "AnvilMenuMixin",
+        "ServerPlayerGameModeMixin",
+        "SmithingMenuMixin"
+    ],
+    "injectors": {
+        "defaultRequire": 1
+    }
+}

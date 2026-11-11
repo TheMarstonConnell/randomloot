@@ -2,35 +2,35 @@ package dev.marston.randomloot;
 
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import net.neoforged.neoforge.common.ModConfigSpec;
+import net.minecraftforge.common.ForgeConfigSpec;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Mod configuration, built on NeoForge's ModConfigSpec. On Fabric the same
+ * Mod configuration, built on NeoForge's ForgeConfigSpec. On Fabric the same
  * spec API is provided by Forge Config API Port, so this class stays in
  * common; each loader registers {@link #SPEC} and wires its config-loaded
  * event to {@link #onLoad()}.
  */
 public class Config
 {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
+    private static final ForgeConfigSpec.Builder BUILDER = new ForgeConfigSpec.Builder();
 
-    private static ModConfigSpec.DoubleValue CASE_CHANCE;
+    private static ForgeConfigSpec.DoubleValue CASE_CHANCE;
 
-    private static ModConfigSpec.DoubleValue MOD_CHANCE;
+    private static ForgeConfigSpec.DoubleValue MOD_CHANCE;
 
-    private static ModConfigSpec.DoubleValue GOODNESS;
+    private static ForgeConfigSpec.DoubleValue GOODNESS;
 
-    private static ModConfigSpec.DoubleValue ARMOR_CHANCE;
+    private static ForgeConfigSpec.DoubleValue ARMOR_CHANCE;
 
-    private static ModConfigSpec.DoubleValue DISPENSER_GOODNESS;
+    private static ForgeConfigSpec.DoubleValue DISPENSER_GOODNESS;
 
-    private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
+    private static ForgeConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
 
-    private static ModConfigSpec.IntValue LIVING_WHISPERS;
+    private static ForgeConfigSpec.IntValue LIVING_WHISPERS;
 
     /**
      * A documented numeric option: one source for the spec definition, for the plain
@@ -86,22 +86,22 @@ public class Config
     public static List<? extends String> LootTableMatches = List.of("chest");
     public static int LivingWhispersPerMinute = LIVING_WHISPERS_OPTION.defaultValue();
 
-    private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
+    private static Map<String, ForgeConfigSpec.BooleanValue> MODIFIERS_ENABLED;
     private static Map<String, Boolean> ModsEnabled = new HashMap<>();
 
-    public static final ModConfigSpec SPEC = build();
+    public static final ForgeConfigSpec SPEC = build();
 
-    public static ModConfigSpec build() {
+    public static ForgeConfigSpec build() {
         init();
         return BUILDER.build();
     }
 
-    private static ModConfigSpec.DoubleValue define(Option option) {
+    private static ForgeConfigSpec.DoubleValue define(Option option) {
         return BUILDER.comment(option.comment())
                 .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
     }
 
-    private static ModConfigSpec.IntValue define(IntOption option) {
+    private static ForgeConfigSpec.IntValue define(IntOption option) {
         return BUILDER.comment(option.comment())
                 .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
     }
@@ -113,11 +113,11 @@ public class Config
         MOD_CHANCE = define(MOD_CHANCE_OPTION);
         LOOT_TABLE_MATCHES = BUILDER
                 .comment("loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
-                .defineListAllowEmpty("lootTableMatches", List.of("chest"), () -> "chest", o -> o instanceof String);
+                .defineListAllowEmpty(List.of("lootTableMatches"), () -> List.of("chest"), o -> o instanceof String);
         BUILDER.pop();
 
         BUILDER.push("Modifiers Enabled");
-        MODIFIERS_ENABLED = new HashMap<String, ModConfigSpec.BooleanValue>();
+        MODIFIERS_ENABLED = new HashMap<String, ForgeConfigSpec.BooleanValue>();
 
         for (Map.Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
             String key = entry.getKey();
@@ -154,9 +154,9 @@ public class Config
         LivingWhispersPerMinute = LIVING_WHISPERS.get();
 
         ModsEnabled = new HashMap<String, Boolean>();
-        for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {
+        for (Map.Entry<String, ForgeConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {
             String key = entry.getKey();
-            ModConfigSpec.BooleanValue val = entry.getValue();
+            ForgeConfigSpec.BooleanValue val = entry.getValue();
 
             ModsEnabled.put(key, val.get());
         }

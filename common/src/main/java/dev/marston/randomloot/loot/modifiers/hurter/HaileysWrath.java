@@ -63,7 +63,7 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
 
         // Spawn a bee at the victim's location
         BlockPos pos = victim.blockPosition();
-        Entity bee = EntityType.BEE.create(serverLevel, null, pos, net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, false, false);
+        Entity bee = EntityType.BEE.create(serverLevel, null, null, pos, net.minecraft.world.entity.MobSpawnType.MOB_SUMMONED, false, false);
         if (bee != null) {
             bee.setPos(victim.getX(), victim.getY(), victim.getZ());
             level.addFreshEntity(bee);

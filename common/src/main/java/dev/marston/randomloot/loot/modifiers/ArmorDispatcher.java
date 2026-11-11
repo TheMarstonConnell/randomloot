@@ -31,7 +31,7 @@ public final class ArmorDispatcher {
 	private static List<ItemStack> wornLootArmor(LivingEntity entity) {
 		List<ItemStack> worn = null;
 		for (EquipmentSlot slot : EquipmentSlot.values()) {
-			if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
+			if (slot.getType() != EquipmentSlot.Type.ARMOR) {
 				continue;
 			}
 
@@ -98,11 +98,11 @@ public final class ArmorDispatcher {
 		for (ItemStack stack : wornLootArmor(wearer)) {
 			LootUtils.addXp(stack, wearer, xp);
 
-			if (damagesArmor && stack.canBeHurtBy(source)) {
+			if (damagesArmor && !(source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE) && stack.getItem().isFireResistant())) {
 				EquipmentSlot slot = LootUtils.wearableSlot(stack);
 				int hurt = (int) onArmorHurt(wearer, stack, slot, durability);
 				if (slot != null && hurt > 0) {
-					stack.hurtAndBreak(hurt, wearer, slot);
+					stack.hurtAndBreak(hurt, wearer, broken -> broken.broadcastBreakEvent(slot));
 				}
 			}
 		}
@@ -120,7 +120,7 @@ public final class ArmorDispatcher {
 	 */
 	public static float onArmorHurt(LivingEntity wearer, ItemStack stack, EquipmentSlot slot,
 			float durabilityDamage) {
-		if (slot == null || slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) {
+		if (slot == null || slot.getType() != EquipmentSlot.Type.ARMOR) {
 			return durabilityDamage;
 		}
 

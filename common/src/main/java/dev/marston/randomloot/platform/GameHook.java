@@ -3,7 +3,7 @@ package dev.marston.randomloot.platform;
 /**
  * Every game event the mod needs a loader to route into a common dispatcher.
  *
- * <p>Adding a hook is one method on NeoForge, where {@code NeoForgeEvents} lists them all
+ * <p>Adding a hook is one method on NeoForge, where {@code ForgeEvents} lists them all
  * in a single class. On Fabric the same hook may need a Fabric API callback, or a mixin
  * class <em>plus</em> an entry in {@code randomloot.fabric.mixins.json} - three places to
  * remember, spread across six files. Nothing in {@code common} named the required set, so

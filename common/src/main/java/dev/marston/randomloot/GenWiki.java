@@ -531,7 +531,7 @@ public class GenWiki {
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
 
-        File recipeDir = repoFile(RESOURCES + "data/randomloot/recipe/");
+        File recipeDir = repoFile(RESOURCES + "data/randomloot/recipes/");
         File[] recipeFiles = recipeDir.listFiles((dir, name) -> name.startsWith("trait_") && name.endsWith(".json"));
 
         if (recipeFiles != null) {
@@ -681,7 +681,7 @@ public class GenWiki {
     }
 
     private static RecipeCost readRecipe(String trait) throws IOException {
-        return readRecipe(repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json"));
+        return readRecipe(repoFile(RESOURCES + "data/randomloot/recipes/trait_" + trait + ".json"));
     }
 
     private static RecipeCost readRecipe(File recipeFile) throws IOException {

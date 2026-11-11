@@ -69,16 +69,15 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 
 				RecipeManager manager = serverLevel.getRecipeManager();
 
-				List<SmeltingRecipe> smeltingRecipes = manager.getAllRecipesFor(RecipeType.SMELTING).stream()
-						.map(RecipeHolder::value)
-						.toList();
+				List<SmeltingRecipe> smeltingRecipes = manager.getAllRecipesFor(RecipeType.SMELTING);
+				net.minecraft.world.Container smeltInput = new net.minecraft.world.SimpleContainer(stack);
 
 				for (SmeltingRecipe recipe : smeltingRecipes) {
-					if (!recipe.matches(new SingleRecipeInput(stack), level)) {
+					if (!recipe.matches(smeltInput, level)) {
 						continue;
 					}
 
-					ItemStack result = recipe.assemble(new SingleRecipeInput(stack), serverLevel.registryAccess());
+					ItemStack result = recipe.assemble(smeltInput, serverLevel.registryAccess());
 
 					if (result.isEmpty()) {
 						continue;

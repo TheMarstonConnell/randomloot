@@ -19,12 +19,12 @@ import net.minecraft.world.level.Level;
 
 public class Effect extends EffectModifier implements HoldModifier {
 
-	public Effect(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
+	public Effect(String name, String tagname, int power, int duration, MobEffect effect,
 			ChatFormatting format) {
 		super(name, tagname, power, duration, effect, format);
 	}
 
-	public Effect(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+	public Effect(String name, String tagname, int duration, MobEffect effect, ChatFormatting format) {
 		this(name, tagname, 0, duration, effect, format);
 	}
 
@@ -37,7 +37,7 @@ public class Effect extends EffectModifier implements HoldModifier {
 	@Override
 	public String description() {
 		return "While holding or wearing this item, get the "
-				+ effect.value().getDisplayName().getString().toLowerCase() + " "
+				+ effect.getDisplayName().getString().toLowerCase() + " "
 				+ LootUtils.roman(this.power + 1) + " effect.";
 	}
 

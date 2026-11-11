@@ -40,7 +40,7 @@ public class Explode extends AbstractModifier implements BlockBreakModifier {
 			return false;
 		}
 
-		l.explode(player, Explosion.getDefaultDamageSource(l, player), null, pos.getX(), pos.getY() + 0.5, pos.getZ(), power, false, ExplosionInteraction.TNT);
+		l.explode(player, null, null, pos.getX(), pos.getY() + 0.5, pos.getZ(), power, false, ExplosionInteraction.TNT);
 
 		return false;
 	}

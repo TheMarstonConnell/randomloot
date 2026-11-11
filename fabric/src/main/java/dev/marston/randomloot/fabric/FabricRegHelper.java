@@ -2,6 +2,9 @@ package dev.marston.randomloot.fabric;
 
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.platform.services.RegHelper;
+import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
+import net.fabricmc.fabric.api.object.builder.v1.advancement.CriterionRegistry;
+import net.minecraft.advancements.CriterionTrigger;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -18,8 +21,10 @@ public class FabricRegHelper implements RegHelper {
     @Override
     public Supplier<Item> registerItem(String name, Function<Item.Properties, Item> factory) {
         ResourceKey<Item> key = ResourceKey.create(Registries.ITEM,
-                ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, name));
-        Item item = Registry.register(BuiltInRegistries.ITEM, key, factory.apply(new Item.Properties()));
+                new ResourceLocation(RandomLoot.MODID, name));
+        // FabricItemSettings so loader item factories can reach Fabric-only settings
+        // (equipmentSlot); 1.20.1 does not inject those into Item.Properties itself.
+        Item item = Registry.register(BuiltInRegistries.ITEM, key, factory.apply(new FabricItemSettings()));
         return () -> item;
     }
 
@@ -30,7 +35,13 @@ public class FabricRegHelper implements RegHelper {
         if (target == null) {
             throw new IllegalArgumentException("Unknown registry " + registry);
         }
-        R registered = Registry.register(target, ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, name), value.get());
+        R registered = Registry.register(target, new ResourceLocation(RandomLoot.MODID, name), value.get());
         return () -> registered;
+    }
+
+    /** Vanilla's CriteriaTriggers.register is private on 1.20.1; Fabric API fronts it. */
+    @Override
+    public <T extends CriterionTrigger<?>> T registerCriterion(T trigger) {
+        return CriterionRegistry.register(trigger);
     }
 }

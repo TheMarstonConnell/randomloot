@@ -1,17 +1,33 @@
 plugins {
     id 'multiloader-common'
-    id 'net.neoforged.moddev'
+    id 'net.neoforged.moddev.legacyforge'
 }
 
-neoForge {
-    // Compile the common project against vanilla Minecraft only (NeoForm), no loader APIs.
-    neoFormVersion = neo_form_version
+legacyForge {
+    // Compile the common project against vanilla Minecraft only (MCP config), no loader APIs.
+    mcpVersion = mcp_version
 }
 
 dependencies {
-    // Compile stub for NeoForge's ModConfigSpec so Config.java can live in common.
-    // At runtime NeoForge provides it natively and Fabric gets it from Forge Config API Port.
-    compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common-neoforgeapi:${forge_config_api_port_version}"
+    // Compile stub for Forge's ForgeConfigSpec so Config.java can live in common.
+    // At runtime Forge provides it natively and Fabric gets it from Forge Config API Port.
+    compileOnly "fuzs.forgeconfigapiport:forgeconfigapiport-common:${forge_config_api_port_version}"
+
+    // Unit tests (JUnit 5). Run with `./gradlew :common:test`. They live in common, against
+    // plain vanilla: ModDevGradle's legacy plugin has no unitTest {} harness (that is
+    // NeoForge-only), and Forge-patched classes cannot bootstrap outside FML.
+    testImplementation platform("org.junit:junit-bom:5.11.4")
+    testImplementation "org.junit.jupiter:junit-jupiter"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher"
+    testImplementation "fuzs.forgeconfigapiport:forgeconfigapiport-common:${forge_config_api_port_version}"
+}
+
+sourceSets.test {
+    legacyForge.addModdingDependenciesTo(it)
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
 }
 
 configurations {
@@ -29,4 +45,3 @@ artifacts {
     commonJava sourceSets.main.java.sourceDirectories.singleFile
     commonResources sourceSets.main.resources.sourceDirectories.singleFile
 }
-

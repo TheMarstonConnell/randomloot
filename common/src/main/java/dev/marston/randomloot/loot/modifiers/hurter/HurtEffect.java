@@ -17,11 +17,11 @@ import net.minecraft.world.item.ItemStack;
 
 public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 
-	public HurtEffect(String name, String tagname, int power, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+	public HurtEffect(String name, String tagname, int power, int duration, MobEffect effect, ChatFormatting format) {
 		super(name, tagname, power, duration, effect, format);
 	}
 
-	public HurtEffect(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
+	public HurtEffect(String name, String tagname, int duration, MobEffect effect, ChatFormatting format) {
 		this(name, tagname, 0, duration, effect, format);
 	}
 
@@ -32,7 +32,7 @@ public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 
 	@Override
 	public String description() {
-		return "When attacking with tool, apply the " + effect.value().getDisplayName().getString().toLowerCase()
+		return "When attacking with tool, apply the " + effect.getDisplayName().getString().toLowerCase()
 				+ " " + LootUtils.roman(this.power + 1) + " effect to the target for " + this.duration + " seconds.";
 	}
 

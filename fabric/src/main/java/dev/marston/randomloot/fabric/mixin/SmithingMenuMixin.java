@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
  * grant the crafted-trait advancements, both at the head of it, while the inputs are
  * still whole. onTake runs once for a plain click and once for a shift-click (with an
  * empty carried stack, which is why this cannot hang off the result item). No loader
- * has an event for this on 1.21.1; NeoForge carries the same mixin.
+ * has an event for this on 1.21.1; Forge carries the same mixin.
  */
 @Mixin(SmithingMenu.class)
 public abstract class SmithingMenuMixin {

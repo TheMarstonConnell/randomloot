@@ -40,9 +40,7 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	private static final float BASE_CHANCE = 0.03f;
 	private static final float CHANCE_PER_LEVEL = 0.01f;
 
-	private static final ResourceKey<LootTable> LOOT_TABLE = ResourceKey.create(
-			Registries.LOOT_TABLE,
-			ResourceLocation.fromNamespaceAndPath("randomloot", "prospector_drops"));
+	private static final ResourceLocation LOOT_TABLE = new ResourceLocation("randomloot", "prospector_drops");
 
 	public Prospector(String name, int level, int totalFinds) {
 		this.name = name;
@@ -69,7 +67,7 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	}
 
 	private List<ItemStack> getDropsFromLootTable(ServerLevel serverLevel, BlockPos pos) {
-		LootTable lootTable = serverLevel.getServer().reloadableRegistries().getLootTable(LOOT_TABLE);
+		LootTable lootTable = serverLevel.getServer().getLootData().getLootTable(LOOT_TABLE);
 
 		LootParams params = new LootParams.Builder(serverLevel)
 				.withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))

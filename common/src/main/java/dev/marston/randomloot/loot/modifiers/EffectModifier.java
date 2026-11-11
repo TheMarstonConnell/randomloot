@@ -25,12 +25,12 @@ public abstract class EffectModifier extends AbstractModifier {
 	protected static final int MAX_POWER = 4;
 
 	protected final String tagname;
-	protected final Holder<MobEffect> effect;
+	protected final MobEffect effect;
 	protected final int duration;
 	protected final ChatFormatting format;
 	protected int power;
 
-	protected EffectModifier(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
+	protected EffectModifier(String name, String tagname, int power, int duration, MobEffect effect,
 			ChatFormatting format) {
 		this.name = name;
 		this.tagname = tagname;
@@ -47,7 +47,7 @@ public abstract class EffectModifier extends AbstractModifier {
 	 * level would be paid for and change nothing.
 	 */
 	private int maxPower() {
-		return effect.is(MobEffects.BLINDNESS) || effect.is(MobEffects.FIRE_RESISTANCE) ? 0 : MAX_POWER;
+		return effect == MobEffects.BLINDNESS || effect == MobEffects.FIRE_RESISTANCE ? 0 : MAX_POWER;
 	}
 
 	/** The effect instance this modifier applies: duration is in seconds, no particles. */

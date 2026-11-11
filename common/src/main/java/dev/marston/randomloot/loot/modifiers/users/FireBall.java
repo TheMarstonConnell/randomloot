@@ -86,7 +86,7 @@ public class FireBall extends AbstractModifier implements UseModifier {
 		double d1 = 2.5D;
 		Vec3 vec3 = player.getLookAngle();
 
-		LargeFireball largefireball = new LargeFireball(level, player, vec3, 1);
+		LargeFireball largefireball = new LargeFireball(level, player, vec3.x, vec3.y, vec3.z, 1);
 
 		largefireball.setPos(player.getX() + vec3.x * d1, player.getY(0.5D) + 0.5D, player.getZ() + vec3.z * d1);
 

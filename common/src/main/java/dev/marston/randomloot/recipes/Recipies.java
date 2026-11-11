@@ -10,11 +10,11 @@ public final class Recipies {
 
 	public static final Supplier<RecipeSerializer<TextureChangeRecipe>> TEXTURE_CHANGE_SHAPELESS =
 			Services.REG.register(Registries.RECIPE_SERIALIZER, "texture_change_recipe",
-					() -> new SimpleRecipeSerializer<>(TextureChangeRecipe.CODEC, TextureChangeRecipe.STREAM_CODEC));
+					() -> new SimpleCraftingRecipeSerializer<>(TextureChangeRecipe::new));
 
 	public static final Supplier<RecipeSerializer<TraitAdditionRecipe>> TRAIT_ADDITION_RECIPE =
 			Services.REG.register(Registries.RECIPE_SERIALIZER, "trait_change",
-					() -> new SimpleRecipeSerializer<>(TraitAdditionRecipe.CODEC, TraitAdditionRecipe.STREAM_CODEC));
+					TraitAdditionRecipe.Serializer::new);
 
 	/** Classloads the class so the serializer registrations above run. */
 	public static void init() {

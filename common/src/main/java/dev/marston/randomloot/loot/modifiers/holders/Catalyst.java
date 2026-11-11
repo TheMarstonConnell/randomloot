@@ -100,9 +100,9 @@ public class Catalyst extends LeveledModifier implements HoldModifier {
 
 		// Copy first: addEffect below mutates the live active-effects collection.
 		for (MobEffectInstance active : new ArrayList<>(livingHolder.getActiveEffects())) {
-			Holder<MobEffect> effect = active.getEffect();
+			MobEffect effect = active.getEffect();
 
-			if (effect.value().getCategory() != MobEffectCategory.BENEFICIAL) {
+			if (effect.getCategory() != MobEffectCategory.BENEFICIAL) {
 				continue;
 			}
 

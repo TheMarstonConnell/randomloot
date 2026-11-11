@@ -7,8 +7,6 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.ChatFormatting;
-import net.minecraft.core.Holder;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -17,7 +15,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.LivingEntity;
@@ -30,7 +27,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import org.jetbrains.annotations.NotNull;
 
@@ -40,8 +36,8 @@ import java.util.function.Consumer;
 /**
  * The wearable counterpart to {@link LootItem}. One registered item covers all four
  * armor pieces: the piece type lives in the "info" tag (like tool types) and the
- * equipment slot + worn texture live in the per-stack EQUIPPABLE component, kept in
- * sync by {@link LootUtils#updateEquippable(ItemStack)}.
+ * equipment slot + worn texture are derived per stack on demand by
+ * {@link LootUtils#wearableSlot(ItemStack)} and {@link LootUtils#wornSetIndex(ItemStack)}.
  */
 public class LootArmorItem extends LootGearItem {
 
@@ -57,38 +53,39 @@ public class LootArmorItem extends LootGearItem {
 		return GearStats.toughness(LootUtils.getStats(stack), type);
 	}
 
+	// One fixed modifier id per piece, like vanilla's per-slot armor UUIDs.
+	private static final Map<ToolType, UUID> ARMOR_MODIFIER_IDS = Map.of(
+			ToolType.HELMET, UUID.fromString("5f3a1c2e-8b7d-4e61-9a10-000000000001"),
+			ToolType.CHESTPLATE, UUID.fromString("5f3a1c2e-8b7d-4e61-9a10-000000000002"),
+			ToolType.LEGGINGS, UUID.fromString("5f3a1c2e-8b7d-4e61-9a10-000000000003"),
+			ToolType.BOOTS, UUID.fromString("5f3a1c2e-8b7d-4e61-9a10-000000000004"));
+
 	/**
 	 * The piece's defense/toughness attributes, derived from its stats and
-	 * StatsModifier traits. Stored on the stack as the vanilla
-	 * ATTRIBUTE_MODIFIERS component by {@link LootUtils#refreshDerivedComponents}.
+	 * StatsModifier traits. Stamped onto the stack as the vanilla
+	 * {@code AttributeModifiers} NBT by {@link LootUtils#refreshDerivedComponents}.
 	 */
 	@Override
-	public ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
+	public List<GearAttribute> buildAttributeModifiers(ItemStack stack) {
 
 		// No attributes while rolling: hides the tooltip lines until the reveal.
 		if (LootUtils.isRolling(stack)) {
-			return ItemAttributeModifiers.builder().build();
+			return List.of();
 		}
 
 		ToolType tt = LootUtils.getToolType(stack);
 		EquipmentSlot slot = tt.armorSlot();
+		UUID modifierId = ARMOR_MODIFIER_IDS.get(tt);
 
-		if (slot == null) {
-			return ItemAttributeModifiers.builder().build();
+		if (slot == null || modifierId == null) {
+			return List.of();
 		}
 
-		EquipmentSlotGroup group = EquipmentSlotGroup.bySlot(slot);
-		ResourceLocation modifierId = ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID,
-				"armor." + tt.name().toLowerCase(Locale.ROOT));
-
-		return ItemAttributeModifiers.builder()
-				.add(Attributes.ARMOR,
-						new AttributeModifier(modifierId, getDefense(stack, tt), AttributeModifier.Operation.ADD_VALUE),
-						group)
-				.add(Attributes.ARMOR_TOUGHNESS,
-						new AttributeModifier(modifierId, getToughness(stack, tt), AttributeModifier.Operation.ADD_VALUE),
-						group)
-				.build();
+		return List.of(
+				new GearAttribute(Attributes.ARMOR, new AttributeModifier(modifierId, "Armor modifier",
+						getDefense(stack, tt), AttributeModifier.Operation.ADDITION), slot),
+				new GearAttribute(Attributes.ARMOR_TOUGHNESS, new AttributeModifier(modifierId, "Armor toughness",
+						getToughness(stack, tt), AttributeModifier.Operation.ADDITION), slot));
 	}
 
 	/** Hold-style traits run only while the piece is actually worn in its own slot. */
@@ -100,7 +97,7 @@ public class LootArmorItem extends LootGearItem {
 
 	/**
 	 * Right-click to equip. 26.x got this for free from the EQUIPPABLE component;
-	 * on 1.21.1 we swap into the piece's slot by hand (mirroring Equipable's
+	 * on 1.20.1 we swap into the piece's slot by hand (mirroring Equipable's
 	 * swapWithEquipmentSlot, which can't be used - its slot is item-level while
 	 * ours is per-stack).
 	 */
@@ -113,8 +110,7 @@ public class LootArmorItem extends LootGearItem {
 		}
 
 		ItemStack worn = player.getItemBySlot(slot);
-		if ((!net.minecraft.world.item.enchantment.EnchantmentHelper.has(worn,
-				net.minecraft.world.item.enchantment.EnchantmentEffectComponents.PREVENT_ARMOR_CHANGE)
+		if ((!net.minecraft.world.item.enchantment.EnchantmentHelper.hasBindingCurse(worn)
 				|| player.isCreative()) && !ItemStack.matches(stack, worn)) {
 			if (!level.isClientSide()) {
 				player.awardStat(net.minecraft.stats.Stats.ITEM_USED.get(this));
@@ -140,51 +136,51 @@ public class LootArmorItem extends LootGearItem {
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
 	private static final TagKey<Enchantment> ALL_ARMOR_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "all_armor"));
+			new ResourceLocation(RandomLoot.MODID, "all_armor"));
 	private static final TagKey<Enchantment> HELMET_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "helmets"));
+			new ResourceLocation(RandomLoot.MODID, "helmets"));
 	private static final TagKey<Enchantment> CHESTPLATE_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "chestplates"));
+			new ResourceLocation(RandomLoot.MODID, "chestplates"));
 	private static final TagKey<Enchantment> LEGGINGS_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "leggings"));
+			new ResourceLocation(RandomLoot.MODID, "leggings"));
 	private static final TagKey<Enchantment> BOOTS_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "boots"));
+			new ResourceLocation(RandomLoot.MODID, "boots"));
 
 	/**
-	 * Mirrors {@link LootItem#supportsEnchantment}: the single armor item sits in every
-	 * minecraft:enchantable/*_armor tag, so per-piece filtering has to happen here for
-	 * both the enchanting table and the anvil/book path.
+	 * Mirrors {@link LootItem#supportsEnchantmentCommon}: one item covers all four pieces,
+	 * so per-piece filtering has to happen here for both the enchanting table and the
+	 * anvil/book path.
 	 */
 	@Override
-	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
+	public Boolean supportsEnchantmentCommon(ItemStack stack, Enchantment enchantment) {
 		if (LootUtils.isRolling(stack)) {
 			return false;
 		}
 
 		ToolType type = LootUtils.getToolType(stack);
 
-		if (enchantment.is(ALL_ARMOR_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, ALL_ARMOR_ENCHANTS)) {
 			return type.isArmor();
 		}
 
-		if (enchantment.is(HELMET_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, HELMET_ENCHANTS)) {
 			return type == ToolType.HELMET;
 		}
 
-		if (enchantment.is(CHESTPLATE_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, CHESTPLATE_ENCHANTS)) {
 			return type == ToolType.CHESTPLATE;
 		}
 
-		if (enchantment.is(LEGGINGS_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, LEGGINGS_ENCHANTS)) {
 			return type == ToolType.LEGGINGS;
 		}
 
-		if (enchantment.is(BOOTS_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, BOOTS_ENCHANTS)) {
 			return type == ToolType.BOOTS;
 		}
 
 		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
-		// supported-items definition; null = defer to the loader's default check.
+		// EnchantmentCategory; null = defer to the vanilla check.
 		return null;
 	}
 

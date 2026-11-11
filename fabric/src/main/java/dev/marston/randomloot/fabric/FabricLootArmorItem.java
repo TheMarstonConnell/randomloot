@@ -13,9 +13,9 @@ public class FabricLootArmorItem extends LootArmorItem {
         super(p);
     }
 
-    /** tool_mod changes on nearly every use (XP); it alone should not replay the re-equip animation. */
+    /** The mod's NBT changes on nearly every use (XP); it alone should not replay the re-equip animation. */
     @Override
-    public boolean allowComponentsUpdateAnimation(Player player, InteractionHand hand, ItemStack oldStack,
+    public boolean allowNbtUpdateAnimation(Player player, InteractionHand hand, ItemStack oldStack,
             ItemStack newStack) {
         return !LootGearItem.sameApartFromToolMod(oldStack, newStack);
     }

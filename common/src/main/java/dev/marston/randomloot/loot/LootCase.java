@@ -4,7 +4,7 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.core.Direction;
 import net.minecraft.core.Position;
-import net.minecraft.core.dispenser.BlockSource;
+import net.minecraft.core.BlockSource;
 import net.minecraft.core.dispenser.DefaultDispenseItemBehavior;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerPlayer;
@@ -25,12 +25,12 @@ public class LootCase extends Item {
 	public static void initDispenser() {
 		DispenserBlock.registerBehavior(ModItems.CASE.get(), new DefaultDispenseItemBehavior() {
 			public @NotNull ItemStack execute(@NotNull BlockSource source, @NotNull ItemStack stack) {
-				Direction direction = source.state().getValue(DispenserBlock.FACING);
+				Direction direction = source.getBlockState().getValue(DispenserBlock.FACING);
 				Position position = DispenserBlock.getDispensePosition(source);
 
-				ItemStack tool = LootUtils.genTool(null, source.level(), source.pos());
+				ItemStack tool = LootUtils.genTool(null, source.getLevel(), source.getPos());
 
-				spawnTool(source.level(), tool, 6, direction, position);
+				spawnTool(source.getLevel(), tool, 6, direction, position);
 
 				return ItemStack.EMPTY;
 			}

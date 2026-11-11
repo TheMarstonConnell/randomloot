@@ -1,8 +1,6 @@
 package dev.marston.randomloot.items;
 
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.component.ModDataComponents;
-import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootCase;
 import dev.marston.randomloot.loot.ModTemplate;
@@ -12,21 +10,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.function.Supplier;
 
 public class ModItems {
 
     // Datapack-editable anvil repair materials for Random Tools; see
-    // data/randomloot/tags/item/tool_repair_materials.json (default: diamond).
+    // data/randomloot/tags/items/tool_repair_materials.json (default: diamond).
     public static final TagKey<Item> TOOL_REPAIR_MATERIALS = TagKey.create(Registries.ITEM,
-            ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "tool_repair_materials"));
+            new ResourceLocation(RandomLoot.MODID, "tool_repair_materials"));
 
     // Datapack-editable anvil repair materials for Random Armor; see
-    // data/randomloot/tags/item/armor_repair_materials.json (default: diamond).
+    // data/randomloot/tags/items/armor_repair_materials.json (default: diamond).
     public static final TagKey<Item> ARMOR_REPAIR_MATERIALS = TagKey.create(Registries.ITEM,
-            ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "armor_repair_materials"));
+            new ResourceLocation(RandomLoot.MODID, "armor_repair_materials"));
 
     public static Supplier<Item> TOOL = Services.REG.registerItem("tool",
             p -> Services.PLATFORM.createLootItem(gearProps(p, TOOL_REPAIR_MATERIALS)));
@@ -40,12 +37,12 @@ public class ModItems {
     public static Supplier<Item> ESSENCE = Services.REG.registerItem("essence", Item::new);
 
     /**
-     * Shared properties for both gear items: empty trait component. Enchantability and
-     * tag-based repair live on LootGearItem (1.21.1 has no Properties.enchantable /
-     * repairable; the item methods are the API).
+     * Shared properties for both gear items. Nothing to add on 1.20.1: trait state is
+     * plain stack NBT, and enchantability and tag-based repair live on LootGearItem (no
+     * Properties.enchantable / repairable; the item methods are the API).
      */
     private static Item.Properties gearProps(Item.Properties p, TagKey<Item> repairMaterials) {
-        return p.component(ModDataComponents.TOOL_MODIFIER.get(), new ToolModifier(new HashMap<>()));
+        return p;
     }
 
     /** Classloads the class so the item registrations above run. */

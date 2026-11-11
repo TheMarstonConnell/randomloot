@@ -30,7 +30,7 @@ public final class LootArmorRendering {
 	public static ResourceLocation texture(ItemStack stack, EquipmentSlot slot) {
 		int set = LootUtils.wornSetIndex(stack);
 		String folder = slot == EquipmentSlot.LEGS ? "humanoid_leggings" : "humanoid";
-		return ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID,
+		return new ResourceLocation(RandomLoot.MODID,
 				"textures/entity/equipment/" + folder + "/set" + set + ".png");
 	}
 
@@ -76,7 +76,7 @@ public final class LootArmorRendering {
 		setPartVisibility(armorModel, slot);
 
 		VertexConsumer vc = ItemRenderer.getArmorFoilBuffer(buffers,
-				RenderType.armorCutoutNoCull(texture(stack, slot)), stack.hasFoil());
-		armorModel.renderToBuffer(pose, vc, light, OverlayTexture.NO_OVERLAY, -1);
+				RenderType.armorCutoutNoCull(texture(stack, slot)), false, stack.hasFoil());
+		armorModel.renderToBuffer(pose, vc, light, OverlayTexture.NO_OVERLAY, 1.0F, 1.0F, 1.0F, 1.0F);
 	}
 }

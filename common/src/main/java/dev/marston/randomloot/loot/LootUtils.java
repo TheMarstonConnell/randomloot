@@ -7,8 +7,6 @@ import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
-import dev.marston.randomloot.component.ModDataComponents;
-import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
@@ -20,11 +18,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.core.component.DataComponentType;
-import net.minecraft.core.component.DataComponents;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.tags.TagKey;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
@@ -101,12 +100,12 @@ public class LootUtils {
 		CompoundTag tag = new CompoundTag();
 		tag.putLong("endTime", revealTime);
 
-		Component name = stack.get(DataComponents.CUSTOM_NAME);
-		if (name != null) {
+		if (stack.hasCustomHoverName()) {
+			Component name = stack.getHoverName();
 			tag.putString("name", name.getString());
 			TextColor color = name.getStyle().getColor();
 			tag.putString("nameColor", color != null ? color.serialize() : "#FFFFFF");
-			stack.remove(DataComponents.CUSTOM_NAME);
+			stack.resetHoverName();
 		}
 
 		GearTags.write(stack, GearTags.ROLLING, tag);
@@ -128,15 +127,33 @@ public class LootUtils {
 	/**
 	 * The mod's per-type/per-piece enchant gate for either gear item, or null when
 	 * the stack isn't loot gear / the enchant isn't in a randomloot group tag -
-	 * callers fall back to the loader's default check. Single dispatch point for
-	 * Fabric's ALLOW_ENCHANTING event and NeoForge's supportsEnchantment overrides.
+	 * callers fall back to vanilla's EnchantmentCategory check. Single dispatch point
+	 * for both loaders' enchanting-table and anvil hooks.
 	 */
 	@Nullable
-	public static Boolean gearEnchantGate(ItemStack stack, Holder<Enchantment> enchantment) {
+	public static Boolean gearEnchantGate(ItemStack stack, Enchantment enchantment) {
 		if (stack.getItem() instanceof LootGearItem gear) {
 			return gear.supportsEnchantmentCommon(stack, enchantment);
 		}
 		return null;
+	}
+
+	/** Whether this gear accepts the enchantment: the gate above, else vanilla's category. */
+	public static boolean gearAcceptsEnchantment(ItemStack stack, Enchantment enchantment) {
+		Boolean gate = gearEnchantGate(stack, enchantment);
+		return gate != null ? gate : enchantment.category.canEnchant(stack.getItem());
+	}
+
+	/**
+	 * Tag membership for an enchantment. 1.20.1 enchantments are plain registry objects
+	 * rather than holders, so this resolves the holder first; the tags themselves load
+	 * from {@code data/<ns>/tags/enchantment/} like any other registry's.
+	 */
+	public static boolean enchantIn(Enchantment enchantment, TagKey<Enchantment> tag) {
+		return BuiltInRegistries.ENCHANTMENT.getResourceKey(enchantment)
+				.flatMap(BuiltInRegistries.ENCHANTMENT::getHolder)
+				.map(holder -> holder.is(tag))
+				.orElse(false);
 	}
 
 	/** Game time at which a rolling item settles; 0 when not rolling. */
@@ -157,32 +174,36 @@ public class LootUtils {
 	}
 
 	/**
-	 * Rebuilds the stack's derived vanilla components - attributes
-	 * (attack/armor) and max damage - from its stats, type and traits. Called
-	 * from every mutator that changes one of those inputs. Both loaders read
-	 * the plain components, replacing NeoForge's dynamic item-method
-	 * extensions.
+	 * Rebuilds the stack's derived stats - attributes (attack/armor) and max damage -
+	 * from its goodness, type and traits. Called from every mutator that changes one of
+	 * those inputs ({@link GearTags#mutate} does it for you).
+	 *
+	 * <p>On 1.21.1+ these are the ATTRIBUTE_MODIFIERS and MAX_DAMAGE data components.
+	 * 1.20.1 has neither: attributes go in the vanilla {@code AttributeModifiers} stack
+	 * NBT, which both loaders read natively, and max damage is cached under
+	 * {@link GearTags#DERIVED} for {@link LootGearItem#maxDamageOf}.
 	 */
 	public static void refreshDerivedComponents(ItemStack stack) {
 		if (stack.getItem() instanceof LootGearItem gear) {
-			stack.set(DataComponents.ATTRIBUTE_MODIFIERS, gear.buildAttributeModifiers(stack));
-			stack.set(DataComponents.MAX_DAMAGE, LootGearItem.computeMaxDamage(stack));
+			stack.removeTagKey("AttributeModifiers");
+			for (LootGearItem.GearAttribute attr : gear.buildAttributeModifiers(stack)) {
+				stack.addAttributeModifier(attr.attribute(), attr.modifier(), attr.slot());
+			}
+
+			CompoundTag derived = new CompoundTag();
+			derived.putInt("maxDamage", LootGearItem.computeMaxDamage(stack));
+			GearTags.write(stack, GearTags.DERIVED, derived);
 		}
 	}
 
 	/**
-	 * One-time migration for stacks from before attributes/durability lived in
-	 * data components: if the stack has never had the components stamped on
-	 * (no patch entry), derive them now. Called from inventoryTick.
+	 * Stamps a stack that has never had its derived stats written (no
+	 * {@link GearTags#DERIVED} marker). Called from inventoryTick.
 	 */
 	public static void migrateDerivedComponents(ItemStack stack) {
-		// Plain loop: this runs from inventoryTick for every loot item, every tick.
-		for (Map.Entry<DataComponentType<?>, Optional<?>> entry : stack.getComponentsPatch().entrySet()) {
-			if (entry.getKey() == DataComponents.ATTRIBUTE_MODIFIERS) {
-				return;
-			}
+		if (!GearTags.has(stack, GearTags.DERIVED)) {
+			refreshDerivedComponents(stack);
 		}
-		refreshDerivedComponents(stack);
 	}
 
 	/**
@@ -257,34 +278,32 @@ public class LootUtils {
 		ItemStack copy = new ItemStack(stack.getItem());
 
 		// Preserve the tool's durability so texture/trait changes don't repair it.
-		copy.set(DataComponents.DAMAGE, stack.get(DataComponents.DAMAGE));
+		copy.setDamageValue(stack.getDamageValue());
 
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
+		CompoundTag root = stack.getTagElement(GearTags.ROOT);
+		if (root == null) {
 			return copy;
 		}
 
-		// Build the new map first, then create ToolModifier with it
-		Map<String, CompoundTag> newTags = new HashMap<>();
-		Map<String, CompoundTag> tags = mods.getTags();
-		tags.forEach((s, compoundTag) -> {
-			newTags.put(s, compoundTag.copy());
-		});
+		copy.getOrCreateTag().put(GearTags.ROOT, root.copy());
 
-		ToolModifier copyMods = new ToolModifier(newTags);
-		copy.set(ModDataComponents.TOOL_MODIFIER.get(), copyMods);
-
-		copy.set(DataComponents.CUSTOM_NAME, stack.get(DataComponents.CUSTOM_NAME));
+		if (stack.hasCustomHoverName()) {
+			copy.setHoverName(stack.getHoverName());
+		}
 
 		// Smithing and Essence-retexturing must not strip table/anvil enchantments.
-		copy.set(DataComponents.ENCHANTMENTS, stack.get(DataComponents.ENCHANTMENTS));
-		copy.set(DataComponents.REPAIR_COST, stack.get(DataComponents.REPAIR_COST));
+		CompoundTag source = stack.getTag();
+		if (source != null && source.contains("Enchantments", Tag.TAG_LIST)) {
+			copy.getOrCreateTag().put("Enchantments", source.get("Enchantments").copy());
+		}
+		if (source != null && source.contains("RepairCost", Tag.TAG_ANY_NUMERIC)) {
+			copy.setRepairCost(stack.getBaseRepairCost());
+		}
 
-		// Armor carries its slot + worn-texture in the per-stack EQUIPPABLE component.
 		updateEquippable(copy);
 
 		// The copy's tags were set wholesale rather than through GearTags.mutate, so
-		// stamp the derived components here. Without this the recipe output carried
+		// stamp the derived stats here. Without this the recipe output carried
 		// default attributes until its first inventoryTick.
 		refreshDerivedComponents(copy);
 
@@ -336,7 +355,7 @@ public class LootUtils {
 		}
 
 		if (amount > 0) {
-			stack.hurtAndBreak(amount, holder, slot);
+			stack.hurtAndBreak(amount, holder, broken -> broken.broadcastBreakEvent(slot));
 		}
 	}
 
@@ -357,12 +376,12 @@ public class LootUtils {
 
 		Style style = Style.EMPTY;
 		style = style.withItalic(false);
-		DataResult<TextColor> col = TextColor.parseColor(color);
-		style = style.withColor(col.getOrThrow());
+		TextColor col = TextColor.parseColor(color);
+		style = style.withColor(col != null ? col : TextColor.fromRgb(0xFFFFFF));
 
 		comp = comp.withStyle(style);
 
-		stack.set(DataComponents.CUSTOM_NAME, comp);
+		stack.setHoverName(comp);
 	}
 
 	public static void setItemLore(ItemStack stack, String lore) {

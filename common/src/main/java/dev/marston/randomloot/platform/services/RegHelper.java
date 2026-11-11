@@ -23,5 +23,12 @@ public interface RegHelper {
      * wildcarded registries (RecipeSerializer&lt;?&gt;, DataComponentType&lt;?&gt;, ...)
      * get back a typed supplier without casts.
      */
+    /**
+     * Registers an advancement criterion. 1.20.1 has no trigger registry and vanilla's
+     * {@code CriteriaTriggers.register} is private: Forge widens it with its access
+     * transformer, Fabric exposes it through {@code CriterionRegistry}.
+     */
+    <T extends net.minecraft.advancements.CriterionTrigger<?>> T registerCriterion(T trigger);
+
     <T, R extends T> Supplier<R> register(ResourceKey<? extends Registry<T>> registry, String name, Supplier<R> value);
 }

@@ -8,7 +8,7 @@ import java.util.Set;
  *
  * <p>Each loader's event shim calls {@link #bind} as it registers, and the
  * {@code loader_hooks_all_bound} gametest asserts nothing is {@link #missing()}. Two
- * adapters make this seam real: NeoForge binds from {@code NeoForgeEvents}, Fabric from
+ * adapters make this seam real: NeoForge binds from {@code ForgeEvents}, Fabric from
  * {@code RandomLootFabric}.
  *
  * <p>This checks that a hook was <em>declared</em> wired, not that the wiring works - a

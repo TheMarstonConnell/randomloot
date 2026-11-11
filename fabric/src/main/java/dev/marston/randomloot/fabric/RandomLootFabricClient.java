@@ -23,13 +23,13 @@ public class RandomLootFabricClient implements ClientModInitializer {
     public void onInitializeClient() {
         // The randomloot:cosmetic model property drives per-stack texture selection
         // via classic model overrides (26.x uses range_dispatch + a codec'd property).
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "cosmetic");
+        ResourceLocation id = new ResourceLocation(RandomLoot.MODID, "cosmetic");
         ItemProperties.register(ModItems.TOOL.get(), id,
                 (stack, level, entity, seed) -> LootUtils.modelTexture(stack, level, seed));
         ItemProperties.register(ModItems.ARMOR.get(), id,
                 (stack, level, entity, seed) -> LootUtils.modelTexture(stack, level, seed));
 
-        // Worn Random Armor rendering (NeoForge uses a custom render layer instead).
+        // Worn Random Armor rendering (Forge uses a custom render layer instead).
         ArmorRenderer.register((matrices, buffers, stack, entity, slot, light, contextModel) -> {
             if (LootUtils.wearableSlot(stack) != slot) {
                 return;

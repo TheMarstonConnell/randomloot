@@ -35,14 +35,6 @@ public interface IPlatformHelper {
     boolean canHarvestBlock(BlockState state, Level level, BlockPos pos, Player player);
 
     /**
-     * The level behind a tooltip context, if the loader exposes one (NeoForge
-     * patches TooltipContext with level(); on Fabric only the client can
-     * supply it). Tooltip code must tolerate null.
-     */
-    @Nullable
-    Level tooltipLevel(Item.TooltipContext ctx);
-
-    /**
      * The state a block turns into when the given tool action is applied
      * (axe strip/scrape/wax-off, shovel flatten), or null when the action
      * does not apply. NeoForge routes through getToolModifiedState so other

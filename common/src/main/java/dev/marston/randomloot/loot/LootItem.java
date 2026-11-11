@@ -15,7 +15,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
-import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -24,7 +24,6 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -33,7 +32,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.inventory.SmithingMenu;
-import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -111,7 +109,12 @@ public class LootItem extends LootGearItem {
 	}
 
 
-	@Override
+	/**
+	 * Stack-aware correct-tool check. Vanilla 1.20.1 only has the stack-less
+	 * {@code Item#isCorrectToolForDrops(BlockState)}, so each loader subclass routes its
+	 * own stack-aware hook here (Forge {@code isCorrectToolForDrops(ItemStack, BlockState)},
+	 * Fabric {@code isSuitableFor(ItemStack, BlockState)}).
+	 */
 	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
 
 		if (LootUtils.isRolling(stack)) {
@@ -137,17 +140,18 @@ public class LootItem extends LootGearItem {
 
 
 	/**
-	 * The stack's attack attributes, derived from its stats. Stored on the
-	 * stack as the vanilla ATTRIBUTE_MODIFIERS component by
-	 * {@link LootUtils#refreshDerivedComponents} whenever the inputs change.
+	 * The stack's attack attributes, derived from its stats. Stamped onto the stack as
+	 * the vanilla {@code AttributeModifiers} NBT by
+	 * {@link LootUtils#refreshDerivedComponents} whenever the inputs change. The base
+	 * attack UUIDs are what make the tooltip render them as green item stats.
 	 */
 	@Override
-	public ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
+	public List<GearAttribute> buildAttributeModifiers(ItemStack stack) {
 
 		// No attributes while rolling: hides the tooltip lines and keeps the
 		// undecided tool from working as a weapon.
 		if (LootUtils.isRolling(stack)) {
-			return ItemAttributeModifiers.builder().build();
+			return List.of();
 		}
 
 		ToolType tt = LootUtils.getToolType(stack);
@@ -155,10 +159,11 @@ public class LootItem extends LootGearItem {
 		float attack = getAttackDamage(stack, tt);
 		float speed = getAttackSpeed(stack, tt);
 
-		return ItemAttributeModifiers.builder().add(
-				Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, attack, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
-				.add(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_ID, speed, AttributeModifier.Operation.ADD_VALUE),
-						EquipmentSlotGroup.MAINHAND).build();
+		return List.of(
+				new GearAttribute(Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_UUID,
+						"Weapon modifier", attack, AttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND),
+				new GearAttribute(Attributes.ATTACK_SPEED, new AttributeModifier(Item.BASE_ATTACK_SPEED_UUID,
+						"Weapon modifier", speed, AttributeModifier.Operation.ADDITION), EquipmentSlot.MAINHAND));
 	}
 
 	/** Loader-neutral form of NeoForge's canPerformAction; loader subclasses hook it into their APIs. */
@@ -481,48 +486,44 @@ public class LootItem extends LootGearItem {
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
 	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
+			new ResourceLocation(RandomLoot.MODID, "all_tools"));
 	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
+			new ResourceLocation(RandomLoot.MODID, "mining_tools"));
 	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
+			new ResourceLocation(RandomLoot.MODID, "weapons"));
 	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
+			new ResourceLocation(RandomLoot.MODID, "swords"));
 
 	/**
-	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:
-	 * the enchanting table consults isPrimaryItemFor, but the anvil/book path checks
-	 * supportsEnchantment, whose default just reads the enchantment's supported-items tag.
-	 * Since the single tool item sits in every minecraft:enchantable/* tag (it covers all
-	 * four tool types), that default let an efficiency book land on a sword. The default
-	 * isPrimaryItemFor delegates here, so the table stays filtered too.
+	 * The per-tool-type enchant filter, shared by the enchanting table and the anvil/book
+	 * path on both loaders (see {@link LootUtils#gearEnchantGate}).
 	 */
 	@Override
-	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
+	public Boolean supportsEnchantmentCommon(ItemStack stack, Enchantment enchantment) {
 		if (LootUtils.isRolling(stack)) {
 			return false;
 		}
 
 		ToolType type = LootUtils.getToolType(stack);
 
-		if (enchantment.is(ALL_TOOL_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, ALL_TOOL_ENCHANTS)) {
 			return true;
 		}
 
-		if (enchantment.is(MINING_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, MINING_ENCHANTS)) {
 			return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
 		}
 
-		if (enchantment.is(WEAPON_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, WEAPON_ENCHANTS)) {
 			return type == ToolType.SWORD || type == ToolType.AXE;
 		}
 
-		if (enchantment.is(SWORD_ENCHANTS)) {
+		if (LootUtils.enchantIn(enchantment, SWORD_ENCHANTS)) {
 			return type == ToolType.SWORD;
 		}
 
 		// Enchantments in none of the randomloot tags (e.g. modded ones) follow their own
-		// supported-items definition; null = defer to the loader's default check.
+		// EnchantmentCategory; null = defer to the vanilla check.
 		return null;
 	}
 

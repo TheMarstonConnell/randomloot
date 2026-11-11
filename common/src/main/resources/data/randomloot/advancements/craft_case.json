@@ -1,0 +1,28 @@
+{
+  "parent": "randomloot:salvage_gear",
+  "criteria": {
+    "crafted_case": {
+      "conditions": {
+        "recipe_id": "randomloot:case_from_essence"
+      },
+      "trigger": "minecraft:recipe_crafted"
+    }
+  },
+  "display": {
+    "description": {
+      "translate": "advancements.randomloot.craft_case.description"
+    },
+    "icon": {
+      "item": "randomloot:case"
+    },
+    "title": {
+      "translate": "advancements.randomloot.craft_case.title"
+    }
+  },
+  "requirements": [
+    [
+      "crafted_case"
+    ]
+  ],
+  "sends_telemetry_event": false
+}

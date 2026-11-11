@@ -1,21 +1,26 @@
 package dev.marston.randomloot.fabric.mixin;
 
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
-import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.LivingEntity;
+import dev.marston.randomloot.loot.LootGearItem;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/** Fabric stand-in for NeoForge's ArmorHurtEvent (Unbreaking's chance to skip armor durability). */
+/**
+ * Per-stack max durability for Random Loot gear. Vanilla 1.20.1 answers
+ * {@code ItemStack.getMaxDamage()} from a per-item constant; Forge has a stack-aware
+ * {@code Item#getMaxDamage(ItemStack)} to override, Fabric has nothing, hence this.
+ * (26.x and 1.21.1 carry the value in the MAX_DAMAGE data component instead.)
+ */
 @Mixin(ItemStack.class)
 public abstract class ItemStackMixin {
 
-    @ModifyVariable(method = "hurtAndBreak(ILnet/minecraft/world/entity/LivingEntity;Lnet/minecraft/world/entity/EquipmentSlot;)V",
-            at = @At("HEAD"), argsOnly = true)
-    private int randomloot$armorUnbreaking(int amount, int amountArg, LivingEntity owner, EquipmentSlot slot) {
+    @Inject(method = "getMaxDamage", at = @At("HEAD"), cancellable = true)
+    private void randomloot$gearMaxDamage(CallbackInfoReturnable<Integer> cir) {
         ItemStack self = (ItemStack) (Object) this;
-        return (int) ArmorDispatcher.onArmorHurt(owner, self, slot, amount);
+        if (self.getItem() instanceof LootGearItem) {
+            cir.setReturnValue(LootGearItem.maxDamageOf(self));
+        }
     }
 }

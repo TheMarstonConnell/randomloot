@@ -20,17 +20,22 @@ jobs:
 
     steps:
     - uses: actions/checkout@v7
-    - name: Set up JDK 25
+    # Gradle runs on 21 (fabric-loom needs a newer JDK than Minecraft 1.20.1's Java
+    # 17); 17 is installed for the Gradle toolchain that compiles the mod. The last
+    # version listed is the default.
+    - name: Set up JDK 17 + 21
       uses: actions/setup-java@v5
       with:
-        java-version: '25'
+        java-version: |
+          17
+          21
         distribution: 'temurin'
     - name: Setup Gradle
       uses: gradle/actions/setup-gradle@v6
     - name: Build and run unit tests
       run: ./gradlew build
-    - name: Run in-world gametests (NeoForge)
-      run: ./gradlew :neoforge:runGameTestServer
+    - name: Run in-world gametests (Forge)
+      run: ./gradlew :forge:runGameTestServer
     - name: Run in-world gametests (Fabric)
       run: ./gradlew :fabric:runGametest
     - name: Upload test reports
@@ -39,6 +44,6 @@ jobs:
       with:
         name: test-reports
         path: |
-          neoforge/build/reports/tests/
-          neoforge/run/logs/
+          common/build/reports/tests/
+          forge/run/logs/
           fabric/runs/gametest/logs/

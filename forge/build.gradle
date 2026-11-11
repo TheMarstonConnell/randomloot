@@ -1,0 +1,49 @@
+plugins {
+    id 'multiloader-loader'
+    id 'net.neoforged.moddev.legacyforge'
+}
+
+legacyForge {
+    version = "${minecraft_version}-${forge_version}"
+
+    runs {
+        configureEach {
+            // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
+            systemProperty 'forge.enabledGameTestNamespaces', mod_id
+            logLevel = org.slf4j.event.Level.DEBUG
+        }
+        client {
+            client()
+            // Disable the narrator
+            systemProperty 'narrator.enabled', 'false'
+        }
+        server {
+            server()
+            programArgument '--nogui'
+        }
+        // This run config launches GameTestServer and runs all registered gametests, then exits.
+        gameTestServer {
+            type = "gameTestServer"
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet(sourceSets.main)
+        }
+    }
+}
+
+// Legacy Forge runs on SRG names: mixins need a refmap, and the jar is reobfuscated.
+mixin {
+    add sourceSets.main, "${mod_id}.refmap.json"
+    config "${mod_id}.forge.mixins.json"
+}
+
+dependencies {
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+
+jar {
+    manifest.attributes(['MixinConfigs': "${mod_id}.forge.mixins.json"])
+}

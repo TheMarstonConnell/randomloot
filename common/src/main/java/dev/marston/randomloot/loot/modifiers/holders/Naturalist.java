@@ -31,11 +31,11 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
 
     private static final int SEARCH_RADIUS = 5;
 
-    // Datapack-editable; see data/randomloot/tags/block/naturalist_targets.json (crops and
+    // Datapack-editable; see data/randomloot/tags/blocks/naturalist_targets.json (crops and
     // saplings). Without it every bonemealable block was a candidate, and around any lawn
     // that is almost entirely grass blocks: the trait grew tall grass instead of crops.
     private static final TagKey<Block> TARGETS = TagKey.create(Registries.BLOCK,
-            ResourceLocation.fromNamespaceAndPath(RandomLoot.MODID, "naturalist_targets"));
+            new ResourceLocation(RandomLoot.MODID, "naturalist_targets"));
 
     public Naturalist() {
         this("Naturalist", 1);
@@ -119,7 +119,7 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
                     Block block = state.getBlock();
 
                     if (state.is(TARGETS) && block instanceof BonemealableBlock bonemealable) {
-                        if (bonemealable.isValidBonemealTarget(level, checkPos, state)) {
+                        if (bonemealable.isValidBonemealTarget(level, checkPos, state, level.isClientSide())) {
                             bonemealableBlocks.add(checkPos);
                         }
                     }

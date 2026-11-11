@@ -15,10 +15,8 @@ import net.minecraft.gametest.framework.GameTestHelper;
  * Fabric registration for the shared gametest bodies in {@link GameTestBodies}.
  * Run headless with {@code ./gradlew :fabric:runGametest}.
  *
- * <p>The two enchant-filtering tests are NeoForge-only (they exercise the
- * supportsEnchantment item extension; Fabric wires the same common logic through
- * EnchantmentEvents.ALLOW_ENCHANTING), as is loot_modifiers_load (GLMs are a
- * NeoForge system - Fabric injects loot through LootTableEvents.MODIFY instead).
+ * <p>Only loot_modifiers_load is Forge-only (GLMs are a Forge system - Fabric injects
+ * loot through LootTableEvents.MODIFY instead).
  */
 public class RandomLootFabricGameTests implements FabricGameTest {
 
@@ -316,5 +314,20 @@ public class RandomLootFabricGameTests implements FabricGameTest {
                 "traits should default to enabled");
 
         helper.succeed();
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void enchantTypeFiltering(GameTestHelper helper) {
+        GameTestBodies.enchantTypeFiltering(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void armorEnchantFiltering(GameTestHelper helper) {
+        GameTestBodies.armorEnchantFiltering(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void anvilBookRespectsEnchantGate(GameTestHelper helper) {
+        GameTestBodies.anvilBookRespectsEnchantGate(helper);
     }
 }

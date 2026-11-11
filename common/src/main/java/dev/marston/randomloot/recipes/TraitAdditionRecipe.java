@@ -1,9 +1,7 @@
 package dev.marston.randomloot.recipes;
 
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.MapCodec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
-import java.util.Optional;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
@@ -14,32 +12,34 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.TraitEligibility;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import net.minecraft.core.Holder;
-import net.minecraft.network.RegistryFriendlyByteBuf;
-import net.minecraft.network.codec.ByteBufCodecs;
-import net.minecraft.network.codec.StreamCodec;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.ExtraCodecs;
+import net.minecraft.util.GsonHelper;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.RecipeCraftingHolder;
+import net.minecraft.world.inventory.RecipeHolder;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.core.HolderLookup;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.SmithingRecipe;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 public class TraitAdditionRecipe implements SmithingRecipe {
-	final Holder<Item> additionItem;
+	private final ResourceLocation id;
+	final Item additionItem;
 	/** How many of {@link #additionItem} the add template needs and consumes. */
 	final int additionCount;
-	final Optional<Ingredient> template;
-	final Optional<Ingredient> base;
+	final Ingredient template;
+	final Ingredient base;
 	final String trait;
 	/**
 	 * The seed of the server world this recipe last matched in, which is the world its
@@ -48,52 +48,71 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	@Nullable
 	private Long worldSeed;
 
-	/** The recipe JSON's {@code "item"} object: the addition and how many of it adding costs. */
-	private record Addition(Holder<Item> item, int count) {
+	/**
+	 * The three smithing slots by name. 1.21.1+ hand recipes a SmithingRecipeInput; on
+	 * 1.20.1 a recipe gets the menu's raw input Container, so this wraps slots 0-2.
+	 */
+	public record Input(ItemStack template, ItemStack base, ItemStack addition) {
+		public static Input of(Container container) {
+			return new Input(container.getItem(SmithingMenu.TEMPLATE_SLOT), container.getItem(SmithingMenu.BASE_SLOT),
+					container.getItem(SmithingMenu.ADDITIONAL_SLOT));
+		}
+
+		/** A throwaway container holding these stacks in smithing-slot order. */
+		public Container toContainer() {
+			return new SimpleContainer(template, base, addition);
+		}
 	}
 
-	// Reads {"id": <item>, "count": <int>} by item id, which (unlike ItemStack.CODEC) does
-	// NOT require item data-components to be bound. Recipes are parsed during datapack load,
-	// before components are bound, so ItemStack.CODEC made every trait recipe fail to load with
-	// "Item ... does not have components yet" -- which left the tool unplaceable in the smithing
-	// table (no recipe contributed it to the SMITHING_BASE set). The same ordering is why the
-	// count is only range-checked here and not against the item's max stack size (a component);
-	// the trait_recipe_counts_load gametest covers that instead.
-	private static final Codec<Addition> ADDITION_CODEC = RecordCodecBuilder.create(
-			i -> i.group(
-							BuiltInRegistries.ITEM.holderByNameCodec().fieldOf("id").forGetter(Addition::item),
-							ExtraCodecs.intRange(1, Item.ABSOLUTE_MAX_STACK_SIZE).optionalFieldOf("count", 1)
-									.forGetter(Addition::count)
-					)
-					.apply(i, Addition::new)
-	);
+	/**
+	 * 1.20.1 recipe serializers read JSON and the network buffer by hand (the codec form
+	 * arrived in 1.20.2). The JSON shape is the same as on the newer branches:
+	 * {@code {"item": {"id": <item>, "count": <int>}, "trait": <trait>}}.
+	 */
+	public static final class Serializer implements RecipeSerializer<TraitAdditionRecipe> {
+		@Override
+		public TraitAdditionRecipe fromJson(ResourceLocation id, JsonObject json) {
+			JsonObject addition = GsonHelper.getAsJsonObject(json, "item");
+			ResourceLocation itemId = new ResourceLocation(GsonHelper.getAsString(addition, "id"));
+			Item item = BuiltInRegistries.ITEM.getOptional(itemId)
+					.orElseThrow(() -> new JsonSyntaxException("Unknown item '" + itemId + "'"));
+			int count = GsonHelper.getAsInt(addition, "count", 1);
+			if (count < 1 || count > 64) {
+				throw new JsonSyntaxException("Trait recipe count must be 1-64, got " + count);
+			}
+			return new TraitAdditionRecipe(id, item, count, GsonHelper.getAsString(json, "trait"));
+		}
 
-	public static final MapCodec<TraitAdditionRecipe> CODEC = RecordCodecBuilder.mapCodec(
-			builder -> builder.group(
-							ADDITION_CODEC.fieldOf("item").forGetter(g -> new Addition(g.additionItem, g.additionCount)),
-							Codec.STRING.fieldOf("trait").forGetter(g -> g.trait)
-					)
-					.apply(builder, (addition, trait) -> new TraitAdditionRecipe(addition.item(), addition.count(), trait))
-	);
-	public static final StreamCodec<RegistryFriendlyByteBuf, TraitAdditionRecipe> STREAM_CODEC = StreamCodec.composite(
-			ByteBufCodecs.holderRegistry(Registries.ITEM),
-			c -> c.additionItem,
-			ByteBufCodecs.VAR_INT,
-			c -> c.additionCount,
-			ByteBufCodecs.STRING_UTF8,
-			c -> c.trait,
-			TraitAdditionRecipe::new
-	);
+		@Override
+		public TraitAdditionRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buf) {
+			Item item = buf.readById(BuiltInRegistries.ITEM);
+			int count = buf.readVarInt();
+			return new TraitAdditionRecipe(id, item, count, buf.readUtf());
+		}
 
-	public TraitAdditionRecipe(Holder<Item> additionItem, int additionCount, String traitIn) {
+		@Override
+		public void toNetwork(FriendlyByteBuf buf, TraitAdditionRecipe recipe) {
+			buf.writeId(BuiltInRegistries.ITEM, recipe.additionItem);
+			buf.writeVarInt(recipe.additionCount);
+			buf.writeUtf(recipe.trait);
+		}
+	}
+
+	public TraitAdditionRecipe(ResourceLocation id, Item additionItem, int additionCount, String traitIn) {
+		this.id = id;
 		this.additionItem = additionItem;
 		this.additionCount = additionCount;
 		this.trait = traitIn;
-		this.base = Optional.of(Ingredient.of(ModItems.TOOL.get(), ModItems.ARMOR.get()));
-		this.template= Optional.of(Ingredient.of(ModItems.MOD_SUB.get(), ModItems.MOD_ADD.get()));
+		this.base = Ingredient.of(ModItems.TOOL.get(), ModItems.ARMOR.get());
+		this.template = Ingredient.of(ModItems.MOD_SUB.get(), ModItems.MOD_ADD.get());
 	}
 
-	public Holder<Item> additionItem() {
+	@Override
+	public ResourceLocation getId() {
+		return this.id;
+	}
+
+	public Item additionItem() {
 		return this.additionItem;
 	}
 
@@ -119,20 +138,20 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	 * the advancement criteria are server-only.
 	 */
 	public static void onTake(SmithingMenu menu, Player player) {
-		if (!(menu.getSlot(SmithingMenu.RESULT_SLOT).container instanceof RecipeCraftingHolder results)) {
+		if (!(menu.getSlot(SmithingMenu.RESULT_SLOT).container instanceof RecipeHolder results)) {
 			return;
 		}
-		RecipeHolder<?> used = results.getRecipeUsed();
-		if (used == null || !(used.value() instanceof TraitAdditionRecipe recipe)) {
+		Recipe<?> used = results.getRecipeUsed();
+		if (!(used instanceof TraitAdditionRecipe recipe)) {
 			return;
 		}
-		SmithingRecipeInput input = new SmithingRecipeInput(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem(),
+		Input input = new Input(menu.getSlot(SmithingMenu.TEMPLATE_SLOT).getItem(),
 				menu.getSlot(SmithingMenu.BASE_SLOT).getItem(), menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem());
 
 		// A shift-click has already moved the taken stack into the inventory, out of
 		// reach. The inputs are still whole and assemble to the same gear.
 		if (player instanceof ServerPlayer serverPlayer) {
-			ModCriteria.traitsObtained(serverPlayer, recipe.assemble(input, serverPlayer.registryAccess()), TraitObtainedTrigger.SOURCE_CRAFTED);
+			ModCriteria.traitsObtained(serverPlayer, recipe.getResult(input), TraitObtainedTrigger.SOURCE_CRAFTED);
 		}
 
 		// Vanilla's onTake shrinks every input by one; the rest of additionCost leaves the
@@ -146,7 +165,8 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	}
 
 	@Override
-	public boolean matches(SmithingRecipeInput input, Level level) {
+	public boolean matches(Container container, Level level) {
+		Input input = Input.of(container);
 
 		if (!input.base().is(ModItems.TOOL.get()) && !input.base().is(ModItems.ARMOR.get())) {
 			return false;
@@ -157,7 +177,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		if (!input.addition().is(this.additionItem.value())) {
+		if (!input.addition().is(this.additionItem)) {
 			return false;
 		}
 
@@ -193,7 +213,7 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 			return false;
 		}
 
-		if (!this.template.get().test(input.template())) {
+		if (!this.template.test(input.template())) {
 			return false;
 		}
 
@@ -204,7 +224,8 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		return true;
 	}
 
-	private ItemStack getResult(SmithingRecipeInput input) {
+	/** The gear this recipe turns {@code input} into; {@link #assemble} by slot name. */
+	public ItemStack getResult(Input input) {
 
 			ItemStack tool = input.base();
 
@@ -239,29 +260,29 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 
 
 	@Override
-	public ItemStack assemble(SmithingRecipeInput input, HolderLookup.Provider provider) {
-		return this.getResult(input);
+	public ItemStack assemble(Container container, RegistryAccess registryAccess) {
+		return this.getResult(Input.of(container));
 	}
 
 	@Override
-	public ItemStack getResultItem(HolderLookup.Provider provider) {
+	public ItemStack getResultItem(RegistryAccess registryAccess) {
 		// Recipe-book preview only; the real result is assembled per input.
 		return new ItemStack(ModItems.TOOL.get());
 	}
 
 	@Override
 	public boolean isTemplateIngredient(ItemStack stack) {
-		return this.template.get().test(stack);
+		return this.template.test(stack);
 	}
 
 	@Override
 	public boolean isBaseIngredient(ItemStack stack) {
-		return this.base.get().test(stack);
+		return this.base.test(stack);
 	}
 
 	@Override
 	public boolean isAdditionIngredient(ItemStack stack) {
-		return stack.is(this.additionItem.value());
+		return stack.is(this.additionItem);
 	}
 
 	@Override

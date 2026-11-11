@@ -16,7 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 /**
  * Reports the result of every server-side item use and block use, so a right-click
  * trait that deferred to the off-hand item learns whether that item actually did anything.
- * No loader has an event for the result; NeoForge carries the same mixin.
+ * No loader has an event for the result; Forge carries the same mixin.
  */
 @Mixin(ServerPlayerGameMode.class)
 public abstract class ServerPlayerGameModeMixin {
