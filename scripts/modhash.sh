@@ -27,8 +27,10 @@ def norm(path, pattern, repl):
 
 norm(os.path.join(root, "fabric.mod.json"),
      r'"version"\s*:\s*"[^"]+"', '"version":"__VERSION__"')
-norm(os.path.join(root, "META-INF", "neoforge.mods.toml"),
-     r'^version="[^"]+"', 'version="__VERSION__"')
+# NeoForge branches ship neoforge.mods.toml, the Forge 1.20.1 branch mods.toml.
+for manifest in ("neoforge.mods.toml", "mods.toml"):
+    norm(os.path.join(root, "META-INF", manifest),
+         r'^version="[^"]+"', 'version="__VERSION__"')
 norm(os.path.join(root, "META-INF", "MANIFEST.MF"),
      r'^(Implementation-Version|Specification-Version): .+$', r'\1: __VERSION__')
 PY
