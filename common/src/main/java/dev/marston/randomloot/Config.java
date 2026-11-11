@@ -60,7 +60,7 @@ public class Config
             "chance that a loot case contains an armor piece instead of a tool.");
     public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
             "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
-    public static final Option LEVEL_UP_TRAIT_CHANCE_OPTION = new Option("levelUpTraitChance", 0.5, 0.0, 1.0,
+    public static final Option LEVEL_UP_TRAIT_CHANCE_OPTION = new Option("levelUpTraitChance", 0.2, 0.0, 1.0,
             "chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up.");
     public static final IntOption LIVING_WHISPERS_OPTION = new IntOption("livingWhispersPerMinute", 1, 0, 1200,
             "max whispers (\"pssst...\", \"hi...\", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");

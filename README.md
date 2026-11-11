@@ -19,7 +19,7 @@ You can find cases in any chest that generated in a structure of some kind (ex: 
 ### Random Tool
 Random Tools look like a variety of tool types and can be one of: pickaxes, shovels, axes, swords. These tools all generate with random traits. For every tool you generate by opening a case, the tool you generate will come with better stats and more traits.
 
-Tools and armor gain XP as you use them. Every level-up boosts their stats and has a chance (50% by default, configurable via `levelUpTraitChance`) to roll a bonus trait or level up one they already have, so a well-worn favorite keeps growing.
+Tools and armor gain XP as you use them. Every level-up boosts their stats and has a chance (20% by default, configurable via `levelUpTraitChance`) to roll a bonus trait or level up one they already have, so a well-worn favorite keeps growing.
 
 ![tools in inventory](https://raw.githubusercontent.com/TheMarstonConnell/randomloot/26.x/.github/assets/tools.png)
 
