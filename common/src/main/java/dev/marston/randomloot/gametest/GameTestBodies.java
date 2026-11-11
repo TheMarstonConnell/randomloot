@@ -408,23 +408,34 @@ public final class GameTestBodies {
 	 */
 	public static ServerPlayer mockPlayer(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
-		ServerPlayer player = new ServerPlayer(level.getServer(), level,
-				new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player")) {
-			@Override
-			public boolean isSpectator() {
-				return false;
-			}
-
-			@Override
-			public boolean isCreative() {
-				return true;
-			}
-		};
+		ServerPlayer player = new MockPlayer(level);
 		net.minecraft.network.Connection connection = new net.minecraft.network.Connection(
 				net.minecraft.network.protocol.PacketFlow.SERVERBOUND);
 		new io.netty.channel.embedded.EmbeddedChannel(connection);
 		level.getServer().getPlayerList().placeNewPlayer(connection, player);
 		return player;
+	}
+
+	/**
+	 * Named rather than anonymous: newer javac builds copy the super constructor's
+	 * parameter names onto an anonymous class's constructor, and Forge 1.20.1's binary
+	 * names two of ServerPlayer's alike, which fails to compile.
+	 */
+	private static final class MockPlayer extends ServerPlayer {
+		MockPlayer(ServerLevel level) {
+			super(level.getServer(), level,
+					new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "test-mock-player"));
+		}
+
+		@Override
+		public boolean isSpectator() {
+			return false;
+		}
+
+		@Override
+		public boolean isCreative() {
+			return true;
+		}
 	}
 
 	private static ServerPlayer mockVulnerablePlayer(GameTestHelper helper) {

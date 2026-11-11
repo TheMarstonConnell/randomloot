@@ -127,12 +127,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 		// tracking it, and a saved copy would come back as an untracked, invulnerable,
 		// AI-less shulker stuck inside the block forever. Unsaved entities are also left
 		// in memory when their chunk unloads, so the lifecycle sweep can still discard them.
-		Shulker se = new Shulker(EntityType.SHULKER, level) {
-			@Override
-			public boolean shouldBeSaved() {
-				return false;
-			}
-		};
+		Shulker se = new MarkerShulker(level);
 		se.setGlowingTag(true);
 		se.setInvulnerable(true);
 		se.setInvisible(true);
@@ -144,5 +139,22 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 
 		shulkers.add(se);
 		timings.add(-1);
+	}
+
+	/**
+	 * A marker shulker that is never saved. A named class rather than an anonymous one:
+	 * newer javac builds copy the super constructor's parameter names onto an anonymous
+	 * class's constructor, and Forge 1.20.1's binary names two of them alike, which fails
+	 * to compile ("variable o is already defined").
+	 */
+	private static final class MarkerShulker extends Shulker {
+		MarkerShulker(Level level) {
+			super(EntityType.SHULKER, level);
+		}
+
+		@Override
+		public boolean shouldBeSaved() {
+			return false;
+		}
 	}
 }
