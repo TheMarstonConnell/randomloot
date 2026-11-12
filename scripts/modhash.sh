@@ -29,9 +29,6 @@ norm(os.path.join(root, "fabric.mod.json"),
      r'"version"\s*:\s*"[^"]+"', '"version":"__VERSION__"')
 norm(os.path.join(root, "META-INF", "neoforge.mods.toml"),
      r'^version="[^"]+"', 'version="__VERSION__"')
-# The Forge 1.20.1 branch ships mods.toml instead.
-norm(os.path.join(root, "META-INF", "mods.toml"),
-     r'^version="[^"]+"', 'version="__VERSION__"')
 norm(os.path.join(root, "META-INF", "MANIFEST.MF"),
      r'^(Implementation-Version|Specification-Version): .+$', r'\1: __VERSION__')
 PY
