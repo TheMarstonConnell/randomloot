@@ -25,18 +25,16 @@ jobs:
           # name, jar-name segment and CurseForge/Modrinth loader id are all the same
           # word). manifest: the file that proves the jar is that loader's.
           # java: the Minecraft version's Java (what the mod platforms list).
-          # build_java: the JDK Gradle itself runs on. fabric-loom needs a newer JDK
-          # than Minecraft 1.20.1's Java 17; the Gradle toolchain still compiles
-          # that branch for 17.
+          # build_java: the JDK Gradle itself runs on, when it differs from java.
+          # fabric-loom needs a newer JDK than Minecraft 1.20.1's Java 17; the
+          # Gradle toolchain still compiles that branch for 17.
           - branch: "26.x"
             java: "25"
-            build_java: "25"
             modloader: neoforge
             modloader_name: NeoForge
             manifest: META-INF/neoforge.mods.toml
           - branch: "1.21.1.x"
             java: "21"
-            build_java: "21"
             modloader: neoforge
             modloader_name: NeoForge
             manifest: META-INF/neoforge.mods.toml
@@ -58,7 +56,7 @@ jobs:
           # on); the first stays installed for the Gradle toolchain to find.
           java-version: |
             ${{ matrix.java }}
-            ${{ matrix.build_java }}
+            ${{ matrix.build_java || matrix.java }}
           distribution: 'temurin'
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
