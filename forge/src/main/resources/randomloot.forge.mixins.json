@@ -6,6 +6,8 @@
     "refmap": "randomloot.refmap.json",
     "mixins": [
         "AnvilMenuMixin",
+        "GrindstoneMenuMixin",
+        "RepairItemRecipeMixin",
         "ServerPlayerGameModeMixin",
         "SmithingMenuMixin"
     ],

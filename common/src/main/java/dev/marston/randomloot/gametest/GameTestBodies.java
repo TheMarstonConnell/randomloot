@@ -792,6 +792,53 @@ public final class GameTestBodies {
 	}
 
 	/**
+	 * The other two vanilla "combine two of the same item" paths, which the anvil block
+	 * does not cover. Crafting-grid repair (RepairItemRecipe) answers with a brand-new
+	 * stack of the item - no type, traits or XP - and the grindstone keeps the top
+	 * stack and eats the bottom one. Both must refuse two pieces of gear, while a
+	 * single piece can still be disenchanted in the grindstone.
+	 */
+	public static void gearCannotCombineOutsideAnvil(GameTestHelper helper) {
+		ServerPlayer player = mockPlayer(helper);
+		var access = ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+
+		ItemStack left = newTool(ToolType.SWORD);
+		left.setDamageValue(50);
+		ItemStack right = newTool(ToolType.SWORD);
+		right.setDamageValue(60);
+
+		var crafting = new net.minecraft.world.inventory.CraftingMenu(1, player.getInventory(), access);
+		var grid = new net.minecraft.world.inventory.TransientCraftingContainer(crafting, 3, 3);
+		grid.setItem(0, left.copy());
+		grid.setItem(1, right.copy());
+		var repair = helper.getLevel().getRecipeManager()
+				.getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, helper.getLevel());
+		helper.assertTrue(repair.isEmpty(),
+				"two Random Tools in a crafting grid must not match a recipe, got "
+						+ repair.map(r -> r.getId() + " -> " + r.assemble(grid, helper.getLevel().registryAccess()))
+								.orElse(null));
+
+		var grindstone = new net.minecraft.world.inventory.GrindstoneMenu(2, player.getInventory(), access);
+		grindstone.getSlot(0).set(left.copy());
+		grindstone.getSlot(1).set(right.copy());
+		helper.assertTrue(grindstone.getSlot(2).getItem().isEmpty(),
+				"two Random Tools in a grindstone must yield nothing, got " + grindstone.getSlot(2).getItem());
+
+		// Control: one enchanted piece still disenchants.
+		ItemStack enchanted = newTool(ToolType.SWORD);
+		enchanted.enchant(Enchantments.SHARPNESS, 1);
+		grindstone.getSlot(0).set(enchanted);
+		grindstone.getSlot(1).set(ItemStack.EMPTY);
+		ItemStack cleaned = grindstone.getSlot(2).getItem();
+		helper.assertTrue(LootUtils.isLootGear(cleaned) && !cleaned.isEnchanted(),
+				"a single enchanted Random Tool should still disenchant in the grindstone, got " + cleaned);
+		helper.assertTrue(LootUtils.getToolType(cleaned) == ToolType.SWORD,
+				"disenchanting must keep the gear's identity");
+
+		helper.succeed();
+	}
+
+	/**
 	 * The anvil must refuse to combine two Random Loot items (each is unique;
 	 * combining destroys the right item's identity and is a cheap repair loop) -
 	 * NeoForge via isCombineRepairable=false, Fabric via AnvilMenuMixin - while

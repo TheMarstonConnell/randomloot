@@ -205,6 +205,11 @@ public class RandomLootGameTests {
 	}
 
 	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
+	public void gear_cannot_combine_outside_anvil(GameTestHelper helper) {
+		GameTestBodies.gearCannotCombineOutsideAnvil(helper);
+	}
+
+	@GameTest(template = TEMPLATE, templateNamespace = RandomLoot.MODID, timeoutTicks = 200)
 	public void armor_enchant_filtering(GameTestHelper helper) {
 		GameTestBodies.armorEnchantFiltering(helper);
 	}

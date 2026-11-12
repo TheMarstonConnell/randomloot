@@ -507,8 +507,8 @@ cross-porting. **On this branch the loader project is `forge/`, not `neoforge/`.
 
 ```bash
 ./gradlew build                      # both jars + unit tests (:common:test)
-./gradlew :forge:runGameTestServer   # 59 gametests
-./gradlew :fabric:runGametest        # 59 gametests
+./gradlew :forge:runGameTestServer   # 60 gametests
+./gradlew :fabric:runGametest        # 60 gametests
 ./gradlew :forge:runClient           # / :fabric:runClient
 ```
 
@@ -547,6 +547,13 @@ cross-porting. **On this branch the loader project is `forge/`, not `neoforge/`.
   resolved via `LootUtils.enchantIn`); the `minecraft:enchantable/*` item tags do not
   exist. `sweeping_edge` is `minecraft:sweeping`; fields are `Enchantments.BLOCK_EFFICIENCY`,
   `ALL_DAMAGE_PROTECTION`, `FALL_PROTECTION`.
+- **Two pieces of gear never combine**, and there are three vanilla paths, not one: the
+  anvil (Forge `AnvilUpdateEvent`, Fabric `AnvilMenuMixin`), crafting-grid repair
+  (`RepairItemRecipeMixin` on both loaders - vanilla answers with a blank `new
+  ItemStack(item)`, wiping type/traits/XP) and the grindstone (`GrindstoneMenuMixin` on
+  both - it eats the bottom piece). NeoForge's `isCombineRepairable=false` covered the
+  last two on 26.x/1.21.1 NeoForge; nothing does on 1.20.1, and the Fabric jars of the
+  newer branches were never checked. `gear_cannot_combine_outside_anvil` is the test.
 - **Damage hooks**: Forge has a single `LivingDamageEvent` (no Pre/Post) - pre runs at
   normal priority, post at `LOWEST`. Fabric API has no `AFTER_DAMAGE`, so
   `LivingEntityMixin` does both around the `actuallyHurt` call (post = health +

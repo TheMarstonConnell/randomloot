@@ -233,6 +233,11 @@ public class RandomLootFabricGameTests implements FabricGameTest {
     }
 
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void gearCannotCombineOutsideAnvil(GameTestHelper helper) {
+        GameTestBodies.gearCannotCombineOutsideAnvil(helper);
+    }
+
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
     public void anvilCannotCombineLootGear(GameTestHelper helper) {
         GameTestBodies.anvilCannotCombineLootGear(helper);
     }
