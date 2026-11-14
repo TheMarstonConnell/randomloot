@@ -95,6 +95,29 @@ public final class TraitGrant {
 	}
 
 	/**
+	 * The same grant for gear that is not a stack yet. {@code gear} describes it and
+	 * {@code traits} is the tag of traits it will store, which is what
+	 * {@link Modifier#MODTAG} holds on a stack; the two must agree, so build the context's
+	 * trait list from that tag ({@link LootUtils#getModifiers(CompoundTag)}). Writes into
+	 * {@code traits} exactly what the stack form would have stored.
+	 *
+	 * @return {@link Kind#ADDED}, {@link Kind#LEVELED} or {@link Kind#REFUSED}
+	 */
+	public static Kind grant(TraitEligibility.GearContext gear, CompoundTag traits, Modifier trait,
+			@Nullable Long worldSeed) {
+		if (!TraitEligibility.check(gear, trait).allowed()) {
+			return Kind.REFUSED;
+		}
+
+		Entry entry = entryAfter(traits, worldSeed == null ? trait : trait.forWorld(worldSeed));
+		if (entry == null) {
+			return Kind.REFUSED;
+		}
+		traits.put(trait.tagName(), entry.stored());
+		return entry.kind();
+	}
+
+	/**
 	 * {@link #grant} with no gate and no world, for building gear a player could not have
 	 * made: a Thorny sword, a forger that does not exist. Test setup only.
 	 */
@@ -133,21 +156,41 @@ public final class TraitGrant {
 		String tag = trait.tagName();
 		CompoundTag stored = GearTags.read(gear, Modifier.MODTAG);
 
-		if (!stored.contains(tag)) {
-			GearTags.mutate(gear, Modifier.MODTAG, traits -> traits.put(tag, trait.toNBT()));
-			return new Outcome(Kind.ADDED, trait, gear, null);
+		Entry entry = entryAfter(stored, trait);
+		if (entry == null) {
+			// The gate refuses a capped trait before grant gets here; only force can.
+			return new Outcome(Kind.REFUSED, trait, gear,
+					new TraitEligibility.Result(TraitEligibility.Verdict.ALREADY_MAXED,
+							trait.fromNBT(stored.getCompoundOrEmpty(tag)), LootUtils.getToolType(gear)));
 		}
 
-		// Already on the gear: its own copy levels, keeping whatever else it stores.
-		Modifier held = trait.fromNBT(stored.getCompoundOrEmpty(tag));
+		GearTags.mutate(gear, Modifier.MODTAG, traits -> traits.put(tag, entry.stored()));
+		return new Outcome(entry.kind(), trait, gear, null);
+	}
+
+	/** What gear stores for a trait after one more grant of it, and whether that added or leveled it. */
+	private record Entry(Kind kind, CompoundTag stored) {
+	}
+
+	/**
+	 * The entry one more grant of {@code trait} leaves in {@code traits}, without writing
+	 * it: the trait itself when it is new, the gear's own copy one level up when it is
+	 * already there, or null when that copy is capped.
+	 */
+	@Nullable
+	private static Entry entryAfter(CompoundTag traits, Modifier trait) {
+		String tag = trait.tagName();
+		if (!traits.contains(tag)) {
+			return new Entry(Kind.ADDED, trait.toNBT());
+		}
+
+		// Already there: the gear's own copy levels, keeping whatever else it stores.
+		Modifier held = trait.fromNBT(traits.getCompoundOrEmpty(tag));
 		if (!held.canLevel()) {
-			// The gate refuses a capped trait before grant gets here; only force can.
-			return new Outcome(Kind.REFUSED, trait, gear, new TraitEligibility.Result(
-					TraitEligibility.Verdict.ALREADY_MAXED, held, LootUtils.getToolType(gear)));
+			return null;
 		}
 
 		held.levelUp();
-		GearTags.mutate(gear, Modifier.MODTAG, traits -> traits.put(held.tagName(), held.toNBT()));
-		return new Outcome(Kind.LEVELED, trait, gear, null);
+		return new Entry(Kind.LEVELED, held.toNBT());
 	}
 }

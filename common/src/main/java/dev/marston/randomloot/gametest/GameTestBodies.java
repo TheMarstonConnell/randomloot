@@ -17,7 +17,10 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
+import dev.marston.randomloot.loot.GearRoll;
+import dev.marston.randomloot.loot.GearStats;
 import dev.marston.randomloot.loot.GearTags;
+import dev.marston.randomloot.loot.LootGearItem;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.TraitEligibility;
@@ -69,6 +72,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.context.UseOnContext;
@@ -120,6 +124,10 @@ public final class GameTestBodies {
 		Modifier thorny = ModifierRegistry.getModifier("thorny");
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
 
+		// The stack-free form of the grant, kept in step: it has to store the same thing.
+		CompoundTag asTag = new CompoundTag();
+		TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed);
+
 		TraitGrant.Outcome added = TraitGrant.grant(chestplate, thorny, seed);
 		helper.assertTrue(added.kind() == TraitGrant.Kind.ADDED,
 				"a trait the gear lacks should be ADDED, got " + added.kind());
@@ -128,7 +136,12 @@ public final class GameTestBodies {
 		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny"),
 				"the gear should carry Thorny at its first level, got " + traitName(chestplate, "thorny"));
 
+		TraitGrant.Kind leveledAsTag = TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed);
 		TraitGrant.Outcome leveled = TraitGrant.grant(chestplate, thorny, seed);
+		helper.assertTrue(leveledAsTag == TraitGrant.Kind.LEVELED
+						&& asTag.equals(GearTags.read(chestplate, Modifier.MODTAG)),
+				"a grant onto a tag should store what a grant onto a stack stores, got " + asTag + " and "
+						+ GearTags.read(chestplate, Modifier.MODTAG));
 		helper.assertTrue(leveled.kind() == TraitGrant.Kind.LEVELED && leveled.granted(),
 				"a repeat of a trait that levels should be LEVELED, got " + leveled.kind());
 		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny II"),
@@ -552,30 +565,76 @@ public final class GameTestBodies {
 		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty(tagName);
 	}
 
-	/** genTool() produces a real, typed item with positive goodness (covers the RNG/biome path). */
-	public static void genTool(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack tool = LootUtils.genTool(player, helper.getLevel());
+	/**
+	 * Stamping makes the item the gear roll decided on, and nothing reads differently
+	 * off the stack: a tool and an armor piece, checked field by field through the
+	 * accessors the rest of the mod uses. The vanilla components that derive from those
+	 * fields are built once, at the end, so they have to match what a refresh would give.
+	 */
+	public static void stampWritesWhatTheGearRollDecided(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		GearRoll.Scene scene = new GearRoll.Scene(new GearRoll.Place("minecraft:jungle", 0.95f, "minecraft:the_nether"),
+				level.getSeed(), false, new GearRoll.Owner("11111111-2222-3333-4444-555555555555", "Tester"));
 
-		ToolType type = LootUtils.getToolType(tool);
-		helper.assertTrue(type != ToolType.NULL, "generated item should have a real type");
-		if (type.isArmor()) {
-			helper.assertTrue(tool.is(ModItems.ARMOR.get()), "armor rolls should produce the RandomLoot armor item");
-			helper.assertTrue(tool.get(DataComponents.EQUIPPABLE) != null, "generated armor should be equippable");
-		} else {
-			helper.assertTrue(tool.is(ModItems.TOOL.get()), "tool rolls should produce the RandomLoot tool");
+		for (ToolType type : new ToolType[] { ToolType.SWORD, ToolType.CHESTPLATE }) {
+			// Goodness 6 earns three trait picks.
+			GearRoll.Rolled rolled = GearRoll.ofType(type, 6.0f, scene, RandomSource.create(type.ordinal()));
+			ItemStack gear = LootUtils.stamp(rolled);
+
+			helper.assertTrue(gear.is(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get()),
+					type + " should be stamped onto the " + (type.isArmor() ? "armor" : "tool") + " item");
+			helper.assertTrue(LootUtils.getToolType(gear) == type && LootUtils.getStats(gear) == 6.0f,
+					type + " should carry its type and goodness");
+			helper.assertTrue(LootUtils.getBiomeKey(gear).equals("minecraft:jungle")
+							&& LootUtils.getBiomeTemperature(gear) == 0.95f
+							&& LootUtils.getDimension(gear).equals("minecraft:the_nether"),
+					type + " should carry where it was made");
+			helper.assertTrue(LootUtils.getOwnerUUID(gear).equals("11111111-2222-3333-4444-555555555555")
+					&& LootUtils.getOwnerName(gear).equals("Tester"), type + " should carry who opened it");
+			helper.assertTrue(LootUtils.getTextureIndex(gear) == rolled.texture(), type + " should carry its look");
+			helper.assertTrue(LootUtils.getItemLore(gear).equals(rolled.lore()), type + " should carry its lore");
+
+			Component name = gear.get(DataComponents.CUSTOM_NAME);
+			helper.assertTrue(name != null && name.getString().equals(rolled.name())
+							&& name.getStyle().getColor().serialize().equalsIgnoreCase(rolled.nameColor()),
+					type + " should be named " + rolled.name() + " in " + rolled.nameColor() + ", got " + name);
+
+			helper.assertTrue(!rolled.traits().isEmpty() && GearTags.read(gear, Modifier.MODTAG).equals(rolled.traits()),
+					type + " should store the traits exactly as rolled, got " + GearTags.read(gear, Modifier.MODTAG));
+			helper.assertFalse(GearTags.has(gear, GearTags.XP), type + " should start with no XP written");
+
+			helper.assertTrue((gear.get(DataComponents.EQUIPPABLE) != null) == type.isArmor(),
+					"only armor should be equippable, " + type);
+			LootGearItem item = (LootGearItem) gear.getItem();
+			helper.assertTrue(!heldAttributes(gear).modifiers().isEmpty()
+							&& heldAttributes(gear).equals(item.buildAttributeModifiers(gear)),
+					type + " should be stamped with the attributes its stats and traits give");
+			helper.assertTrue(gear.getMaxDamage() == LootGearItem.computeMaxDamage(gear),
+					type + " should be stamped with its own durability");
 		}
-		helper.assertTrue(LootUtils.getStats(tool) > 0f, "generated item should have positive goodness");
+
+		// A player's case, through the entry point the case item uses: the scene is read
+		// off the world, so the lore credits this world's forger for the biome's band.
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack opened = LootUtils.openCase(player);
+		helper.assertTrue(LootUtils.getStats(opened) == GearStats.goodnessForCases(0, Config.Goodness),
+				"a first case should roll first-case goodness, got " + LootUtils.getStats(opened));
+		helper.assertTrue(LootUtils.getOwnerUUID(opened).equals(player.getStringUUID()),
+				"an opened case should record its opener");
+		String forger = NameGenerator.forgerForWorld(level.getSeed(), LootUtils.getBiomeTemperature(opened));
+		helper.assertTrue(LootUtils.getItemLore(opened).endsWith(", forged by " + forger + "."),
+				"an opened case should credit this world's forger, " + forger + ", got "
+						+ LootUtils.getItemLore(opened));
 
 		helper.succeed();
 	}
 
 	/**
-	 * genTool() with no player (the dispenser path) records the dispense position's
-	 * biome and still rolls positive goodness off the machine curve.
+	 * A case opened by a machine (the dispenser path) records the dispense position's
+	 * biome, has no owner, and still rolls positive goodness off the machine curve.
 	 */
 	public static void genToolDispenser(GameTestHelper helper) {
-		ItemStack tool = LootUtils.genTool(null, helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		ItemStack tool = LootUtils.dispenseCase(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
 
 		helper.assertTrue(LootUtils.getToolType(tool) != ToolType.NULL, "dispensed item should have a real type");
 		helper.assertTrue(LootUtils.getStats(tool) > 0f, "dispensed item should have positive goodness");
@@ -583,6 +642,9 @@ public final class GameTestBodies {
 		String biomeKey = LootUtils.getBiomeKey(tool);
 		helper.assertTrue(!biomeKey.isEmpty() && !biomeKey.equals("unknown"),
 				"dispensed item should record the dispenser's biome, got: " + biomeKey);
+		helper.assertTrue(LootUtils.getOwnerUUID(tool).isEmpty()
+				&& LootUtils.getItemLore(tool).startsWith("Discovered by a machine in "),
+				"dispensed item should have no owner, got lore: " + LootUtils.getItemLore(tool));
 
 		helper.succeed();
 	}
@@ -765,29 +827,6 @@ public final class GameTestBodies {
 		helper.assertTrue(wrapped != null && wrapped.assetId().isPresent()
 						&& wrapped.assetId().get().identifier().toString().equals("randomloot:set1"),
 				"texture cycling should wrap back to equipment asset randomloot:set1");
-
-		helper.succeed();
-	}
-
-	/** Every item generated in the same world (same temperature band) credits the same forger. */
-	public static void forgerWorldConstant(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		String firstForger = null;
-		for (int i = 0; i < 4; i++) {
-			ItemStack item = LootUtils.genTool(player, helper.getLevel());
-			String lore = LootUtils.getItemLore(item);
-
-			int at = lore.indexOf("forged by ");
-			helper.assertTrue(at >= 0, "item lore should credit a forger, got: " + lore);
-			String forger = lore.substring(at + "forged by ".length()).replace(".", "");
-
-			if (firstForger == null) {
-				firstForger = forger;
-			}
-			helper.assertTrue(firstForger.equals(forger),
-					"forger should be world-constant, got " + forger + " and " + firstForger);
-		}
 
 		helper.succeed();
 	}

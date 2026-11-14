@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
  * Whether a trait may be added to a piece of loot gear, and why not when it can't.
  *
  * <p>The rule used to be written three times - once for the case roll
- * ({@link LootUtils#generateNewTrait}), once for {@code /randomloot trait add}, and once
+ * ({@link GearRoll#pickTrait}), once for {@code /randomloot trait add}, and once
  * for the smithing table - and the three copies disagreed: smithing skipped the config
  * toggle, the compatibility check and the level cap, so it would consume the template
  * and the addition item and hand back an unchanged tool. All three now ask this module.
