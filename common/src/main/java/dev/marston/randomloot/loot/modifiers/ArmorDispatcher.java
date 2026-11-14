@@ -88,7 +88,7 @@ public final class ArmorDispatcher {
 
 	/**
 	 * Durability hook for a single armor piece about to take damage. Returns the
-	 * (possibly zeroed) durability damage after Unbreaking rolls.
+	 * (possibly reduced) durability damage after Unbreaking rolls.
 	 *
 	 * <p>The slot gate lives here rather than in the shims because the two loaders
 	 * deliver very different scopes: NeoForge's ArmorHurtEvent fires only for armor

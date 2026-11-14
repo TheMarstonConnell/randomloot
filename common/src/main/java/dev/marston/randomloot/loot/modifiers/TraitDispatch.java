@@ -222,16 +222,13 @@ public final class TraitDispatch {
 
 	/**
 	 * Worn armor is damaged inside vanilla, which asks here how much of
-	 * {@code durabilityDamage} the piece should really take. One Unbreaking roll decides
-	 * the whole hit.
+	 * {@code durabilityDamage} the piece should really take. Unbreaking gets a roll per
+	 * point, as it does for a tool. Both loaders charge the whole points of what comes
+	 * back, so those are the points that are rolled.
 	 */
 	public static float armorDurability(ItemStack armor, Level level, float durabilityDamage) {
-		for (Modifier trait : traitsOf(armor)) {
-			if (trait instanceof Unbreaking unbreaking && unbreaking.test(level)) {
-				return 0.0f;
-			}
-		}
-		return durabilityDamage;
+		Unbreaking unbreaking = unbreakingOn(traitsOf(armor));
+		return unbreaking == null ? durabilityDamage : unbreaking.remaining((int) durabilityDamage, level);
 	}
 
 	/** The gear's traits. {@link LootUtils#getModifiers} leaves out the config-disabled ones. */
@@ -274,23 +271,25 @@ public final class TraitDispatch {
 			return;
 		}
 
-		// A trait appears at most once on a piece of gear.
-		for (Modifier trait : traits) {
-			if (trait instanceof Unbreaking unbreaking) {
-				int spent = 0;
-				for (int i = 0; i < points; i++) {
-					if (!unbreaking.test(holder.level())) {
-						spent++;
-					}
-				}
-				points = spent;
-				break;
-			}
+		Unbreaking unbreaking = unbreakingOn(traits);
+		if (unbreaking != null) {
+			points = unbreaking.remaining(points, holder.level());
 		}
 
 		if (points > 0) {
 			gear.hurtAndBreak(points, holder, slot);
 		}
+	}
+
+	/** The gear's Unbreaking trait, or null. A trait appears at most once on a piece of gear. */
+	@Nullable
+	private static Unbreaking unbreakingOn(List<Modifier> traits) {
+		for (Modifier trait : traits) {
+			if (trait instanceof Unbreaking unbreaking) {
+				return unbreaking;
+			}
+		}
+		return null;
 	}
 
 	/** The registry's pre-hit traits, found once: {@link #beforeDamage} runs for every damage event on the server. */

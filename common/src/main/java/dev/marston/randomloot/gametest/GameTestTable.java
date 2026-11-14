@@ -69,6 +69,7 @@ public final class GameTestTable {
 			row("trait_dispatch_runs_pre_hit_traits_first", GameTestBodies::traitDispatchRunsPreHitTraitsFirst),
 			row("trait_dispatch_leaves_rolling_gear_inert", GameTestBodies::traitDispatchLeavesRollingGearInert),
 			row("trait_dispatch_saves_only_changed_traits", GameTestBodies::traitDispatchSavesOnlyChangedTraits),
+			row("unbreaking_rolls_per_durability_point", GameTestBodies::unbreakingRollsPerDurabilityPoint),
 			row("gen_tool", GameTestBodies::genTool),
 			row("gen_tool_dispenser", GameTestBodies::genToolDispenser),
 			row("dispenser_opens_case", GameTestBodies::dispenserOpensCase),

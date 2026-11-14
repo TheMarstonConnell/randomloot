@@ -62,9 +62,17 @@ public class Unbreaking extends LeveledModifier {
 		return CHANCE_PER_LEVEL * (float) (this.level + 1);
 	}
 
-	public boolean test(Level level) {
-		float f = level.getRandom().nextFloat();
-
-		return f <= chance();
+	/**
+	 * How many of {@code points} of durability the gear still has to pay: each point gets
+	 * its own roll to be let off. The one rule for tools and worn armor alike.
+	 */
+	public int remaining(int points, Level level) {
+		int owed = 0;
+		for (int i = 0; i < points; i++) {
+			if (level.getRandom().nextFloat() > chance()) {
+				owed++;
+			}
+		}
+		return owed;
 	}
 }
