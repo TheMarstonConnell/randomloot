@@ -25,9 +25,13 @@ public class DirtPlace extends PlaceOnUseModifier {
 		super(1);
 	}
 
-	/** Named after a forger rolled on the spot, when neither a world nor the gear says which. */
+	/**
+	 * Gear that stores its Grace without a name gets a forger rolled on the spot, as it
+	 * always has. Every grant writes a name, so only a stored tag that lost its own gets
+	 * here. The registry's own Grace rolls nothing: it is the declared, plain "Grace".
+	 */
 	@Override
-	protected String defaultName() {
+	protected String nameWhenNotStored() {
 		return NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace";
 	}
 
@@ -41,8 +45,8 @@ public class DirtPlace extends PlaceOnUseModifier {
 
 	@Override
 	public boolean hasDynamicName() {
-		// Each instance is named after a randomly generated forger ("<Forger>'s Grace"),
-		// so there is no stable name to translate.
+		// On gear it is named after a forger ("<Forger>'s Grace"), the world's when the
+		// grant knew its world, so there is no one name to translate.
 		return true;
 	}
 

@@ -71,11 +71,7 @@ class TraitGrantTest {
 	@Test
 	void aWorldDependentTraitGoesOnAsThatWorldsVariant() {
 		Modifier grace = ModifierRegistry.getModifier("dirt_place");
-		// A world whose forger is not the one the registry's Grace happened to roll.
-		long seed = 0;
-		while (seed < 64 && (NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace").equals(grace.name())) {
-			seed++;
-		}
+		long seed = 7L;
 
 		CompoundTag stamped = new CompoundTag();
 		assertEquals(Kind.ADDED, TraitGrant.grant(gear(ToolType.SHOVEL, stamped), stamped, grace, seed, RANDOM));
@@ -83,7 +79,7 @@ class TraitGrantTest {
 
 		CompoundTag unstamped = new CompoundTag();
 		TraitGrant.grant(gear(ToolType.SHOVEL, unstamped), unstamped, grace, null, RANDOM);
-		assertEquals(grace.name(), nameOf(unstamped, "dirt_place"),
-				"with no world, the trait goes on as the registry holds it");
+		assertEquals("Grace", nameOf(unstamped, "dirt_place"),
+				"with no world, the trait goes on as the registry holds it: naming no forger");
 	}
 }

@@ -51,7 +51,8 @@ import org.junit.jupiter.api.Test;
  * </ul>
  *
  * <p>Two values are random by design and compared by shape: Chaotic's seed on a fresh
- * grant, and the forger in Grace's name when no world or stored name supplies one.
+ * grant, and the forger a Grace is given when it is read off gear that stores no name
+ * for it.
  *
  * <p>To regenerate after a deliberate change, run the tests with the environment
  * variable {@code RL_WRITE_TRAIT_FIXTURES} set to the fixture directory
@@ -292,7 +293,7 @@ class TraitFixtureTest {
 		lines.add("# what the registry's own instance of each trait shows: the config comment, the wiki and the lang file read these");
 		for (Map.Entry<String, Modifier> entry : registry().entrySet()) {
 			Modifier trait = entry.getValue();
-			lines.add(entry.getKey() + " " + (entry.getKey().equals("dirt_place") ? renderShape(trait) : render(trait)));
+			lines.add(entry.getKey() + " " + render(trait));
 		}
 		check("registry.txt", lines);
 	}
@@ -426,10 +427,6 @@ class TraitFixtureTest {
 		}
 		return "name=" + trait.name() + " | canLevel=" + trait.canLevel() + " | description=" + trait.description()
 				+ " | details=" + details;
-	}
-
-	private static String renderShape(Modifier trait) {
-		return forgerShape(render(trait));
 	}
 
 	/** Replaces whichever temperate forger was rolled, so a rolled name compares by shape. */

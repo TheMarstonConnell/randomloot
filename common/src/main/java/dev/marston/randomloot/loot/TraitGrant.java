@@ -85,7 +85,8 @@ public final class TraitGrant {
 	 * Grants {@code trait} to {@code gear} if the gate allows it: adds it, or levels the
 	 * one already there. A trait that varies by world ({@link Modifier#forWorld}, such as
 	 * the forger in DirtPlace's name) goes on as that world's variant. A null seed means
-	 * no world is known, and the trait goes on as the registry holds it.
+	 * no world is known, and the trait goes on as the registry holds it: DirtPlace as
+	 * plain "Grace".
 	 */
 	public static Outcome grant(ItemStack gear, Modifier trait, @Nullable Long worldSeed) {
 		TraitEligibility.Result gate = TraitEligibility.check(gear, trait);

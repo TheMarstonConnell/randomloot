@@ -291,15 +291,12 @@ public final class GameTestBodies {
 	 */
 	public static void traitGrantStampsWorldForger(GameTestHelper helper) {
 		Modifier dirtPlace = ModifierRegistry.getModifier("dirt_place");
-
-		// A world whose forger is not the one the registry's DirtPlace happened to roll,
-		// so a grant that skipped the stamp cannot pass by luck.
+		// The registry's own Grace names no forger, so a grant that skipped the stamp
+		// cannot pass by matching the world's.
+		helper.assertTrue(dirtPlace.name().equals("Grace"),
+				"the registry's Grace should be named plainly, got " + dirtPlace.name());
 		long seed = 0;
-		while (seed < 64 && worldGrace(seed).equals(dirtPlace.name())) {
-			seed++;
-		}
 		String expected = worldGrace(seed);
-		helper.assertFalse(expected.equals(dirtPlace.name()), "64 worlds should not all share one forger");
 
 		ItemStack shovel = newTool(ToolType.SHOVEL);
 		TraitGrant.Outcome granted = TraitGrant.grant(shovel, dirtPlace, seed);
@@ -311,8 +308,9 @@ public final class GameTestBodies {
 
 		ItemStack noWorld = newTool(ToolType.SHOVEL);
 		TraitGrant.grant(noWorld, dirtPlace, null);
-		helper.assertTrue(traitName(noWorld, "dirt_place").equals(dirtPlace.name()),
-				"with no world to forge for, the trait should go on as the registry holds it");
+		helper.assertTrue(traitName(noWorld, "dirt_place").equals("Grace"),
+				"with no world to forge for, the trait should go on as plain Grace, got "
+						+ traitName(noWorld, "dirt_place"));
 
 		ItemStack foreign = newTool(ToolType.SWORD);
 		TraitGrant.force(foreign, graceOf("Nobody"));
@@ -1734,8 +1732,8 @@ public final class GameTestBodies {
 
 	/**
 	 * The gear's DirtPlace is named after this world's forger. Callers smith gear that
-	 * starts with a made-up forger: the registry prototype's random one matches the
-	 * world's one time in six, which would let a missing stamp pass.
+	 * starts with a made-up forger, as gear brought in from another world would, so it is
+	 * the smithing table's stamp that is checked.
 	 */
 	private static void assertWorldForger(GameTestHelper helper, ItemStack gear) {
 		String expected = worldGrace(helper.getLevel().getSeed());
