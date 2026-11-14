@@ -37,13 +37,14 @@ public abstract class AbstractModifier implements Modifier {
 	void bind(TraitDeclaration declaration) {
 		this.declaration = declaration;
 		this.level = declaration.minLevel;
-		if (this.name == null) {
-			this.name = defaultName();
-		}
+		this.name = declaration.name;
 	}
 
-	/** The name a trait has when the gear stores none. The declared one, unless a trait names itself. */
-	protected String defaultName() {
+	/**
+	 * The name a trait read off gear takes when the gear stores none. The declared one,
+	 * unless a trait says otherwise. A new instance always starts with the declared name.
+	 */
+	protected String nameWhenNotStored() {
 		return this.declaration.name;
 	}
 
@@ -141,7 +142,7 @@ public abstract class AbstractModifier implements Modifier {
 	/** Reads back what {@link #toNBT} wrote. Anything the gear does not have keeps its starting value. */
 	void load(CompoundTag tag) {
 		String storedName = tag.getStringOr(NAME, null);
-		this.name = storedName != null ? storedName : defaultName();
+		this.name = storedName != null ? storedName : nameWhenNotStored();
 
 		TraitDeclaration declared = this.declaration;
 		if (declared.levelKey != null) {
