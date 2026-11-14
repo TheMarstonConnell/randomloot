@@ -113,6 +113,7 @@ public final class RandomLootGameTests {
 		register(event, env, "smithing_take_consumes_count", GameTestBodies::smithingTakeConsumesCount);
 		register(event, env, "smithing_shift_click_consumes_count", GameTestBodies::smithingShiftClickConsumesCount);
 		register(event, env, "smithing_removal_costs_one", GameTestBodies::smithingRemovalCostsOne);
+		register(event, env, "chaotic_grants_roll_own_seeds", GameTestBodies::chaoticGrantsRollOwnSeeds);
 		register(event, env, "single_level_effects_stop_at_level_one", GameTestBodies::singleLevelEffectsStopAtLevelOne);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
 		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);

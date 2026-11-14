@@ -36,6 +36,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
@@ -52,6 +53,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
@@ -372,33 +374,62 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Wearer-hurt traits fire when a PLAYER takes damage. Regression: on Fabric the
-	 * armor-trait hook was a mixin into LivingEntity.actuallyHurt, which Player
-	 * overrides - so Thorny (and every WearerHurtModifier) silently did nothing for
-	 * players while passing the zombie-based tests.
+	 * Thorny reflects a share of the damage its wearer took, for a player and for a mob.
+	 *
+	 * <p>Two Fabric regressions live here. The armor-trait hook was once a mixin into
+	 * LivingEntity.actuallyHurt, which Player re-implements, so Thorny (and every
+	 * WearerHurtModifier) silently did nothing for players while the zombie-based tests
+	 * passed. Later it wrapped the actuallyHurt call, which handed the traits the hit
+	 * before armor where NeoForge's LivingDamageEvent.Pre hands them the damage after it:
+	 * for the hit below Thorny reflected 7.5 on Fabric and 3.0 on NeoForge.
 	 */
 	public static void thornyReflectsForPlayer(GameTestHelper helper) {
-		ServerPlayer player = mockVulnerablePlayer(helper);
-
-		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chest, ModifierRegistry.getModifier("thorny"));
-		player.setItemSlot(EquipmentSlot.CHEST, chest);
-
 		// A player attacker: mob damage scales with difficulty and zeroes out on the
 		// gametest server's Peaceful setting before it ever reaches the armor hooks.
 		// PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer.
 		enablePvp(helper);
+		ServerPlayer player = mockVulnerablePlayer(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
-		float attackerHealth = attacker.getHealth();
-		float wearerHealth = player.getHealth();
+		assertThornyReflectsDamageTaken(helper, player, attacker, player.damageSources().playerAttack(attacker));
 
-		helper.hurt(player, player.damageSources().playerAttack(attacker), 6.0f);
-
-		helper.assertTrue(player.getHealth() < wearerHealth, "the wearer should take damage");
-		helper.assertTrue(attacker.getHealth() < attackerHealth,
-				"thorny should reflect damage back at the attacker when the wearer is a player");
+		// The mob wearer is a witch. She shrugs off 85% of magic in her own override of
+		// the last reduction, so she also tells "after the reductions" from "inside the
+		// shared one": a hook on LivingEntity.getDamageAfterMagicAbsorb itself runs before
+		// her share comes off.
+		LivingEntity witch = helper.spawn(EntityTypes.WITCH, new BlockPos(1, 2, 1));
+		// The attacker is a mob too, for the Peaceful reason again: a mob's thorns would
+		// scale to nothing against a player. Its own 2 armor would shave the reflected hit.
+		LivingEntity witchAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		witchAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+		assertThornyReflectsDamageTaken(helper, witch, witchAttacker,
+				witch.damageSources().indirectMagic(witchAttacker, witchAttacker));
 
 		helper.succeed();
+	}
+
+	/** Hits a maxed-Thorny wearer who mitigates most of it and checks what comes back at the attacker. */
+	private static void assertThornyReflectsDamageTaken(GameTestHelper helper, LivingEntity wearer,
+			LivingEntity attacker, DamageSource source) {
+		wearer.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "thorny"));
+		// Full diamond's worth of armor, so the hit before and after it are far apart.
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(20.0);
+
+		float hit = 10.0f;
+		// Maxed Thorny: 15% at level 0 and 15% more for each of its 4 levels.
+		float share = 0.75f;
+		float wearerHealth = wearer.getHealth();
+		float attackerHealth = attacker.getHealth();
+		helper.hurt(wearer, source, hit);
+
+		float taken = wearerHealth - wearer.getHealth();
+		float reflected = attackerHealth - attacker.getHealth();
+		String who = wearer.getType().getDescriptionId();
+
+		helper.assertTrue(taken > 0.0f && taken < hit * 0.6f,
+				who + ": a large part of the hit should be mitigated, took " + taken + " of " + hit);
+		helper.assertTrue(Math.abs(reflected - taken * share) < 0.01f,
+				who + ": thorny should reflect " + share + " of the " + taken + " the wearer took (" + taken * share
+						+ "), not of the " + hit + " dealt (" + hit * share + "); reflected " + reflected);
 	}
 
 	/**
@@ -1008,11 +1039,14 @@ public final class GameTestBodies {
 	}
 
 	private static void assertAdvancementDone(GameTestHelper helper, ServerPlayer player, String id) {
+		helper.assertTrue(advancementDone(helper, player, id), "gameplay sequence should complete advancement: " + id);
+	}
+
+	private static boolean advancementDone(GameTestHelper helper, ServerPlayer player, String id) {
 		var advancement = helper.getLevel().getServer().getAdvancements()
 				.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id));
 		helper.assertTrue(advancement != null, "advancement should be loaded: " + id);
-		helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
-				"gameplay sequence should complete advancement: " + id);
+		return player.getAdvancements().getOrStartProgress(advancement).isDone();
 	}
 
 	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
@@ -1321,7 +1355,9 @@ public final class GameTestBodies {
 	/**
 	 * Through a real menu, the removal template previews with one item and takes one.
 	 * Stripping a trait for the full price again would make undoing Spelunking cost a
-	 * second stack of torches.
+	 * second stack of torches. Nor is it adding a trait: the take hook serves both
+	 * templates and used to fire the crafted-trait criterion behind add_trait for either.
+	 * (smithingShiftClickConsumesCount is the control: an add does complete it.)
 	 */
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -1343,8 +1379,41 @@ public final class GameTestBodies {
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
 		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
 				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
+		helper.assertFalse(advancementDone(helper, player, "add_trait"),
+				"removing a trait must not complete add_trait");
 
 		helper.succeed();
+	}
+
+	/**
+	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic, and
+	 * every grant - case roll, level-up roll, command, smithing table - ends in
+	 * addModifier writing that one onto the gear. So the seed it picked for itself at
+	 * start-up went onto every Chaotic tool granted until the server restarted, and they
+	 * all swung in step.
+	 */
+	public static void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
+		Modifier chaotic = ModifierRegistry.getModifier("chaotic");
+
+		List<ItemStack> tools = List.of(newTool(ToolType.SWORD), newTool(ToolType.SWORD), newTool(ToolType.SWORD));
+		tools.forEach(tool -> LootUtils.addModifier(tool, chaotic));
+		List<CompoundTag> granted = tools.stream().map(GameTestBodies::chaoticData).toList();
+		helper.assertTrue(granted.stream().distinct().count() == 3,
+				"three chaotic grants should carry three seeds, got " + granted);
+
+		// Only the grant rolls: a seed that is on the gear stays there through a rewrite.
+		ItemStack tool = tools.get(0);
+		LootUtils.updateModifier(tool, LootUtils.getModifiers(tool).get(0));
+		helper.assertTrue(chaoticData(tool).equals(granted.get(0)),
+				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(tool) + " after "
+						+ granted.get(0));
+
+		helper.succeed();
+	}
+
+	/** What the gear stores for its Chaotic trait: the name and the seed. */
+	private static CompoundTag chaoticData(ItemStack gear) {
+		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty("chaotic");
 	}
 
 	/**
