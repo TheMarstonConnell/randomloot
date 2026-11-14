@@ -1703,9 +1703,9 @@ public final class GameTestBodies {
 
 		Set<GameHook> undelivered = GameHooks.undelivered();
 		undelivered.remove(GameHook.SERVER_STOPPING);
-		// A known gap this test found, left for the mod's author to rule on because closing
-		// it changes what Fabric players get: Fabric does not deliver the first config load
-		// (see GameHooks.config). Take this out with the fix.
+		// A gap this test found: Fabric does not deliver the first config load (see
+		// GameHooks.config). Its fix is a separate change against the release branch; take
+		// this excuse out once that fix is under this code.
 		if (Services.PLATFORM.platformName().equals("Fabric")) {
 			undelivered.remove(GameHook.CONFIG);
 		}

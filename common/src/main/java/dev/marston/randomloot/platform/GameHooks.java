@@ -251,9 +251,10 @@ public final class GameHooks {
 	 * file inside {@code ConfigRegistry.register}, and the Fabric shim adds its loading
 	 * listener after that call, so the values in the file only arrive if the file is
 	 * edited while the game runs. Measured with {@code caseChance = 0.5} in the file:
-	 * NeoForge runs with 0.5, Fabric with the default 0.25. Left as found, because
-	 * closing it changes what Fabric players get; {@code loader_hooks_all_bound} excuses
-	 * this one hook on Fabric until it is closed.
+	 * NeoForge runs with 0.5, Fabric with the default 0.25. The fix, adding the
+	 * listeners before the config is registered, is a change of its own against the
+	 * release branch and is not in this code yet; until it is,
+	 * {@code loader_hooks_all_bound} excuses this one hook on Fabric.
 	 */
 	public static void config() {
 		delivered(GameHook.CONFIG);
