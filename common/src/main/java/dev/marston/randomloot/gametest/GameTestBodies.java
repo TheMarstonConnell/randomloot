@@ -9,6 +9,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
 
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.GenWiki;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
@@ -68,6 +69,7 @@ import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -1282,6 +1284,38 @@ public final class GameTestBodies {
 		}
 
 		helper.succeed();
+	}
+
+	/**
+	 * Wiki generation from this server's loaded data: every trait MODIFIERS.md lists has
+	 * a recipe that loaded, and the docs render without throwing. In a run started with
+	 * {@code RL_PROD=false} this row is also what writes the docs (see {@link GenWiki}),
+	 * so a failure here fails that run instead of committing a wrong page.
+	 */
+	public static void wikiGenerates(GameTestHelper helper) {
+		GenWiki.generate(helper.getLevel().recipeAccess().getRecipes());
+		helper.succeed();
+	}
+
+	/**
+	 * A trait whose recipe did not load stops wiki generation and is named in the
+	 * failure. It used to be written out as "crafting: n/a" with a warning in the log,
+	 * and a release shipped with all 68 entries reading that way.
+	 */
+	public static void wikiNeedsEveryTraitRecipe(GameTestHelper helper) {
+		List<RecipeHolder<?>> withoutThorny = helper.getLevel().recipeAccess().getRecipes().stream()
+				.filter(h -> !h.id().identifier().getPath().equals("trait_thorny"))
+				.toList();
+
+		try {
+			GenWiki.render(withoutThorny);
+		} catch (IllegalStateException expected) {
+			helper.assertTrue(expected.getMessage().contains("thorny"),
+					"the failure should name the trait with no recipe, got: " + expected.getMessage());
+			helper.succeed();
+			return;
+		}
+		throw helper.assertionException(Component.literal("rendering the wiki without Thorny's recipe should fail"));
 	}
 
 	/** The datapack's recipe for a trait, as loaded. */
