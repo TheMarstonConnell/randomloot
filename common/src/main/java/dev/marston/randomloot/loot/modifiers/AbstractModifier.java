@@ -78,22 +78,22 @@ public abstract class AbstractModifier implements Modifier {
 	}
 
 	@Override
-	public String tagName() {
+	public final String tagName() {
 		return this.declaration.tag;
 	}
 
 	@Override
-	public ChatFormatting color() {
+	public final ChatFormatting color() {
 		return this.declaration.color;
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
+	public final boolean forTool(ToolType type) {
 		return this.declaration.fits.contains(type);
 	}
 
 	@Override
-	public boolean compatible(Modifier mod) {
+	public final boolean compatible(Modifier mod) {
 		return !(mod instanceof AbstractModifier other) || !this.declaration.excludes(other.declaration);
 	}
 
@@ -103,29 +103,29 @@ public abstract class AbstractModifier implements Modifier {
 	 */
 	@Override
 	public String name() {
-		if (this.declaration == null || this.declaration.levelKey == null || this.level == this.declaration.minLevel) {
+		if (this.declaration.levelKey == null || this.level == this.declaration.minLevel) {
 			return this.name;
 		}
 		return this.name + " " + LootUtils.roman(this.level - this.declaration.minLevel + 1);
 	}
 
 	@Override
-	public boolean canLevel() {
-		return this.declaration != null && this.declaration.levelKey != null && this.level < this.declaration.maxLevel;
+	public final boolean canLevel() {
+		return this.declaration.levelKey != null && this.level < this.declaration.maxLevel;
 	}
 
 	@Override
-	public void levelUp() {
+	public final void levelUp() {
 		this.level++;
 	}
 
 	/** Everything the trait keeps on gear: its name, its level if it has one, and its declared fields. */
 	@Override
-	public CompoundTag toNBT() {
+	public final CompoundTag toNBT() {
 		CompoundTag tag = new CompoundTag();
 		tag.putString(NAME, this.name);
 
-		if (this.declaration != null && this.declaration.levelKey != null) {
+		if (this.declaration.levelKey != null) {
 			tag.putInt(this.declaration.levelKey, this.level);
 			if (this.declaration.levelMirrorKey != null) {
 				tag.putInt(this.declaration.levelMirrorKey, this.level);
@@ -164,7 +164,7 @@ public abstract class AbstractModifier implements Modifier {
 
 	/** A new instance of this trait holding what {@code tag} stores. */
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
+	public final Modifier fromNBT(CompoundTag tag) {
 		return ModifierRegistry.loadModifier(tagName(), tag);
 	}
 
@@ -190,15 +190,5 @@ public abstract class AbstractModifier implements Modifier {
 	@Override
 	public void writeToLore(List<Component> list, boolean shift) {
 		list.add(Modifier.makeComp(this.displayName()).withStyle(this.color()));
-	}
-
-	/** Melee tools: swords and axes. */
-	public static boolean isWeapon(ToolType type) {
-		return type == ToolType.SWORD || type == ToolType.AXE;
-	}
-
-	/** Block-breaking tools: pickaxes, axes and shovels. */
-	public static boolean isMiningTool(ToolType type) {
-		return type == ToolType.PICKAXE || type == ToolType.AXE || type == ToolType.SHOVEL;
 	}
 }

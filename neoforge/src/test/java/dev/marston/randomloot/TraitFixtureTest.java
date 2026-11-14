@@ -114,6 +114,10 @@ class TraitFixtureTest {
 				lines.add(tag + " #" + grant + " " + kind + " " + shape(tag, stored, tag.equals("chaotic")));
 				lines.add("    " + render(onGear));
 				assertEquals(stored, onGear.toNBT(), tag + " read back off gear should write the same tag");
+				// Trait dispatch saves a trait when what it would store differs before and
+				// after a hook. One that stored something different each time it was asked
+				// would be written to the gear on every tick it is held.
+				assertEquals(onGear.toNBT(), onGear.toNBT(), tag + " should store the same thing every time it is asked");
 			}
 		}
 		check("grants.txt", lines);
