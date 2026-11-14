@@ -32,11 +32,6 @@ public class FireBall extends AbstractModifier implements UseModifier {
 	}
 
 	@Override
-	public boolean compatible(Modifier mod) {
-		return !ModifierRegistry.USERS.contains(mod);
-	}
-
-	@Override
 	public boolean use(Level level, Player player, InteractionHand hand) {
 
 		double d1 = 2.5D;

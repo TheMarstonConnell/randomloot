@@ -126,9 +126,9 @@ public final class TraitEligibility {
 				if (!existing.canLevel()) {
 					return new Result(Verdict.ALREADY_MAXED, existing, ctx.type());
 				}
-			} else if (!existing.compatible(trait) || !trait.compatible(existing)) {
-				// Both are asked: a conflict only one of the pair declares (Lumbering
-				// names Veiny, Veiny does not name Lumbering) holds in either order.
+			} else if (!existing.compatible(trait)) {
+				// A conflict is declared on one trait of a pair and holds in either
+				// order: the registry applies it both ways.
 				return new Result(Verdict.INCOMPATIBLE, existing, ctx.type());
 			}
 		}

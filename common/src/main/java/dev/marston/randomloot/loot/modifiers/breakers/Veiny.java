@@ -105,11 +105,4 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 		return "Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to "
 				+ power.get().intValue() + " in each direction.";
 	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		// Incompatible with Excavator
-		return !(mod instanceof Excavator);
-	}
-
 }

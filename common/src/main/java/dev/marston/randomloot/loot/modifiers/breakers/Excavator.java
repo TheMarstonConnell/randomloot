@@ -100,11 +100,4 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	public String description() {
 		return "Breaking blocks while crouching mines a 3x3 area perpendicular to the surface.";
 	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		// Incompatible with Veiny
-		return !(mod instanceof Veiny);
-	}
-
 }

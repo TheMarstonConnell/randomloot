@@ -101,9 +101,4 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			}
 		}
 	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return !(mod instanceof Veiny);
-	}
 }

@@ -30,7 +30,21 @@ public final class TraitDeclaration {
 
 	/** The wiki's sections. A trait is listed under each group it declares. */
 	public enum Group {
-		BREAKERS, USERS, HURTERS, HOLDERS, STATS, WEARERS, MISC
+		BREAKERS,
+		/** Right-click traits. A piece of gear answers a right-click once, so it carries only one of them. */
+		USERS(true),
+		HURTERS, HOLDERS, STATS, WEARERS, MISC;
+
+		/** Whether two traits of this group can never share a piece of gear. */
+		final boolean oneAPiece;
+
+		Group() {
+			this(false);
+		}
+
+		Group(boolean oneAPiece) {
+			this.oneAPiece = oneAPiece;
+		}
 	}
 
 	/** Swords and axes. */
@@ -128,6 +142,25 @@ public final class TraitDeclaration {
 	public Modifier make(Supplier<? extends AbstractModifier> factory) {
 		this.factory = factory;
 		return ModifierRegistry.register(this);
+	}
+
+	/**
+	 * Whether this trait and {@code other} cannot share a piece of gear. The same answer
+	 * whichever of the two is asked, from whichever of them declared it.
+	 */
+	boolean excludes(TraitDeclaration other) {
+		if (other == this) {
+			return false;
+		}
+		if (this.excludes.contains(other.tag) || other.excludes.contains(this.tag)) {
+			return true;
+		}
+		for (Group group : this.groups) {
+			if (group.oneAPiece && other.groups.contains(group)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/** A new instance of the trait, as a fresh grant starts out. */
