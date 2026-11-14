@@ -44,6 +44,10 @@ _Avoid_: glue, bridge, platform code
 The one list of the gametests that both loaders run. A shared gametest exists by having a row in it, so it cannot be present on one loader and missing on the other.
 _Avoid_: test registry, test list, test manifest
 
+**Wiki generation**:
+Producing the player docs in the repo (the trait list, config guide, progression, names, loot and biome pages) from the game's own loaded data, so a page cannot state something the game does not do. It refuses to produce a page with a gap in it, such as a trait with no recipe.
+_Avoid_: docs build, doc gen, wiki export
+
 **Config setting**:
 One value a player or pack maker can change in the config file, such as the chance of finding a case or whether a trait is switched on. Each is declared once, and the file, its row in the config guide and the value the game reads all come from that declaration.
 _Avoid_: option, config value, property

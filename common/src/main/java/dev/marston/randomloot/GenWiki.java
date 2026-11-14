@@ -11,15 +11,41 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.resources.Identifier;
+import net.minecraft.world.item.crafting.RecipeHolder;
 
 import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
+import java.util.function.Consumer;
 
-public class GenWiki {
+/**
+ * Wiki generation: the repo's player docs (MODIFIERS.md, CONFIG.md, PROGRESSION.md,
+ * NAMES.md, LOOT.md, BIOMES.md) and the trait entries of lang/en_us.json, rendered from
+ * what the game itself holds - the trait registry, the config settings, {@link GearStats}
+ * and the recipes a server has loaded.
+ *
+ * <p>It runs as the {@code wiki_generates} row of the gametest table, on a server whose
+ * datapacks have loaded, so it sees recipes the way the game does instead of parsing the
+ * JSON files a second time. Every run renders the docs, and a trait whose recipe did not
+ * load fails that run. Only a run started with {@code RL_PROD=false} writes them, to the
+ * repo root named by {@code RL_WIKI_DIR}; that is how the wiki workflow regenerates them.
+ */
+public final class GenWiki {
 
-    private static void write(String s, FileWriter f) throws IOException {
-        f.write(s + "\n");
+    /** The trait recipes the server loaded, by trait tag name; sorted, which is the order LOOT.md lists them in. */
+    private final SortedMap<String, RecipeCost> recipes;
+
+    /** Traits MODIFIERS.md has an entry for but no recipe loaded for. Any at all fails the render. */
+    private final Set<String> withoutRecipe = new TreeSet<>();
+
+    private GenWiki(SortedMap<String, RecipeCost> recipes) {
+        this.recipes = recipes;
+    }
+
+    private static void write(String s, StringBuilder f) {
+        f.append(s).append('\n');
     }
 
     private static String stripItemName(String name) {
@@ -37,17 +63,17 @@ public class GenWiki {
         return m.name();
     }
 
+    /**
+     * The lang file this regenerates, relative to the repo root. It is the one source
+     * file wiki generation still opens: it is rewritten in place, and its hand-written
+     * entries have to be read back to be kept. Recipes are not read from here any more;
+     * a stale path used to make every recipe in the docs read "n/a" without failing.
+     */
+    private static final String LANG_FILE = "common/src/main/resources/assets/randomloot/lang/en_us.json";
+
     // Resolves a path relative to the repo root. RL_WIKI_DIR overrides the
     // default of "..", which only holds when the game's working directory is a
     // direct child of the repo root (e.g. run/) — CI run configs live deeper.
-    /**
-     * Where the mod's assets and data live. This moved from src/ to common/src/ in the
-     * multiloader restructure, and GenWiki was not updated: every recipe lookup and the
-     * lang merge silently failed, which is why all 68 entries in MODIFIERS.md read
-     * "crafting: n/a" and LOOT.md's recipe table shipped with no rows.
-     */
-    private static final String RESOURCES = "common/src/main/resources/";
-
     private static File repoFile(String relativePath) {
         String root = System.getenv("RL_WIKI_DIR");
         if (root == null || root.isBlank()) {
@@ -56,19 +82,20 @@ public class GenWiki {
         return new File(root.strip(), relativePath);
     }
 
-    private static void writeMod(Modifier m, FileWriter f) throws IOException {
+    private void writeMod(Modifier m, StringBuilder f) {
         String tag = m.tagName();
         String recipe = "n/a";
         // The count is what the Addition Template charges; one item is implied.
         String cost = "";
-        try {
-            RecipeCost read = readRecipe(tag);
-            recipe = read.itemId();
-            if (read.count() > 1) {
-                cost = " \u00d7" + read.count();
+        RecipeCost loaded = recipes.get(tag);
+        if (loaded == null) {
+            // Never reaches a file: render() throws once every page has been through.
+            withoutRecipe.add(tag);
+        } else {
+            recipe = loaded.itemId();
+            if (loaded.count() > 1) {
+                cost = " \u00d7" + loaded.count();
             }
-        } catch (Exception e) {
-            RandomLoot.LOGGER.warn("failed to find recipe for " + tag + ".");
         }
         write("### " + docName(m), f);
 
@@ -79,7 +106,7 @@ public class GenWiki {
         write("**Description:** " + m.description(), f);
     }
 
-    private static void writeMods(Set<Modifier> mods, FileWriter f) throws IOException {
+    private void writeMods(Set<Modifier> mods, StringBuilder f) {
         List<Modifier> sortedList = new ArrayList<>(mods);
         sortedList.sort(Comparator.comparing(GenWiki::docName));
 
@@ -88,7 +115,7 @@ public class GenWiki {
         }
     }
 
-    private static void writeModifiers(FileWriter f) throws IOException {
+    private void writeModifiers(StringBuilder f) {
 
         write("# Modifiers", f);
         write("This is a full list of modifiers in the game and a description of what they do.", f);
@@ -123,7 +150,7 @@ public class GenWiki {
     }
 
     /** One CONFIG.md table: a row per setting of the group, rendered from its declaration rather than restated. */
-    private static void writeSettingRows(Config.Group group, FileWriter f) throws IOException {
+    private static void writeSettingRows(Config.Group group, StringBuilder f) {
         for (Config.Setting<?> setting : Config.settings(group)) {
             write("| `" + setting.key() + "` | " + defaultCell(setting) + " | " + rangeCell(setting) + " | "
                     + setting.description() + " |", f);
@@ -149,7 +176,7 @@ public class GenWiki {
         return setting.min() + "-" + setting.max();
     }
 
-    private static void writeConfig(FileWriter f) throws IOException {
+    private static void writeConfig(StringBuilder f) {
         write("# Configuration Guide", f);
         write("", f);
         write("This document describes all configuration options available for Random Loot.", f);
@@ -200,7 +227,7 @@ public class GenWiki {
         write("", f);
     }
 
-    private static void writeProgression(FileWriter f) throws IOException {
+    private static void writeProgression(StringBuilder f) {
         write("# Tool Progression", f);
         write("", f);
         write("This document explains how Random Loot tools improve over time.", f);
@@ -292,7 +319,7 @@ public class GenWiki {
         write("", f);
     }
 
-    private static void writeNames(FileWriter f) throws IOException {
+    private static void writeNames(StringBuilder f) {
         write("# Name Generation", f);
         write("", f);
         write("This document explains how Random Loot tool names are generated.", f);
@@ -377,7 +404,7 @@ public class GenWiki {
         write("", f);
     }
 
-    private static void writeStringArray(String[] array, FileWriter f) throws IOException {
+    private static void writeStringArray(String[] array, StringBuilder f) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < array.length; i++) {
             sb.append("`").append(array[i]).append("`");
@@ -388,7 +415,7 @@ public class GenWiki {
         write(sb.toString(), f);
     }
 
-    private static void writeBiomes(FileWriter f) throws IOException {
+    private static void writeBiomes(StringBuilder f) {
         write("# Biome-Specific Traits", f);
         write("", f);
         write("Some traits in Random Loot are tied to specific biomes. These special traits can only appear on tools generated in matching biomes, and can only be added via smithing table to tools that originated from compatible biomes.", f);
@@ -449,7 +476,7 @@ public class GenWiki {
         write("", f);
     }
 
-    private static void writeLoot(FileWriter f) throws IOException {
+    private void writeLoot(StringBuilder f) {
         write("# Loot & Crafting Guide", f);
         write("", f);
         write("This document explains where to find Random Loot items and how to craft with them.", f);
@@ -468,7 +495,7 @@ public class GenWiki {
         write("- End Cities", f);
         write("- And any other structure with loot chests!", f);
         write("", f);
-        write("Default spawn chance: **25%** (configurable in [CONFIG.md](CONFIG.md))", f);
+        write("Default spawn chance: **" + percent(Config.CASE_CHANCE) + "** (configurable in [CONFIG.md](CONFIG.md))", f);
         write("", f);
 
         write("## Using Loot Cases", f);
@@ -482,7 +509,8 @@ public class GenWiki {
         write("", f);
         write("Loot Cases can be placed in **Dispensers** for automated opening:", f);
         write("- The dispenser will open the case and eject the generated item", f);
-        write("- Dispensed gear rolls at a fraction of the goodness of the most progressed online player (default 75%, configurable via `dispenserGoodness` in [CONFIG.md](CONFIG.md))", f);
+        write("- Dispensed gear rolls at a fraction of the goodness of the most progressed online player (default " + percent(Config.DISPENSER_GOODNESS)
+                + ", configurable via `" + Config.DISPENSER_GOODNESS.key() + "` in [CONFIG.md](CONFIG.md))", f);
         write("- The dispenser's own biome and dimension are recorded on the item, so biome-restricted traits can roll", f);
         write("- **Note:** Opening cases with a dispenser does not advance player progression", f);
         write("", f);
@@ -498,7 +526,7 @@ public class GenWiki {
         write("", f);
         write("Trait Templates also spawn in structure chests.", f);
         write("", f);
-        write("Default spawn chance: **15%** (configurable in [CONFIG.md](CONFIG.md))", f);
+        write("Default spawn chance: **" + percent(Config.MOD_CHANCE) + "** (configurable in [CONFIG.md](CONFIG.md))", f);
         write("", f);
 
         write("## Trait Templates", f);
@@ -533,28 +561,23 @@ public class GenWiki {
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
 
-        File recipeDir = repoFile(RESOURCES + "data/randomloot/recipe/");
-        File[] recipeFiles = recipeDir.listFiles((dir, name) -> name.startsWith("trait_") && name.endsWith(".json"));
-
-        if (recipeFiles != null) {
-            Arrays.sort(recipeFiles);
-            for (File recipeFile : recipeFiles) {
-                try {
-                    String traitName = recipeFile.getName().replace("trait_", "").replace(".json", "");
-                    RecipeCost cost = readRecipe(recipeFile);
-                    // The recipe's tag name and the trait's display name can differ
-                    // (e.g. trait_necrotic.json is the "Draining" trait), so resolve
-                    // through the registry and only fall back to the filename.
-                    Modifier mod = ModifierRegistry.getModifier(traitName);
-                    String displayName = mod != null ? docName(mod)
-                            : traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
-                    write("| " + displayName + " | `" + cost.itemId() + "` | " + cost.count() + " |", f);
-                } catch (Exception e) {
-                    RandomLoot.LOGGER.warn("Failed to read recipe: " + recipeFile.getName());
-                }
-            }
+        for (Map.Entry<String, RecipeCost> entry : recipes.entrySet()) {
+            String traitName = entry.getKey();
+            RecipeCost cost = entry.getValue();
+            // The recipe's tag name and the trait's display name can differ
+            // (e.g. trait_necrotic is the "Draining" trait), so resolve
+            // through the registry and only fall back to the tag name.
+            Modifier mod = ModifierRegistry.getModifier(traitName);
+            String displayName = mod != null ? docName(mod)
+                    : traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
+            write("| " + displayName + " | `" + cost.itemId() + "` | " + cost.count() + " |", f);
         }
         write("", f);
+    }
+
+    /** A chance setting's default as the docs print it: 0.25 is "25%". */
+    private static String percent(Config.Setting<Double> chance) {
+        return Math.round(chance.defaultValue() * 100) + "%";
     }
 
     /**
@@ -572,7 +595,7 @@ public class GenWiki {
      */
     private static void writeLang() throws IOException {
         Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
-        File langFile = repoFile(RESOURCES + "assets/randomloot/lang/en_us.json");
+        File langFile = repoFile(LANG_FILE);
 
         Map<String, String> entries = new TreeMap<>();
 
@@ -627,73 +650,92 @@ public class GenWiki {
         }
     }
 
-    public static void genWiki() {
+    /**
+     * Renders every doc from a server's loaded recipes and, when the run was started with
+     * {@code RL_PROD=false}, writes them under the repo root named by {@code RL_WIKI_DIR}.
+     * With {@code RL_PROD} unset nothing is written.
+     *
+     * @throws IllegalStateException when a trait in MODIFIERS.md has no loaded recipe, or
+     *                               the docs were asked for and the root is not the repo
+     * @throws UncheckedIOException  when a file cannot be written
+     */
+    public static void generate(Collection<RecipeHolder<?>> loadedRecipes) {
+        Map<String, String> docs = render(loadedRecipes);
 
-        String isProdEnv = System.getenv("RL_PROD");
-        if (isProdEnv == null) {
+        String isProd = System.getenv("RL_PROD");
+        if (isProd == null || !isProd.strip().contains("false")) {
             return;
         }
 
-        String isProd = isProdEnv.strip();
-
-        if (isProd.contains("false")) {
-            RandomLoot.LOGGER.info("Creating wiki...");
-
-            try {
-                FileWriter modifiersWriter = new FileWriter(repoFile("MODIFIERS.md"));
-                writeModifiers(modifiersWriter);
-                modifiersWriter.close();
-                RandomLoot.LOGGER.info("Generated MODIFIERS.md");
-
-                FileWriter configWriter = new FileWriter(repoFile("CONFIG.md"));
-                writeConfig(configWriter);
-                configWriter.close();
-                RandomLoot.LOGGER.info("Generated CONFIG.md");
-
-                FileWriter progressionWriter = new FileWriter(repoFile("PROGRESSION.md"));
-                writeProgression(progressionWriter);
-                progressionWriter.close();
-                RandomLoot.LOGGER.info("Generated PROGRESSION.md");
-
-                FileWriter namesWriter = new FileWriter(repoFile("NAMES.md"));
-                writeNames(namesWriter);
-                namesWriter.close();
-                RandomLoot.LOGGER.info("Generated NAMES.md");
-
-                FileWriter lootWriter = new FileWriter(repoFile("LOOT.md"));
-                writeLoot(lootWriter);
-                lootWriter.close();
-                RandomLoot.LOGGER.info("Generated LOOT.md");
-
-                FileWriter biomesWriter = new FileWriter(repoFile("BIOMES.md"));
-                writeBiomes(biomesWriter);
-                biomesWriter.close();
-                RandomLoot.LOGGER.info("Generated BIOMES.md");
-
-                writeLang();
-                RandomLoot.LOGGER.info("Generated lang/en_us.json");
-
-                RandomLoot.LOGGER.info("Wiki generation complete!");
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        // Checked before the first write: with the wrong root the docs would land in a
+        // directory nobody commits from, and the lang file would lose its hand-written entries.
+        if (!repoFile(LANG_FILE).isFile()) {
+            throw new IllegalStateException("RL_PROD=false asks for the wiki, but "
+                    + repoFile("").toPath().toAbsolutePath().normalize() + " is not the repo root (no " + LANG_FILE + "). Set RL_WIKI_DIR to the repo root.");
         }
 
+        RandomLoot.LOGGER.info("Creating wiki...");
+        try {
+            for (Map.Entry<String, String> doc : docs.entrySet()) {
+                Files.writeString(repoFile(doc.getKey()).toPath(), doc.getValue());
+                RandomLoot.LOGGER.info("Generated " + doc.getKey());
+            }
+            writeLang();
+            RandomLoot.LOGGER.info("Generated lang/en_us.json");
+        } catch (IOException e) {
+            throw new UncheckedIOException("wiki generation could not write its files", e);
+        }
+        RandomLoot.LOGGER.info("Wiki generation complete!");
+    }
+
+    /**
+     * The six docs as text, by file name, in the order they are written. Touches no file.
+     *
+     * @throws IllegalStateException when a trait in MODIFIERS.md has no loaded recipe;
+     *                               the message names every such trait
+     */
+    public static Map<String, String> render(Collection<RecipeHolder<?>> loadedRecipes) {
+        GenWiki wiki = new GenWiki(traitRecipes(loadedRecipes));
+
+        Map<String, String> docs = new LinkedHashMap<>();
+        docs.put("MODIFIERS.md", page(wiki::writeModifiers));
+        docs.put("CONFIG.md", page(GenWiki::writeConfig));
+        docs.put("PROGRESSION.md", page(GenWiki::writeProgression));
+        docs.put("NAMES.md", page(GenWiki::writeNames));
+        docs.put("LOOT.md", page(wiki::writeLoot));
+        docs.put("BIOMES.md", page(GenWiki::writeBiomes));
+
+        if (!wiki.withoutRecipe.isEmpty()) {
+            throw new IllegalStateException("no trait recipe is loaded for " + wiki.withoutRecipe
+                    + ". Each trait needs data/" + RandomLoot.MODID + "/recipe/" + RECIPE_PREFIX + "<tag>.json.");
+        }
+        return docs;
+    }
+
+    private static String page(Consumer<StringBuilder> writer) {
+        StringBuilder page = new StringBuilder();
+        writer.accept(page);
+        return page.toString();
     }
 
     /** A trait recipe's addition item and how many of it the Addition Template charges. */
     private record RecipeCost(String itemId, int count) {
     }
 
-    private static RecipeCost readRecipe(String trait) throws IOException {
-        return readRecipe(repoFile(RESOURCES + "data/randomloot/recipe/trait_" + trait + ".json"));
-    }
+    /** A trait's recipe has the id {@code randomloot:trait_<tag>}. */
+    private static final String RECIPE_PREFIX = "trait_";
 
-    private static RecipeCost readRecipe(File recipeFile) throws IOException {
-        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(recipeFile))) {
-            JsonObject item = new Gson().fromJson(bufferedReader, JsonObject.class).get("item").getAsJsonObject();
-            return new RecipeCost(item.get("id").getAsString(), item.has("count") ? item.get("count").getAsInt() : 1);
+    private static SortedMap<String, RecipeCost> traitRecipes(Collection<RecipeHolder<?>> loadedRecipes) {
+        SortedMap<String, RecipeCost> byTrait = new TreeMap<>();
+        for (RecipeHolder<?> holder : loadedRecipes) {
+            Identifier id = holder.id().identifier();
+            if (holder.value() instanceof TraitAdditionRecipe recipe && id.getNamespace().equals(RandomLoot.MODID)
+                    && id.getPath().startsWith(RECIPE_PREFIX)) {
+                byTrait.put(id.getPath().substring(RECIPE_PREFIX.length()),
+                        new RecipeCost(recipe.additionItem().getRegisteredName(), recipe.additionCount()));
+            }
         }
+        return byTrait;
     }
 
 }

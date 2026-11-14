@@ -1,8 +1,10 @@
 # Regenerates the wiki markdown (MODIFIERS.md, CONFIG.md, PROGRESSION.md,
-# NAMES.md, LOOT.md, BIOMES.md) from the mod's registries on every push to a
-# PR. GenWiki runs during mod construction when RL_PROD=false, so booting the
-# headless GameTestServer is enough to produce the files. If they differ from
-# what's checked in, the diff is committed and pushed back to the PR branch.
+# NAMES.md, LOOT.md, BIOMES.md) from the mod's registries and loaded recipes on
+# every push to a PR. Wiki generation is the wiki_generates gametest, which
+# writes the files when RL_PROD=false, so running the headless GameTestServer
+# produces them. If they differ from what's checked in, the diff is committed
+# and pushed back to the PR branch. A trait with no loaded recipe, or any other
+# gametest failure, fails the Generate step and nothing is committed.
 #
 # Pushes made with the default GITHUB_TOKEN do not trigger new workflow runs,
 # so the auto-commit cannot loop.

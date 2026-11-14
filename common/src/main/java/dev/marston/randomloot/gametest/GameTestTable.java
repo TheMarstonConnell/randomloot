@@ -118,7 +118,10 @@ public final class GameTestTable {
 			row("loot_injection_rolls_once_per_chest", GameTestBodies::lootInjectionRollsOncePerChest),
 			row("early_bird_reads_pre_hit_health", GameTestBodies::earlyBirdReadsPreHitHealth),
 			row("stat_boost_traits_boost_melee", GameTestBodies::statBoostTraitsBoostMelee),
-			row("right_click_traits_yield_to_usable_offhand", GameTestBodies::rightClickTraitsYieldToUsableOffhand));
+			row("right_click_traits_yield_to_usable_offhand", GameTestBodies::rightClickTraitsYieldToUsableOffhand),
+			// Also what writes the docs, in a run started with RL_PROD=false (see GenWiki).
+			row("wiki_generates", GameTestBodies::wikiGenerates),
+			row("wiki_needs_every_trait_recipe", GameTestBodies::wikiNeedsEveryTraitRecipe));
 
 	/** Every shared gametest, in the order the loaders register them. */
 	public static List<Row> rows() {
