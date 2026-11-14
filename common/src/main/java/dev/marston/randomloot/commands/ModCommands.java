@@ -151,7 +151,10 @@ public class ModCommands {
 		}
 
 		boolean leveled = outcome.kind() == TraitGrant.Kind.LEVELED;
-		source.sendSuccess(() -> Component.literal(leveled ? "Leveled up " : "Added ").append(mod.displayName())
+		// The trait as it was granted, not the registry's copy: Grace goes on under this
+		// world's forger, and the registry's carries another.
+		Component granted = outcome.trait().displayName();
+		source.sendSuccess(() -> Component.literal(leveled ? "Leveled up " : "Added ").append(granted)
 				.append(leveled ? " on " : " to ").append(held.getDisplayName()), true);
 		return 1;
 	}
