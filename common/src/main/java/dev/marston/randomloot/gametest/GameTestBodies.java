@@ -487,6 +487,35 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
+	/**
+	 * Unbreaking has one rule for tools and worn armor: a roll for every point of
+	 * durability. Armor used to get a single roll that cancelled the whole hit or none of
+	 * it, so at Unbreaking's first level (20%) a 100-point hit cost the piece 0 or 100.
+	 * Rolled per point it lands in between; all 100 falling the same way is a 1 in
+	 * several billion chance.
+	 */
+	public static void unbreakingRollsPerDurabilityPoint(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+
+		ItemStack axe = gear(helper, ToolType.AXE, false, "unbreaking");
+		helper.assertTrue(axe.getMaxDamage() > 100, "the axe has to survive 100 points to be measured");
+		TraitDispatch.spendDurability(axe, 100, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() > 0 && axe.getDamageValue() < 100,
+				"a tool should roll Unbreaking per point, spent " + axe.getDamageValue() + " of 100");
+
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+		TraitGrant.force(chestplate, ModifierRegistry.getModifier("unbreaking"));
+		float charged = TraitDispatch.armorDurability(chestplate, helper.getLevel(), 100.0f);
+		helper.assertTrue(charged > 0.0f && charged < 100.0f,
+				"worn armor should roll Unbreaking per point, charged " + charged + " of 100");
+
+		// A piece without the trait is charged exactly what vanilla asked for.
+		helper.assertTrue(TraitDispatch.armorDurability(newArmor(ToolType.CHESTPLATE), helper.getLevel(), 2.5f) == 2.5f,
+				"armor without Unbreaking should be charged the hit as it came");
+
+		helper.succeed();
+	}
+
 	/** Gear of the given type at goodness 4 with the given traits, put into its reveal roll if asked. */
 	private static ItemStack gear(GameTestHelper helper, ToolType type, boolean rolling, String... traits) {
 		ItemStack gear = newTool(type);
