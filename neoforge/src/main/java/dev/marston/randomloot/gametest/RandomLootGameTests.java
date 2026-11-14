@@ -92,7 +92,6 @@ public final class RandomLootGameTests {
 		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
 		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
 		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
-		register(event, env, "thorny_reflects_damage_taken", GameTestBodies::thornyReflectsDamageTaken);
 		register(event, env, "migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents);
 		register(event, env, "featherweight_softens_fall_damage", GameTestBodies::featherweightSoftensFallDamage);
 		register(event, env, "adrenaline_grants_speed", GameTestBodies::adrenalineGrantsSpeed);
@@ -114,8 +113,6 @@ public final class RandomLootGameTests {
 		register(event, env, "smithing_take_consumes_count", GameTestBodies::smithingTakeConsumesCount);
 		register(event, env, "smithing_shift_click_consumes_count", GameTestBodies::smithingShiftClickConsumesCount);
 		register(event, env, "smithing_removal_costs_one", GameTestBodies::smithingRemovalCostsOne);
-		register(event, env, "smithing_removal_does_not_grant_add_trait",
-				GameTestBodies::smithingRemovalDoesNotGrantAddTrait);
 		register(event, env, "chaotic_grants_roll_own_seeds", GameTestBodies::chaoticGrantsRollOwnSeeds);
 		register(event, env, "single_level_effects_stop_at_level_one", GameTestBodies::singleLevelEffectsStopAtLevelOne);
 		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);

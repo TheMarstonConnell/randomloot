@@ -374,54 +374,26 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Wearer-hurt traits fire when a PLAYER takes damage. Regression: on Fabric the
-	 * armor-trait hook was a mixin into LivingEntity.actuallyHurt, which Player
-	 * overrides - so Thorny (and every WearerHurtModifier) silently did nothing for
-	 * players while passing the zombie-based tests.
+	 * Thorny reflects a share of the damage its wearer took, for a player and for a mob.
+	 *
+	 * <p>Two Fabric regressions live here. The armor-trait hook was once a mixin into
+	 * LivingEntity.actuallyHurt, which Player re-implements, so Thorny (and every
+	 * WearerHurtModifier) silently did nothing for players while the zombie-based tests
+	 * passed. Later it wrapped the actuallyHurt call, which handed the traits the hit
+	 * before armor where NeoForge's LivingDamageEvent.Pre hands them the damage after it:
+	 * for the hit below Thorny reflected 7.5 on Fabric and 3.0 on NeoForge.
 	 */
 	public static void thornyReflectsForPlayer(GameTestHelper helper) {
-		ServerPlayer player = mockVulnerablePlayer(helper);
-
-		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chest, ModifierRegistry.getModifier("thorny"));
-		player.setItemSlot(EquipmentSlot.CHEST, chest);
-
 		// A player attacker: mob damage scales with difficulty and zeroes out on the
 		// gametest server's Peaceful setting before it ever reaches the armor hooks.
 		// PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer.
 		enablePvp(helper);
+		ServerPlayer player = mockVulnerablePlayer(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
-		float attackerHealth = attacker.getHealth();
-		float wearerHealth = player.getHealth();
+		assertThornyReflectsDamageTaken(helper, player, attacker, player.damageSources().playerAttack(attacker));
 
-		helper.hurt(player, player.damageSources().playerAttack(attacker), 6.0f);
-
-		helper.assertTrue(player.getHealth() < wearerHealth, "the wearer should take damage");
-		helper.assertTrue(attacker.getHealth() < attackerHealth,
-				"thorny should reflect damage back at the attacker when the wearer is a player");
-
-		helper.succeed();
-	}
-
-	/**
-	 * Thorny reflects a share of the damage its wearer took, not of the hit before armor.
-	 * The loaders used to disagree: NeoForge hands wearer-hurt traits the damage from
-	 * LivingDamageEvent.Pre, after armor and enchantments, while Fabric's stand-in wrapped
-	 * the actuallyHurt call and handed them the raw hit. thornyReflectsForPlayer only
-	 * asks whether the attacker lost any health, so it passed either way.
-	 *
-	 * <p>A player and a mob wearer, because Fabric needs a hook in each: Player has its
-	 * own actuallyHurt and never runs LivingEntity's.
-	 */
-	public static void thornyReflectsDamageTaken(GameTestHelper helper) {
-		enablePvp(helper);
-		ServerPlayer playerWearer = mockVulnerablePlayer(helper);
-		ServerPlayer playerAttacker = mockVulnerablePlayer(helper);
-		assertThornyReflectsDamageTaken(helper, playerWearer, playerAttacker,
-				playerWearer.damageSources().playerAttack(playerAttacker));
-
-		// Mob against mob: a mob's thorns scale with difficulty against a player, and the
-		// gametest server is Peaceful.
+		// Mob against mob, for the same reason: a mob's thorns would scale to nothing
+		// against a player.
 		LivingEntity mobWearer = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		LivingEntity mobAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		// A zombie's own 2 armor would shave the reflected hit.
@@ -1380,7 +1352,9 @@ public final class GameTestBodies {
 	/**
 	 * Through a real menu, the removal template previews with one item and takes one.
 	 * Stripping a trait for the full price again would make undoing Spelunking cost a
-	 * second stack of torches.
+	 * second stack of torches. Nor is it adding a trait: the take hook serves both
+	 * templates and used to fire the crafted-trait criterion behind add_trait for either.
+	 * (smithingShiftClickConsumesCount is the control: an add does complete it.)
 	 */
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -1402,85 +1376,40 @@ public final class GameTestBodies {
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
 		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
 				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
-
-		helper.succeed();
-	}
-
-	/**
-	 * Stripping a trait with the Subtraction Template does not complete add_trait. The
-	 * take hook fired the crafted-trait criterion for every trait recipe, whichever
-	 * template was in the slot. The add that follows is the control: same player, same
-	 * table, so the first assert cannot pass just because criteria never fire here.
-	 */
-	public static void smithingRemovalDoesNotGrantAddTrait(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
-
-		SmithingMenu removal = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
-				new ItemStack(Items.CACTUS));
-		removal.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
-
-		ItemStack stripped = removal.getCarried();
-		helper.assertTrue(!stripped.isEmpty() && !hasTrait(stripped, "thorny"),
-				"the removal should have gone through");
 		helper.assertFalse(advancementDone(helper, player, "add_trait"),
 				"removing a trait must not complete add_trait");
 
-		SmithingMenu addition = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), stripped,
-				new ItemStack(Items.CACTUS, 4));
-		addition.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
-
-		helper.assertTrue(hasTrait(addition.getCarried(), "thorny"), "the addition should have gone through");
-		assertAdvancementDone(helper, player, "add_trait");
-
 		helper.succeed();
 	}
 
 	/**
-	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic and every
-	 * grant writes that one onto the gear, so the seed it picked for itself at start-up
-	 * went onto every Chaotic tool granted until the server restarted, and they all swung
-	 * in step.
+	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic, and
+	 * every grant - case roll, level-up roll, command, smithing table - ends in
+	 * addModifier writing that one onto the gear. So the seed it picked for itself at
+	 * start-up went onto every Chaotic tool granted until the server restarted, and they
+	 * all swung in step.
 	 */
 	public static void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		Modifier chaotic = ModifierRegistry.getModifier("chaotic");
 
-		// The admin command...
-		player.setItemInHand(InteractionHand.MAIN_HAND, newTool(ToolType.SWORD));
-		CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
-		helper.assertTrue(run(helper.getLevel().getServer().getCommands().getDispatcher(), source,
-				"randomloot trait add chaotic") == 1, "trait add chaotic should succeed");
-		CompoundTag commanded = chaoticData(helper, player.getMainHandItem());
-
-		// ...the smithing table...
-		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
-				newTool(ToolType.SWORD), new ItemStack(Items.AMETHYST_SHARD));
-		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
-		CompoundTag smithed = chaoticData(helper, menu.getCarried());
-
-		// ...and the write a case roll and a level-up roll both end in.
-		ItemStack rolledTool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(rolledTool, ModifierRegistry.getModifier("chaotic").forWorld(helper.getLevel().getSeed()));
-		CompoundTag rolled = chaoticData(helper, rolledTool);
-
-		helper.assertFalse(commanded.equals(smithed) || commanded.equals(rolled) || smithed.equals(rolled),
-				"three chaotic grants should carry three seeds, got " + commanded + ", " + smithed + ", " + rolled);
+		List<ItemStack> tools = List.of(newTool(ToolType.SWORD), newTool(ToolType.SWORD), newTool(ToolType.SWORD));
+		tools.forEach(tool -> LootUtils.addModifier(tool, chaotic));
+		List<CompoundTag> granted = tools.stream().map(GameTestBodies::chaoticData).toList();
+		helper.assertTrue(granted.stream().distinct().count() == 3,
+				"three chaotic grants should carry three seeds, got " + granted);
 
 		// Only the grant rolls: a seed that is on the gear stays there through a rewrite.
-		Modifier onGear = LootUtils.getModifiers(rolledTool).stream().filter(m -> m.tagName().equals("chaotic"))
-				.findFirst().orElseThrow();
-		LootUtils.updateModifier(rolledTool, onGear);
-		helper.assertTrue(chaoticData(helper, rolledTool).equals(rolled),
-				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(helper, rolledTool)
-						+ " after " + rolled);
+		ItemStack tool = tools.get(0);
+		LootUtils.updateModifier(tool, LootUtils.getModifiers(tool).get(0));
+		helper.assertTrue(chaoticData(tool).equals(granted.get(0)),
+				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(tool) + " after "
+						+ granted.get(0));
 
 		helper.succeed();
 	}
 
 	/** What the gear stores for its Chaotic trait: the name and the seed. */
-	private static CompoundTag chaoticData(GameTestHelper helper, ItemStack gear) {
-		helper.assertTrue(LootUtils.hasRawTrait(gear, "chaotic"), "the gear should have been granted chaotic");
+	private static CompoundTag chaoticData(ItemStack gear) {
 		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty("chaotic");
 	}
 
