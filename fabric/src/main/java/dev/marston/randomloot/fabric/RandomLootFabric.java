@@ -22,11 +22,12 @@ import net.neoforged.fml.config.ModConfig;
  * the loader hook contract: each listener unpacks one Fabric API event and makes one call
  * to {@link GameHooks}, whose javadoc says what that hook has to be handed.
  *
- * <p>Fabric API has no event for six hooks; those are mixins, listed in
- * {@code randomloot.fabric.mixins.json}: DAMAGE_PRE ({@code LivingEntityMixin} and
- * {@code PlayerMixin}), ARMOR_HURT ({@code ItemStackMixin}), BREAK_SPEED
- * ({@code PlayerMixin}), AFTER_USE_ITEM ({@code ServerPlayerGameModeMixin}),
- * ANVIL_COMBINE ({@code AnvilMenuMixin}) and SMITHING_TAKE ({@code SmithingMenuMixin}).
+ * <p>Fabric API has no event, or none at the right stage, for seven hooks; those are
+ * mixins, listed in {@code randomloot.fabric.mixins.json}: DAMAGE_PRE and DAMAGE_POST
+ * ({@code LivingEntityMixin} and {@code PlayerMixin}), ARMOR_HURT
+ * ({@code ItemStackMixin}), BREAK_SPEED ({@code PlayerMixin}), AFTER_USE_ITEM
+ * ({@code ServerPlayerGameModeMixin}), ANVIL_COMBINE ({@code AnvilMenuMixin}) and
+ * SMITHING_TAKE ({@code SmithingMenuMixin}).
  */
 public class RandomLootFabric implements ModInitializer {
 
@@ -56,15 +57,6 @@ public class RandomLootFabric implements ModInitializer {
         ModConfigEvents.reloading(RandomLoot.MODID).register(config -> GameHooks.config());
 
         ServerLivingEntityEvents.AFTER_DEATH.register(GameHooks::kill);
-
-        // Not yet a plain translation: this drops any hit a shield blocked part of, and
-        // AFTER_DAMAGE itself hands over the damage before armor and skips killing hits.
-        // NeoForge's shim does none of that. Which is meant is open; see GameHooks.damagePost.
-        ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
-            if (!blocked) {
-                GameHooks.damagePost(entity, damageTaken);
-            }
-        });
 
         ServerTickEvents.END_SERVER_TICK.register(server -> GameHooks.serverTick());
 

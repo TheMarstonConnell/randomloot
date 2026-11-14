@@ -864,61 +864,99 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Armor XP for the two hits both loaders' DAMAGE_POST hooks already report alike: a
-	 * hit nothing mitigates earns its damage in XP, and a hit a shield blocks whole earns
-	 * none.
+	 * Armor earns XP for the damage its wearer actually takes, the same on both loaders.
+	 * The DAMAGE_POST hook hands over the hit as it stands after a shield, armor and the
+	 * wearer-hurt traits, and it comes for a killing hit too.
 	 *
-	 * <p>The loaders do not yet agree on a hit that armor or a wearer-hurt trait reduces,
-	 * that a shield blocks part of, or that kills: GameHooks.damagePost has the numbers.
-	 * Those cases belong here once the mod's author has said which loader is right.
+	 * <p>Fabric used to hand over the hit as dealt, never a killing one, and its shim
+	 * dropped any hit a shield blocked part of. What Fabric gave then is noted on each case
+	 * where it differed.
 	 */
 	public static void armorXpPerHit(GameTestHelper helper) {
 		enablePvp(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
 
-		// Generic damage skips armor: what is dealt is what is taken.
-		ServerPlayer plain = mockVulnerablePlayer(helper);
-		plain.setItemSlot(EquipmentSlot.CHEST, newArmor(ToolType.CHESTPLATE));
-		float health = plain.getHealth();
-		helper.assertTrue(armorXpFromHit(helper, plain, plain.damageSources().generic(), 10.0f) == 10,
-				"a hit for 10 that nothing mitigates should earn 10 armor XP, got "
-						+ LootUtils.getXP(plain.getItemBySlot(EquipmentSlot.CHEST)));
-		helper.assertTrue(health - plain.getHealth() == 10.0f, "the unmitigated hit should take 10 health");
+		// Generic damage skips armor: 10 dealt, 10 taken.
+		ServerPlayer plain = chestplateWearer(helper, attacker, 0.0);
+		assertArmorXpFromHit(helper, "an unmitigated hit", plain, EquipmentSlot.CHEST,
+				plain.damageSources().generic(), 10.0f, 10.0f, 10);
 
-		// The blocker looks along +z at an attacker two blocks down it.
-		ServerPlayer blocker = mockVulnerablePlayer(helper);
-		blocker.setItemSlot(EquipmentSlot.CHEST, newArmor(ToolType.CHESTPLATE));
-		blocker.snapTo(attacker.getX(), attacker.getY(), attacker.getZ() - 2.0, 0.0f, 0.0f);
-		blocker.setYHeadRot(0.0f);
-		DamageSource attack = blocker.damageSources().playerAttack(attacker);
+		// 20 armor takes 10 down to 4. Fabric gave 10.
+		ServerPlayer armored = chestplateWearer(helper, attacker, 20.0);
+		assertArmorXpFromHit(helper, "a hit against 20 armor", armored, EquipmentSlot.CHEST,
+				armored.damageSources().playerAttack(attacker), 10.0f, 4.0f, 4);
 
-		// Control: the same hit earns XP until the shield is up.
-		helper.assertTrue(armorXpFromHit(helper, blocker, attack, 10.0f) > 0,
-				"the attack should earn armor XP when nothing blocks it");
+		// Half of 10 gets past the shield and 20 armor takes that down to 1.5. Fabric gave 0.
+		ServerPlayer halfBlocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, halfBlocker, 0.5f);
+		assertArmorXpFromHit(helper, "a half-blocked hit", halfBlocker, EquipmentSlot.CHEST,
+				halfBlocker.damageSources().playerAttack(attacker), 10.0f, 1.5f, 2);
 
-		// A shield with no raise delay: a mock player is never ticked, so the vanilla
-		// quarter second would never pass.
-		ItemStack shield = new ItemStack(Items.SHIELD);
-		shield.set(DataComponents.BLOCKS_ATTACKS, new BlocksAttacks(0.0f, 1.0f,
-				List.of(new BlocksAttacks.DamageReduction(90.0f, Optional.empty(), 0.0f, 1.0f)),
-				BlocksAttacks.ItemDamageFunction.DEFAULT, Optional.empty(), Optional.empty(), Optional.empty()));
-		blocker.setItemInHand(InteractionHand.OFF_HAND, shield);
-		blocker.startUsingItem(InteractionHand.OFF_HAND);
-		helper.assertTrue(blocker.isBlocking(), "the shield should be up");
+		ServerPlayer blocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, blocker, 1.0f);
+		assertArmorXpFromHit(helper, "a fully blocked hit", blocker, EquipmentSlot.CHEST,
+				blocker.damageSources().playerAttack(attacker), 10.0f, 0.0f, 0);
 
-		health = blocker.getMaxHealth();
-		helper.assertTrue(armorXpFromHit(helper, blocker, attack, 10.0f) == 0,
-				"a hit a shield blocks whole should earn no armor XP");
-		helper.assertTrue(blocker.getHealth() == health, "the blocked hit should take no health");
+		// Maxed Featherweight cancels the fall; boots that soaked nothing learn nothing. Fabric gave 6.
+		ServerPlayer faller = mockVulnerablePlayer(helper);
+		faller.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+		assertArmorXpFromHit(helper, "a fall Featherweight cancels", faller, EquipmentSlot.FEET,
+				faller.damageSources().fall(), 6.0f, 0.0f, 0);
+
+		// A killing hit counts, capped at the wearer's 20 health. Fabric gave 0.
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		ItemStack zombieChest = newArmor(ToolType.CHESTPLATE);
+		zombie.setItemSlot(EquipmentSlot.CHEST, zombieChest);
+		helper.hurt(zombie, zombie.damageSources().generic(), 1000.0f);
+		helper.assertTrue(zombie.isDeadOrDying(), "the zombie should die to a hit for 1000");
+		helper.assertTrue(LootUtils.getLevel(zombieChest) == 0 && LootUtils.getXP(zombieChest) == 20,
+				"a killing hit should earn the wearer's 20 max health in armor XP, got "
+						+ LootUtils.getXP(zombieChest));
 
 		helper.succeed();
 	}
 
-	/** Hits the wearer once at full health and returns the XP their chestplate gained from it. */
-	private static int armorXpFromHit(GameTestHelper helper, ServerPlayer wearer, DamageSource source, float damage) {
-		int before = LootUtils.getXP(wearer.getItemBySlot(EquipmentSlot.CHEST));
-		freshHit(helper, wearer, source, damage);
-		return LootUtils.getXP(wearer.getItemBySlot(EquipmentSlot.CHEST)) - before;
+	/**
+	 * A hurtable player in a fresh Random Armor chestplate with this much armor, standing
+	 * two blocks down +z from the attacker's side and looking along +z at them, so a raised
+	 * shield faces the attack.
+	 */
+	private static ServerPlayer chestplateWearer(GameTestHelper helper, ServerPlayer attacker, double armor) {
+		ServerPlayer wearer = mockVulnerablePlayer(helper);
+		wearer.setItemSlot(EquipmentSlot.CHEST, newArmor(ToolType.CHESTPLATE));
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(armor);
+		wearer.snapTo(attacker.getX(), attacker.getY(), attacker.getZ() - 2.0, 0.0f, 0.0f);
+		wearer.setYHeadRot(0.0f);
+		return wearer;
+	}
+
+	/**
+	 * Raises a shield that blocks this share of a hit. It has no raise delay: a mock player
+	 * is never ticked, so the vanilla quarter second would never pass.
+	 */
+	private static void raiseShield(GameTestHelper helper, ServerPlayer wearer, float share) {
+		ItemStack shield = new ItemStack(Items.SHIELD);
+		shield.set(DataComponents.BLOCKS_ATTACKS, new BlocksAttacks(0.0f, 1.0f,
+				List.of(new BlocksAttacks.DamageReduction(90.0f, Optional.empty(), 0.0f, share)),
+				BlocksAttacks.ItemDamageFunction.DEFAULT, Optional.empty(), Optional.empty(), Optional.empty()));
+		wearer.setItemInHand(InteractionHand.OFF_HAND, shield);
+		wearer.startUsingItem(InteractionHand.OFF_HAND);
+		helper.assertTrue(wearer.isBlocking(), "the shield should be up");
+	}
+
+	/** Hits the wearer once at full health and checks what they took and what the worn piece earned from it. */
+	private static void assertArmorXpFromHit(GameTestHelper helper, String what, ServerPlayer wearer,
+			EquipmentSlot slot, DamageSource source, float dealt, float taken, int xp) {
+		int xpBefore = LootUtils.getXP(wearer.getItemBySlot(slot));
+		freshHit(helper, wearer, source, dealt);
+
+		float lost = wearer.getMaxHealth() - wearer.getHealth();
+		helper.assertTrue(Math.abs(lost - taken) < 0.001f,
+				what + " for " + dealt + " should take " + taken + " health, took " + lost);
+		ItemStack worn = wearer.getItemBySlot(slot);
+		int earned = LootUtils.getXP(worn) - xpBefore;
+		helper.assertTrue(LootUtils.getLevel(worn) == 0 && earned == xp,
+				what + " for " + dealt + " (" + taken + " taken) should earn " + xp + " armor XP, earned " + earned);
 	}
 
 	/** The anvil's material-repair path accepts items from the armor_repair_materials tag. */

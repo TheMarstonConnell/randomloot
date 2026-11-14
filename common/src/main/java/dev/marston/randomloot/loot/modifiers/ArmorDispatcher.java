@@ -80,8 +80,8 @@ public final class ArmorDispatcher {
 
 	/**
 	 * Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP per block/swing.
-	 * What {@code inflictedDamage} measures is not the same on both loaders yet - the damage
-	 * taken on NeoForge, the damage dealt on Fabric; GameHooks.damagePost has the numbers.
+	 * {@code inflictedDamage} is what the wearer took, the amount the pre-damage hook answered,
+	 * on both loaders; it is 0 for a hit a shield or a trait took whole.
 	 */
 	public static void onLivingDamagePost(LivingEntity wearer, float inflictedDamage) {
 		if (wearer.level().isClientSide()) {
