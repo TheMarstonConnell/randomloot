@@ -10,6 +10,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
@@ -17,6 +18,8 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.GearTags;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.TraitEligibility;
+import dev.marston.randomloot.loot.TraitGrant;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -88,6 +91,7 @@ import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -100,18 +104,222 @@ public final class GameTestBodies {
 	private GameTestBodies() {
 	}
 
-	/** Adding then removing a trait round-trips through the tool's data component (the smithing core). */
-	public static void modifierRoundTrip(GameTestHelper helper) {
-		ItemStack tool = newTool(ToolType.SWORD);
+	/**
+	 * Trait grant, the way in: a trait the gear lacks is ADDED, a repeat of one that levels
+	 * is LEVELED up to its cap, and from there it is refused with the gear left exactly as
+	 * it was. Only an outcome that granted something counts as obtaining a trait.
+	 */
+	public static void traitGrantAddsThenLevels(GameTestHelper helper) {
+		Long seed = helper.getLevel().getSeed();
+		Modifier thorny = ModifierRegistry.getModifier("thorny");
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
 
-		Modifier critical = ModifierRegistry.getModifier("critical");
-		LootUtils.addModifier(tool, critical);
-		helper.assertTrue(hasTrait(tool, "critical"), "trait should be present after addModifier");
+		TraitGrant.Outcome added = TraitGrant.grant(chestplate, thorny, seed);
+		helper.assertTrue(added.kind() == TraitGrant.Kind.ADDED,
+				"a trait the gear lacks should be ADDED, got " + added.kind());
+		helper.assertTrue(added.granted() && added.changed() && added.refusal() == null && added.gear() == chestplate,
+				"an ADDED outcome is a grant on the stack it was given, with nothing to explain");
+		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny"),
+				"the gear should carry Thorny at its first level, got " + traitName(chestplate, "thorny"));
 
-		LootUtils.removeModifier(tool, critical);
-		helper.assertFalse(hasTrait(tool, "critical"), "trait should be gone after removeModifier");
+		TraitGrant.Outcome leveled = TraitGrant.grant(chestplate, thorny, seed);
+		helper.assertTrue(leveled.kind() == TraitGrant.Kind.LEVELED && leveled.granted(),
+				"a repeat of a trait that levels should be LEVELED, got " + leveled.kind());
+		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny II"),
+				"the gear's own Thorny should have gone up a level, got " + traitName(chestplate, "thorny"));
+
+		// Keep granting until the cap answers.
+		ItemStack before;
+		TraitGrant.Outcome last;
+		int grants = 2;
+		do {
+			before = chestplate.copy();
+			last = TraitGrant.grant(chestplate, thorny, seed);
+		} while (last.kind() == TraitGrant.Kind.LEVELED && ++grants < 64);
+
+		helper.assertTrue(last.kind() == TraitGrant.Kind.REFUSED
+						&& last.gate().verdict() == TraitEligibility.Verdict.ALREADY_MAXED,
+				"a trait at its cap should be refused as ALREADY_MAXED after " + grants + " grants, got " + last.kind());
+		helper.assertTrue(!last.granted() && !last.changed() && last.refusal() != null,
+				"a refusal changes nothing and explains itself");
+		helper.assertTrue(ItemStack.matches(before, chestplate), "a refused grant must leave the gear as it was");
+
+		ServerPlayer granted = helper.makeMockServerPlayerInLevel();
+		leveled.obtainedBy(granted, TraitObtainedTrigger.SOURCE_CRAFTED);
+		assertAdvancementDone(helper, granted, "add_trait");
+		ServerPlayer refused = helper.makeMockServerPlayerInLevel();
+		last.obtainedBy(refused, TraitObtainedTrigger.SOURCE_CRAFTED);
+		helper.assertFalse(advancementDone(helper, refused, "add_trait"),
+				"a refused grant must not count as obtaining a trait");
 
 		helper.succeed();
+	}
+
+	/**
+	 * Trait grant refuses whatever the gate refuses: it says which rule it was, explains
+	 * it for a player and leaves the gear alone. One case per gate reason.
+	 */
+	public static void traitGrantRefusesWhatTheGateRefuses(GameTestHelper helper) {
+		Modifier critical = ModifierRegistry.getModifier("critical");
+		Modifier veiny = ModifierRegistry.getModifier("veiny");
+
+		assertRefused(helper, new ItemStack(Items.STICK), critical, TraitEligibility.Verdict.NOT_GEAR);
+
+		ItemStack rolling = newTool(ToolType.SWORD);
+		LootUtils.startRoll(rolling, helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS);
+		assertRefused(helper, rolling, critical, TraitEligibility.Verdict.ROLLING);
+
+		assertRefused(helper, newTool(ToolType.SWORD), ModifierRegistry.getModifier("thorny"),
+				TraitEligibility.Verdict.WRONG_TYPE);
+		// Void-Touched is End-only. Test gear has no biome, which reads as the overworld.
+		assertRefused(helper, newTool(ToolType.PICKAXE), ModifierRegistry.getModifier("void_touched"),
+				TraitEligibility.Verdict.WRONG_BIOME);
+
+		ItemStack veinyPickaxe = newTool(ToolType.PICKAXE);
+		TraitGrant.force(veinyPickaxe, veiny);
+		assertRefused(helper, veinyPickaxe, ModifierRegistry.getModifier("excavator"),
+				TraitEligibility.Verdict.INCOMPATIBLE);
+		// Veiny has a single level, so a second one is refused, not silently dropped.
+		assertRefused(helper, veinyPickaxe, veiny, TraitEligibility.Verdict.ALREADY_MAXED);
+
+		withTraitDisabled("critical",
+				() -> assertRefused(helper, newTool(ToolType.SWORD), critical, TraitEligibility.Verdict.DISABLED));
+
+		helper.succeed();
+	}
+
+	/** Granting the trait is refused for the given reason, explains itself and changes nothing. */
+	private static void assertRefused(GameTestHelper helper, ItemStack gear, Modifier trait,
+			TraitEligibility.Verdict why) {
+		ItemStack before = gear.copy();
+		TraitGrant.Outcome outcome = TraitGrant.grant(gear, trait, helper.getLevel().getSeed());
+
+		helper.assertTrue(outcome.kind() == TraitGrant.Kind.REFUSED && outcome.gate().verdict() == why,
+				trait.tagName() + " should be refused as " + why + ", got " + outcome.kind()
+						+ (outcome.gate() == null ? "" : " as " + outcome.gate().verdict()));
+		helper.assertTrue(!outcome.granted() && !outcome.changed() && outcome.refusal() != null,
+				"a refusal changes nothing and explains itself (" + why + ")");
+		helper.assertTrue(ItemStack.matches(before, gear),
+				"a refused grant must leave the gear as it was (" + why + ")");
+	}
+
+	/**
+	 * Runs {@code body} with a trait switched off the way a server owner would, through
+	 * its {@code <tag>_enabled} entry in randomloot-common.toml, then switches it back
+	 * on. Nothing reaches the file: set() only changes the loaded values.
+	 */
+	private static void withTraitDisabled(String tag, Runnable body) {
+		ModConfigSpec.ConfigValue<Boolean> enabled = Config.SPEC.getValues()
+				.get(List.of("Modifiers Enabled", tag + "_enabled"));
+		enabled.set(false);
+		Config.onLoad();
+		try {
+			body.run();
+		} finally {
+			enabled.set(true);
+			Config.onLoad();
+		}
+	}
+
+	/**
+	 * Trait grant, the way out: a trait on the gear is REMOVED and one that is not there is
+	 * NOT_PRESENT. No gate stands in the way, so a trait on the wrong kind of gear, or one
+	 * switched off in the config, still comes off. Removing obtains nothing.
+	 */
+	public static void traitGrantRemoves(GameTestHelper helper) {
+		Modifier critical = ModifierRegistry.getModifier("critical");
+		Modifier thorny = ModifierRegistry.getModifier("thorny");
+
+		ItemStack sword = newTool(ToolType.SWORD);
+		TraitGrant.grant(sword, critical, helper.getLevel().getSeed());
+		helper.assertTrue(LootUtils.hasRawTrait(sword, "critical"), "the sword should start with critical");
+
+		TraitGrant.Outcome removed = TraitGrant.remove(sword, critical);
+		helper.assertTrue(removed.kind() == TraitGrant.Kind.REMOVED,
+				"a trait on the gear should be REMOVED, got " + removed.kind());
+		helper.assertTrue(removed.changed() && !removed.granted() && removed.refusal() == null,
+				"a removal changes the gear, grants nothing and has nothing to explain");
+		helper.assertFalse(LootUtils.hasRawTrait(sword, "critical"), "a removed trait should be gone from the gear");
+
+		ItemStack bare = sword.copy();
+		TraitGrant.Outcome absent = TraitGrant.remove(sword, critical);
+		helper.assertTrue(absent.kind() == TraitGrant.Kind.NOT_PRESENT && !absent.changed()
+				&& absent.refusal() != null, "a trait the gear lacks should be NOT_PRESENT, got " + absent.kind());
+		helper.assertTrue(ItemStack.matches(bare, sword), "removing a trait that is not there must change nothing");
+
+		ItemStack thornySword = newTool(ToolType.SWORD);
+		TraitGrant.force(thornySword, thorny);
+		helper.assertTrue(TraitGrant.remove(thornySword, thorny).kind() == TraitGrant.Kind.REMOVED,
+				"a trait on the wrong kind of gear should still come off");
+
+		ItemStack switchedOff = newTool(ToolType.SWORD);
+		TraitGrant.force(switchedOff, critical);
+		withTraitDisabled("critical",
+				() -> helper.assertTrue(TraitGrant.remove(switchedOff, critical).kind() == TraitGrant.Kind.REMOVED,
+						"a trait switched off in the config should still come off"));
+
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		removed.obtainedBy(player, TraitObtainedTrigger.SOURCE_CRAFTED);
+		helper.assertFalse(advancementDone(helper, player, "add_trait"),
+				"removing a trait must not count as obtaining one");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A trait named after a forger goes on as this world's. Grant stamps the trait it adds
+	 * and leaves the rest of the gear alone; restamp, the smithing table's sweep, re-forges
+	 * everything the gear carries.
+	 */
+	public static void traitGrantStampsWorldForger(GameTestHelper helper) {
+		Modifier dirtPlace = ModifierRegistry.getModifier("dirt_place");
+
+		// A world whose forger is not the one the registry's DirtPlace happened to roll,
+		// so a grant that skipped the stamp cannot pass by luck.
+		long seed = 0;
+		while (seed < 64 && worldGrace(seed).equals(dirtPlace.name())) {
+			seed++;
+		}
+		String expected = worldGrace(seed);
+		helper.assertFalse(expected.equals(dirtPlace.name()), "64 worlds should not all share one forger");
+
+		ItemStack shovel = newTool(ToolType.SHOVEL);
+		TraitGrant.Outcome granted = TraitGrant.grant(shovel, dirtPlace, seed);
+		helper.assertTrue(granted.kind() == TraitGrant.Kind.ADDED && granted.trait().name().equals(expected),
+				"the outcome should name the trait after the world's forger, got " + granted.trait().name());
+		helper.assertTrue(traitName(shovel, "dirt_place").equals(expected),
+				"granted dirt_place should be named after the world's forger, got "
+						+ traitName(shovel, "dirt_place") + " expected " + expected);
+
+		ItemStack noWorld = newTool(ToolType.SHOVEL);
+		TraitGrant.grant(noWorld, dirtPlace, null);
+		helper.assertTrue(traitName(noWorld, "dirt_place").equals(dirtPlace.name()),
+				"with no world to forge for, the trait should go on as the registry holds it");
+
+		ItemStack foreign = newTool(ToolType.SWORD);
+		TraitGrant.force(foreign, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.grant(foreign, ModifierRegistry.getModifier("critical"), seed);
+		helper.assertTrue(traitName(foreign, "dirt_place").equals("Nobody's Grace"),
+				"granting another trait should not re-forge one already on the gear, got "
+						+ traitName(foreign, "dirt_place"));
+
+		TraitGrant.restamp(foreign, seed);
+		helper.assertTrue(traitName(foreign, "dirt_place").equals(expected),
+				"restamp should re-forge a trait the gear came in with, got " + traitName(foreign, "dirt_place"));
+
+		helper.succeed();
+	}
+
+	/** DirtPlace's name in a world with this seed: its temperate forger's Grace. */
+	private static String worldGrace(long seed) {
+		// 0.5f is the temperate band DirtPlace asks for.
+		return NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace";
+	}
+
+	/** The name of the trait as the gear carries it, level included, or "nothing". */
+	private static String traitName(ItemStack gear, String tagName) {
+		return LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals(tagName)).map(Modifier::name)
+				.findFirst().orElse("nothing");
 	}
 
 	/** genTool() produces a real, typed item with positive goodness (covers the RNG/biome path). */
@@ -354,25 +562,6 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/** DirtPlace's "<Forger>'s Grace" name resolves to this world's temperate forger. */
-	public static void dirtPlaceWorldForger(GameTestHelper helper) {
-		long seed = helper.getLevel().getSeed();
-
-		ItemStack tool = newTool(ToolType.SHOVEL);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("dirt_place").forWorld(seed));
-
-		Modifier dirtPlace = LootUtils.getModifiers(tool).stream()
-				.filter(m -> m.tagName().equals("dirt_place")).findFirst().orElse(null);
-		helper.assertTrue(dirtPlace != null, "dirt_place trait should be on the tool");
-
-		String expected = NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace";
-		helper.assertTrue(dirtPlace.name().equals(expected),
-				"dirt_place should be named after the world's forger, got " + dirtPlace.name()
-						+ " expected " + expected);
-
-		helper.succeed();
-	}
-
 	/**
 	 * Thorny reflects a share of the damage its wearer took, for a player and for a mob.
 	 *
@@ -480,7 +669,7 @@ public final class GameTestBodies {
 		Modifier mod = ModifierRegistry.getModifier(trait);
 		// First add lands at the base level; every repeat levels it up until maxed.
 		for (int i = 0; i < 16; i++) {
-			LootUtils.addModifier(piece, mod);
+			TraitGrant.force(piece, mod);
 		}
 		return piece;
 	}
@@ -549,7 +738,7 @@ public final class GameTestBodies {
 	public static void adrenalineGrantsSpeed(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
 		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chest, ModifierRegistry.getModifier("adrenaline"));
+		TraitGrant.force(chest, ModifierRegistry.getModifier("adrenaline"));
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
 		helper.assertFalse(player.hasEffect(MobEffects.SPEED), "no speed before the hit");
@@ -614,7 +803,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
 		ItemStack pick = newTool(ToolType.PICKAXE);
-		LootUtils.addModifier(pick, ModifierRegistry.getModifier("soulbound"));
+		TraitGrant.force(pick, ModifierRegistry.getModifier("soulbound"));
 		LootUtils.setOwnerUUID(pick, player.getStringUUID());
 		player.setItemInHand(InteractionHand.MAIN_HAND, pick);
 
@@ -866,8 +1055,8 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("haileys_wrath"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("nemesis"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 		int damageBefore = tool.getDamageValue();
 		int xpBefore = LootUtils.getXP(tool);
@@ -906,7 +1095,7 @@ public final class GameTestBodies {
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("catalyst"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("catalyst"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		for (int i = 0; i < 200; i++) {
@@ -963,7 +1152,7 @@ public final class GameTestBodies {
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("stench"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("stench"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
@@ -1170,7 +1359,7 @@ public final class GameTestBodies {
 		helper.assertFalse(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
 				"the subtraction template must not match gear that lacks the trait");
 		ItemStack mismatched = newTool(ToolType.SWORD);
-		LootUtils.addModifier(mismatched, ModifierRegistry.getModifier("thorny"));
+		TraitGrant.force(mismatched, ModifierRegistry.getModifier("thorny"));
 		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
 
@@ -1190,7 +1379,7 @@ public final class GameTestBodies {
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
-		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(sword, new DirtPlace("Nobody's Grace", 1));
 
 		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
@@ -1229,9 +1418,8 @@ public final class GameTestBodies {
 	 * world's one time in six, which would let a missing stamp pass.
 	 */
 	private static void assertWorldForger(GameTestHelper helper, ItemStack gear) {
-		String expected = NameGenerator.forgerForWorld(helper.getLevel().getSeed(), 0.5f) + "'s Grace";
-		String forged = LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals("dirt_place"))
-				.map(Modifier::name).findFirst().orElse("nothing");
+		String expected = worldGrace(helper.getLevel().getSeed());
+		String forged = traitName(gear, "dirt_place");
 		helper.assertTrue(expected.equals(forged),
 				"smithed gear should credit this world's forger, got " + forged + " expected " + expected);
 	}
@@ -1334,7 +1522,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chestplate, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(chestplate, new DirtPlace("Nobody's Grace", 1));
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
 				new ItemStack(Items.CACTUS, 10));
 
@@ -1368,7 +1556,7 @@ public final class GameTestBodies {
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+		TraitGrant.force(thornyChestplate, ModifierRegistry.getModifier("thorny"));
 
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
 				new ItemStack(Items.CACTUS));
@@ -1394,7 +1582,7 @@ public final class GameTestBodies {
 	/**
 	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic, and
 	 * every grant - case roll, level-up roll, command, smithing table - ends in
-	 * addModifier writing that one onto the gear. So the seed it picked for itself at
+	 * TraitGrant writing that one onto the gear. So the seed it picked for itself at
 	 * start-up went onto every Chaotic tool granted until the server restarted, and they
 	 * all swung in step.
 	 */
@@ -1402,7 +1590,7 @@ public final class GameTestBodies {
 		Modifier chaotic = ModifierRegistry.getModifier("chaotic");
 
 		List<ItemStack> tools = List.of(newTool(ToolType.SWORD), newTool(ToolType.SWORD), newTool(ToolType.SWORD));
-		tools.forEach(tool -> LootUtils.addModifier(tool, chaotic));
+		tools.forEach(tool -> TraitGrant.force(tool, chaotic));
 		List<CompoundTag> granted = tools.stream().map(GameTestBodies::chaoticData).toList();
 		helper.assertTrue(granted.stream().distinct().count() == 3,
 				"three chaotic grants should carry three seeds, got " + granted);
@@ -1529,7 +1717,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		for (String trait : traits) {
-			LootUtils.addModifier(tool, ModifierRegistry.getModifier(trait));
+			TraitGrant.force(tool, ModifierRegistry.getModifier(trait));
 		}
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 		return player;
@@ -1720,7 +1908,7 @@ public final class GameTestBodies {
 		Modifier unbreaking = ModifierRegistry.getModifier("unbreaking");
 		// First add lands at the base level; every repeat levels it up until maxed.
 		for (int i = 0; i < 16; i++) {
-			LootUtils.addModifier(axe, unbreaking);
+			TraitGrant.force(axe, unbreaking);
 		}
 		ServerPlayer player = survivalPlayerHolding(helper, axe);
 
@@ -1819,7 +2007,7 @@ public final class GameTestBodies {
 			ItemStack traited = newTool(ToolType.SWORD);
 			LootUtils.setStats(traited, 4.0f);
 			for (String trait : traitSets[i]) {
-				LootUtils.addModifier(traited, ModifierRegistry.getModifier(trait));
+				TraitGrant.force(traited, ModifierRegistry.getModifier(trait));
 			}
 			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
