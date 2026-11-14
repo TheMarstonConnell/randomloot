@@ -392,19 +392,13 @@ public final class GameTestBodies {
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
 		assertThornyReflectsDamageTaken(helper, player, attacker, player.damageSources().playerAttack(attacker));
 
-		// Mob against mob, for the same reason: a mob's thorns would scale to nothing
-		// against a player.
-		LivingEntity mobWearer = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-		LivingEntity mobAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-		// A zombie's own 2 armor would shave the reflected hit.
-		mobAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
-		assertThornyReflectsDamageTaken(helper, mobWearer, mobAttacker,
-				mobWearer.damageSources().mobAttack(mobAttacker));
-
-		// A witch shrugs off 85% of magic in her own override of the last reduction, so
-		// she tells "after the reductions" from "inside the shared one": a hook on
-		// LivingEntity.getDamageAfterMagicAbsorb itself runs before her share comes off.
+		// The mob wearer is a witch. She shrugs off 85% of magic in her own override of
+		// the last reduction, so she also tells "after the reductions" from "inside the
+		// shared one": a hook on LivingEntity.getDamageAfterMagicAbsorb itself runs before
+		// her share comes off.
 		LivingEntity witch = helper.spawn(EntityTypes.WITCH, new BlockPos(1, 2, 1));
+		// The attacker is a mob too, for the Peaceful reason again: a mob's thorns would
+		// scale to nothing against a player. Its own 2 armor would shave the reflected hit.
 		LivingEntity witchAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		witchAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
 		assertThornyReflectsDamageTaken(helper, witch, witchAttacker,
