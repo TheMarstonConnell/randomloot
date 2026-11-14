@@ -56,7 +56,11 @@ public final class TraitDeclaration {
 			ToolType.BOOTS);
 	/** Mining tools and armor: what is held while working or worn. */
 	public static final Set<ToolType> MINING_TOOLS_AND_ARMOR = union(MINING_TOOLS, ARMOR);
-	/** Everything that is not armor. */
+	/**
+	 * Everything that is not armor. The fit of a trait whose hooks only run for gear in a
+	 * hand (a hit, a broken block, a right-click): on armor it would be a dead trait with
+	 * a tooltip.
+	 */
 	public static final Set<ToolType> HAND_HELD = Collections.unmodifiableSet(EnumSet.complementOf(EnumSet.copyOf(ARMOR)));
 	/** Any gear at all. */
 	public static final Set<ToolType> ANY_GEAR = Collections.unmodifiableSet(EnumSet.allOf(ToolType.class));
