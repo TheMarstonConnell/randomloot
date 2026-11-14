@@ -197,6 +197,10 @@ public final class TraitDispatch {
 
 	/** The combined multiplier the gear's stat traits apply to dig speed and defense. Either side. */
 	public static float statMultiplier(ItemStack gear) {
+		if (LootUtils.isRolling(gear)) {
+			return 1.0f;
+		}
+
 		float multiplier = 1.0f;
 		for (Modifier trait : traitsOf(gear)) {
 			if (trait instanceof StatsModifier stats) {
@@ -215,7 +219,7 @@ public final class TraitDispatch {
 	 */
 	public static void spendDurability(ItemStack tool, int points, @Nullable LivingEntity holder,
 			EquipmentSlot slot) {
-		if (holder != null && points > 0 && !tool.isEmpty()) {
+		if (holder != null && points > 0 && !tool.isEmpty() && !LootUtils.isRolling(tool)) {
 			spend(tool, traitsOf(tool), points, holder, slot);
 		}
 	}
