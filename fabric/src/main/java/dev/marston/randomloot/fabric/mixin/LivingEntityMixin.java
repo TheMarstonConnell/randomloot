@@ -2,7 +2,7 @@ package dev.marston.randomloot.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
@@ -32,6 +32,6 @@ public abstract class LivingEntityMixin {
             target = "Lnet/minecraft/world/entity/LivingEntity;getDamageAfterMagicAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F"))
     private float randomloot$wearerHurtTraits(LivingEntity instance, DamageSource source, float damage,
             Operation<Float> original) {
-        return ArmorDispatcher.onLivingDamagePre(instance, source, original.call(instance, source, damage));
+        return GameHooks.damagePre(instance, source, original.call(instance, source, damage));
     }
 }

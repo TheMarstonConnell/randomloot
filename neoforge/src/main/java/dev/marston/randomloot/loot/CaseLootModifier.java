@@ -2,6 +2,7 @@ package dev.marston.randomloot.loot;
 
 import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.RecordCodecBuilder;
+import dev.marston.randomloot.platform.GameHooks;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import java.util.Optional;
 import net.minecraft.core.Holder;
@@ -49,25 +50,14 @@ public class CaseLootModifier extends LootModifier {
     }
 
 
+    /**
+     * NeoForge's shim for LOOT_INJECTION: called once per finished top-level roll, for
+     * this modifier's one item. Which tables, what chance and the roll are common's.
+     */
     @Override
     protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot,
                                                           LootContext context) {
-
-        // Table matching and per-item chances are the common LootInjection policy;
-        // this modifier is just NeoForge's delivery mechanism for it.
-        if (!LootInjection.matchesTable(context.getQueriedLootTableId().getPath())) {
-            return generatedLoot;
-        }
-
-        double chance = LootInjection.chanceFor(item);
-        if (chance < 0) {
-            return generatedLoot;
-        }
-
-        if (context.getRandom().nextDouble() < chance) {
-            generatedLoot.add(new ItemStack(item));
-        }
-
+        generatedLoot.addAll(GameHooks.lootInjection(context.getQueriedLootTableId(), context, item));
         return generatedLoot;
     }
 }

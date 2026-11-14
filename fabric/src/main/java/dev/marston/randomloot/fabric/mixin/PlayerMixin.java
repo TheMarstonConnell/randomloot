@@ -3,8 +3,7 @@ package dev.marston.randomloot.fabric.mixin;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
-import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.player.Player;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,7 +18,7 @@ public abstract class PlayerMixin {
 
     @ModifyReturnValue(method = "getDestroySpeed(Lnet/minecraft/world/level/block/state/BlockState;)F", at = @At("RETURN"))
     private float randomloot$soulboundBreakSpeed(float original) {
-        return Soulbound.modifyBreakSpeed((Player) (Object) this, original);
+        return GameHooks.breakSpeed((Player) (Object) this, original);
     }
 
     /**
@@ -30,6 +29,6 @@ public abstract class PlayerMixin {
             target = "Lnet/minecraft/world/entity/player/Player;getDamageAfterMagicAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F"))
     private float randomloot$playerWearerHurtTraits(Player instance, DamageSource source, float damage,
             Operation<Float> original) {
-        return ArmorDispatcher.onLivingDamagePre(instance, source, original.call(instance, source, damage));
+        return GameHooks.damagePre(instance, source, original.call(instance, source, damage));
     }
 }
