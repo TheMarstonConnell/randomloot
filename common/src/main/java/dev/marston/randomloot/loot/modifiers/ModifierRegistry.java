@@ -147,6 +147,8 @@ public class ModifierRegistry {
 			.levels(1, 3).make(Healing::new);
 	public static Modifier HUNTER = trait("hunter", "Hunter", ChatFormatting.DARK_RED, union(only(ToolType.SWORD), ARMOR), Group.HOLDERS)
 			.make(Hunter::new);
+	// Not on armor: the swing only ever shows up as bonus melee damage, so there it would be a
+	// dead trait whose tooltip fluctuates for no reason.
 	public static Modifier CHAOTIC = trait("chaotic", "Chaotic", ChatFormatting.DARK_PURPLE, HAND_HELD, Group.HURTERS, Group.STATS)
 			.make(Chaotic::new);
 	public static Modifier CATALYST = trait("catalyst", "Catalyst", ChatFormatting.RED, ANY_GEAR, Group.HOLDERS)
@@ -156,6 +158,8 @@ public class ModifierRegistry {
 
 	public static Modifier BUSTED = trait("busted", "Busted", ChatFormatting.LIGHT_PURPLE, MINING_TOOLS, Group.STATS)
 			.make(Busted::new);
+	// Not on armor: the damage scaling only fires from melee hooks, and the hidden stats
+	// multiplier on its own would contradict the description.
 	public static Modifier FIERCE = trait("fierce", "Fierce", ChatFormatting.RED, HAND_HELD, Group.HURTERS, Group.STATS)
 			.make(Fierce::new);
 	public static Modifier MUNCHIES = trait("munchies", "Munchies", ChatFormatting.YELLOW, HAND_HELD, Group.BREAKERS, Group.HURTERS, Group.STATS)
