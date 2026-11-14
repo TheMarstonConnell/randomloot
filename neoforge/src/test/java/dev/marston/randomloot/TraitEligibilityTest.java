@@ -14,6 +14,7 @@ import dev.marston.randomloot.loot.TraitEligibility.GearContext;
 import dev.marston.randomloot.loot.TraitEligibility.Verdict;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.breakers.Excavator;
+import dev.marston.randomloot.loot.modifiers.breakers.Lumbering;
 import dev.marston.randomloot.loot.modifiers.breakers.Veiny;
 import dev.marston.randomloot.loot.modifiers.hurter.Fierce;
 import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
@@ -64,6 +65,22 @@ class TraitEligibilityTest {
 		assertEquals(Verdict.INCOMPATIBLE, result.verdict());
 		assertNotNull(result.conflict());
 		assertEquals(veiny.tagName(), result.conflict().tagName());
+	}
+
+	@Test
+	void rejectsAnIncompatiblePairInEitherOrder() {
+		// Lumbering names Veiny as a conflict; Veiny's own list only names Excavator.
+		Modifier veiny = new Veiny();
+		Modifier lumbering = new Lumbering();
+
+		assertEquals(Verdict.INCOMPATIBLE,
+				TraitEligibility.check(gear(ToolType.AXE, lumbering), veiny).verdict(),
+				"a Lumbering axe should refuse Veiny");
+
+		TraitEligibility.Result reverse = TraitEligibility.check(gear(ToolType.AXE, veiny), lumbering);
+		assertEquals(Verdict.INCOMPATIBLE, reverse.verdict(), "a Veiny axe should refuse Lumbering");
+		assertNotNull(reverse.conflict());
+		assertEquals(veiny.tagName(), reverse.conflict().tagName());
 	}
 
 	@Test

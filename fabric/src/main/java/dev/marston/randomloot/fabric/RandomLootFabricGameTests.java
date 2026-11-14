@@ -169,6 +169,16 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
+    public void smithingRemovalDoesNotGrantAddTrait(GameTestHelper helper) {
+        GameTestBodies.smithingRemovalDoesNotGrantAddTrait(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
+    public void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
+        GameTestBodies.chaoticGrantsRollOwnSeeds(helper);
+    }
+
+    @GameTest(maxTicks = MAX_TICKS)
     public void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
         GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
     }

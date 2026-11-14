@@ -36,6 +36,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
@@ -1008,11 +1009,14 @@ public final class GameTestBodies {
 	}
 
 	private static void assertAdvancementDone(GameTestHelper helper, ServerPlayer player, String id) {
+		helper.assertTrue(advancementDone(helper, player, id), "gameplay sequence should complete advancement: " + id);
+	}
+
+	private static boolean advancementDone(GameTestHelper helper, ServerPlayer player, String id) {
 		var advancement = helper.getLevel().getServer().getAdvancements()
 				.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id));
 		helper.assertTrue(advancement != null, "advancement should be loaded: " + id);
-		helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
-				"gameplay sequence should complete advancement: " + id);
+		return player.getAdvancements().getOrStartProgress(advancement).isDone();
 	}
 
 	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
@@ -1345,6 +1349,84 @@ public final class GameTestBodies {
 				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
 
 		helper.succeed();
+	}
+
+	/**
+	 * Stripping a trait with the Subtraction Template does not complete add_trait. The
+	 * take hook fired the crafted-trait criterion for every trait recipe, whichever
+	 * template was in the slot. The add that follows is the control: same player, same
+	 * table, so the first assert cannot pass just because criteria never fire here.
+	 */
+	public static void smithingRemovalDoesNotGrantAddTrait(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+
+		SmithingMenu removal = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
+				new ItemStack(Items.CACTUS));
+		removal.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		ItemStack stripped = removal.getCarried();
+		helper.assertTrue(!stripped.isEmpty() && !hasTrait(stripped, "thorny"),
+				"the removal should have gone through");
+		helper.assertFalse(advancementDone(helper, player, "add_trait"),
+				"removing a trait must not complete add_trait");
+
+		SmithingMenu addition = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), stripped,
+				new ItemStack(Items.CACTUS, 4));
+		addition.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		helper.assertTrue(hasTrait(addition.getCarried(), "thorny"), "the addition should have gone through");
+		assertAdvancementDone(helper, player, "add_trait");
+
+		helper.succeed();
+	}
+
+	/**
+	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic and every
+	 * grant writes that one onto the gear, so the seed it picked for itself at start-up
+	 * went onto every Chaotic tool granted until the server restarted, and they all swung
+	 * in step.
+	 */
+	public static void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+
+		// The admin command...
+		player.setItemInHand(InteractionHand.MAIN_HAND, newTool(ToolType.SWORD));
+		CommandSourceStack source = player.createCommandSourceStack().withPermission(PermissionSet.ALL_PERMISSIONS);
+		helper.assertTrue(run(helper.getLevel().getServer().getCommands().getDispatcher(), source,
+				"randomloot trait add chaotic") == 1, "trait add chaotic should succeed");
+		CompoundTag commanded = chaoticData(helper, player.getMainHandItem());
+
+		// ...the smithing table...
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newTool(ToolType.SWORD), new ItemStack(Items.AMETHYST_SHARD));
+		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+		CompoundTag smithed = chaoticData(helper, menu.getCarried());
+
+		// ...and the write a case roll and a level-up roll both end in.
+		ItemStack rolledTool = newTool(ToolType.SWORD);
+		LootUtils.addModifier(rolledTool, ModifierRegistry.getModifier("chaotic").forWorld(helper.getLevel().getSeed()));
+		CompoundTag rolled = chaoticData(helper, rolledTool);
+
+		helper.assertFalse(commanded.equals(smithed) || commanded.equals(rolled) || smithed.equals(rolled),
+				"three chaotic grants should carry three seeds, got " + commanded + ", " + smithed + ", " + rolled);
+
+		// Only the grant rolls: a seed that is on the gear stays there through a rewrite.
+		Modifier onGear = LootUtils.getModifiers(rolledTool).stream().filter(m -> m.tagName().equals("chaotic"))
+				.findFirst().orElseThrow();
+		LootUtils.updateModifier(rolledTool, onGear);
+		helper.assertTrue(chaoticData(helper, rolledTool).equals(rolled),
+				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(helper, rolledTool)
+						+ " after " + rolled);
+
+		helper.succeed();
+	}
+
+	/** What the gear stores for its Chaotic trait: the name and the seed. */
+	private static CompoundTag chaoticData(GameTestHelper helper, ItemStack gear) {
+		helper.assertTrue(LootUtils.hasRawTrait(gear, "chaotic"), "the gear should have been granted chaotic");
+		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty("chaotic");
 	}
 
 	/**
