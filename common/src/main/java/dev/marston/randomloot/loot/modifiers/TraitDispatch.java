@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * common is decided here, once, so a trait class states only its own rule:
  * <ul>
  * <li>the gear's traits are loaded once per event, without the config-disabled ones;
- * <li>gear still in its reveal roll is inert (the two armor events are the exception);
+ * <li>gear still in its reveal roll is inert, worn or held;
  * <li>a hit trait that reads pre-hit state ({@link PreHitModifier}) runs before the rest;
  * <li>hooks that change the world run on the server only;
  * <li>a trait whose stored state changed in its hook is written back to the gear, and a
@@ -178,11 +178,11 @@ public final class TraitDispatch {
 
 	/**
 	 * The wearer of this armor piece is about to take {@code damage}. Returns what they
-	 * should take after the piece's traits. Fires for a piece still in its reveal roll.
+	 * should take after the piece's traits.
 	 */
 	public static float wearerHurt(ItemStack armor, LivingEntity wearer, DamageSource source, float damage) {
 		Level level = wearer.level();
-		if (level.isClientSide()) {
+		if (level.isClientSide() || LootUtils.isRolling(armor)) {
 			return damage;
 		}
 
@@ -228,9 +228,14 @@ public final class TraitDispatch {
 	 * Worn armor is damaged inside vanilla, which asks here how much of
 	 * {@code durabilityDamage} the piece should really take. Unbreaking gets a roll per
 	 * point, as it does for a tool. Both loaders charge the whole points of what comes
-	 * back, so those are the points that are rolled.
+	 * back, so those are the points that are rolled. A piece still in its reveal roll
+	 * gets no roll: it is charged what vanilla asked for.
 	 */
 	public static float armorDurability(ItemStack armor, Level level, float durabilityDamage) {
+		if (LootUtils.isRolling(armor)) {
+			return durabilityDamage;
+		}
+
 		Unbreaking unbreaking = unbreakingOn(traitsOf(armor));
 		return unbreaking == null ? durabilityDamage : unbreaking.remaining((int) durabilityDamage, level);
 	}

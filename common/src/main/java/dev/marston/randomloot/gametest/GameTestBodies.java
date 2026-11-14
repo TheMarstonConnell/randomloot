@@ -373,8 +373,9 @@ public final class GameTestBodies {
 	/**
 	 * Gear still in its reveal roll is inert: trait dispatch runs none of its traits and
 	 * spends none of its durability, for a hit, a broken block, a right-click, a tick, a
-	 * kill, a stat read or a direct durability charge. Each case runs on live gear first,
-	 * so the rolling half cannot pass by doing nothing.
+	 * kill, a stat read, a direct durability charge, or - worn - damage to its wearer and
+	 * to the piece itself. Each case runs on live gear first, so the rolling half cannot
+	 * pass by doing nothing.
 	 */
 	public static void traitDispatchLeavesRollingGearInert(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -460,6 +461,19 @@ public final class GameTestBodies {
 			TraitDispatch.spendDurability(fragile, 5, player, EquipmentSlot.MAINHAND);
 			helper.assertTrue(fragile.getDamageValue() == (rolling ? 0 : 5),
 					"a durability charge on a " + state + " pickaxe cost " + fragile.getDamageValue());
+
+			// Damage to the wearer: Featherweight takes some of a fall.
+			ItemStack boots = gear(helper, ToolType.BOOTS, rolling, "featherweight");
+			float fall = TraitDispatch.wearerHurt(boots, player, player.damageSources().fall(), 10.0f);
+			helper.assertTrue((fall < 10.0f) != rolling, "a fall in " + state + " boots: Featherweight "
+					+ (rolling ? "must not" : "should") + " soften it, the wearer takes " + fall + " of 10");
+
+			// Damage to the worn piece: Unbreaking rolls for each point. All 100 points
+			// getting through live armor is a 1 in several billion chance.
+			ItemStack chestplate = gear(helper, ToolType.CHESTPLATE, rolling, "unbreaking");
+			float charged = TraitDispatch.armorDurability(chestplate, level, 100.0f);
+			helper.assertTrue((charged < 100.0f) != rolling, "a hit on a " + state + " chestplate: Unbreaking "
+					+ (rolling ? "must not" : "should") + " roll, the piece is charged " + charged + " of 100");
 		}
 
 		helper.succeed();
@@ -549,7 +563,7 @@ public final class GameTestBodies {
 
 	/** Gear of the given type at goodness 4 with the given traits, put into its reveal roll if asked. */
 	private static ItemStack gear(GameTestHelper helper, ToolType type, boolean rolling, String... traits) {
-		ItemStack gear = newTool(type);
+		ItemStack gear = type.isArmor() ? newArmor(type) : newTool(type);
 		LootUtils.setStats(gear, 4.0f);
 		for (String trait : traits) {
 			TraitGrant.force(gear, ModifierRegistry.getModifier(trait));
