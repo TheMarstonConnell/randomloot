@@ -1,12 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.ToolType;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -21,20 +20,18 @@ import net.minecraft.world.level.Level;
  * {@link #place(UseOnContext)}.
  */
 public abstract class PlaceOnUseModifier extends AbstractModifier implements UseModifier {
-
 	protected static final String DAMAGE = "DAMAGE";
 
-	protected int damage;
+	/** Durability a placement costs. Stored, so gear keeps the cost it was made with. */
+	protected final Stored<Integer> damage;
+
+	/** @param durabilityCost what a placement costs on freshly granted gear */
+	protected PlaceOnUseModifier(int durabilityCost) {
+		this.damage = stored(DAMAGE, durabilityCost);
+	}
 
 	/** Attempts the placement; durability is only charged on SUCCESS. */
 	protected abstract InteractionResult place(UseOnContext ctx);
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = super.toNBT();
-		tag.putInt(DAMAGE, damage);
-		return tag;
-	}
 
 	@Override
 	public InteractionResult use(UseOnContext ctx) {
@@ -45,7 +42,7 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 		InteractionResult result = place(ctx);
 
 		if (result == InteractionResult.SUCCESS) {
-			TraitDispatch.spendDurability(ctx.getItemInHand(), this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
+			TraitDispatch.spendDurability(ctx.getItemInHand(), this.damage.get(), ctx.getPlayer(), EquipmentSlot.MAINHAND);
 		}
 
 		return result;
@@ -66,9 +63,4 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 		return !ModifierRegistry.USERS.contains(mod);
 	}
 
-	@Override
-	public boolean forTool(ToolType type) {
-		// Right-click traits never fire from worn armor.
-		return !type.isArmor();
-	}
 }

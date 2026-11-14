@@ -5,6 +5,7 @@ import dev.marston.randomloot.loot.ToolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -160,6 +161,11 @@ public abstract class AbstractModifier implements Modifier {
 	@Override
 	public Modifier fromNBT(CompoundTag tag) {
 		return ModifierRegistry.loadModifier(tagName(), tag);
+	}
+
+	@Override
+	public Modifier granted(RandomSource random) {
+		return fromNBT(toNBT());
 	}
 
 	@Override

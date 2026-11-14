@@ -1,7 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -9,11 +8,9 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LightningBolt;
 import net.minecraft.world.entity.LivingEntity;

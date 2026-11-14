@@ -1,18 +1,14 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
@@ -24,46 +20,10 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
-
-public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRestrictedModifier {
-
-	public VoidTouched(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public VoidTouched() {
-		this("Void-Touched", 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 0;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new VoidTouched(tag.getStringOr(NAME, "Void-Touched"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String tagName() {
-		return "void_touched";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_PURPLE;
-	}
-
+public class VoidTouched extends AbstractModifier implements UseModifier, BiomeRestrictedModifier {
 	@Override
 	public String description() {
-		float distance = 8.0f + (this.level * 4.0f);
+		float distance = 8.0f + (traitLevel() * 4.0f);
 		return "Right-click to teleport up to " + distance + " blocks. Costs 10 durability.";
 	}
 
@@ -78,19 +38,13 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
-		// Right-click traits never fire from worn armor.
-		return !type.isArmor();
-	}
-
-	@Override
 	public InteractionResult use(UseOnContext ctx) {
 		return InteractionResult.PASS;
 	}
 
 	@Override
 	public boolean use(Level level, Player player, InteractionHand hand) {
-		float distance = 8.0f + (this.level * 4.0f);
+		float distance = 8.0f + (traitLevel() * 4.0f);
 		Vec3 lookVec = player.getLookAngle();
 		Vec3 destination = player.position().add(
 			lookVec.x * distance,

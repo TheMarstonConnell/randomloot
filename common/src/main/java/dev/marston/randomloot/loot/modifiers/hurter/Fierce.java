@@ -1,53 +1,17 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-
 public class Fierce extends AbstractModifier implements EntityHurtModifier, StatsModifier {
-
-	public Fierce() {
-		this("Fierce");
-	}
-
-	public Fierce(String name) {
-		this.name = name;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Fierce(tag.getStringOr(NAME, "Fierce"));
-	}
-
-	@Override
-	public String tagName() {
-		return "fierce";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.RED;
-	}
-
 	@Override
 	public String description() {
 		return "Deals more damage as durability decreases";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		// The damage scaling only fires from melee hooks; on armor only the hidden
-		// stats multiplier would apply, which contradicts the description.
-		return !type.isArmor();
 	}
 
 	private float getDamageMultiplier(ItemStack itemstack) {

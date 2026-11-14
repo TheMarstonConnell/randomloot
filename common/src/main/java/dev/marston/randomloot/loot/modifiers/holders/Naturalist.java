@@ -4,16 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
@@ -26,8 +21,7 @@ import net.minecraft.world.level.block.BonemealSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.RandomSource;
 
-public class Naturalist extends LeveledModifier implements HoldModifier {
-
+public class Naturalist extends AbstractModifier implements HoldModifier {
     private static final int SEARCH_RADIUS = 5;
 
     // Datapack-editable; see data/randomloot/tags/block/naturalist_targets.json (crops and
@@ -36,56 +30,15 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
     private static final TagKey<Block> TARGETS = TagKey.create(Registries.BLOCK,
             Identifier.fromNamespaceAndPath(RandomLoot.MODID, "naturalist_targets"));
 
-    public Naturalist() {
-        this("Naturalist", 1);
-    }
-
-    public Naturalist(String name, int level) {
-        this.name = name;
-        this.level = level;
-    }
-
-    @Override
-    protected int minLevel() {
-        return 1;
-    }
-
-    @Override
-    protected int maxLevel() {
-        return 3;
-    }
-
     private long getUpdateInterval() {
         // Level 1: 200 ticks (10s), Level 2: 140 ticks (7s), Level 3: 100 ticks (5s)
-        return 260 - (level * 60);
-    }
-
-    @Override
-    public String tagName() {
-        return "naturalist";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.GREEN;
+        return 260 - (traitLevel() * 60);
     }
 
     @Override
     public String description() {
         float seconds = getUpdateInterval() / 20.0f;
         return "Bone meals nearby crops and saplings every " + String.format("%.0f", seconds) + " seconds";
-    }
-
-    @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        String name = tag.getStringOr(NAME, "Naturalist");
-        int level = ModifierConstants.getLevel(tag, 1);
-        return new Naturalist(name, level);
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        return true; // Works with all tool types
     }
 
     @Override

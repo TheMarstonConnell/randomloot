@@ -1,14 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -18,52 +13,11 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
-public class Overgrown extends LeveledModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
-
-	public Overgrown(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public Overgrown() {
-		this("Overgrown", 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 0;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Overgrown(tag.getStringOr(NAME, "Overgrown"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String tagName() {
-		return "overgrown";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GREEN;
-	}
-
+public class Overgrown extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 	@Override
 	public String description() {
-		float bonusDamage = 2.5f + (this.level * 2.5f);
+		float bonusDamage = 2.5f + (traitLevel() * 2.5f);
 		return "Grants poison immunity. Deals " + bonusDamage + " bonus damage to arthropods.";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.SWORD) || type.equals(ToolType.AXE) || type.equals(ToolType.SHOVEL);
 	}
 
 	@Override
@@ -76,9 +30,9 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 							  type == EntityTypes.BEE;
 
 		if (isArthropod) {
-			float bonusDamage = 2.5f + (this.level * 2.5f);
+			float bonusDamage = 2.5f + (traitLevel() * 2.5f);
 			dealBonusDamage(hurtee, hurter, bonusDamage);
-			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, this.level));
+			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, traitLevel()));
 		}
 	}
 

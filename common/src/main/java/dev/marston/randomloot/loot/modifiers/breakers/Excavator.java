@@ -2,15 +2,12 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -22,15 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Excavator extends AbstractModifier implements BlockBreakModifier {
-
-	public Excavator(String name) {
-		this.name = name;
-	}
-
-	public Excavator() {
-		this.name = "Excavator";
-	}
-
 	private List<BlockPos> get3x3Positions(BlockPos center, ServerPlayer player) {
 		List<BlockPos> positions = new ArrayList<>();
 
@@ -109,21 +97,6 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Excavator(tag.getStringOr(NAME, "Excavator"));
-	}
-
-	@Override
-	public String tagName() {
-		return "excavator";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GREEN;
-	}
-
-	@Override
 	public String description() {
 		return "Breaking blocks while crouching mines a 3x3 area perpendicular to the surface.";
 	}
@@ -134,8 +107,4 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 		return !(mod instanceof Veiny);
 	}
 
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
-	}
 }

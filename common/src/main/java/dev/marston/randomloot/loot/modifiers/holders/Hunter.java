@@ -2,12 +2,8 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import java.util.List;
 
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -17,40 +13,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public class Hunter extends AbstractModifier implements HoldModifier {
-
     private static final double SEARCH_RADIUS = 10.0;
-
-    public Hunter() {
-        this.name = "Hunter";
-    }
-
-    public Hunter(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String tagName() {
-        return "hunter";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.DARK_RED;
-    }
 
     @Override
     public String description() {
         return "Nearby hostile mobs get the glowing effect";
-    }
-
-    @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        return new Hunter(tag.getStringOr(NAME, "Hunter"));
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        return type.equals(ToolType.SWORD) || type.isArmor();
     }
 
     @Override

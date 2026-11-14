@@ -1,11 +1,8 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionResult;
@@ -21,34 +18,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-
 public class TorchPlace extends PlaceOnUseModifier {
 
-	public TorchPlace(String name, int damage) {
-		this.name = name;
-		this.damage = damage;
-	}
-
 	public TorchPlace() {
-		this("Spelunking", 10);
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new TorchPlace(
-			tag.getStringOr(NAME, "Spelunking"),
-			tag.getIntOr(DAMAGE, 10)
-		);
-	}
-
-	@Override
-	public String tagName() {
-		return "torch_place";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.YELLOW;
+		super(10);
 	}
 
 	private boolean canPlace(LevelReader level, BlockState state, BlockPos pos) {
@@ -126,7 +99,7 @@ public class TorchPlace extends PlaceOnUseModifier {
 
 	@Override
 	public String description() {
-		return "Right clicking on a block while crouching with the tool in hand will place a torch and use " + this.damage
+		return "Right clicking on a block while crouching with the tool in hand will place a torch and use " + this.damage.get()
 				+ " durability points.";
 	}
 }

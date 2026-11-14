@@ -1,56 +1,21 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-
 import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public class HaileysWrath extends AbstractModifier implements EntityKillModifier {
-
-    public HaileysWrath() {
-        this.name = "Hailey's Wrath";
-    }
-
-    public HaileysWrath(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String tagName() {
-        return "haileys_wrath";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.GOLD;
-    }
-
     @Override
     public String description() {
         return "Spawns a bee when the target is killed";
-    }
-
-    @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        return new HaileysWrath(tag.getStringOr(NAME, "Hailey's Wrath"));
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        return isWeapon(type);
     }
 
     @Override

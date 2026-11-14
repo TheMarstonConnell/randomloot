@@ -32,7 +32,6 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
@@ -316,7 +315,7 @@ public final class GameTestBodies {
 				"with no world to forge for, the trait should go on as the registry holds it");
 
 		ItemStack foreign = newTool(ToolType.SWORD);
-		TraitGrant.force(foreign, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(foreign, graceOf("Nobody"));
 		TraitGrant.grant(foreign, ModifierRegistry.getModifier("critical"), seed);
 		helper.assertTrue(traitName(foreign, "dirt_place").equals("Nobody's Grace"),
 				"granting another trait should not re-forge one already on the gear, got "
@@ -327,6 +326,13 @@ public final class GameTestBodies {
 				"restamp should re-forge a trait the gear came in with, got " + traitName(foreign, "dirt_place"));
 
 		helper.succeed();
+	}
+
+	/** A Grace (dirt_place) as gear from some other world might carry it, credited to a made-up forger. */
+	private static Modifier graceOf(String forger) {
+		CompoundTag stored = ModifierRegistry.getModifier("dirt_place").toNBT();
+		stored.putString("name", forger + "'s Grace");
+		return ModifierRegistry.loadModifier("dirt_place", stored);
 	}
 
 	/** DirtPlace's name in a world with this seed: its temperate forger's Grace. */
@@ -1673,7 +1679,7 @@ public final class GameTestBodies {
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
-		TraitGrant.force(sword, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(sword, graceOf("Nobody"));
 
 		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
@@ -1816,7 +1822,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
-		TraitGrant.force(chestplate, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(chestplate, graceOf("Nobody"));
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
 				new ItemStack(Items.CACTUS, 10));
 

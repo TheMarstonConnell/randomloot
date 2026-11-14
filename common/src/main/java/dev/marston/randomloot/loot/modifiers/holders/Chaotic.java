@@ -1,54 +1,38 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
+import net.minecraft.util.RandomSource;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import java.util.Random;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
 public class Chaotic extends AbstractModifier implements StatsModifier, EntityHurtModifier {
-
     private static final String SEED = "chaoticSeed";
     private static final long UPDATE_INTERVAL = 100L; // 5 seconds = 100 ticks (20 ticks/sec)
     private static final float MAX_MODIFIER = 0.50f; // +/- 50% max
 
     /**
-     * Null on the registry's Chaotic, which has no seed of its own: every grant writes
-     * that one instance onto the gear, so {@link #toNBT} rolls a seed per write instead.
-     * A seed held here went onto every Chaotic tool granted until the server restarted.
+     * What this tool's swings are drawn from. Every grant gets its own ({@link #granted});
+     * one seed shared by every Chaotic tool made them all swing in step.
      */
-    @Nullable
-    private final Long seed;
+    private final Stored<Long> seed = stored(SEED, 12345L);
 
-    public Chaotic() {
-        this.name = "Chaotic";
-        this.seed = null;
-    }
-
-    public Chaotic(String name, long seed) {
-        this.name = name;
-        this.seed = seed;
-    }
-
+    /** A fresh Chaotic with a seed of its own, drawn from the grant's random source. */
     @Override
-    public String tagName() {
-        return "chaotic";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.DARK_PURPLE;
+    public Modifier granted(RandomSource random) {
+        Chaotic fresh = (Chaotic) super.granted(random);
+        fresh.seed.set(random.nextLong());
+        return fresh;
     }
 
     @Override
@@ -56,39 +40,18 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
         return "Melee damage bonus randomly fluctuates every 5 seconds, up to +50%";
     }
 
-    @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = super.toNBT();
-        tag.putLong(SEED, seed != null ? seed : new Random().nextLong());
-        return tag;
-    }
-
-    @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        String name = tag.getStringOr(NAME, "Chaotic");
-        long s = tag.getLongOr(SEED, 12345L); // Fixed default seed
-        return new Chaotic(name, s);
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        // The swing only ever shows up as bonus melee damage, so on armor it would be
-        // a dead trait with a tooltip that fluctuates for no reason.
-        return !type.isArmor();
-    }
-
     /**
      * Calculate current state based on game time and seed.
      * This works on both client and server since it's deterministic.
      */
     private float getCurrentState(Level level) {
-        if (level == null || seed == null) {
+        if (level == null) {
             return 0f;
         }
         // Get which "period" we're in (changes every UPDATE_INTERVAL ticks)
         long period = level.getGameTime() / UPDATE_INTERVAL;
         // Use seed XOR'd with period * large prime for better distribution
-        Random rand = new Random(seed ^ (period * 6364136223846793005L));
+        Random rand = new Random(seed.get() ^ (period * 6364136223846793005L));
         return (rand.nextFloat() * 2 * MAX_MODIFIER) - MAX_MODIFIER;
     }
 
