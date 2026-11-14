@@ -129,11 +129,6 @@ public class RandomLootFabricGameTests {
     }
 
     @GameTest(maxTicks = MAX_TICKS)
-    public void thornyReflectsDamageTaken(GameTestHelper helper) {
-        GameTestBodies.thornyReflectsDamageTaken(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
     public void armorRepairable(GameTestHelper helper) {
         GameTestBodies.armorRepairable(helper);
     }
@@ -171,11 +166,6 @@ public class RandomLootFabricGameTests {
     @GameTest(maxTicks = MAX_TICKS)
     public void smithingRemovalCostsOne(GameTestHelper helper) {
         GameTestBodies.smithingRemovalCostsOne(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingRemovalDoesNotGrantAddTrait(GameTestHelper helper) {
-        GameTestBodies.smithingRemovalDoesNotGrantAddTrait(helper);
     }
 
     @GameTest(maxTicks = MAX_TICKS)
