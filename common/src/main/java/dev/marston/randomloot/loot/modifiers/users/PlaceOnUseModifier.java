@@ -1,9 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.world.InteractionHand;

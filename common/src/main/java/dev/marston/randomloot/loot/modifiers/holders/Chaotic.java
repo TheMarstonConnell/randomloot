@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
-import net.minecraft.util.RandomSource;
-import dev.marston.randomloot.loot.modifiers.Stored;
 import java.util.Random;
 
 import dev.marston.randomloot.loot.LootItem;
@@ -10,8 +8,10 @@ import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;

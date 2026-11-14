@@ -120,19 +120,14 @@ class GearRollTest {
 		throw new AssertionError("no number of grants of " + tag + " stores " + wanted);
 	}
 
-	/** Chaotic rolls a seed of its own on every write, so two grants of it never store the same thing. */
+	/**
+	 * Chaotic's seed comes from the random source its grant was given, and the replay
+	 * above has a source of its own, so the seed is left out of that comparison.
+	 */
 	private static CompoundTag withoutChaoticSeed(CompoundTag trait) {
 		CompoundTag copy = trait.copy();
 		copy.remove("chaoticSeed");
 		return copy;
-	}
-
-	private static CompoundTag traitsWithoutChaoticSeeds(GearRoll.Rolled rolled) {
-		CompoundTag traits = new CompoundTag();
-		for (String tag : rolled.traits().keySet()) {
-			traits.put(tag, withoutChaoticSeed(rolled.traits().getCompoundOrEmpty(tag)));
-		}
-		return traits;
 	}
 
 	@Test
@@ -184,7 +179,8 @@ class GearRollTest {
 			assertEquals(first.name(), again.name());
 			assertEquals(first.lore(), again.lore());
 			assertEquals(first.texture(), again.texture());
-			assertEquals(traitsWithoutChaoticSeeds(first), traitsWithoutChaoticSeeds(again));
+			// Down to Chaotic's seed: a grant draws it from the roll's own random source.
+			assertEquals(first.traits(), again.traits());
 		}
 
 		assertFalse(GearRoll.roll(12.0f, scene(PLAINS), 0.15, RandomSource.create(1L)).name()

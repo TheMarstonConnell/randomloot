@@ -46,14 +46,9 @@ public class ModifierRegistry {
 
 	private static final HashMap<String, Modifier> Modifiers = new HashMap<>();
 	private static final HashMap<String, TraitDeclaration> Declarations = new HashMap<>();
-	private static final HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
 
 	public static Map<String, Modifier> getModifiers() {
 		return Collections.unmodifiableMap(Modifiers);
-	}
-
-	public static Map<String, Boolean> getModifierEnabled() {
-		return Collections.unmodifiableMap(ModifierEnabled);
 	}
 
 	public static Modifier getModifier(String name) {
@@ -207,20 +202,6 @@ public class ModifierRegistry {
 		return Collections.unmodifiableSet(members);
 	}
 
-	public static Modifier register(Modifier modifier) {
-
-		String tagName = modifier.tagName();
-
-		if (Modifiers.containsKey(tagName)) {
-			throw new IllegalStateException("Cannot register modifier twice: " + tagName);
-		}
-
-		Modifiers.put(tagName, modifier);
-		ModifierEnabled.put(tagName, true);
-
-		return modifier;
-	}
-
 	/** A trait that puts {@code effect} on whatever its weapon hits, for {@code seconds}. */
 	private static Modifier hitEffect(String tag, String name, ChatFormatting color, Holder<MobEffect> effect,
 			int seconds) {
@@ -253,25 +234,26 @@ public class ModifierRegistry {
 
 	/** Registers a finished declaration and returns the registry's own instance of the trait. */
 	static Modifier register(TraitDeclaration declaration) {
+		if (Declarations.containsKey(declaration.tag)) {
+			throw new IllegalStateException("Cannot register modifier twice: " + declaration.tag);
+		}
+
+		Modifier registered = declaration.create();
 		Declarations.put(declaration.tag, declaration);
-		return register(declaration.create());
+		Modifiers.put(declaration.tag, registered);
+		return registered;
 	}
 
 	/** A new instance of the named trait holding what {@code tag} stores, or null for a name nobody registered. */
 	public static Modifier loadModifier(String name, CompoundTag tag) {
 		TraitDeclaration declaration = Declarations.get(name);
-		if (declaration != null) {
-			AbstractModifier trait = declaration.create();
-			trait.load(tag);
-			return trait;
-		}
-
-		Modifier m = Modifiers.get(name);
-		if (m == null) {
+		if (declaration == null) {
 			return null;
 		}
 
-		return m.fromNBT(tag);
+		AbstractModifier trait = declaration.create();
+		trait.load(tag);
+		return trait;
 	}
 
 }
