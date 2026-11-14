@@ -1001,23 +1001,45 @@ public final class GameTestBodies {
 	 */
 	public static void levelUpRollsTrait(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		double saved = Config.LevelUpTraitChance;
 
-		try {
-			Config.LevelUpTraitChance = 1.0;
+		try (Config.Substitution always = Config.LEVEL_UP_TRAIT_CHANCE.substitute(1.0)) {
 			ItemStack rolled = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(rolled, player, 500);
 			helper.assertTrue(LootUtils.rawTraitNames(rolled).size() == 1,
 					"one level-up at chance 1.0 should roll one trait, got " + LootUtils.rawTraitNames(rolled));
+		}
 
-			Config.LevelUpTraitChance = 0.0;
+		try (Config.Substitution never = Config.LEVEL_UP_TRAIT_CHANCE.substitute(0.0)) {
 			ItemStack plain = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(plain, player, 1600);
 			helper.assertTrue(LootUtils.rawTraitNames(plain).isEmpty(),
 					"level-ups at chance 0.0 should roll no traits, got " + LootUtils.rawTraitNames(plain));
-		} finally {
-			Config.LevelUpTraitChance = saved;
 		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * A trait switched off in the config stays written on the gear but stops being one
+	 * of its traits: {@code getModifiers} is what every trait dispatch reads.
+	 */
+	public static void disabledTraitIsFiltered(GameTestHelper helper) {
+		ItemStack armor = newArmor(ToolType.CHESTPLATE);
+		LootUtils.addModifier(armor, ModifierRegistry.THORNY);
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1 && LootUtils.hasEnabledModifier(armor, "thorny"),
+				"an enabled trait should be one of the gear's traits, got " + LootUtils.getModifiers(armor));
+
+		try (Config.Substitution off = Config.traitToggle("thorny").substitute(false)) {
+			helper.assertTrue(LootUtils.getModifiers(armor).isEmpty(),
+					"a disabled trait should be filtered out, got " + LootUtils.getModifiers(armor));
+			helper.assertTrue(!LootUtils.hasEnabledModifier(armor, "thorny"),
+					"a disabled trait should not count as enabled on the gear");
+			helper.assertTrue(LootUtils.hasRawTrait(armor, "thorny"),
+					"a disabled trait should still be written on the gear, so it can be removed");
+		}
+
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1,
+				"the trait should be back once the toggle is, got " + LootUtils.getModifiers(armor));
 
 		helper.succeed();
 	}

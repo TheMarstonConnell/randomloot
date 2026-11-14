@@ -127,8 +127,9 @@ public class RandomLootFabricGameTests {
         helper.assertTrue(Files.exists(config),
                 "FCAP should generate randomloot-common.toml, looked at " + config);
 
-        helper.assertTrue(Config.CaseChance > 0.0 && Config.CaseChance <= 1.0,
-                "caseChance should be loaded and sane, got " + Config.CaseChance);
+        double caseChance = Config.CASE_CHANCE.get();
+        helper.assertTrue(caseChance > 0.0 && caseChance <= 1.0,
+                "caseChance should be loaded and sane, got " + caseChance);
         helper.assertTrue(Config.traitEnabled("thorny"),
                 "traits should default to enabled");
 

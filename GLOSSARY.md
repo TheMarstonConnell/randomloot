@@ -43,3 +43,7 @@ _Avoid_: glue, bridge, platform code
 **Gametest table**:
 The one list of the gametests that both loaders run. A shared gametest exists by having a row in it, so it cannot be present on one loader and missing on the other.
 _Avoid_: test registry, test list, test manifest
+
+**Config setting**:
+One value a player or pack maker can change in the config file, such as the chance of finding a case or whether a trait is switched on. Each is declared once, and the file, its row in the config guide and the value the game reads all come from that declaration.
+_Avoid_: option, config value, property

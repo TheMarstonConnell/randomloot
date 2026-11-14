@@ -97,7 +97,7 @@ public class Healing extends LeveledModifier implements HoldModifier {
 			stack.setDamageValue(Math.max(stack.getDamageValue() - 1, 0));
 
 			if (f < power / 5 && holder instanceof Player p
-					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LivingWhispersPerMinute)) {
+					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LIVING_WHISPERS_PER_MINUTE.get())) {
 				MutableComponent comp = Component.empty();
 
 				comp.append(Util.getRandom(WHISPER_LINES, level.getRandom()));

@@ -4,169 +4,291 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.neoforged.neoforge.common.ModConfigSpec;
 
-import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
 
 /**
- * Mod configuration, built on NeoForge's ModConfigSpec. On Fabric the same
- * spec API is provided by Forge Config API Port, so this class stays in
- * common; each loader registers {@link #SPEC} and wires its config-loaded
- * event to {@link #onLoad()}.
+ * The mod's config settings. A setting is declared once, as a {@link Setting} constant
+ * below: its key, default, range, comment and group. Everything else is derived from
+ * that declaration - the entry in the spec both loaders register ({@link #SPEC}), the
+ * row in CONFIG.md ({@link #settings(Group)}) and the value the mod reads
+ * ({@link Setting#get()}).
+ *
+ * <p>Built on NeoForge's ModConfigSpec. On Fabric the same spec API is provided by
+ * Forge Config API Port, so this class stays in common; each loader registers
+ * {@link #SPEC} and wires its config-loaded event to {@link #onLoad()}.
+ *
+ * <p>To add a setting, add one constant above {@link #SPEC}. Nothing else needs an edit.
  */
-public class Config
+public final class Config
 {
-    private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
-
-    private static ModConfigSpec.DoubleValue CASE_CHANCE;
-
-    private static ModConfigSpec.DoubleValue MOD_CHANCE;
-
-    private static ModConfigSpec.DoubleValue GOODNESS;
-
-    private static ModConfigSpec.DoubleValue ARMOR_CHANCE;
-
-    private static ModConfigSpec.DoubleValue DISPENSER_GOODNESS;
-
-    private static ModConfigSpec.DoubleValue LEVEL_UP_TRAIT_CHANCE;
-
-    private static ModConfigSpec.ConfigValue<List<? extends String>> LOOT_TABLE_MATCHES;
-
-    private static ModConfigSpec.IntValue LIVING_WHISPERS;
+    /** Every setting in declaration order, trait toggles included. Stays above the first declaration. */
+    private static final List<Setting<?>> DECLARED = new ArrayList<>();
 
     /**
-     * A documented numeric option: one source for the spec definition, for the plain
-     * static field's pre-load default, and for the CONFIG.md table {@link GenWiki}
-     * renders. Defaults and ranges used to be written twice - once here, once as literal
-     * markdown - so the docs could drift from the spec with nothing to notice.
-     *
-     * <p>These must be declared above {@link #SPEC}: static initializers run in source
-     * order, and {@code SPEC = build()} reads them.
+     * Where a setting sits. One group gives both groupings: the section of
+     * randomloot-common.toml it is written under, and the table of CONFIG.md it is listed
+     * in. Constants are in the order the file writes its sections.
      */
-    public record Option(String name, double defaultValue, double min, double max, String comment) {
+    public enum Group {
+        LOOT_CHANCES("Loot Chances"),
+        /** One toggle per registered trait, declared from {@link ModifierRegistry} rather than by hand. */
+        TRAIT_TOGGLES("Modifiers Enabled"),
+        MODIFIER_SETTINGS("Modifier Settings"),
+        /** The file has always called this section "Misc"; existing files depend on that name. */
+        PROGRESSION("Misc");
+
+        private final String section;
+
+        Group(String section) {
+            this.section = section;
+        }
+
+        /** The section name in randomloot-common.toml. */
+        public String section() {
+            return section;
+        }
     }
 
-    /** {@link Option} for whole-number settings, so the spec and CONFIG.md don't show them as decimals. */
-    public record IntOption(String name, int defaultValue, int min, int max, String comment) {
-    }
-
-    public static final Option CASE_CHANCE_OPTION = new Option("caseChance", 0.25, 0.0, 1.0,
+    public static final Setting<Double> CASE_CHANCE = decimal(Group.LOOT_CHANCES, "caseChance", 0.25, 0.0, 1.0,
             "chance to find a case in a chest.");
-    public static final Option MOD_CHANCE_OPTION = new Option("modChance", 0.15, 0.0, 1.0,
+    public static final Setting<Double> MOD_CHANCE = decimal(Group.LOOT_CHANCES, "modChance", 0.15, 0.0, 1.0,
             "chance to find a modifier template in a chest.");
-    public static final Option GOODNESS_OPTION = new Option("goodness_rate", 1.0, 0.01, 10.0,
-            "rate of tool improvement per player");
-    public static final Option ARMOR_CHANCE_OPTION = new Option("armorChance", 0.15, 0.0, 1.0,
-            "chance that a loot case contains an armor piece instead of a tool.");
-    public static final Option DISPENSER_GOODNESS_OPTION = new Option("dispenserGoodness", 0.75, 0.0, 1.0,
-            "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
-    public static final Option LEVEL_UP_TRAIT_CHANCE_OPTION = new Option("levelUpTraitChance", 0.2, 0.0, 1.0,
-            "chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up.");
-    public static final IntOption LIVING_WHISPERS_OPTION = new IntOption("livingWhispersPerMinute", 1, 0, 1200,
+    // The file's comment and the CONFIG.md row have always worded this one differently,
+    // so it carries both; every other setting's row is its comment.
+    public static final Setting<List<? extends String>> LOOT_TABLE_MATCHES = strings(Group.LOOT_CHANCES,
+            "lootTableMatches", List.of("chest"),
+            "loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
+            .describedAs("Loot table id substrings that cases/templates can be injected into. Empty list disables injection");
+
+    public static final Setting<Integer> LIVING_WHISPERS_PER_MINUTE = whole(Group.MODIFIER_SETTINGS,
+            "livingWhispersPerMinute", 1, 0, 1200,
             "max whispers (\"pssst...\", \"hi...\", ...) per minute from the Living trait, shared across every Living item a player holds or wears. 0 disables them.");
 
-    /** The loot-chance options, in the order CONFIG.md lists them. */
-    public static List<Option> lootChanceOptions() {
-        return List.of(CASE_CHANCE_OPTION, MOD_CHANCE_OPTION);
+    public static final Setting<Double> GOODNESS = decimal(Group.PROGRESSION, "goodness_rate", 1.0, 0.01, 10.0,
+            "rate of tool improvement per player");
+    public static final Setting<Double> ARMOR_CHANCE = decimal(Group.PROGRESSION, "armorChance", 0.15, 0.0, 1.0,
+            "chance that a loot case contains an armor piece instead of a tool.");
+    public static final Setting<Double> DISPENSER_GOODNESS = decimal(Group.PROGRESSION, "dispenserGoodness", 0.75, 0.0, 1.0,
+            "goodness of dispenser-opened cases, as a fraction of the highest goodness of any online player.");
+    public static final Setting<Double> LEVEL_UP_TRAIT_CHANCE = decimal(Group.PROGRESSION, "levelUpTraitChance", 0.2, 0.0, 1.0,
+            "chance that each gear level-up also rolls a new trait (or levels up one it already has). 0 disables it, 1 rolls on every level-up.");
+
+    /** The per-trait toggles by trait tag name, in the registry's own iteration order (the order the file lists them). */
+    private static final Map<String, Setting<Boolean>> TRAIT_TOGGLES = declareTraitToggles();
+
+    /** The spec both loaders register. Built from every setting declared above it. */
+    public static final ModConfigSpec SPEC = buildSpec();
+
+    private Config() {
     }
 
-    /** The progression options, in the order CONFIG.md lists them. */
-    public static List<Option> progressionOptions() {
-        return List.of(GOODNESS_OPTION, ARMOR_CHANCE_OPTION, DISPENSER_GOODNESS_OPTION, LEVEL_UP_TRAIT_CHANCE_OPTION);
-    }
-
-    /** The per-modifier tuning options, in the order CONFIG.md lists them. */
-    public static List<IntOption> modifierSettingOptions() {
-        return List.of(LIVING_WHISPERS_OPTION);
-    }
-
-    // These mirror the spec so reads that land before the first ModConfigEvent.Loading
-    // (e.g. early world gen) see sane values, not 0.0.
-    public static double CaseChance = CASE_CHANCE_OPTION.defaultValue();
-    public static double ModChance = MOD_CHANCE_OPTION.defaultValue();
-    public static double Goodness = GOODNESS_OPTION.defaultValue();
-    public static double ArmorChance = ARMOR_CHANCE_OPTION.defaultValue();
-    public static double DispenserGoodness = DISPENSER_GOODNESS_OPTION.defaultValue();
-    public static double LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE_OPTION.defaultValue();
-    public static List<? extends String> LootTableMatches = List.of("chest");
-    public static int LivingWhispersPerMinute = LIVING_WHISPERS_OPTION.defaultValue();
-
-    private static Map<String, ModConfigSpec.BooleanValue> MODIFIERS_ENABLED;
-    private static Map<String, Boolean> ModsEnabled = new HashMap<>();
-
-    public static final ModConfigSpec SPEC = build();
-
-    public static ModConfigSpec build() {
-        init();
-        return BUILDER.build();
-    }
-
-    private static ModConfigSpec.DoubleValue define(Option option) {
-        return BUILDER.comment(option.comment())
-                .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
-    }
-
-    private static ModConfigSpec.IntValue define(IntOption option) {
-        return BUILDER.comment(option.comment())
-                .defineInRange(option.name(), option.defaultValue(), option.min(), option.max());
-    }
-
-    public static void init() {
-
-        BUILDER.push("Loot Chances");
-        CASE_CHANCE = define(CASE_CHANCE_OPTION);
-        MOD_CHANCE = define(MOD_CHANCE_OPTION);
-        LOOT_TABLE_MATCHES = BUILDER
-                .comment("loot table id substrings that cases and templates can be injected into. An empty list disables injection entirely.")
-                .defineListAllowEmpty("lootTableMatches", List.of("chest"), () -> "chest", o -> o instanceof String);
-        BUILDER.pop();
-
-        BUILDER.push("Modifiers Enabled");
-        MODIFIERS_ENABLED = new HashMap<String, ModConfigSpec.BooleanValue>();
-
+    private static Map<String, Setting<Boolean>> declareTraitToggles() {
+        Map<String, Setting<Boolean>> toggles = new LinkedHashMap<>();
         for (Map.Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
-            String key = entry.getKey();
-            Modifier mod = entry.getValue();
-
-            MODIFIERS_ENABLED.put(key,
-                    BUILDER.comment("should the " + mod.name() + " trait be enabled").define(key + "_enabled", true));
+            String tagName = entry.getKey();
+            toggles.put(tagName, flag(Group.TRAIT_TOGGLES, tagName + "_enabled", true,
+                    "should the " + entry.getValue().name() + " trait be enabled"));
         }
-        BUILDER.pop();
-
-        BUILDER.push("Modifier Settings");
-        LIVING_WHISPERS = define(LIVING_WHISPERS_OPTION);
-        BUILDER.pop();
-
-        BUILDER.push("Misc");
-        GOODNESS = define(GOODNESS_OPTION);
-        ARMOR_CHANCE = define(ARMOR_CHANCE_OPTION);
-        DISPENSER_GOODNESS = define(DISPENSER_GOODNESS_OPTION);
-        LEVEL_UP_TRAIT_CHANCE = define(LEVEL_UP_TRAIT_CHANCE_OPTION);
-        BUILDER.pop();
+        return toggles;
     }
 
+    private static ModConfigSpec buildSpec() {
+        ModConfigSpec.Builder builder = new ModConfigSpec.Builder();
+        for (Group group : Group.values()) {
+            builder.push(group.section());
+            for (Setting<?> setting : settings(group)) {
+                setting.define(builder);
+            }
+            builder.pop();
+        }
+        return builder.build();
+    }
+
+    /** A group's settings in declaration order, which is the order the file lists them in (and CONFIG.md, which only re-sorts the trait toggles). */
+    public static List<Setting<?>> settings(Group group) {
+        List<Setting<?>> inGroup = new ArrayList<>();
+        for (Setting<?> setting : DECLARED) {
+            if (setting.group() == group) {
+                inGroup.add(setting);
+            }
+        }
+        return inGroup;
+    }
+
+    /** Whether a trait is switched on. A tag name with no trait behind it counts as on. */
     public static boolean traitEnabled(String tagName) {
-        return ModsEnabled.getOrDefault(tagName, true);
+        Setting<Boolean> toggle = TRAIT_TOGGLES.get(tagName);
+        return toggle == null || toggle.get();
     }
 
-    /** Pulls spec values into the plain static fields; called from each loader's config-loaded event. */
+    /** The on/off setting of a registered trait, e.g. to {@linkplain Setting#substitute substitute} it in a test. */
+    public static Setting<Boolean> traitToggle(String tagName) {
+        Setting<Boolean> toggle = TRAIT_TOGGLES.get(tagName);
+        if (toggle == null) {
+            throw new IllegalArgumentException("no trait is registered as '" + tagName + "'");
+        }
+        return toggle;
+    }
+
+    /** Takes every setting's value from the loaded file; each loader calls this from its config loaded and reloaded events. */
     public static void onLoad() {
-        CaseChance = CASE_CHANCE.get();
-        ModChance = MOD_CHANCE.get();
-        Goodness = GOODNESS.get();
-        ArmorChance = ARMOR_CHANCE.get();
-        DispenserGoodness = DISPENSER_GOODNESS.get();
-        LevelUpTraitChance = LEVEL_UP_TRAIT_CHANCE.get();
-        LootTableMatches = LOOT_TABLE_MATCHES.get();
-        LivingWhispersPerMinute = LIVING_WHISPERS.get();
+        for (Setting<?> setting : DECLARED) {
+            setting.load();
+        }
+    }
 
-        ModsEnabled = new HashMap<String, Boolean>();
-        for (Map.Entry<String, ModConfigSpec.BooleanValue> entry : MODIFIERS_ENABLED.entrySet()) {
-            String key = entry.getKey();
-            ModConfigSpec.BooleanValue val = entry.getValue();
+    private static Setting<Double> decimal(Group group, String key, double defaultValue, double min, double max,
+            String comment) {
+        return new Setting<>(group, key, defaultValue, min, max, comment,
+                builder -> builder.defineInRange(key, defaultValue, min, max));
+    }
 
-            ModsEnabled.put(key, val.get());
+    /** A whole-number setting, so the file and CONFIG.md don't show it as a decimal. */
+    private static Setting<Integer> whole(Group group, String key, int defaultValue, int min, int max,
+            String comment) {
+        return new Setting<>(group, key, defaultValue, min, max, comment,
+                builder -> builder.defineInRange(key, defaultValue, min, max));
+    }
+
+    /** A list of strings, which may be empty. A config screen offers the first default as the entry to add. */
+    private static Setting<List<? extends String>> strings(Group group, String key, List<String> defaultValue,
+            String comment) {
+        return new Setting<>(group, key, defaultValue, null, null, comment,
+                builder -> builder.defineListAllowEmpty(key, defaultValue,
+                        () -> defaultValue.isEmpty() ? "" : defaultValue.get(0), o -> o instanceof String));
+    }
+
+    private static Setting<Boolean> flag(Group group, String key, boolean defaultValue, String comment) {
+        return new Setting<>(group, key, defaultValue, null, null, comment,
+                builder -> builder.define(key, defaultValue));
+    }
+
+    /**
+     * One config setting: what it is called, what it defaults to, and how to read it.
+     *
+     * <p>{@link #get()} is how the mod reads the value. Until the config file has loaded
+     * it returns the default, so a read that lands early (world gen before the first
+     * load event) sees a sane value; after that it returns what the file said at the
+     * last load or reload.
+     */
+    public static final class Setting<T> {
+        private final Group group;
+        private final String key;
+        private final T defaultValue;
+        private final T min;
+        private final T max;
+        private final String comment;
+        private final Function<ModConfigSpec.Builder, ModConfigSpec.ConfigValue<T>> definer;
+        private String description;
+
+        private ModConfigSpec.ConfigValue<T> specValue;
+        private volatile T loaded;
+        private volatile T substituted;
+
+        private Setting(Group group, String key, T defaultValue, T min, T max, String comment,
+                Function<ModConfigSpec.Builder, ModConfigSpec.ConfigValue<T>> definer) {
+            // SPEC is still null while the declarations above it run, and set from then on.
+            if (SPEC != null) {
+                throw new IllegalStateException("config setting '" + key + "' is declared below Config.SPEC,"
+                        + " so the spec was built without it. Move the declaration above SPEC.");
+            }
+            this.group = group;
+            this.key = key;
+            this.defaultValue = defaultValue;
+            this.min = min;
+            this.max = max;
+            this.comment = comment;
+            this.definer = definer;
+            this.loaded = defaultValue;
+            DECLARED.add(this);
         }
 
+        /** Gives the setting a CONFIG.md description that is not its comment. */
+        private Setting<T> describedAs(String description) {
+            this.description = description;
+            return this;
+        }
+
+        private void define(ModConfigSpec.Builder builder) {
+            specValue = definer.apply(builder.comment(comment));
+        }
+
+        private void load() {
+            loaded = specValue.get();
+        }
+
+        /** The setting's current value. */
+        public T get() {
+            T substitute = substituted;
+            return substitute != null ? substitute : loaded;
+        }
+
+        /**
+         * Makes {@link #get()} return {@code value} until the returned substitution is
+         * closed, whatever the config file says. For tests:
+         *
+         * <pre>{@code
+         * try (Config.Substitution chance = Config.LEVEL_UP_TRAIT_CHANCE.substitute(1.0)) {
+         *     // every reader sees 1.0 here
+         * }
+         * }</pre>
+         *
+         * Every reader on every thread sees it, so a gametest must open and close it
+         * within one tick; left open across ticks it would leak into the tests running
+         * beside it. Nothing in the mod itself calls this.
+         */
+        public Substitution substitute(T value) {
+            T previous = substituted;
+            substituted = Objects.requireNonNull(value, "value");
+            return () -> substituted = previous;
+        }
+
+        /** The key in randomloot-common.toml, e.g. {@code caseChance}. */
+        public String key() {
+            return key;
+        }
+
+        public Group group() {
+            return group;
+        }
+
+        public T defaultValue() {
+            return defaultValue;
+        }
+
+        /** The lowest allowed value, or null for a setting with no range (a list, a toggle). */
+        public T min() {
+            return min;
+        }
+
+        /** The highest allowed value, or null for a setting with no range. */
+        public T max() {
+            return max;
+        }
+
+        /** The comment written above the setting in randomloot-common.toml. */
+        public String comment() {
+            return comment;
+        }
+
+        /** The setting described for CONFIG.md: its comment, capitalized and without the trailing period, unless it was given its own wording. */
+        public String description() {
+            if (description != null) {
+                return description;
+            }
+            return Character.toUpperCase(comment.charAt(0)) + comment.substring(1).replaceAll("\\.$", "");
+        }
+    }
+
+    /** A value put in place of a setting's own by {@link Setting#substitute}; closing it puts the previous one back. */
+    @FunctionalInterface
+    public interface Substitution extends AutoCloseable {
+        @Override
+        void close();
     }
 }
