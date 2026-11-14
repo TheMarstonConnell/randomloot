@@ -1,5 +1,6 @@
 package dev.marston.randomloot.gametest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -31,6 +32,7 @@ import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -1291,6 +1293,37 @@ public final class GameTestBodies {
 		helper.assertTrue(run(commands, source, "randomloot trait remove critical") == 1,
 				"trait remove should succeed");
 		helper.assertFalse(hasTrait(player.getMainHandItem(), "critical"), "trait remove should strip the trait");
+
+		// The reply names the trait as it went onto the gear. Grace is named after this
+		// world's forger, while the registry's own copy carries one rolled at start-up
+		// (the same forger one start in six, when this cannot tell the two apart).
+		List<String> replies = new ArrayList<>();
+		CommandSourceStack listening = source.withSource(new CommandSource() {
+			@Override
+			public void sendSystemMessage(Component message) {
+				replies.add(message.getString());
+			}
+
+			@Override
+			public boolean acceptsSuccess() {
+				return true;
+			}
+
+			@Override
+			public boolean acceptsFailure() {
+				return true;
+			}
+
+			@Override
+			public boolean shouldInformAdmins() {
+				return false;
+			}
+		});
+		helper.assertTrue(run(commands, listening, "randomloot trait add dirt_place") == 1,
+				"trait add should accept dirt_place on a sword");
+		String onGear = traitName(player.getMainHandItem(), "dirt_place");
+		helper.assertTrue(replies.size() == 1 && replies.get(0).startsWith("Added " + onGear + " to "),
+				"the reply should name the trait as it is on the gear, " + onGear + ", got " + replies);
 
 		// Tab-completion for `trait add` only offers traits the command would accept.
 		ParseResults<CommandSourceStack> parse = commands.parse("randomloot trait add ", source);
