@@ -359,8 +359,9 @@ public final class GameTestBodies {
 
 	/**
 	 * Gear still in its reveal roll is inert: trait dispatch runs none of its traits and
-	 * spends none of its durability, for a hit, a broken block, a right-click or a tick.
-	 * Each case runs on live gear first, so the rolling half cannot pass by doing nothing.
+	 * spends none of its durability, for a hit, a broken block, a right-click, a tick or
+	 * a kill. Each case runs on live gear first, so the rolling half cannot pass by doing
+	 * nothing.
 	 */
 	public static void traitDispatchLeavesRollingGearInert(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -429,6 +430,15 @@ public final class GameTestBodies {
 			TraitDispatch.tick(hasty, level, player);
 			helper.assertTrue(player.hasEffect(MobEffects.HASTE) != rolling,
 					"a tick of a " + state + " pickaxe: Hasty " + (rolling ? "must not" : "should") + " run");
+
+			// Kill: Nemesis counts what its weapon kills.
+			ItemStack nemesis = gear(helper, ToolType.SWORD, rolling, "nemesis");
+			CompoundTag kills = storedTrait(nemesis, "nemesis");
+			LivingEntity victim = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			TraitDispatch.kill(nemesis, victim, player);
+			helper.assertTrue(storedTrait(nemesis, "nemesis").equals(kills) == rolling,
+					"a kill with a " + state + " sword: Nemesis " + (rolling ? "must not" : "should") + " count it");
+			victim.discard();
 		}
 
 		helper.succeed();
