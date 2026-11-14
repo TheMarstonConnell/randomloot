@@ -83,11 +83,7 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// The melee half of the "15% stat boost". getStats only reaches mining speed,
 		// so without this a Munchies sword drained hunger for nothing.
 		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
@@ -95,20 +91,12 @@ public class Munchies extends LeveledModifier implements EntityHurtModifier, Blo
 
 		// Chance to consume hunger
 		tryConsumeHunger(hurter);
-
-		return false;
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
-		if (player.level().isClientSide()) {
-			return false;
-		}
-
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 		// Chance to consume hunger on block break
 		tryConsumeHunger(player);
-
-		return false;
 	}
 
 	@Override

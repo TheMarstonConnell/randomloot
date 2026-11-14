@@ -1,11 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -45,7 +45,7 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 		InteractionResult result = place(ctx);
 
 		if (result == InteractionResult.SUCCESS) {
-			LootUtils.damageGear(ctx.getItemInHand(), this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
+			TraitDispatch.spendDurability(ctx.getItemInHand(), this.damage, ctx.getPlayer(), EquipmentSlot.MAINHAND);
 		}
 
 		return result;

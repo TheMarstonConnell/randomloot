@@ -79,10 +79,6 @@ public class Stench extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (level.isClientSide()) {
-			return;
-		}
-
 		double radius = getRadius();
 		AABB searchBox = new AABB(
 				holder.getX() - radius, holder.getY() - radius, holder.getZ() - radius,

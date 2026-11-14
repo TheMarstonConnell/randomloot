@@ -49,17 +49,11 @@ public class Critical extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
 		Modifier.TrackEntityParticle(hurtee.level(), hurtee, ParticleTypes.CRIT);
 
 		dealBonusDamage(hurtee, hurter, dmg * 0.5f);
-
-		return false;
 	}
 }

@@ -67,7 +67,7 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		EntityType<?> type = hurtee.getType();
 		boolean isArthropod = type == EntityTypes.SPIDER ||
 							  type == EntityTypes.CAVE_SPIDER ||
@@ -76,15 +76,10 @@ public class Overgrown extends LeveledModifier implements EntityHurtModifier, Ho
 							  type == EntityTypes.BEE;
 
 		if (isArthropod) {
-			if (hurtee.level().isClientSide()) {
-				return false;
-			}
 			float bonusDamage = 2.5f + (this.level * 2.5f);
 			dealBonusDamage(hurtee, hurter, bonusDamage);
 			hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 60, this.level));
 		}
-
-		return false;
 	}
 
 	@Override

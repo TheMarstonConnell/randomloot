@@ -40,8 +40,7 @@ public class HurtEffect extends EffectModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		hurtee.addEffect(makeInstance());
-		return false;
 	}
 }

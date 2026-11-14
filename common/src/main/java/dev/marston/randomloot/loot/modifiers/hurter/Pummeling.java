@@ -49,11 +49,7 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         Level level = hurtee.level();
         Vec3 pos = hurtee.position();
         
@@ -67,7 +63,5 @@ public class Pummeling extends AbstractModifier implements EntityHurtModifier {
         hurtee.teleportTo(pos.x, pos.y - slamDepth, pos.z);
         hurtee.setDeltaMovement(0, 0, 0);
         hurtee.syncVelocity = true;
-
-        return false;
     }
 }

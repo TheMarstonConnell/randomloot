@@ -74,9 +74,8 @@ public class Fire extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		hurtee.setRemainingFireTicks(points * 20);
-		return false;
 	}
 
 	public boolean canLevel() {

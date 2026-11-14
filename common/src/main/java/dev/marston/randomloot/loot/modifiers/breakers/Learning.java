@@ -1,7 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -37,10 +36,10 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
 
 		if (!(entity instanceof Player)) {
-			return false;
+			return;
 		}
 
 		Player player = (Player) entity;
@@ -51,9 +50,6 @@ public class Learning extends AbstractModifier implements BlockBreakModifier {
 			count = count - max;
 			player.giveExperiencePoints(this.points);
 		}
-
-		LootUtils.updateModifier(itemstack, this);
-		return false;
 	}
 
 	@Override

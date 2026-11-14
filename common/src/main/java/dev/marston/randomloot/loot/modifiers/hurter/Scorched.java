@@ -65,10 +65,9 @@ public class Scorched extends LeveledModifier implements EntityHurtModifier, Hol
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		int fireDuration = (4 + (this.level * 2)) * 20;
 		hurtee.setRemainingFireTicks(fireDuration);
-		return false;
 	}
 
 	@Override

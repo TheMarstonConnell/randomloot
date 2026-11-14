@@ -10,6 +10,7 @@ import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -70,7 +71,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	/** Chance-based extra durability cost: 2.0x -> always, 1.6x -> 60%, 1.25x -> 25%. */
 	private void tryExtraDamage(ItemStack itemstack, ServerPlayer player) {
 		if (player.level().getRandom().nextFloat() < (getDurabilityMultiplier() - 1.0f)) {
-			LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+			TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 		}
 	}
 
@@ -86,11 +87,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// The "25% more damage" half of the trait. getStats only reaches mining speed,
 		// so without this a Fragile sword paid the durability cost for nothing.
 		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
@@ -99,21 +96,13 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 		if (hurter instanceof ServerPlayer player) {
 			tryExtraDamage(itemstack, player);
 		}
-
-		return false;
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
-		if (player.level().isClientSide()) {
-			return false;
-		}
-
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 		if (player instanceof ServerPlayer serverPlayer) {
 			tryExtraDamage(itemstack, serverPlayer);
 		}
-
-		return false;
 	}
 
 	@Override

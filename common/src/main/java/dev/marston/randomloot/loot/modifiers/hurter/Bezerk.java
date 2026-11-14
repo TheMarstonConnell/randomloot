@@ -54,11 +54,7 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
 		float maxHealth = hurter.getMaxHealth();
@@ -67,7 +63,5 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 		float ratio = maxHealth / currentHealth;
 
 		dealBonusDamage(hurtee, hurter, dmg * BONUS_DAMAGE_SCALE * (ratio - 1));
-
-		return false;
 	}
 }

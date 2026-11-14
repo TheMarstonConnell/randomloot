@@ -13,7 +13,7 @@ package dev.marston.randomloot.loot;
  * test.
  *
  * <p>{@code statMultiplier} is the product of the gear's {@code StatsModifier} traits -
- * see {@link LootUtils#statMultiplier(net.minecraft.world.item.ItemStack)}.
+ * see {@code TraitDispatch.statMultiplier(ItemStack)}.
  */
 public final class GearStats {
 

@@ -59,10 +59,6 @@ public class Magnetized extends AbstractModifier implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (level.isClientSide()) {
-			return;
-		}
-
 		List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, holder.getBoundingBox().inflate(RANGE));
 
 		for (ItemEntity item : items) {

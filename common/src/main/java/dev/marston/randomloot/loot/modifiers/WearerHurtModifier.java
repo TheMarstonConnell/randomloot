@@ -5,8 +5,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Armor traits that react to the wearer taking damage. Dispatched from
- * {@link ArmorDispatcher}, once per worn piece carrying the trait, after vanilla's
+ * Armor traits that react to the wearer taking damage. Dispatched by
+ * {@link TraitDispatch#wearerHurt}, which {@link ArmorDispatcher} calls once per worn
+ * piece, after vanilla's
  * armor, protection-enchantment and Resistance reductions and before absorption hearts:
  * NeoForge's {@code LivingDamageEvent.Pre}, and the same point by mixin on Fabric. So
  * {@code damage} is what is about to be taken, not the hit that was dealt.

@@ -61,20 +61,14 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		float multiplier = getDamageMultiplier(itemstack);
 		if (multiplier <= 1.0f) {
-			return false;
+			return;
 		}
 
 		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 		dealBonusDamage(hurtee, hurter, baseDamage * (multiplier - 1.0f));
-
-		return false;
 	}
 
 	@Override

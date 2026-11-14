@@ -75,14 +75,10 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		float damage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 
 		hurter.heal(damage * drain());
-		return false;
 	}
 
 	public boolean canLevel() {

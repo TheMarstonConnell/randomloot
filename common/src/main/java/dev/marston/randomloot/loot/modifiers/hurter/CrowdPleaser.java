@@ -56,12 +56,8 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         Level level = hurtee.level();
-        if (level.isClientSide()) {
-            return false;
-        }
-
         // Get the type of entity being attacked
         EntityType<?> targetType = hurtee.getType();
         
@@ -86,7 +82,5 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
             dealBonusDamage(hurtee, hurter, baseDamage * bonusPercent);
         }
-
-        return false;
     }
 }

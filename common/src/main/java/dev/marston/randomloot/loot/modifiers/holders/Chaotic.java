@@ -129,11 +129,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         float currentState = getCurrentState(hurtee.level());
 
         // Apply damage modifier based on current state. dealBonusDamage ignores
@@ -143,7 +139,5 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
             dealBonusDamage(hurtee, hurter, baseDamage * currentState);
         }
-
-        return false;
     }
 }

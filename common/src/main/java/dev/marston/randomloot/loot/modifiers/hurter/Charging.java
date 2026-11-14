@@ -2,7 +2,6 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -88,13 +87,9 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		Level level = hurtee.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		long time = level.getGameTime();
 
@@ -117,10 +112,6 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 			ModCriteria.traitUsed(hurter, this);
 
 			this.charged = time;
-			LootUtils.updateModifier(itemstack, this);
 		}
-
-		return false;
-
 	}
 }

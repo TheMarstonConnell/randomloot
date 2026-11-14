@@ -65,23 +65,17 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         // Only a well-fed attacker deals bonus melee damage. A "hungry penalty" cannot
         // be applied as a post-hit negative hurt (that would heal the target already
         // damaged by the primary swing), so the hungry case is handled purely by the
         // mining-fatigue effect in hold().
         if (!isWellFed(hurter)) {
-            return false;
+            return;
         }
 
         float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
         dealBonusDamage(hurtee, hurter, baseDamage * DAMAGE_BONUS);
-
-        return false;
     }
 
     @Override

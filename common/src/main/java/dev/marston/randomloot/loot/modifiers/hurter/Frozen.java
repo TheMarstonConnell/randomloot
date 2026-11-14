@@ -70,10 +70,9 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		int duration = 3 * 20;
 		hurtee.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, duration, this.level + 1, false, true));
-		return false;
 	}
 
 	@Override

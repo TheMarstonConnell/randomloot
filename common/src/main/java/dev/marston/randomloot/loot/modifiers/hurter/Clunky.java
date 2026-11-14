@@ -63,11 +63,7 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         Vec3 knockbackDir = hurtee.position().subtract(hurter.position()).normalize();
         
         Vec3 currentVelocity = hurtee.getDeltaMovement();
@@ -78,7 +74,5 @@ public class Clunky extends AbstractModifier implements EntityHurtModifier, Hold
         );
         
         hurtee.syncVelocity = true;
-
-        return false;
     }
 }

@@ -4,8 +4,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Hook for traits that react to the holder killing something. Dispatched from
- * {@link KillDispatcher} off {@code LivingDeathEvent}, so it fires for every
+ * Hook for traits that react to the holder killing something. Dispatched by
+ * {@link TraitDispatch#kill}, which {@link KillDispatcher} calls off each loader's
+ * death event, so it fires for every
  * kill the tool gets credit for: direct melee blows, follow-up bonus damage
  * from other traits (Executioner), and indirect kills like Charged lightning
  * or Flaming burn-down. Checking {@code hurtee.getHealth() <= 0} inside

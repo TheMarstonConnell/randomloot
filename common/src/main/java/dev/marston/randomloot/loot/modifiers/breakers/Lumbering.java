@@ -8,6 +8,7 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -97,18 +98,15 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 		if (!(p instanceof ServerPlayer player)) {
-			return false;
+			return;
 		}
 
 		Level level = player.level();
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		if (!isLog(broken)) {
-			return false;
+			return;
 		}
 
 		// Seed the search with the block the player broke instead of re-reading it:
@@ -126,7 +124,7 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			if (isLog(logState)) {
 				boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, logPos, player, level, logState);
 				if (destroyed) {
-					LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+					TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 
 					if (itemstack.isEmpty()) {
 						break;
@@ -134,8 +132,6 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 				}
 			}
 		}
-
-		return false;
 	}
 
 	@Override
