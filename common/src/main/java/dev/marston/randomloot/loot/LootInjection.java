@@ -60,7 +60,7 @@ public final class LootInjection {
 			return false;
 		}
 
-		for (String match : Config.LootTableMatches) {
+		for (String match : Config.LOOT_TABLE_MATCHES.get()) {
 			if (tablePath.contains(match)) {
 				return true;
 			}
@@ -71,8 +71,8 @@ public final class LootInjection {
 	/** Every injected item with its current configured chance. */
 	public static List<Entry> entries() {
 		return List.of(
-				new Entry(ModItems.CASE.get(), Config.CaseChance),
-				new Entry(ModItems.MOD_ADD.get(), Config.ModChance));
+				new Entry(ModItems.CASE.get(), Config.CASE_CHANCE.get()),
+				new Entry(ModItems.MOD_ADD.get(), Config.MOD_CHANCE.get()));
 	}
 
 	/**

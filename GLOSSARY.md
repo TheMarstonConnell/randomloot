@@ -71,3 +71,7 @@ _Avoid_: generation, gen tool, loot roll
 **XP step**:
 What a gain of XP does to a piece of gear's level: the level it ends on, the XP left over and how many levels it gained. Each level gained is then applied as one level-up.
 _Avoid_: level-up loop, XP loop
+
+**Config setting**:
+One value a player or pack maker can change in the config file, such as the chance of finding a case or whether a trait is switched on. Each is declared once, and the file, its row in the config guide and the value the game reads all come from that declaration.
+_Avoid_: option, config value, property

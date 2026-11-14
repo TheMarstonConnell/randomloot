@@ -124,8 +124,8 @@ public class RandomLootFabricGameTests {
      *
      * <p>The gametest server's config file is seeded with one value off its default (the
      * seedGametestConfig task in fabric/build.gradle), because a file of defaults reads
-     * the same whether or not anything was loaded: the Config fields start out holding
-     * the defaults. That is how this test used to pass while Fabric ignored the file at
+     * the same whether or not anything was loaded: every setting starts out holding
+     * its default. That is how this test used to pass while Fabric ignored the file at
      * startup - Forge Config API Port loads it inside ConfigRegistry.register, and the
      * mod was adding its loading listener after that call.
      */
@@ -140,16 +140,18 @@ public class RandomLootFabricGameTests {
                 .matcher(Files.readString(config));
         helper.assertTrue(inFile.find(), "livingWhispersPerMinute should be in " + config);
         int whispers = Integer.parseInt(inFile.group(1));
-        helper.assertTrue(whispers != Config.LIVING_WHISPERS_OPTION.defaultValue(),
+        helper.assertTrue(whispers != Config.LIVING_WHISPERS_PER_MINUTE.defaultValue(),
                 "the gametest config should set livingWhispersPerMinute off its default of "
-                        + Config.LIVING_WHISPERS_OPTION.defaultValue() + " (seedGametestConfig in fabric/build.gradle);"
+                        + Config.LIVING_WHISPERS_PER_MINUTE.defaultValue() + " (seedGametestConfig in fabric/build.gradle);"
                         + " run this through ./gradlew :fabric:runGametest");
-        helper.assertTrue(Config.LivingWhispersPerMinute == whispers,
+        int running = Config.LIVING_WHISPERS_PER_MINUTE.get();
+        helper.assertTrue(running == whispers,
                 "the mod should run with the file's livingWhispersPerMinute of " + whispers + ", runs with "
-                        + Config.LivingWhispersPerMinute);
+                        + running);
 
-        helper.assertTrue(Config.CaseChance > 0.0 && Config.CaseChance <= 1.0,
-                "caseChance should be loaded and sane, got " + Config.CaseChance);
+        double caseChance = Config.CASE_CHANCE.get();
+        helper.assertTrue(caseChance > 0.0 && caseChance <= 1.0,
+                "caseChance should be loaded and sane, got " + caseChance);
         helper.assertTrue(Config.traitEnabled("thorny"),
                 "traits should default to enabled");
 

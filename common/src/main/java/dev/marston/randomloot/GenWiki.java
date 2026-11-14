@@ -122,26 +122,31 @@ public class GenWiki {
         writeMods(ModifierRegistry.MISC, f);
     }
 
-    /** One CONFIG.md row, rendered from the spec definition rather than restated. */
-    private static void writeOptionRow(Config.Option option, FileWriter f) throws IOException {
-        write("| `" + option.name() + "` | " + trimNumber(option.defaultValue()) + " | "
-                + trimNumber(option.min()) + "-" + trimNumber(option.max()) + " | "
-                + optionDescription(option.comment()) + " |", f);
+    /** One CONFIG.md table: a row per setting of the group, rendered from its declaration rather than restated. */
+    private static void writeSettingRows(Config.Group group, FileWriter f) throws IOException {
+        for (Config.Setting<?> setting : Config.settings(group)) {
+            write("| `" + setting.key() + "` | " + defaultCell(setting) + " | " + rangeCell(setting) + " | "
+                    + setting.description() + " |", f);
+        }
     }
 
-    private static void writeOptionRow(Config.IntOption option, FileWriter f) throws IOException {
-        write("| `" + option.name() + "` | " + option.defaultValue() + " | "
-                + option.min() + "-" + option.max() + " | " + optionDescription(option.comment()) + " |", f);
+    /** A number as Java prints it (0.25, and 1.0 for a decimal but 1 for a whole number); a list as inline code. */
+    private static String defaultCell(Config.Setting<?> setting) {
+        if (setting.defaultValue() instanceof List<?> list) {
+            StringJoiner entries = new StringJoiner(", ", "`[", "]`");
+            for (Object entry : list) {
+                entries.add("\"" + entry + "\"");
+            }
+            return entries.toString();
+        }
+        return String.valueOf(setting.defaultValue());
     }
 
-    /** The spec comment as a table cell: capitalized, trailing period dropped. */
-    private static String optionDescription(String comment) {
-        return Character.toUpperCase(comment.charAt(0)) + comment.substring(1).replaceAll("\\.$", "");
-    }
-
-    /** 0.25 not 0.25000000000000001; 1.0 stays 1.0 so ranges read as decimals. */
-    private static String trimNumber(double value) {
-        return String.valueOf(value);
+    private static String rangeCell(Config.Setting<?> setting) {
+        if (setting.defaultValue() instanceof List<?>) {
+            return "list of strings";
+        }
+        return setting.min() + "-" + setting.max();
     }
 
     private static void writeConfig(FileWriter f) throws IOException {
@@ -156,10 +161,7 @@ public class GenWiki {
         write("", f);
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
-        for (Config.Option option : Config.lootChanceOptions()) {
-            writeOptionRow(option, f);
-        }
-        write("| `lootTableMatches` | `[\"chest\"]` | list of strings | Loot table id substrings that cases/templates can be injected into. Empty list disables injection |", f);
+        writeSettingRows(Config.Group.LOOT_CHANCES, f);
         write("", f);
 
         write("## Progression", f);
@@ -168,9 +170,7 @@ public class GenWiki {
         write("", f);
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
-        for (Config.Option option : Config.progressionOptions()) {
-            writeOptionRow(option, f);
-        }
+        writeSettingRows(Config.Group.PROGRESSION, f);
         write("", f);
 
         write("## Modifier Settings", f);
@@ -179,9 +179,7 @@ public class GenWiki {
         write("", f);
         write("| Option | Default | Range | Description |", f);
         write("|--------|---------|-------|-------------|", f);
-        for (Config.IntOption option : Config.modifierSettingOptions()) {
-            writeOptionRow(option, f);
-        }
+        writeSettingRows(Config.Group.MODIFIER_SETTINGS, f);
         write("", f);
 
         write("## Modifier Toggles", f);
@@ -197,7 +195,7 @@ public class GenWiki {
         for (Map.Entry<String, Modifier> entry : sortedMods) {
             String key = entry.getKey();
             Modifier mod = entry.getValue();
-            write("| `" + key + "_enabled` | [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | " + mod.description() + " |", f);
+            write("| `" + Config.traitToggle(key).key() + "` | [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | " + mod.description() + " |", f);
         }
         write("", f);
     }
@@ -241,7 +239,7 @@ public class GenWiki {
         write("", f);
         write(String.format("Each level-up also has a **%d%%** chance to roll a bonus trait, or to level up a trait the gear already has"
                 + " (`%s` in [CONFIG.md](CONFIG.md)).",
-                Math.round(Config.LEVEL_UP_TRAIT_CHANCE_OPTION.defaultValue() * 100), Config.LEVEL_UP_TRAIT_CHANCE_OPTION.name()), f);
+                Math.round(Config.LEVEL_UP_TRAIT_CHANCE.defaultValue() * 100), Config.LEVEL_UP_TRAIT_CHANCE.key()), f);
         write("", f);
         write("**XP Required per Level:** `500 × 2^level`", f);
         write("", f);

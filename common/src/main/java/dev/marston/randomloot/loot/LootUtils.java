@@ -411,7 +411,7 @@ public class LootUtils {
 	public static void addXp(ItemStack item, LivingEntity holder, int amount) {
 		GearStats.XpStep step = GearStats.xpStep(getLevel(item), getXP(item), amount);
 
-		double bonusTraitChance = Config.LevelUpTraitChance;
+		double bonusTraitChance = Config.LEVEL_UP_TRAIT_CHANCE.get();
 		for (int i = 0; i < step.levelsGained(); i++) {
 			levelUp(item, holder, bonusTraitChance);
 		}
@@ -635,7 +635,7 @@ public class LootUtils {
 		// before the one in hand. The curve counts that one itself; the criteria wants
 		// it counted, hence the + 1 below.
 		int openedBefore = player.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get()));
-		float goodness = GearStats.goodnessForCases(openedBefore, Config.Goodness);
+		float goodness = GearStats.goodnessForCases(openedBefore, Config.GOODNESS.get());
 
 		ItemStack gear = rollAt(player.level(), player.blockPosition(), goodness, player);
 
@@ -656,13 +656,13 @@ public class LootUtils {
 		for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
 			best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
 		}
-		float goodness = GearStats.goodnessForCases(best, Config.Goodness * Config.DispenserGoodness);
+		float goodness = GearStats.goodnessForCases(best, Config.GOODNESS.get() * Config.DISPENSER_GOODNESS.get());
 
 		return rollAt(level, pos, goodness, null);
 	}
 
 	private static ItemStack rollAt(Level level, BlockPos pos, float goodness, @Nullable Player opener) {
-		return stamp(GearRoll.roll(goodness, sceneAt(level, pos, opener), Config.ArmorChance, level.getRandom()));
+		return stamp(GearRoll.roll(goodness, sceneAt(level, pos, opener), Config.ARMOR_CHANCE.get(), level.getRandom()));
 	}
 
 	/**

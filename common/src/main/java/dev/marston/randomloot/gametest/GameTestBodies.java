@@ -104,7 +104,6 @@ import net.minecraft.world.level.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.neoforge.common.ModConfigSpec;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -204,8 +203,9 @@ public final class GameTestBodies {
 		// Veiny has a single level, so a second one is refused, not silently dropped.
 		assertRefused(helper, veinyPickaxe, veiny, TraitEligibility.Verdict.ALREADY_MAXED);
 
-		withTraitDisabled("critical",
-				() -> assertRefused(helper, newTool(ToolType.SWORD), critical, TraitEligibility.Verdict.DISABLED));
+		try (Config.Substitution off = Config.traitToggle("critical").substitute(false)) {
+			assertRefused(helper, newTool(ToolType.SWORD), critical, TraitEligibility.Verdict.DISABLED);
+		}
 
 		helper.succeed();
 	}
@@ -223,24 +223,6 @@ public final class GameTestBodies {
 				"a refusal changes nothing and explains itself (" + why + ")");
 		helper.assertTrue(ItemStack.matches(before, gear),
 				"a refused grant must leave the gear as it was (" + why + ")");
-	}
-
-	/**
-	 * Runs {@code body} with a trait switched off the way a server owner would, through
-	 * its {@code <tag>_enabled} entry in randomloot-common.toml, then switches it back
-	 * on. Nothing reaches the file: set() only changes the loaded values.
-	 */
-	private static void withTraitDisabled(String tag, Runnable body) {
-		ModConfigSpec.ConfigValue<Boolean> enabled = Config.SPEC.getValues()
-				.get(List.of("Modifiers Enabled", tag + "_enabled"));
-		enabled.set(false);
-		Config.onLoad();
-		try {
-			body.run();
-		} finally {
-			enabled.set(true);
-			Config.onLoad();
-		}
 	}
 
 	/**
@@ -276,9 +258,10 @@ public final class GameTestBodies {
 
 		ItemStack switchedOff = newTool(ToolType.SWORD);
 		TraitGrant.force(switchedOff, critical);
-		withTraitDisabled("critical",
-				() -> helper.assertTrue(TraitGrant.remove(switchedOff, critical).kind() == TraitGrant.Kind.REMOVED,
-						"a trait switched off in the config should still come off"));
+		try (Config.Substitution off = Config.traitToggle("critical").substitute(false)) {
+			helper.assertTrue(TraitGrant.remove(switchedOff, critical).kind() == TraitGrant.Kind.REMOVED,
+					"a trait switched off in the config should still come off");
+		}
 
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		removed.obtainedBy(player, TraitObtainedTrigger.SOURCE_CRAFTED);
@@ -639,7 +622,7 @@ public final class GameTestBodies {
 		// off the world, so the lore credits this world's forger for the biome's band.
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		ItemStack opened = LootUtils.openCase(player);
-		helper.assertTrue(LootUtils.getStats(opened) == GearStats.goodnessForCases(0, Config.Goodness),
+		helper.assertTrue(LootUtils.getStats(opened) == GearStats.goodnessForCases(0, Config.GOODNESS.get()),
 				"a first case should roll first-case goodness, got " + LootUtils.getStats(opened));
 		helper.assertTrue(LootUtils.getOwnerUUID(opened).equals(player.getStringUUID()),
 				"an opened case should record its opener");
@@ -1628,23 +1611,45 @@ public final class GameTestBodies {
 	 */
 	public static void levelUpRollsTrait(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		double saved = Config.LevelUpTraitChance;
 
-		try {
-			Config.LevelUpTraitChance = 1.0;
+		try (Config.Substitution always = Config.LEVEL_UP_TRAIT_CHANCE.substitute(1.0)) {
 			ItemStack rolled = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(rolled, player, 500);
 			helper.assertTrue(LootUtils.rawTraitNames(rolled).size() == 1,
 					"one level-up at chance 1.0 should roll one trait, got " + LootUtils.rawTraitNames(rolled));
+		}
 
-			Config.LevelUpTraitChance = 0.0;
+		try (Config.Substitution never = Config.LEVEL_UP_TRAIT_CHANCE.substitute(0.0)) {
 			ItemStack plain = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(plain, player, 1600);
 			helper.assertTrue(LootUtils.rawTraitNames(plain).isEmpty(),
 					"level-ups at chance 0.0 should roll no traits, got " + LootUtils.rawTraitNames(plain));
-		} finally {
-			Config.LevelUpTraitChance = saved;
 		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * A trait switched off in the config stays written on the gear but stops being one
+	 * of its traits: {@code getModifiers} is what every trait dispatch reads.
+	 */
+	public static void disabledTraitIsFiltered(GameTestHelper helper) {
+		ItemStack armor = newArmor(ToolType.CHESTPLATE);
+		TraitGrant.force(armor, ModifierRegistry.getModifier("thorny"));
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1 && LootUtils.hasEnabledModifier(armor, "thorny"),
+				"an enabled trait should be one of the gear's traits, got " + LootUtils.getModifiers(armor));
+
+		try (Config.Substitution off = Config.traitToggle("thorny").substitute(false)) {
+			helper.assertTrue(LootUtils.getModifiers(armor).isEmpty(),
+					"a disabled trait should be filtered out, got " + LootUtils.getModifiers(armor));
+			helper.assertTrue(!LootUtils.hasEnabledModifier(armor, "thorny"),
+					"a disabled trait should not count as enabled on the gear");
+			helper.assertTrue(LootUtils.hasRawTrait(armor, "thorny"),
+					"a disabled trait should still be written on the gear, so it can be removed");
+		}
+
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1,
+				"the trait should be back once the toggle is, got " + LootUtils.getModifiers(armor));
 
 		helper.succeed();
 	}
@@ -2511,25 +2516,20 @@ public final class GameTestBodies {
 	 * carry its own injected pool.
 	 */
 	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
-		double savedCase = Config.CaseChance;
-		double savedMod = Config.ModChance;
-		try {
-			for (String path : List.of("chests/simple_dungeon", "chests/trial_chambers/reward")) {
-				var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(
-						ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
-				helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
+		for (String path : List.of("chests/simple_dungeon", "chests/trial_chambers/reward")) {
+			var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(
+					ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
+			helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
 
-				Config.CaseChance = 1.0;
-				Config.ModChance = 1.0;
+			try (Config.Substitution cases = Config.CASE_CHANCE.substitute(1.0);
+					Config.Substitution templates = Config.MOD_CHANCE.substitute(1.0)) {
 				assertInjectedPerRoll(helper, table, path, 1);
+			}
 
-				Config.CaseChance = 0.0;
-				Config.ModChance = 0.0;
+			try (Config.Substitution cases = Config.CASE_CHANCE.substitute(0.0);
+					Config.Substitution templates = Config.MOD_CHANCE.substitute(0.0)) {
 				assertInjectedPerRoll(helper, table, path, 0);
 			}
-		} finally {
-			Config.CaseChance = savedCase;
-			Config.ModChance = savedMod;
 		}
 
 		helper.succeed();
