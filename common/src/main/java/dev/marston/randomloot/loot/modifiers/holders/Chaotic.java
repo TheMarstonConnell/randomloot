@@ -15,6 +15,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
 
 public class Chaotic extends AbstractModifier implements StatsModifier, EntityHurtModifier {
 
@@ -22,11 +23,17 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     private static final long UPDATE_INTERVAL = 100L; // 5 seconds = 100 ticks (20 ticks/sec)
     private static final float MAX_MODIFIER = 0.50f; // +/- 50% max
 
-    private long seed;
+    /**
+     * Null on the registry's Chaotic, which has no seed of its own: every grant writes
+     * that one instance onto the gear, so {@link #toNBT} rolls a seed per write instead.
+     * A seed held here went onto every Chaotic tool granted until the server restarted.
+     */
+    @Nullable
+    private final Long seed;
 
     public Chaotic() {
         this.name = "Chaotic";
-        this.seed = new Random().nextLong();
+        this.seed = null;
     }
 
     public Chaotic(String name, long seed) {
@@ -53,7 +60,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     public CompoundTag toNBT() {
         CompoundTag tag = new CompoundTag();
         tag.putString(NAME, name);
-        tag.putLong(SEED, seed);
+        tag.putLong(SEED, seed != null ? seed : new Random().nextLong());
         return tag;
     }
 
@@ -76,7 +83,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
      * This works on both client and server since it's deterministic.
      */
     private float getCurrentState(Level level) {
-        if (level == null) {
+        if (level == null || seed == null) {
             return 0f;
         }
         // Get which "period" we're in (changes every UPDATE_INTERVAL ticks)

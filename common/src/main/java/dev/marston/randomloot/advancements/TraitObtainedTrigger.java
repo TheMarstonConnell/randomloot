@@ -14,8 +14,9 @@ import java.util.Optional;
 /**
  * Fired when a player ends up with a Random Tool whose trait set changed:
  * freshly generated from a Loot Case ({@link #SOURCE_GENERATED}), taken from a
- * smithing table after a trait recipe ({@link #SOURCE_CRAFTED}), or rolled by a
- * level-up ({@link #SOURCE_LEVELED}).
+ * smithing table after a trait recipe added to it ({@link #SOURCE_CRAFTED}; stripping
+ * a trait with the Subtraction Template does not count), or rolled by a level-up
+ * ({@link #SOURCE_LEVELED}).
  * Carries the tool's full list of trait tag names.
  */
 public class TraitObtainedTrigger extends SimpleCriterionTrigger<TraitObtainedTrigger.TriggerInstance> {

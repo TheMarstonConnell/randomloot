@@ -134,8 +134,9 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 				menu.getSlot(SmithingMenu.BASE_SLOT).getItem(), menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem());
 
 		// A shift-click has already moved the taken stack into the inventory, out of
-		// reach. The inputs are still whole and assemble to the same gear.
-		if (player instanceof ServerPlayer serverPlayer) {
+		// reach. The inputs are still whole and assemble to the same gear. Only an add
+		// obtains a trait; the Subtraction Template shares this recipe and takes one off.
+		if (player instanceof ServerPlayer serverPlayer && input.template().is(ModItems.MOD_ADD.get())) {
 			ModCriteria.traitsObtained(serverPlayer, recipe.assemble(input), TraitObtainedTrigger.SOURCE_CRAFTED);
 		}
 
