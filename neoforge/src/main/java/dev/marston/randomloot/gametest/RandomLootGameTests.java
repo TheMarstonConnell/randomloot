@@ -92,6 +92,7 @@ public final class RandomLootGameTests {
 		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
 		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
 		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
+		register(event, env, "thorny_reflects_damage_taken", GameTestBodies::thornyReflectsDamageTaken);
 		register(event, env, "migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents);
 		register(event, env, "featherweight_softens_fall_damage", GameTestBodies::featherweightSoftensFallDamage);
 		register(event, env, "adrenaline_grants_speed", GameTestBodies::adrenalineGrantsSpeed);

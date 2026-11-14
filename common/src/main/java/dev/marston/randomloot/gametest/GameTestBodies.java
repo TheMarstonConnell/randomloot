@@ -53,6 +53,7 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
@@ -400,6 +401,60 @@ public final class GameTestBodies {
 				"thorny should reflect damage back at the attacker when the wearer is a player");
 
 		helper.succeed();
+	}
+
+	/**
+	 * Thorny reflects a share of the damage its wearer took, not of the hit before armor.
+	 * The loaders used to disagree: NeoForge hands wearer-hurt traits the damage from
+	 * LivingDamageEvent.Pre, after armor and enchantments, while Fabric's stand-in wrapped
+	 * the actuallyHurt call and handed them the raw hit. thornyReflectsForPlayer only
+	 * asks whether the attacker lost any health, so it passed either way.
+	 *
+	 * <p>A player and a mob wearer, because Fabric needs a hook in each: Player has its
+	 * own actuallyHurt and never runs LivingEntity's.
+	 */
+	public static void thornyReflectsDamageTaken(GameTestHelper helper) {
+		enablePvp(helper);
+		ServerPlayer playerWearer = mockVulnerablePlayer(helper);
+		ServerPlayer playerAttacker = mockVulnerablePlayer(helper);
+		assertThornyReflectsDamageTaken(helper, playerWearer, playerAttacker,
+				playerWearer.damageSources().playerAttack(playerAttacker));
+
+		// Mob against mob: a mob's thorns scale with difficulty against a player, and the
+		// gametest server is Peaceful.
+		LivingEntity mobWearer = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		LivingEntity mobAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		// A zombie's own 2 armor would shave the reflected hit.
+		mobAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+		assertThornyReflectsDamageTaken(helper, mobWearer, mobAttacker,
+				mobWearer.damageSources().mobAttack(mobAttacker));
+
+		helper.succeed();
+	}
+
+	/** Hits a maxed-Thorny wearer through heavy armor and checks what comes back at the attacker. */
+	private static void assertThornyReflectsDamageTaken(GameTestHelper helper, LivingEntity wearer,
+			LivingEntity attacker, DamageSource source) {
+		wearer.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "thorny"));
+		// Full diamond's worth of armor, so the hit before and after it are far apart.
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(20.0);
+
+		float hit = 10.0f;
+		// Maxed Thorny: 15% at level 0 and 15% more for each of its 4 levels.
+		float share = 0.75f;
+		float wearerHealth = wearer.getHealth();
+		float attackerHealth = attacker.getHealth();
+		helper.hurt(wearer, source, hit);
+
+		float taken = wearerHealth - wearer.getHealth();
+		float reflected = attackerHealth - attacker.getHealth();
+		String who = wearer.getType().getDescriptionId();
+
+		helper.assertTrue(taken > 0.0f && taken < hit * 0.6f,
+				who + ": armor should soak a large part of the hit, took " + taken + " of " + hit);
+		helper.assertTrue(Math.abs(reflected - taken * share) < 0.01f,
+				who + ": thorny should reflect " + share + " of the " + taken + " the wearer took (" + taken * share
+						+ "), not of the " + hit + " dealt (" + hit * share + "); reflected " + reflected);
 	}
 
 	/**
