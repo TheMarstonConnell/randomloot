@@ -11,7 +11,9 @@ import net.minecraft.world.item.ItemStack;
  * Routes kills to {@link EntityKillModifier} traits on the killer's main-hand
  * tool. Called from each loader's death event (rather than checking victim
  * health in the hurt hook) so kills are credited no matter how the trait's
- * tool finished the job.
+ * tool finished the job. Reached through
+ * {@link dev.marston.randomloot.platform.GameHooks#kill}, which says what a
+ * loader hands it; NeoForge also calls on the client, hence the side check.
  */
 public final class KillDispatcher {
 
