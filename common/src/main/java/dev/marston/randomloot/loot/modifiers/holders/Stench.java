@@ -2,13 +2,8 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import java.util.List;
 
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -22,59 +17,19 @@ import net.minecraft.world.phys.AABB;
  * hostile mobs within range are afflicted with Slowness and Weakness. Levels widen the radius
  * (6 / 8 / 10 blocks).
  */
-public class Stench extends LeveledModifier implements HoldModifier {
-
+public class Stench extends AbstractModifier implements HoldModifier {
 	/** Re-applied each tick at a short duration so the cloud fades once mobs leave range. */
 	private static final int EFFECT_DURATION = 40; // 2 seconds
 
-	public Stench() {
-		this("Stench", 1);
-	}
-
-	public Stench(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 3;
-	}
-
 	/** Aura radius in blocks: 6 / 8 / 10 by level. */
 	private double getRadius() {
-		return 4.0 + (level * 2.0);
-	}
-
-	@Override
-	public String tagName() {
-		return "stench";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.YELLOW;
+		return 4.0 + (traitLevel() * 2.0);
 	}
 
 	@Override
 	public String description() {
 		return "Hostile mobs within " + String.format("%.0f", getRadius())
 				+ " blocks are afflicted with Slowness and Weakness.";
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Stench(tag.getStringOr(NAME, "Stench"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return true;
 	}
 
 	@Override

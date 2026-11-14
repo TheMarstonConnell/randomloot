@@ -1,14 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.PreHitModifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
@@ -16,9 +11,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-
-public class EarlyBird extends LeveledModifier implements PreHitModifier {
-
+public class EarlyBird extends AbstractModifier implements PreHitModifier {
 	/**
 	 * Entities whose latest hit found them at full health. {@code hurtEnemy} runs after
 	 * the hit has landed, so the health it sees is already reduced; this is recorded
@@ -49,28 +42,9 @@ public class EarlyBird extends LeveledModifier implements PreHitModifier {
 		return FULL_HEALTH_HITS.remove(victim);
 	}
 
-	public EarlyBird(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public EarlyBird() {
-		this("Early Bird", 1);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 3;
-	}
-
 	private float getBonusDamage() {
 		// Level 1: 15%, Level 2: 25%, Level 3: 40%
-		switch (level) {
+		switch (traitLevel()) {
 			case 1: return 0.15f;
 			case 2: return 0.25f;
 			case 3: return 0.40f;
@@ -79,28 +53,8 @@ public class EarlyBird extends LeveledModifier implements PreHitModifier {
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new EarlyBird(tag.getStringOr(NAME, "Early Bird"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public String tagName() {
-		return "early_bird";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.YELLOW;
-	}
-
-	@Override
 	public String description() {
 		return "Deals " + String.format("%.0f", getBonusDamage() * 100) + "% extra damage to full-health targets";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
 	}
 
 	@Override

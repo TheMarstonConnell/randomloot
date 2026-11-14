@@ -121,9 +121,7 @@ public interface Modifier {
 	 * grants share an instance, so nothing one piece of gear does to its trait can
 	 * reach another's.
 	 */
-	default Modifier granted(RandomSource random) {
-		return fromNBT(toNBT());
-	}
+	Modifier granted(RandomSource random);
 
 	default boolean canLevel() {
 		return false;

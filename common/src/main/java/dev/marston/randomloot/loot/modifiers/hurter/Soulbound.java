@@ -6,48 +6,14 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public class Soulbound extends AbstractModifier implements EntityHurtModifier {
-
-	public Soulbound(String name) {
-		this.name = name;
-	}
-
-	public Soulbound() {
-		this.name = "Soulbound";
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Soulbound(tag.getStringOr(NAME, "Soulbound"));
-	}
-
-	@Override
-	public String tagName() {
-		return "soulbound";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_PURPLE;
-	}
-
 	@Override
 	public String description() {
 		return "Grants 15% bonus damage and mining speed when wielded by the original owner.";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		// Works for all hand tools; its enforcement hook is melee-based, so it
-		// would be a dead trait on armor.
-		return !type.isArmor();
 	}
 
 	@Override

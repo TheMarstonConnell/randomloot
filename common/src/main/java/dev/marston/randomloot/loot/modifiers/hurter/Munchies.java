@@ -2,73 +2,27 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class Munchies extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
-
+public class Munchies extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 	private static final float STAT_BOOST = 0.15f; // 15% boost
-
-	public Munchies() {
-		this("Munchies", 1);
-	}
-
-	public Munchies(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 5;
-	}
 
 	private float getHungerChance() {
 		// Level 1: 10%, Level 2: 8%, Level 3: 6%, Level 4: 4%, Level 5: 2%
-		return 0.12f - (level * 0.02f);
-	}
-
-	@Override
-	public String tagName() {
-		return "munchies";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.YELLOW;
+		return 0.12f - (traitLevel() * 0.02f);
 	}
 
 	@Override
 	public String description() {
 		return "15% stat boost, but " + String.format("%.0f", getHungerChance() * 100) + "% chance to consume hunger on use";
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Munchies(tag.getStringOr(NAME, "Munchies"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		// Its payoff lives in tool-only hooks, so on armor it would be a confusing no-op.
-		return !type.isArmor();
 	}
 
 	private void tryConsumeHunger(LivingEntity entity) {
