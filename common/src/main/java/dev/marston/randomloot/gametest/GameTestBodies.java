@@ -91,8 +91,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Loader-neutral gametest bodies, shared by the NeoForge registration
- * (RandomLootGameTests) and the Fabric one (RandomLootFabricGameTests).
+ * Loader-neutral gametest bodies. Each one runs on both loaders once it has a row in
+ * {@link GameTestTable}; a body without a row never runs (GameTestTableTest catches that).
  * Everything here uses only vanilla + common APIs.
  */
 public final class GameTestBodies {

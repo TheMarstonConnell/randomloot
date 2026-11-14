@@ -35,9 +35,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
  * (item data-components aren't bound outside a running server). Run headless with
  * {@code ./gradlew :neoforge:runGameTestServer}.
  *
- * <p>Shared test bodies live in {@link GameTestBodies} (common); this class holds the
- * NeoForge registration plumbing plus the NeoForge-only tests (global loot modifiers,
- * the supportsEnchantment item-extension paths).
+ * <p>This is the NeoForge adapter for the gametest table ({@link GameTestTable}, common):
+ * it registers every row of the table, then the NeoForge-only tests written below
+ * (global loot modifiers, the supportsEnchantment item-extension paths). A shared test
+ * is never declared here - its body goes in {@link GameTestBodies} and its row in the table.
  *
  * <p>26.1's gametest system is data-driven. Vanilla's {@code FunctionGameTestInstance}
  * resolves test bodies from the {@code TEST_FUNCTION} registry, which is bootstrapped
@@ -50,8 +51,6 @@ public final class RandomLootGameTests {
 
 	private RandomLootGameTests() {
 	}
-
-	private static final Identifier STRUCTURE = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "empty");
 
 	// GameTestInstance.codec() must resolve to an entry in this registry.
 	private static final DeferredRegister<MapCodec<? extends GameTestInstance>> TEST_INSTANCE_TYPES =
@@ -66,75 +65,26 @@ public final class RandomLootGameTests {
 	}
 
 	public static void onRegisterGameTests(RegisterGameTestsEvent event) {
-		Holder<TestEnvironmentDefinition<?>> env =
-				event.registerEnvironment(Identifier.fromNamespaceAndPath(RandomLoot.MODID, "default_env"));
+		Holder<TestEnvironmentDefinition<?>> env = event.registerEnvironment(GameTestTable.ENVIRONMENT);
 
-		register(event, env, "modifier_roundtrip", GameTestBodies::modifierRoundTrip);
-		register(event, env, "gen_tool", GameTestBodies::genTool);
-		register(event, env, "gen_tool_dispenser", GameTestBodies::genToolDispenser);
-		register(event, env, "dispenser_opens_case", GameTestBodies::dispenserOpensCase);
-		register(event, env, "case_opens_into_hand", GameTestBodies::caseOpensIntoHand);
-		register(event, env, "case_roll_reveal", GameTestBodies::caseRollReveal);
-		register(event, env, "deterministic_roll_lifecycles", GameTestBodies::deterministicRollLifecycles);
-		register(event, env, "break_block", GameTestBodies::breakBlock);
-		register(event, env, "loot_modifiers_load", RandomLootGameTests::lootModifiersLoad);
-		register(event, env, "advancements_load", GameTestBodies::advancementsLoad);
-		register(event, env, "xp_level_curve", GameTestBodies::xpLevelCurve);
-		register(event, env, "level_up_rolls_trait", GameTestBodies::levelUpRollsTrait);
-		register(event, env, "kill_trait_hooks", GameTestBodies::killTraitHooks);
-		register(event, env, "catalyst_extends_effects", GameTestBodies::catalystExtendsEffects);
-		register(event, env, "stench_debuffs_mobs", GameTestBodies::stenchDebuffsMobs);
-		register(event, env, "new_trait_recipes_load", GameTestBodies::newTraitRecipesLoad);
-		register(event, env, "enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering);
-		register(event, env, "tool_repairable", GameTestBodies::toolRepairable);
-		register(event, env, "armor_components", GameTestBodies::armorComponents);
-		register(event, env, "forger_world_constant", GameTestBodies::forgerWorldConstant);
-		register(event, env, "dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger);
-		register(event, env, "armor_xp_on_damage", GameTestBodies::armorXpOnDamage);
-		register(event, env, "thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer);
-		register(event, env, "migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents);
-		register(event, env, "featherweight_softens_fall_damage", GameTestBodies::featherweightSoftensFallDamage);
-		register(event, env, "adrenaline_grants_speed", GameTestBodies::adrenalineGrantsSpeed);
-		register(event, env, "bulwark_blocks_some_hits", GameTestBodies::bulwarkBlocksSomeHits);
-		register(event, env, "unbreaking_skips_armor_durability", GameTestBodies::unbreakingSkipsArmorDurability);
-		register(event, env, "soulbound_owner_mines_faster", GameTestBodies::soulboundOwnerMinesFaster);
-		register(event, env, "enchanting_table_filters_by_type", GameTestBodies::enchantingTableFiltersByType);
-		register(event, env, "axe_tool_actions", GameTestBodies::axeToolActions);
-		register(event, env, "shovel_flattens", GameTestBodies::shovelFlattens);
-		register(event, env, "loot_injection_adds_cases", GameTestBodies::lootInjectionAddsCases);
-		register(event, env, "loot_injection_skips_block_drops", GameTestBodies::lootInjectionSkipsBlockDrops);
-		register(event, env, "anvil_cannot_combine_loot_gear", GameTestBodies::anvilCannotCombineLootGear);
-		register(event, env, "armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering);
-		register(event, env, "armor_repairable", GameTestBodies::armorRepairable);
-		register(event, env, "admin_commands", GameTestBodies::adminCommands);
-		register(event, env, "smithing_trait_gating", GameTestBodies::smithingTraitGating);
-		register(event, env, "smithing_craft_sequence", GameTestBodies::smithingCraftSequence);
-		register(event, env, "trait_recipe_counts_load", GameTestBodies::traitRecipeCountsLoad);
-		register(event, env, "smithing_take_consumes_count", GameTestBodies::smithingTakeConsumesCount);
-		register(event, env, "smithing_shift_click_consumes_count", GameTestBodies::smithingShiftClickConsumesCount);
-		register(event, env, "smithing_removal_costs_one", GameTestBodies::smithingRemovalCostsOne);
-		register(event, env, "chaotic_grants_roll_own_seeds", GameTestBodies::chaoticGrantsRollOwnSeeds);
-		register(event, env, "single_level_effects_stop_at_level_one", GameTestBodies::singleLevelEffectsStopAtLevelOne);
-		register(event, env, "clone_preserves_enchantments", GameTestBodies::clonePreservesEnchantments);
-		register(event, env, "loader_hooks_all_bound", GameTestBodies::loaderHooksAllBound);
-		register(event, env, "lumbering_fells_tree", GameTestBodies::lumberingFellsTree);
-		register(event, env, "veiny_breaks_vein", GameTestBodies::veinyBreaksVein);
-		register(event, env, "melting_keeps_stack_count", GameTestBodies::meltingKeepsStackCount);
-		register(event, env, "area_break_keeps_shulker_contents", GameTestBodies::areaBreakKeepsShulkerContents);
-		register(event, env, "detecting_markers_are_discarded", GameTestBodies::detectingMarkersAreDiscarded);
-		register(event, env, "armor_xp_is_capped", GameTestBodies::armorXpIsCapped);
-		register(event, env, "unbreakable_tool_keeps_durability", GameTestBodies::unbreakableToolKeepsDurability);
-		register(event, env, "loot_injection_rolls_once_per_chest", GameTestBodies::lootInjectionRollsOncePerChest);
-		register(event, env, "early_bird_reads_pre_hit_health", GameTestBodies::earlyBirdReadsPreHitHealth);
-		register(event, env, "stat_boost_traits_boost_melee", GameTestBodies::statBoostTraitsBoostMelee);
-		register(event, env, "right_click_traits_yield_to_usable_offhand",
-				GameTestBodies::rightClickTraitsYieldToUsableOffhand);
+		// Shared tests: whatever the common table lists, so both loaders run the same set.
+		for (GameTestTable.Row row : GameTestTable.rows()) {
+			register(event, env, row);
+		}
+
+		// NeoForge-only tests, same structure and tick limit as the shared ones.
+		register(event, env, neoForgeOnly("loot_modifiers_load", RandomLootGameTests::lootModifiersLoad));
+		register(event, env, neoForgeOnly("enchant_type_filtering", RandomLootGameTests::enchantTypeFiltering));
+		register(event, env, neoForgeOnly("armor_enchant_filtering", RandomLootGameTests::armorEnchantFiltering));
+	}
+
+	private static GameTestTable.Row neoForgeOnly(String name, Consumer<GameTestHelper> body) {
+		return new GameTestTable.Row(name, body, GameTestTable.DEFAULT_MAX_TICKS);
 	}
 
 	private static void register(RegisterGameTestsEvent event, Holder<TestEnvironmentDefinition<?>> env,
-			String name, Consumer<GameTestHelper> body) {
-		TestData<Holder<TestEnvironmentDefinition<?>>> data = new TestData<>(env, STRUCTURE, 200, 0, true);
-		event.registerTest(Identifier.fromNamespaceAndPath(RandomLoot.MODID, name), new RLTestInstance(body, data));
+			GameTestTable.Row row) {
+		event.registerTest(row.id(), new RLTestInstance(row.body(), row.data(env)));
 	}
 
 	// --- NeoForge-only test bodies -------------------------------------------

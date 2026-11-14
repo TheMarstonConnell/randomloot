@@ -59,6 +59,9 @@ public class RandomLootFabric implements ModInitializer {
         GameHooks.bind(GameHook.CONFIG);
 
         registerEvents();
+
+        // Shared gametests from the common table; does nothing outside a gametest run or dev environment.
+        RandomLootFabricGameTests.registerShared();
     }
 
     private static void registerEvents() {

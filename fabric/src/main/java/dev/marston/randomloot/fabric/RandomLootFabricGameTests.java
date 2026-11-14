@@ -1,18 +1,38 @@
 package dev.marston.randomloot.fabric;
 
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.gametest.GameTestBodies;
+import dev.marston.randomloot.gametest.GameTestTable;
+import net.fabricmc.fabric.api.event.registry.DynamicRegistrySetupCallback;
+import net.fabricmc.fabric.api.event.registry.DynamicRegistryView;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+import java.util.Optional;
+
+import net.minecraft.core.Holder;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.gametest.framework.FunctionGameTestInstance;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestInstance;
+import net.minecraft.gametest.framework.TestEnvironmentDefinition;
+import net.minecraft.resources.ResourceKey;
 
 
 /**
- * Fabric registration for the shared gametest bodies in {@link GameTestBodies}.
- * Run headless with {@code ./gradlew :fabric:runGametest}.
+ * Fabric adapter for the gametest table ({@link GameTestTable}), plus the
+ * Fabric-only tests. Run headless with {@code ./gradlew :fabric:runGametest}.
+ *
+ * <p>Shared tests are not declared here: {@link #registerShared()} registers every
+ * row of the table at runtime, under the same {@code randomloot:<name>} ids NeoForge
+ * uses. Only a test that makes sense on Fabric alone is written as a
+ * {@code @GameTest} method below (this class is the {@code fabric-gametest}
+ * entrypoint); such a test keeps Fabric's generated id and default structure. One of
+ * them, {@link #gametestTableRegistered}, checks that the rows really were registered.
  *
  * <p>The two enchant-filtering tests are NeoForge-only (they exercise the
  * supportsEnchantment item extension; Fabric wires the same common logic through
@@ -23,284 +43,77 @@ public class RandomLootFabricGameTests {
 
     private static final int MAX_TICKS = 200;
 
-    @GameTest(maxTicks = MAX_TICKS)
-    public void modifierRoundtrip(GameTestHelper helper) {
-        GameTestBodies.modifierRoundTrip(helper);
+    /**
+     * Registers every row of the gametest table. Called from mod init.
+     *
+     * <p>Fabric API's {@code @GameTest} support does two things for each annotated
+     * method, and this does the same two for each row, so a row ends up as an
+     * ordinary vanilla function test:
+     * <ol>
+     * <li>The body goes into the built-in {@code TEST_FUNCTION} registry during mod
+     * init, while that registry is still open.</li>
+     * <li>A {@link FunctionGameTestInstance} pointing at it goes into the dynamic
+     * {@code TEST_INSTANCE} registry. Fabric API adds its own just before that
+     * registry freezes, from a mixin with no public hook, so the rows go in earlier
+     * through {@link DynamicRegistrySetupCallback}: it fires on the server side only,
+     * once the empty registries exist and before any datapack entry loads.</li>
+     * </ol>
+     *
+     * <p>Gated the way Fabric API gates its own registration (a gametest run, or a
+     * development environment so {@code /test} works in a dev world), so nothing is
+     * registered in a normal game.
+     */
+    public static void registerShared() {
+        if (System.getProperty("fabric-api.gametest") == null
+                && !FabricLoader.getInstance().isDevelopmentEnvironment()) {
+            return;
+        }
+
+        for (GameTestTable.Row row : GameTestTable.rows()) {
+            Registry.register(BuiltInRegistries.TEST_FUNCTION, row.id(), row.body());
+        }
+
+        DynamicRegistrySetupCallback.EVENT.register(RandomLootFabricGameTests::registerInstances);
     }
 
-    @GameTest(maxTicks = MAX_TICKS)
-    public void genTool(GameTestHelper helper) {
-        GameTestBodies.genTool(helper);
+    private static void registerInstances(DynamicRegistryView registries) {
+        // Fired once per group of dynamic registries; only one group holds the test registries.
+        Optional<Registry<GameTestInstance>> instances = registries.getOptional(Registries.TEST_INSTANCE);
+        Optional<Registry<TestEnvironmentDefinition<?>>> environments =
+                registries.getOptional(Registries.TEST_ENVIRONMENT);
+        if (instances.isEmpty() || environments.isEmpty()) {
+            return;
+        }
+
+        // An empty environment, under the id NeoForge registers through RegisterGameTestsEvent.
+        Holder<TestEnvironmentDefinition<?>> environment = Registry.registerForHolder(environments.get(),
+                ResourceKey.create(Registries.TEST_ENVIRONMENT, GameTestTable.ENVIRONMENT),
+                new TestEnvironmentDefinition.AllOf(List.of()));
+
+        for (GameTestTable.Row row : GameTestTable.rows()) {
+            Registry.register(instances.get(), row.id(), new FunctionGameTestInstance(
+                    ResourceKey.create(Registries.TEST_FUNCTION, row.id()), row.data(environment)));
+        }
     }
 
+    /**
+     * Fabric-only: every row of the gametest table reached the test registry.
+     *
+     * <p>The rows go in through a registry-sync event, not Fabric API's own
+     * {@code @GameTest} route. If a Fabric API update stopped that event firing, the
+     * shared tests would vanish and the run would still pass. This test is registered
+     * by the annotation route, so it is still there to fail.
+     */
     @GameTest(maxTicks = MAX_TICKS)
-    public void genToolDispenser(GameTestHelper helper) {
-        GameTestBodies.genToolDispenser(helper);
-    }
+    public void gametestTableRegistered(GameTestHelper helper) {
+        Registry<GameTestInstance> instances =
+                helper.getLevel().registryAccess().lookupOrThrow(Registries.TEST_INSTANCE);
+        for (GameTestTable.Row row : GameTestTable.rows()) {
+            helper.assertTrue(instances.containsKey(row.id()),
+                    "gametest table row was not registered on Fabric: " + row.id());
+        }
 
-    @GameTest(maxTicks = MAX_TICKS)
-    public void dispenserOpensCase(GameTestHelper helper) {
-        GameTestBodies.dispenserOpensCase(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void caseOpensIntoHand(GameTestHelper helper) {
-        GameTestBodies.caseOpensIntoHand(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void caseRollReveal(GameTestHelper helper) {
-        GameTestBodies.caseRollReveal(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void deterministicRollLifecycles(GameTestHelper helper) {
-        GameTestBodies.deterministicRollLifecycles(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void breakBlock(GameTestHelper helper) {
-        GameTestBodies.breakBlock(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void advancementsLoad(GameTestHelper helper) {
-        GameTestBodies.advancementsLoad(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void xpLevelCurve(GameTestHelper helper) {
-        GameTestBodies.xpLevelCurve(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void levelUpRollsTrait(GameTestHelper helper) {
-        GameTestBodies.levelUpRollsTrait(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void killTraitHooks(GameTestHelper helper) {
-        GameTestBodies.killTraitHooks(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void catalystExtendsEffects(GameTestHelper helper) {
-        GameTestBodies.catalystExtendsEffects(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void stenchDebuffsMobs(GameTestHelper helper) {
-        GameTestBodies.stenchDebuffsMobs(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void newTraitRecipesLoad(GameTestHelper helper) {
-        GameTestBodies.newTraitRecipesLoad(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void toolRepairable(GameTestHelper helper) {
-        GameTestBodies.toolRepairable(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void armorComponents(GameTestHelper helper) {
-        GameTestBodies.armorComponents(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void forgerWorldConstant(GameTestHelper helper) {
-        GameTestBodies.forgerWorldConstant(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void dirtPlaceWorldForger(GameTestHelper helper) {
-        GameTestBodies.dirtPlaceWorldForger(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void armorXpOnDamage(GameTestHelper helper) {
-        GameTestBodies.armorXpOnDamage(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void thornyReflectsForPlayer(GameTestHelper helper) {
-        GameTestBodies.thornyReflectsForPlayer(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void armorRepairable(GameTestHelper helper) {
-        GameTestBodies.armorRepairable(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void adminCommands(GameTestHelper helper) {
-        GameTestBodies.adminCommands(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingTraitGating(GameTestHelper helper) {
-        GameTestBodies.smithingTraitGating(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingCraftSequence(GameTestHelper helper) {
-        GameTestBodies.smithingCraftSequence(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void traitRecipeCountsLoad(GameTestHelper helper) {
-        GameTestBodies.traitRecipeCountsLoad(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingTakeConsumesCount(GameTestHelper helper) {
-        GameTestBodies.smithingTakeConsumesCount(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingShiftClickConsumesCount(GameTestHelper helper) {
-        GameTestBodies.smithingShiftClickConsumesCount(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void smithingRemovalCostsOne(GameTestHelper helper) {
-        GameTestBodies.smithingRemovalCostsOne(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
-        GameTestBodies.chaoticGrantsRollOwnSeeds(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
-        GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void clonePreservesEnchantments(GameTestHelper helper) {
-        GameTestBodies.clonePreservesEnchantments(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void loaderHooksAllBound(GameTestHelper helper) {
-        GameTestBodies.loaderHooksAllBound(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void lootInjectionAddsCases(GameTestHelper helper) {
-        GameTestBodies.lootInjectionAddsCases(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
-        GameTestBodies.lootInjectionSkipsBlockDrops(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void migrationRestoresDerivedComponents(GameTestHelper helper) {
-        GameTestBodies.migrationRestoresDerivedComponents(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void featherweightSoftensFallDamage(GameTestHelper helper) {
-        GameTestBodies.featherweightSoftensFallDamage(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void adrenalineGrantsSpeed(GameTestHelper helper) {
-        GameTestBodies.adrenalineGrantsSpeed(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void bulwarkBlocksSomeHits(GameTestHelper helper) {
-        GameTestBodies.bulwarkBlocksSomeHits(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void unbreakingSkipsArmorDurability(GameTestHelper helper) {
-        GameTestBodies.unbreakingSkipsArmorDurability(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void soulboundOwnerMinesFaster(GameTestHelper helper) {
-        GameTestBodies.soulboundOwnerMinesFaster(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void enchantingTableFiltersByType(GameTestHelper helper) {
-        GameTestBodies.enchantingTableFiltersByType(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void axeToolActions(GameTestHelper helper) {
-        GameTestBodies.axeToolActions(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void shovelFlattens(GameTestHelper helper) {
-        GameTestBodies.shovelFlattens(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void anvilCannotCombineLootGear(GameTestHelper helper) {
-        GameTestBodies.anvilCannotCombineLootGear(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void lumberingFellsTree(GameTestHelper helper) {
-        GameTestBodies.lumberingFellsTree(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void veinyBreaksVein(GameTestHelper helper) {
-        GameTestBodies.veinyBreaksVein(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void meltingKeepsStackCount(GameTestHelper helper) {
-        GameTestBodies.meltingKeepsStackCount(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void areaBreakKeepsShulkerContents(GameTestHelper helper) {
-        GameTestBodies.areaBreakKeepsShulkerContents(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void detectingMarkersAreDiscarded(GameTestHelper helper) {
-        GameTestBodies.detectingMarkersAreDiscarded(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void armorXpIsCapped(GameTestHelper helper) {
-        GameTestBodies.armorXpIsCapped(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void unbreakableToolKeepsDurability(GameTestHelper helper) {
-        GameTestBodies.unbreakableToolKeepsDurability(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void lootInjectionRollsOncePerChest(GameTestHelper helper) {
-        GameTestBodies.lootInjectionRollsOncePerChest(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
-        GameTestBodies.earlyBirdReadsPreHitHealth(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void statBoostTraitsBoostMelee(GameTestHelper helper) {
-        GameTestBodies.statBoostTraitsBoostMelee(helper);
-    }
-
-    @GameTest(maxTicks = MAX_TICKS)
-    public void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
-        GameTestBodies.rightClickTraitsYieldToUsableOffhand(helper);
+        helper.succeed();
     }
 
     /**
