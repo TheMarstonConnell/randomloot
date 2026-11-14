@@ -51,11 +51,14 @@ public class RandomLootFabric implements ModInitializer {
         RandomLoot.commonSetup();
 
         // NeoForge-style TOML config via Forge Config API Port; same file name on both loaders.
-        ConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
+        // The listeners go first: Forge Config API Port loads the file inside register(), so
+        // a loading listener added after it never hears the first load, and the mod then runs
+        // on its defaults whatever the file says.
         ModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
         // Both registrations matter: dropping .reloading silently breaks /reload-time
         // config refresh, which NeoForge gets from the single ModConfigEvent.
         ModConfigEvents.reloading(RandomLoot.MODID).register(config -> Config.onLoad());
+        ConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
         GameHooks.bind(GameHook.CONFIG);
 
         registerEvents();

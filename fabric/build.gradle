@@ -38,3 +38,15 @@ loom {
     }
 }
 
+// The gametest server starts from a config file with one value moved off its default, so
+// the configLoads gametest can tell "the file was read into the mod" from "the mod is
+// running on its defaults". It replaces the file: runs/gametest is a throwaway run
+// directory, and the config API fills the other keys back in with their defaults on load.
+def seedGametestConfig = tasks.register('seedGametestConfig') {
+    def config = file('runs/gametest/config/randomloot-common.toml')
+    doLast {
+        config.parentFile.mkdirs()
+        config.text = '["Modifier Settings"]\n\tlivingWhispersPerMinute = 7\n'
+    }
+}
+tasks.matching { it.name == 'runGametest' }.configureEach { dependsOn seedGametestConfig }
