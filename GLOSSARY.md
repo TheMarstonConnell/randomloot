@@ -51,3 +51,11 @@ _Avoid_: add modifier, apply trait, trait change
 **Trait dispatch**:
 The one path a game event takes to the traits on a piece of gear: a hit, a broken block, a right-click, a tick, a kill, damage to the wearer. It settles what every trait shares, such as which ones run, in what order, what gets saved and what durability is spent, so a trait only states its own rule.
 _Avoid_: trait loop, event bus, handler
+
+**Gear roll**:
+The decision of what a case produces: the gear's type, traits, name, lore and look, made from plain facts and chance before any item exists. Stamping is the single step that then makes the item.
+_Avoid_: generation, gen tool, loot roll
+
+**XP step**:
+What a gain of XP does to a piece of gear's level: the level it ends on, the XP left over and how many levels it gained. Each level gained is then applied as one level-up.
+_Avoid_: level-up loop, XP loop

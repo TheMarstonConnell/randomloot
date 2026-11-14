@@ -28,7 +28,7 @@ public class LootCase extends Item {
 				Direction direction = source.state().getValue(DispenserBlock.FACING);
 				Position position = DispenserBlock.getDispensePosition(source);
 
-				ItemStack tool = LootUtils.genTool(null, source.level(), source.pos());
+				ItemStack tool = LootUtils.dispenseCase(source.level(), source.pos());
 
 				spawnTool(source.level(), tool, 6, direction, position);
 
@@ -73,7 +73,7 @@ public class LootCase extends Item {
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
 		if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-			ItemStack tool = LootUtils.generateTool(sPlayer, level);
+			ItemStack tool = LootUtils.openCase(sPlayer);
 			// The gear is fully decided here; the roll only delays the reveal while the
 			// texture wheel spins. Dispensed gear (initDispenser above) skips the roll:
 			// item entities never inventory-tick, so they could not settle on the ground.
@@ -90,8 +90,9 @@ public class LootCase extends Item {
 			lootCase.shrink(1); // client prediction; the server replaces the stack above
 		}
 
-		// Awards the single ITEM_USED stat for the case. genTool() reads this exact
-		// stat to size the loot "goodness" curve, so it must only be counted once.
+		// Awards the single ITEM_USED stat for the case. LootUtils.openCase reads this
+		// exact stat to size the loot "goodness" curve, so it must only be counted once,
+		// and only after the case has been opened.
 		player.awardStat(Stats.ITEM_USED.get(this));
 
 		return InteractionResult.SUCCESS;
