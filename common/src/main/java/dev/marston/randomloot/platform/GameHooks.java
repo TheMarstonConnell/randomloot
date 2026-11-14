@@ -113,32 +113,30 @@ public final class GameHooks {
 	}
 
 	/**
-	 * {@link GameHook#DAMAGE_POST}: a living entity was hit.
+	 * {@link GameHook#DAMAGE_POST}: a hit on a living entity has been resolved.
 	 *
-	 * <p><b>Side</b>: server. <b>Scope</b>: every living entity, players included.
+	 * <p><b>Stage</b>: the end of {@code hurtServer}, after health changed and, for a
+	 * killing hit, after the entity died and dropped its loot. {@code damage} is the
+	 * amount {@link #damagePre} answered for this hit: what was taken, after a shield,
+	 * armor, protection enchantments, Resistance and the wearer-hurt traits, and before
+	 * absorption. It is 0 when a shield or a trait took the whole hit. <b>Side</b>:
+	 * server. <b>Scope</b>: every living entity, players included, for every hit that
+	 * reaches the end of {@code hurtServer}, a killing one too.
 	 *
-	 * <p><b>Stage: the two loaders do not deliver the same thing yet.</b> Which one is
-	 * meant is an open question for the mod's author, so both are kept as they were:
-	 * <ul>
-	 * <li>NeoForge ({@code LivingDamageEvent.Post}) hands over the damage at the
-	 * {@link #damagePre} stage, after that hook's traits changed it: what was taken,
-	 * before absorption. It delivers at the end of {@code hurtServer}, for a killing
-	 * hit too.</li>
-	 * <li>Fabric ({@code ServerLivingEntityEvents.AFTER_DAMAGE}) hands over the damage
-	 * after shield blocking and before armor: what was dealt. It does not deliver a
-	 * killing hit, and its shim drops any hit a shield blocked part of.</li>
-	 * </ul>
-	 * Measured as the armor XP one hit earns:
+	 * <p>NeoForge's {@code LivingDamageEvent.Post} is this already. Fabric API's
+	 * {@code AFTER_DAMAGE} is not - it reports the hit before armor and skips killing
+	 * hits - so the Fabric shim carries {@link #damagePre}'s answer to the tail of
+	 * {@code hurtServer} itself.
+	 *
+	 * <p>Pinned by {@code armor_xp_per_hit}, as the armor XP one hit earns:
 	 * <pre>
-	 *                                                      NeoForge  Fabric
-	 * hit for 10 that nothing mitigates, 10 taken              10      10
-	 * hit for 10, shield blocks all of it                       0       0
-	 * hit for 10 against 20 armor, 4 taken                      4      10
-	 * the same hit with a shield blocking half, 1.5 taken       2       0
-	 * fall for 6, maxed Featherweight cancels it                0       6
-	 * killing hit on a wearer with 20 max health               20       0
+	 * hit for 10 that nothing mitigates, 10 taken              10
+	 * hit for 10 against 20 armor, 4 taken                      4
+	 * the same hit with a shield blocking half, 1.5 taken       2
+	 * the same hit with a shield blocking all of it             0
+	 * fall for 6, maxed Featherweight cancels it                0
+	 * killing hit on a wearer with 20 max health               20
 	 * </pre>
-	 * {@code armor_xp_per_hit} pins the first two rows.
 	 */
 	public static void damagePost(LivingEntity wearer, float damage) {
 		delivered(GameHook.DAMAGE_POST);
