@@ -9,11 +9,15 @@ import dev.marston.randomloot.loot.ModTemplate;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ModItems {
@@ -50,8 +54,26 @@ public class ModItems {
     public static void init() {
     }
 
-    /** Items shown in the Tools & Utilities creative tab, in display order. */
+    /**
+     * The creative tab the mod's items are listed in: vanilla's Tools & Utilities. Built
+     * from its id because the constant in CreativeModeTabs is private to vanilla.
+     */
+    public static final ResourceKey<CreativeModeTab> CREATIVE_TAB = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+            Identifier.withDefaultNamespace("tools_and_utilities"));
+
+    /** Items shown in {@link #CREATIVE_TAB}, in display order. */
     public static List<Item> creativeTabItems() {
         return List.of(TOOL.get(), ARMOR.get(), CASE.get(), MOD_ADD.get(), MOD_SUB.get(), ESSENCE.get());
+    }
+
+    /** Hands the mod's items to {@code output} when {@code tab} is {@link #CREATIVE_TAB}; any other tab is left alone. */
+    public static void addToCreativeTab(ResourceKey<CreativeModeTab> tab, Consumer<ItemStack> output) {
+        if (!CREATIVE_TAB.equals(tab)) {
+            return;
+        }
+
+        for (Item item : creativeTabItems()) {
+            output.accept(new ItemStack(item));
+        }
     }
 }

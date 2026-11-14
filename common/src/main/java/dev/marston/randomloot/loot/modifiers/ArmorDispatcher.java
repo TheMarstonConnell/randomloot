@@ -15,8 +15,9 @@ import java.util.List;
  * Routes damage taken by a wearer to their Random Armor pieces: wearer-hurt
  * traits ({@link WearerHurtModifier}), armor XP (armor levels from absorbing
  * hits, like tools level from swinging), and Unbreaking's chance to skip armor
- * durability loss. Each loader's event shim calls these from its damage
- * events.
+ * durability loss. Reached from both loaders through
+ * {@link dev.marston.randomloot.platform.GameHooks}, whose {@code damagePre},
+ * {@code damagePost} and {@code armorHurt} say what a loader hands each method.
  */
 public final class ArmorDispatcher {
 
@@ -46,7 +47,11 @@ public final class ArmorDispatcher {
 		return worn == null ? List.of() : worn;
 	}
 
-	/** Pre-damage hook: wearer-hurt traits may reduce (or alter) the damage. Returns the new damage. */
+	/**
+	 * Pre-damage hook: wearer-hurt traits may reduce (or alter) the damage. Returns the new damage.
+	 * {@code damage} is what is about to be taken, after armor, protection enchantments and
+	 * Resistance and before absorption, on both loaders.
+	 */
 	public static float onLivingDamagePre(LivingEntity wearer, DamageSource source, float damage) {
 		if (wearer.level().isClientSide()) {
 			return damage;
@@ -73,7 +78,11 @@ public final class ArmorDispatcher {
 		return Math.max(0.0f, damage);
 	}
 
-	/** Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP per block/swing. */
+	/**
+	 * Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP per block/swing.
+	 * What {@code inflictedDamage} measures is not the same on both loaders yet - the damage
+	 * taken on NeoForge, the damage dealt on Fabric; GameHooks.damagePost has the numbers.
+	 */
 	public static void onLivingDamagePost(LivingEntity wearer, float inflictedDamage) {
 		if (wearer.level().isClientSide()) {
 			return;
