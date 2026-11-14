@@ -126,7 +126,10 @@ public final class GameTestTable {
 			row("right_click_traits_yield_to_usable_offhand", GameTestBodies::rightClickTraitsYieldToUsableOffhand),
 			row("armor_xp_per_hit", GameTestBodies::armorXpPerHit),
 			row("anvil_books_filter_by_type", GameTestBodies::anvilBooksFilterByType),
-			row("creative_tab_lists_mod_items", GameTestBodies::creativeTabListsModItems));
+			row("creative_tab_lists_mod_items", GameTestBodies::creativeTabListsModItems),
+			// Also what writes the docs, in a run started with RL_PROD=false (see GenWiki).
+			row("wiki_generates", GameTestBodies::wikiGenerates),
+			row("wiki_needs_every_trait_recipe", GameTestBodies::wikiNeedsEveryTraitRecipe));
 
 	/** Every shared gametest, in the order the loaders register them. */
 	public static List<Row> rows() {

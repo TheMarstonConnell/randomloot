@@ -75,3 +75,7 @@ _Avoid_: level-up loop, XP loop
 **Config setting**:
 One value a player or pack maker can change in the config file, such as the chance of finding a case or whether a trait is switched on. Each is declared once, and the file, its row in the config guide and the value the game reads all come from that declaration.
 _Avoid_: option, config value, property
+
+**Wiki generation**:
+Producing the player docs in the repo (the trait list, config guide, progression, names, loot and biome pages) from the game's own loaded data, so a page cannot state something the game does not do. It refuses to produce a page with a gap in it, such as a trait with no recipe.
+_Avoid_: docs build, doc gen, wiki export
