@@ -68,11 +68,7 @@ public class Executioner extends LeveledModifier implements EntityHurtModifier {
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         float healthPercent = hurtee.getHealth() / hurtee.getMaxHealth();
 
         if (healthPercent <= getHealthThreshold()) {
@@ -94,7 +90,5 @@ public class Executioner extends LeveledModifier implements EntityHurtModifier {
                 );
             }
         }
-
-        return false;
     }
 }

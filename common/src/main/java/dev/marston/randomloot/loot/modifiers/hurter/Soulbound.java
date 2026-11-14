@@ -51,26 +51,21 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// Only apply bonus damage for swords and axes
 		ToolType type = LootUtils.getToolType(itemstack);
 		if (!type.equals(ToolType.SWORD) && !type.equals(ToolType.AXE)) {
-			return false;
+			return;
 		}
 
 		// Check if hurter is the original owner
 		if (!isOwner(itemstack, hurter)) {
-			return false;
+			return;
 		}
 
 		// Apply 15% bonus damage
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
 		float baseDamage = LootItem.getAttackDamage(itemstack, type);
 		dealBonusDamage(hurtee, hurter, baseDamage * 0.15f);
-
-		return false;
 	}
 
 	/**

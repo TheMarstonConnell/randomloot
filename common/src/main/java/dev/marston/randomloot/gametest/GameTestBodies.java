@@ -12,6 +12,7 @@ import com.mojang.brigadier.suggestion.Suggestion;
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
+import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
@@ -32,6 +33,7 @@ import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
@@ -61,6 +63,7 @@ import net.minecraft.world.entity.Pose;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -68,6 +71,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
@@ -322,6 +326,183 @@ public final class GameTestBodies {
 	private static String traitName(ItemStack gear, String tagName) {
 		return LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals(tagName)).map(Modifier::name)
 				.findFirst().orElse("nothing");
+	}
+
+	/**
+	 * Trait dispatch runs a hit trait that reads pre-hit state before the weapon's other
+	 * hit traits. Another trait's bonus damage is a damage event too and overwrites the
+	 * note, so a sword with Feasting and Early Bird has to out-damage one with Feasting
+	 * alone. (Feasting's key iterates ahead of Early Bird's in the trait tag, so in
+	 * stored order it would go first.)
+	 */
+	public static void traitDispatchRunsPreHitTraitsFirst(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+
+		float[] lost = new float[2];
+		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
+		for (int i = 0; i < traitSets.length; i++) {
+			ItemStack sword = gear(helper, ToolType.SWORD, false, traitSets[i]);
+			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			// The swing itself, which is the damage event the note is taken from.
+			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
+			float afterHit = target.getHealth();
+			TraitDispatch.hit(sword, target, player);
+			lost[i] = afterHit - target.getHealth();
+		}
+		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
+		helper.assertTrue(lost[0] > lost[1],
+				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
+						+ lost[0] + " vs " + lost[1]);
+
+		helper.succeed();
+	}
+
+	/**
+	 * Gear still in its reveal roll is inert: trait dispatch runs none of its traits and
+	 * spends none of its durability, for a hit, a broken block, a right-click or a tick.
+	 * Each case runs on live gear first, so the rolling half cannot pass by doing nothing.
+	 */
+	public static void traitDispatchLeavesRollingGearInert(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+		// Off the block the dirt goes on, and crouching for the placing trait. A mock
+		// player never ticks its own pose.
+		player.setPos(helper.absoluteVec(new Vec3(0.5, 1.0, 0.5)));
+		player.setShiftKeyDown(true);
+		player.setPose(Pose.CROUCHING);
+		BlockPos floor = new BlockPos(1, 0, 1);
+		BlockPos onFloor = floor.above();
+		helper.setBlock(floor, Blocks.STONE);
+
+		for (boolean rolling : new boolean[] { false, true }) {
+			String state = rolling ? "rolling" : "live";
+
+			// Hit: Critical adds bonus damage and the hit costs one durability.
+			ItemStack sword = gear(helper, ToolType.SWORD, rolling, "critical");
+			LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			float health = zombie.getHealth();
+			TraitDispatch.hit(sword, zombie, player);
+			helper.assertTrue((zombie.getHealth() < health) != rolling,
+					"a hit with a " + state + " sword: Critical " + (rolling ? "must not" : "should") + " fire");
+			helper.assertTrue(sword.getDamageValue() == (rolling ? 0 : 1),
+					"a hit with a " + state + " sword cost " + sword.getDamageValue() + " durability");
+			zombie.discard();
+
+			// Break: Learning counts the block and the break costs one durability.
+			ItemStack pick = gear(helper, ToolType.PICKAXE, rolling, "learning");
+			CompoundTag counted = storedTrait(pick, "learning");
+			TraitDispatch.blockBroken(pick, Blocks.STONE.defaultBlockState(), helper.absolutePos(onFloor), player);
+			helper.assertTrue(storedTrait(pick, "learning").equals(counted) == rolling,
+					"a block broken with a " + state + " pickaxe: Learning "
+							+ (rolling ? "must not" : "should") + " count it");
+			helper.assertTrue(pick.getDamageValue() == (rolling ? 0 : 1),
+					"a block broken with a " + state + " pickaxe cost " + pick.getDamageValue() + " durability");
+
+			// Right-click anywhere: Flame Thrower fires and pays durability for it.
+			ItemStack thrower = gear(helper, ToolType.SWORD, rolling, "flame_thrower");
+			player.setItemInHand(InteractionHand.MAIN_HAND, thrower);
+			helper.assertTrue(TraitDispatch.usesAnywhere(thrower) != rolling,
+					"a " + state + " sword " + (rolling ? "must not" : "should") + " claim the click");
+			helper.assertTrue(TraitDispatch.use(thrower, level, player, InteractionHand.MAIN_HAND) != rolling,
+					"a right-click with a " + state + " sword: Flame Thrower "
+							+ (rolling ? "must not" : "should") + " fire");
+			helper.assertTrue((thrower.getDamageValue() > 0) != rolling,
+					"a right-click with a " + state + " sword cost " + thrower.getDamageValue() + " durability");
+			level.getEntitiesOfClass(LargeFireball.class, player.getBoundingBox().inflate(8.0))
+					.forEach(LargeFireball::discard);
+
+			// Right-click on a block: Grace places dirt for a crouching holder.
+			ItemStack shovel = gear(helper, ToolType.SHOVEL, rolling, "dirt_place");
+			player.setItemInHand(InteractionHand.MAIN_HAND, shovel);
+			BlockPos clicked = helper.absolutePos(floor);
+			InteractionResult placed = TraitDispatch.useOn(new UseOnContext(player, InteractionHand.MAIN_HAND,
+					new BlockHitResult(Vec3.atCenterOf(clicked), Direction.UP, clicked, false)));
+			helper.assertTrue(placed.consumesAction() != rolling, "a click on a block with a " + state
+					+ " shovel: the placing trait " + (rolling ? "must not" : "should") + " take it");
+			helper.assertTrue(helper.getBlockState(onFloor).is(Blocks.DIRT) != rolling,
+					"a " + state + " shovel " + (rolling ? "must not" : "should") + " place dirt");
+			helper.setBlock(onFloor, Blocks.AIR);
+
+			// Tick: Hasty gives its holder Haste.
+			ItemStack hasty = gear(helper, ToolType.PICKAXE, rolling, "hasty");
+			player.removeEffect(MobEffects.HASTE);
+			TraitDispatch.tick(hasty, level, player);
+			helper.assertTrue(player.hasEffect(MobEffects.HASTE) != rolling,
+					"a tick of a " + state + " pickaxe: Hasty " + (rolling ? "must not" : "should") + " run");
+		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * Trait dispatch saves a trait whose hook changed what it stores, and writes nothing
+	 * for one that did not. A write to a held stack resets the block its holder is
+	 * mining, and rewriting an untouched trait would move it off a legacy key it still
+	 * reads. Traits never save themselves.
+	 */
+	public static void traitDispatchSavesOnlyChangedTraits(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+
+		// Dexterous remembers when it last hit.
+		ItemStack sword = gear(helper, ToolType.SWORD, false, "combo");
+		TraitDispatch.hit(sword, zombie, player);
+		long lastHit = storedTrait(sword, "combo").getLongOr(ModifierConstants.CHARGED, -1L);
+		helper.assertTrue(lastHit == level.getGameTime(),
+				"a hit should save the time Dexterous last struck, got " + lastHit);
+
+		// A second hit in the same tick leaves that time as it is, so there is nothing to save.
+		Object traitsAfterFirstHit = sword.get(ModDataComponents.TOOL_MODIFIER.get());
+		TraitDispatch.hit(sword, zombie, player);
+		helper.assertTrue(sword.get(ModDataComponents.TOOL_MODIFIER.get()) == traitsAfterFirstHit,
+				"a hit that changed no trait's state must not rewrite the gear's traits");
+
+		// Nemesis counts what its weapon kills.
+		ItemStack nemesis = gear(helper, ToolType.SWORD, false, "nemesis");
+		TraitDispatch.kill(nemesis, zombie, player);
+		int kills = storedTrait(nemesis, "nemesis").getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		helper.assertTrue(kills == 1, "a kill should be saved on Nemesis, got " + kills);
+
+		// A hold trait stores nothing new, tick after tick. This one sits on the gear
+		// under the legacy level key, which a rewrite would replace.
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		CompoundTag legacy = ModifierRegistry.getModifier("hasty").toNBT();
+		legacy.remove(ModifierConstants.LEVEL);
+		legacy.putInt(ModifierConstants.LEGACY_LEVEL, 2);
+		GearTags.mutate(pick, Modifier.MODTAG, traits -> traits.put("hasty", legacy));
+		Object traitsBeforeTicks = pick.get(ModDataComponents.TOOL_MODIFIER.get());
+		player.removeEffect(MobEffects.HASTE);
+		for (int tick = 0; tick < 3; tick++) {
+			TraitDispatch.tick(pick, level, player);
+		}
+		MobEffectInstance haste = player.getEffect(MobEffects.HASTE);
+		helper.assertTrue(haste != null && haste.getAmplifier() == 2,
+				"Hasty should have run at the level its legacy key holds");
+		helper.assertTrue(pick.get(ModDataComponents.TOOL_MODIFIER.get()) == traitsBeforeTicks,
+				"ticking a hold trait must not write to the gear");
+		helper.assertTrue(storedTrait(pick, "hasty").equals(legacy),
+				"an untouched trait should keep its legacy key, got " + storedTrait(pick, "hasty"));
+
+		helper.succeed();
+	}
+
+	/** Gear of the given type at goodness 4 with the given traits, put into its reveal roll if asked. */
+	private static ItemStack gear(GameTestHelper helper, ToolType type, boolean rolling, String... traits) {
+		ItemStack gear = newTool(type);
+		LootUtils.setStats(gear, 4.0f);
+		for (String trait : traits) {
+			TraitGrant.force(gear, ModifierRegistry.getModifier(trait));
+		}
+		if (rolling) {
+			LootUtils.startRoll(gear, helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS);
+		}
+		return gear;
+	}
+
+	/** What the gear stores for a trait. */
+	private static CompoundTag storedTrait(ItemStack gear, String tagName) {
+		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty(tagName);
 	}
 
 	/** genTool() produces a real, typed item with positive goodness (covers the RNG/biome path). */
@@ -1945,8 +2126,8 @@ public final class GameTestBodies {
 		}
 		ServerPlayer player = survivalPlayerHolding(helper, axe);
 
-		LootUtils.damageGear(axe, 25, player, EquipmentSlot.MAINHAND);
-		helper.assertTrue(axe.getDamageValue() == 0, "damageGear should spend nothing on an Unbreakable tool");
+		TraitDispatch.spendDurability(axe, 25, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() == 0, "spending durability should cost an Unbreakable tool nothing");
 
 		BlockPos logPos = new BlockPos(1, 1, 1);
 		helper.setBlock(logPos, Blocks.OAK_LOG);
@@ -2029,29 +2210,6 @@ public final class GameTestBodies {
 		earlyBird.hurtEnemy(sword, hitTwice, player);
 		helper.assertTrue(hitTwice.getHealth() == hitTwiceAfter,
 				"Early Bird should not reuse an earlier same-tick full-health hit for a wounded target");
-
-		// Another trait's bonus hit overwrites that record too, so the tool runs Early
-		// Bird before its other traits. Through the real LootItem.hurtEnemy: a sword with
-		// Feasting and Early Bird must out-damage one with Feasting alone. (Feasting's key
-		// iterates ahead of Early Bird's in the trait tag, so it would otherwise go first.)
-		float[] lost = new float[2];
-		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
-		for (int i = 0; i < traitSets.length; i++) {
-			ItemStack traited = newTool(ToolType.SWORD);
-			LootUtils.setStats(traited, 4.0f);
-			for (String trait : traitSets[i]) {
-				TraitGrant.force(traited, ModifierRegistry.getModifier(trait));
-			}
-			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
-			float afterHit = target.getHealth();
-			((LootItem) traited.getItem()).hurtEnemy(traited, target, player);
-			lost[i] = afterHit - target.getHealth();
-		}
-		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
-		helper.assertTrue(lost[0] > lost[1],
-				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
-						+ lost[0] + " vs " + lost[1]);
 
 		helper.succeed();
 	}

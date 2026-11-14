@@ -86,13 +86,9 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		Level level = hurtee.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		long time = level.getGameTime();
 
@@ -107,8 +103,5 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 		}
 
 		this.charged = time;
-		LootUtils.updateModifier(itemstack, this);
-
-		return false;
 	}
 }

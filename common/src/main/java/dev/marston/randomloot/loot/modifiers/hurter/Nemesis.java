@@ -154,12 +154,7 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 	}
 
 	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		// Only act on server side
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		String entityKey = EntityType.getKey(hurtee.getType()).toString();
 		String mostKilled = getMostKilledEntity();
 
@@ -168,8 +163,6 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 			float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
 			dealBonusDamage(hurtee, hurter, baseDamage * bonusDamagePercent());
 		}
-
-		return false;
 	}
 
 	@Override
@@ -178,8 +171,5 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 
 		int currentCount = killCounts.getOrDefault(entityKey, 0);
 		killCounts.put(entityKey, currentCount + 1);
-
-		// Save updated kill counts to the item
-		LootUtils.updateModifier(itemstack, this);
 	}
 }

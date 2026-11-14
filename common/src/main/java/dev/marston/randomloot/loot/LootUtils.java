@@ -12,8 +12,6 @@ import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import dev.marston.randomloot.loot.modifiers.Unbreaking;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
@@ -318,37 +316,6 @@ public class LootUtils {
 		return true;
 	}
 
-	/**
-	 * Spends durability on a loot tool, giving its Unbreaking trait a roll per point
-	 * first. Every durability cost a tool pays goes through here - block breaks, hits,
-	 * stripping and pathing, the right-click traits, and the extra blocks area traits
-	 * break - so a maxed "Unbreakable" tool really is. (Worn armor takes damage inside
-	 * vanilla and is covered by {@code ArmorDispatcher.onArmorHurt} instead.)
-	 */
-	public static void damageGear(ItemStack stack, int amount, @Nullable LivingEntity holder, EquipmentSlot slot) {
-		if (holder == null || amount <= 0 || stack.isEmpty()) {
-			return;
-		}
-
-		// getModifiers already drops config-disabled traits, and a trait appears at most once.
-		for (Modifier mod : getModifiers(stack)) {
-			if (mod instanceof Unbreaking unbreaking) {
-				int spent = 0;
-				for (int i = 0; i < amount; i++) {
-					if (!unbreaking.test(holder.level())) {
-						spent++;
-					}
-				}
-				amount = spent;
-				break;
-			}
-		}
-
-		if (amount > 0) {
-			stack.hurtAndBreak(amount, holder, slot);
-		}
-	}
-
 	public static void addLoreLine(ListTag lore, String text, String color) {
 		JsonObject value = new JsonObject();
 
@@ -384,20 +351,6 @@ public class LootUtils {
 
 	public static int getMaxXP(int level) {
 		return GearStats.maxXp(level);
-	}
-
-	/**
-	 * The combined multiplier the stack's StatsModifier traits apply to dig speed and
-	 * defense. getModifiers already filters out config-disabled traits.
-	 */
-	public static float statMultiplier(ItemStack stack) {
-		float statMod = 1.0f;
-		for (Modifier mod : getModifiers(stack)) {
-			if (mod instanceof StatsModifier sm) {
-				statMod *= sm.getStats(stack);
-			}
-		}
-		return statMod;
 	}
 
 	public static ItemStack levelUp(ItemStack item, LivingEntity holder) {

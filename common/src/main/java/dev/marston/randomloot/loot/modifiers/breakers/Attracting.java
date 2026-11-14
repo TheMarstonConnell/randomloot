@@ -33,13 +33,9 @@ public class Attracting extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 
 		Level level = player.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		ServerLevel serverLevel = (ServerLevel) level;
 		AABB box = new AABB(Vec3.atCenterOf(pos.east().south().below()), Vec3.atCenterOf(pos.west().north().above()));
@@ -57,8 +53,6 @@ public class Attracting extends AbstractModifier implements BlockBreakModifier {
 				}
 			});
 		});
-
-		return false;
 	}
 
 	@Override

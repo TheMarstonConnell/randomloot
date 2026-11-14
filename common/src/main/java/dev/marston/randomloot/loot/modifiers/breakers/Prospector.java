@@ -1,7 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
 import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.LeveledModifier;
@@ -77,19 +76,16 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
 		Level level = entity.level();
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		if (!isStoneBlock(broken)) {
-			return false;
+			return;
 		}
 
 		float chance = BASE_CHANCE + (this.level * CHANCE_PER_LEVEL);
 		if (level.getRandom().nextFloat() > chance) {
-			return false;
+			return;
 		}
 
 		ServerLevel serverLevel = (ServerLevel) level;
@@ -106,10 +102,7 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 		if (!drops.isEmpty()) {
 			level.playSound(null, pos, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.2f);
 			this.totalFinds++;
-			LootUtils.updateModifier(itemstack, this);
 		}
-
-		return false;
 	}
 
 	@Override

@@ -90,10 +90,6 @@ public class Naturalist extends LeveledModifier implements HoldModifier {
 
     @Override
     public void hold(ItemStack stack, Level level, Entity holder) {
-        if (level.isClientSide()) {
-            return;
-        }
-
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }

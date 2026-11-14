@@ -55,10 +55,6 @@ public class Hunter extends AbstractModifier implements HoldModifier {
 
     @Override
     public void hold(ItemStack stack, Level level, Entity holder) {
-        if (level.isClientSide()) {
-            return;
-        }
-
         // Create search box around holder
         AABB searchBox = new AABB(
             holder.getX() - SEARCH_RADIUS, holder.getY() - SEARCH_RADIUS, holder.getZ() - SEARCH_RADIUS,

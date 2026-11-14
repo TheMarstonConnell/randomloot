@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
@@ -9,6 +8,7 @@ import dev.marston.randomloot.loot.modifiers.LeveledModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -90,8 +90,6 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 
 	@Override
 	public boolean use(Level level, Player player, InteractionHand hand) {
-		if (level.isClientSide()) return false;
-
 		float distance = 8.0f + (this.level * 4.0f);
 		Vec3 lookVec = player.getLookAngle();
 		Vec3 destination = player.position().add(
@@ -116,7 +114,7 @@ public class VoidTouched extends LeveledModifier implements UseModifier, BiomeRe
 				32, 0.5, 0.5, 0.5, 0.1);
 		}
 
-		LootUtils.damageGear(player.getItemInHand(hand), 10, player, EquipmentSlot.MAINHAND);
+		TraitDispatch.spendDurability(player.getItemInHand(hand), 10, player, EquipmentSlot.MAINHAND);
 		player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);
 
 		ModCriteria.traitUsed(player, this);

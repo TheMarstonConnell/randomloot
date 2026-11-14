@@ -47,3 +47,7 @@ _Avoid_: test registry, test list, test manifest
 **Trait grant**:
 The one operation that puts a trait on a piece of gear or takes one off, and reports what happened: added, leveled, removed, or refused and why. A case roll, a level-up, the smithing table and the admin command all change gear's traits through it.
 _Avoid_: add modifier, apply trait, trait change
+
+**Trait dispatch**:
+The one path a game event takes to the traits on a piece of gear: a hit, a broken block, a right-click, a tick, a kill, damage to the wearer. It settles what every trait shares, such as which ones run, in what order, what gets saved and what durability is spent, so a trait only states its own rule.
+_Avoid_: trait loop, event bus, handler

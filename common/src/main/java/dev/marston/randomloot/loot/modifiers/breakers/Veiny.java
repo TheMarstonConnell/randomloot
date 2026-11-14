@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -72,28 +73,24 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
-			return false;
+			return;
 		}
 
 		ServerPlayer player = (ServerPlayer) p;
 
 		if (!player.isCrouching()) {
-			return false;
+			return;
 		}
 
 		Level l = player.level();
 
-		if (l.isClientSide()) {
-			return false;
-		}
-
 		LootItem li = (LootItem) itemstack.getItem();
 
 		if (!li.isCorrectToolForDrops(itemstack, broken)) {
-			return false;
+			return;
 		}
 
 		Block b = broken.getBlock();
@@ -106,13 +103,12 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 			boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, l, l.getBlockState(blockPos));
 
 			if (destroyed) {
-				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 				if (itemstack.isEmpty()) {
 					break;
 				}
 			}
 		}
-		return false;
 	}
 
 	@Override

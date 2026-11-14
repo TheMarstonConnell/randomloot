@@ -1,11 +1,11 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.InteractionHand;
@@ -77,10 +77,6 @@ public class FireBall extends AbstractModifier implements UseModifier {
 	@Override
 	public boolean use(Level level, Player player, InteractionHand hand) {
 
-		if (level.isClientSide()) {
-			return false;
-		}
-
 		double d1 = 2.5D;
 		Vec3 vec3 = player.getLookAngle();
 
@@ -90,7 +86,7 @@ public class FireBall extends AbstractModifier implements UseModifier {
 
 		level.addFreshEntity(largefireball);
 
-		LootUtils.damageGear(player.getItemInHand(hand), this.damage, player, EquipmentSlot.MAINHAND);
+		TraitDispatch.spendDurability(player.getItemInHand(hand), this.damage, player, EquipmentSlot.MAINHAND);
 
 		return true;
 	}

@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -69,23 +70,19 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
-			return false;
+			return;
 		}
 
 		ServerPlayer player = (ServerPlayer) p;
 
 		if (!player.isCrouching()) {
-			return false;
+			return;
 		}
 
 		Level level = player.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		LootItem li = (LootItem) itemstack.getItem();
 		List<BlockPos> positions = get3x3Positions(pos, player);
@@ -106,11 +103,9 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 			// along (so a shulker box keeps its contents); only real breaks cost
 			// durability.
 			if (LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, level, state)) {
-				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 			}
 		}
-
-		return false;
 	}
 
 	@Override

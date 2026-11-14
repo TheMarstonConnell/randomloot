@@ -86,10 +86,6 @@ public class Catalyst extends LeveledModifier implements HoldModifier {
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (level.isClientSide()) {
-			return;
-		}
-
 		if (!(holder instanceof LivingEntity livingHolder)) {
 			return;
 		}
