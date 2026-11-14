@@ -57,10 +57,4 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 	public boolean useAnywhere() {
 		return false;
 	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return !ModifierRegistry.USERS.contains(mod);
-	}
-
 }

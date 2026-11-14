@@ -28,6 +28,7 @@ import static dev.marston.randomloot.loot.modifiers.TraitDeclaration.*;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -65,8 +66,9 @@ public class ModifierRegistry {
 			.make(Learning::new);
 	public static Modifier ATTRACTING = trait("attracting", "Magnetic", ChatFormatting.RED, MINING_TOOLS, Group.BREAKERS)
 			.make(Attracting::new);
+	// Three traits that each break more than the block that was hit; Veiny shares gear with neither of the others.
 	public static Modifier VEINY = trait("veiny", "Veiny", ChatFormatting.DARK_GREEN, MINING_TOOLS, Group.BREAKERS)
-			.make(Veiny::new);
+			.excludes("excavator", "lumbering").make(Veiny::new);
 	public static Modifier MELTING = trait("melting", "Melting", ChatFormatting.RED, MINING_TOOLS, Group.BREAKERS)
 			.make(Melting::new);
 	public static Modifier EXCAVATOR = trait("excavator", "Excavator", ChatFormatting.GREEN, MINING_TOOLS, Group.BREAKERS)
@@ -186,19 +188,24 @@ public class ModifierRegistry {
 	public static Modifier MAGNETIZED = trait("magnetized", "Magnetized", ChatFormatting.LIGHT_PURPLE, ARMOR, Group.WEARERS)
 			.make(Magnetized::new);
 
-	public static final Set<Modifier> BREAKERS = Set.of(EXPLODE, LEARNING, ATTRACTING, VEINY, MELTING, EXCAVATOR, PROSPECTOR, MUNCHIES, FRAGILE, LUMBERING);
-	public static final Set<Modifier> USERS = Set.of(TORCH_PLACE, DIRT_PLACE, FIRE_PLACE, FIRE_BALL, VOID_TOUCHED);
-	public static final Set<Modifier> HURTERS = Set.of(CRITICAL, CHARGING, FLAMING, COMBO, DRAINING, POISONOUS,
-			WITHERING, BLINDING, BEZERK, NEMESIS, SOULBOUND, SCORCHED, FROZEN, OVERGROWN, FIERCE, FEASTING, EXECUTIONER, CROWD_PLEASER, PUMMELING, HAILEYS_WRATH, MUNCHIES, CHAOTIC, FRAGILE, CLUNKY, EARLY_BIRD);
-	public static final Set<Modifier> HOLDERS = Set.of(HASTY, ABSORBTION, FILLING, RAINY, ORE_FINDER, SPAWNER_FINDER,
-			LIVING, REGENERATING, RESISTANT, FIRE_RESISTANT, AQUATIC, HUNTER, FEASTING, NATURALIST, CLUNKY, CATALYST,
-			STENCH);
+	// The wiki's sections, as each trait declared them. The sets hold the registry's own instances.
+	public static final Set<Modifier> BREAKERS = inGroup(Group.BREAKERS);
+	public static final Set<Modifier> USERS = inGroup(Group.USERS);
+	public static final Set<Modifier> HURTERS = inGroup(Group.HURTERS);
+	public static final Set<Modifier> HOLDERS = inGroup(Group.HOLDERS);
+	public static final Set<Modifier> STATS = inGroup(Group.STATS);
+	public static final Set<Modifier> WEARERS = inGroup(Group.WEARERS);
+	public static final Set<Modifier> MISC = inGroup(Group.MISC);
 
-	public static final Set<Modifier> STATS = Set.of(BUSTED, FIERCE, MUNCHIES, CHAOTIC, FRAGILE);
-
-	public static final Set<Modifier> WEARERS = Set.of(THORNY, FEATHERWEIGHT, BULWARK, ADRENALINE, MAGNETIZED);
-
-	public static final Set<Modifier> MISC = Set.of(UNBREAKING);
+	private static Set<Modifier> inGroup(Group group) {
+		Set<Modifier> members = new HashSet<>();
+		for (TraitDeclaration declaration : Declarations.values()) {
+			if (declaration.groups.contains(group)) {
+				members.add(Modifiers.get(declaration.tag));
+			}
+		}
+		return Collections.unmodifiableSet(members);
+	}
 
 	public static Modifier register(Modifier modifier) {
 

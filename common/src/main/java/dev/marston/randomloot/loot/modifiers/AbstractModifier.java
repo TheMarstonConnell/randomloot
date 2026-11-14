@@ -92,6 +92,11 @@ public abstract class AbstractModifier implements Modifier {
 		return this.declaration.fits.contains(type);
 	}
 
+	@Override
+	public boolean compatible(Modifier mod) {
+		return !(mod instanceof AbstractModifier other) || !this.declaration.excludes(other.declaration);
+	}
+
 	/**
 	 * The stored name, with a roman numeral from the second level up. The house style: a
 	 * freshly granted trait shows no numeral, and the first upgrade shows "II".
