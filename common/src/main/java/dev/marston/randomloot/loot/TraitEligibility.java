@@ -18,6 +18,7 @@ import net.minecraft.world.item.ItemStack;
  * for the smithing table - and the three copies disagreed: smithing skipped the config
  * toggle, the compatibility check and the level cap, so it would consume the template
  * and the addition item and hand back an unchanged tool. All three now ask this module.
+ * It only answers: {@link TraitGrant} asks it and then makes the change.
  *
  * <p>{@link #check(GearContext, Modifier)} works off a {@link GearContext} rather than an
  * {@code ItemStack} so the rule can be exercised without a bound item registry; the
