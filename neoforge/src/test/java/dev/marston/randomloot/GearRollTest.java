@@ -112,7 +112,7 @@ class GearRollTest {
 		for (int grants = 1; grants <= 64; grants++) {
 			GearContext gear = new GearContext(rolled.type(), place.biomeKey(), place.temperature(),
 					place.dimension(), LootUtils.getModifiers(replay), false, true);
-			TraitGrant.grant(gear, replay, registered, WORLD);
+			TraitGrant.grant(gear, replay, registered, WORLD, RandomSource.create(grants));
 			if (withoutChaoticSeed(replay.getCompoundOrEmpty(tag)).equals(wanted)) {
 				return grants;
 			}

@@ -31,6 +31,7 @@ import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.TagParser;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -100,7 +101,7 @@ class TraitFixtureTest {
 			for (int grant = 1; grant <= 64; grant++) {
 				GearContext now = new GearContext(home.type(), home.biomeKey(), home.temperature(),
 						home.dimension(), LootUtils.getModifiers(traits), false, true);
-				TraitGrant.Kind kind = TraitGrant.grant(now, traits, entry.getValue(), WORLD);
+				TraitGrant.Kind kind = TraitGrant.grant(now, traits, entry.getValue(), WORLD, RandomSource.create(grant));
 				if (kind == TraitGrant.Kind.REFUSED) {
 					lines.add(tag + " #" + grant + " REFUSED");
 					break;

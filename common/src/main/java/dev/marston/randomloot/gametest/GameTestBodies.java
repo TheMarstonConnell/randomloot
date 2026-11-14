@@ -126,7 +126,7 @@ public final class GameTestBodies {
 
 		// The stack-free form of the grant, kept in step: it has to store the same thing.
 		CompoundTag asTag = new CompoundTag();
-		TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed);
+		TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed, RandomSource.create());
 
 		TraitGrant.Outcome added = TraitGrant.grant(chestplate, thorny, seed);
 		helper.assertTrue(added.kind() == TraitGrant.Kind.ADDED,
@@ -136,7 +136,7 @@ public final class GameTestBodies {
 		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny"),
 				"the gear should carry Thorny at its first level, got " + traitName(chestplate, "thorny"));
 
-		TraitGrant.Kind leveledAsTag = TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed);
+		TraitGrant.Kind leveledAsTag = TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed, RandomSource.create());
 		TraitGrant.Outcome leveled = TraitGrant.grant(chestplate, thorny, seed);
 		helper.assertTrue(leveledAsTag == TraitGrant.Kind.LEVELED
 						&& asTag.equals(GearTags.read(chestplate, Modifier.MODTAG)),

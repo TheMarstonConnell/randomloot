@@ -6,6 +6,7 @@ import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -19,59 +20,20 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
 public class Charging extends AbstractModifier implements EntityHurtModifier {
-	private int points;
-	private long charged;
-
-	public Charging(String name, int points, long charged) {
-		this.name = name;
-		this.points = points;
-		this.charged = charged;
-	}
-
-	public Charging() {
-		this.name = "Charged";
-		this.points = 10;
-		this.charged = 0;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putInt(ModifierConstants.POINTS, points);
-		tag.putString(ModifierConstants.NAME, name);
-		tag.putLong(ModifierConstants.CHARGED, charged);
-		return tag;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Charging(tag.getStringOr(ModifierConstants.NAME, "Charged"), tag.getIntOr(ModifierConstants.POINTS, 10), tag.getLongOr(ModifierConstants.CHARGED, 0L));
-	}
-
-	@Override
-	public String tagName() {
-		return "charged";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.YELLOW;
-	}
+	private final Stored<Integer> points = stored(ModifierConstants.POINTS, 10);
+	private final Stored<Long> charged = stored(ModifierConstants.CHARGED, 0L);
 
 	@Override
 	public String description() {
-		return "After " + this.points
+		return "After " + this.points.get()
 				+ " seconds, hitting and enemy will summon a lightning bolt and empty the charge meter.";
 	}
 
 	@Override
 	public Component writeDetailsToLore(Level level) {
 		if (level != null) {
-			float charge = ChargeTracker.getCharge(level, charged, points);
+			float charge = ChargeTracker.getCharge(level, charged.get(), points.get());
 
 			String perc = String.format("%.0f%% Charged", charge * 100.0f);
 
@@ -82,18 +44,13 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
-	}
-
-	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
 		Level level = hurtee.level();
 
 		long time = level.getGameTime();
 
-		if (level instanceof ServerLevel serverLevel && ChargeTracker.getCharge(level, charged, points) >= 1.0f) {
+		if (level instanceof ServerLevel serverLevel && ChargeTracker.getCharge(level, charged.get(), points.get()) >= 1.0f) {
 			LightningBolt lb = new LightningBolt(EntityTypes.LIGHTNING_BOLT, level);
 			lb.setPos(hurtee.position());
 			if (hurter instanceof ServerPlayer) {
@@ -111,7 +68,7 @@ public class Charging extends AbstractModifier implements EntityHurtModifier {
 
 			ModCriteria.traitUsed(hurter, this);
 
-			this.charged = time;
+			this.charged.set(time);
 		}
 	}
 }
