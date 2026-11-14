@@ -409,7 +409,7 @@ public class LootUtils {
 				holder.getSoundSource(), 1.0f, 1.0f);
 
 		if (holder.level() instanceof ServerLevel serverLevel
-				&& holder.getRandom().nextDouble() < Config.LevelUpTraitChance) {
+				&& holder.getRandom().nextDouble() < Config.LEVEL_UP_TRAIT_CHANCE.get()) {
 			Set<String> before = Set.copyOf(rawTraitNames(item));
 
 			Modifier rolled = generateNewTrait(item, holder.getRandom(), serverLevel.getSeed());
@@ -872,13 +872,13 @@ public class LootUtils {
 			ServerPlayer sPlayer = (ServerPlayer) player;
 			StatType<Item> itemUsed = Stats.ITEM_USED;
 			int count = sPlayer.getStats().getValue(itemUsed.get(ModItems.CASE.get()));
-			goodness = GearStats.goodnessForCases(count, Config.Goodness);
+			goodness = GearStats.goodnessForCases(count, Config.GOODNESS.get());
 		} else {
 			goodness = machineGoodness(level);
 		}
 
 		ToolType m;
-		if (level.getRandom().nextFloat() < Config.ArmorChance) {
+		if (level.getRandom().nextFloat() < Config.ARMOR_CHANCE.get()) {
 			int armorType = level.getRandom().nextInt(4);
 			m = switch (armorType) {
 			case 0: {
@@ -970,7 +970,7 @@ public class LootUtils {
 				best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
 			}
 		}
-		return GearStats.goodnessForCases(best, Config.Goodness * Config.DispenserGoodness);
+		return GearStats.goodnessForCases(best, Config.GOODNESS.get() * Config.DISPENSER_GOODNESS.get());
 	}
 
 	/**

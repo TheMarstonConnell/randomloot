@@ -73,6 +73,7 @@ public final class GameTestTable {
 			row("advancements_load", GameTestBodies::advancementsLoad),
 			row("xp_level_curve", GameTestBodies::xpLevelCurve),
 			row("level_up_rolls_trait", GameTestBodies::levelUpRollsTrait),
+			row("disabled_trait_is_filtered", GameTestBodies::disabledTraitIsFiltered),
 			row("kill_trait_hooks", GameTestBodies::killTraitHooks),
 			row("catalyst_extends_effects", GameTestBodies::catalystExtendsEffects),
 			row("stench_debuffs_mobs", GameTestBodies::stenchDebuffsMobs),
