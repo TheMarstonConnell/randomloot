@@ -29,9 +29,6 @@ public final class Config
     /** Every setting in declaration order, trait toggles included. Stays above the first declaration. */
     private static final List<Setting<?>> DECLARED = new ArrayList<>();
 
-    /** Set once {@link #SPEC} exists, so a setting declared below it fails loudly instead of being left out. */
-    private static boolean specBuilt;
-
     /**
      * Where a setting sits. One group gives both groupings: the section of
      * randomloot-common.toml it is written under, and the table of CONFIG.md it is listed
@@ -109,7 +106,6 @@ public final class Config
             }
             builder.pop();
         }
-        specBuilt = true;
         return builder.build();
     }
 
@@ -196,7 +192,8 @@ public final class Config
 
         private Setting(Group group, String key, T defaultValue, T min, T max, String comment,
                 Function<ModConfigSpec.Builder, ModConfigSpec.ConfigValue<T>> definer) {
-            if (specBuilt) {
+            // SPEC is still null while the declarations above it run, and set from then on.
+            if (SPEC != null) {
                 throw new IllegalStateException("config setting '" + key + "' is declared below Config.SPEC,"
                         + " so the spec was built without it. Move the declaration above SPEC.");
             }
