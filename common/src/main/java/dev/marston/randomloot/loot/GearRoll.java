@@ -82,7 +82,7 @@ public final class GearRoll {
 					place.temperature(), place.dimension(), LootUtils.getModifiers(traits), false, true);
 			Modifier pick = pickTrait(gear, random);
 			if (pick != null) {
-				TraitGrant.grant(gear, traits, pick, scene.worldSeed());
+				TraitGrant.grant(gear, traits, pick, scene.worldSeed(), random);
 			}
 		}
 

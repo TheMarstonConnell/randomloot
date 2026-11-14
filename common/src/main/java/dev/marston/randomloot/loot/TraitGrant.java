@@ -7,6 +7,7 @@ import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 
 /**
@@ -91,7 +92,7 @@ public final class TraitGrant {
 		if (!gate.allowed()) {
 			return new Outcome(Kind.REFUSED, trait, gear, gate);
 		}
-		return write(gear, worldSeed == null ? trait : trait.forWorld(worldSeed));
+		return write(gear, worldSeed == null ? trait : trait.forWorld(worldSeed), RandomSource.create());
 	}
 
 	/**
@@ -101,15 +102,17 @@ public final class TraitGrant {
 	 * trait list from that tag ({@link LootUtils#getModifiers(CompoundTag)}). Writes into
 	 * {@code traits} exactly what the stack form would have stored.
 	 *
+	 * @param random where a trait that rolls something per grant draws it from, so that
+	 *               whoever supplies the source decides whether the result can be repeated
 	 * @return {@link Kind#ADDED}, {@link Kind#LEVELED} or {@link Kind#REFUSED}
 	 */
 	public static Kind grant(TraitEligibility.GearContext gear, CompoundTag traits, Modifier trait,
-			@Nullable Long worldSeed) {
+			@Nullable Long worldSeed, RandomSource random) {
 		if (!TraitEligibility.check(gear, trait).allowed()) {
 			return Kind.REFUSED;
 		}
 
-		Entry entry = entryAfter(traits, worldSeed == null ? trait : trait.forWorld(worldSeed));
+		Entry entry = entryAfter(traits, worldSeed == null ? trait : trait.forWorld(worldSeed), random);
 		if (entry == null) {
 			return Kind.REFUSED;
 		}
@@ -122,7 +125,7 @@ public final class TraitGrant {
 	 * made: a Thorny sword, a forger that does not exist. Test setup only.
 	 */
 	public static Outcome force(ItemStack gear, Modifier trait) {
-		return write(gear, trait);
+		return write(gear, trait, RandomSource.create());
 	}
 
 	/**
@@ -152,11 +155,11 @@ public final class TraitGrant {
 		}
 	}
 
-	private static Outcome write(ItemStack gear, Modifier trait) {
+	private static Outcome write(ItemStack gear, Modifier trait, RandomSource random) {
 		String tag = trait.tagName();
 		CompoundTag stored = GearTags.read(gear, Modifier.MODTAG);
 
-		Entry entry = entryAfter(stored, trait);
+		Entry entry = entryAfter(stored, trait, random);
 		if (entry == null) {
 			// The gate refuses a capped trait before grant gets here; only force can.
 			return new Outcome(Kind.REFUSED, trait, gear,
@@ -174,14 +177,15 @@ public final class TraitGrant {
 
 	/**
 	 * The entry one more grant of {@code trait} leaves in {@code traits}, without writing
-	 * it: the trait itself when it is new, the gear's own copy one level up when it is
-	 * already there, or null when that copy is capped.
+	 * it: a fresh instance of the trait when it is new ({@link Modifier#granted}), the
+	 * gear's own copy one level up when it is already there, or null when that copy is
+	 * capped.
 	 */
 	@Nullable
-	private static Entry entryAfter(CompoundTag traits, Modifier trait) {
+	private static Entry entryAfter(CompoundTag traits, Modifier trait, RandomSource random) {
 		String tag = trait.tagName();
 		if (!traits.contains(tag)) {
-			return new Entry(Kind.ADDED, trait.toNBT());
+			return new Entry(Kind.ADDED, trait.granted(random).toNBT());
 		}
 
 		// Already there: the gear's own copy levels, keeping whatever else it stores.

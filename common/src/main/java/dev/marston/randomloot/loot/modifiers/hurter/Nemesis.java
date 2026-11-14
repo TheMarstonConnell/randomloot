@@ -6,7 +6,8 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -19,66 +20,28 @@ import net.minecraft.world.level.Level;
 import java.util.HashMap;
 import java.util.Map;
 
-public class Nemesis extends LeveledModifier implements EntityHurtModifier, EntityKillModifier {
-	private Map<String, Integer> killCounts;
-
+public class Nemesis extends AbstractModifier implements EntityHurtModifier, EntityKillModifier {
 	private static final String KILL_COUNTS = "killCounts";
 
-	public Nemesis(String name, int level, Map<String, Integer> killCounts) {
-		this.name = name;
-		this.level = level;
-		this.killCounts = killCounts;
-	}
+	/** How many of each entity type this weapon has killed, by registry key. */
+	private final Stored<Map<String, Integer>> killCounts = stored(KILL_COUNTS, new HashMap<>(), Nemesis::readCounts,
+			Nemesis::writeCounts);
 
-	public Nemesis() {
-		this("Nemesis", 1, new HashMap<>());
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 3;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = super.toNBT();
-
-		CompoundTag killCountsTag = new CompoundTag();
-		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
-			killCountsTag.putInt(entry.getKey(), entry.getValue());
+	private static Map<String, Integer> readCounts(CompoundTag tag, String key, Map<String, Integer> none) {
+		Map<String, Integer> counts = new HashMap<>();
+		CompoundTag stored = tag.getCompoundOrEmpty(key);
+		for (String entity : stored.keySet()) {
+			counts.put(entity, stored.getIntOr(entity, 0));
 		}
-		tag.put(KILL_COUNTS, killCountsTag);
-
-		return tag;
+		return counts;
 	}
 
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		String name = tag.getStringOr(NAME, "Nemesis");
-		int level = ModifierConstants.getLevel(tag, 1);
-
-		Map<String, Integer> killCounts = new HashMap<>();
-		CompoundTag killCountsTag = tag.getCompoundOrEmpty(KILL_COUNTS);
-		for (String key : killCountsTag.keySet()) {
-			killCounts.put(key, killCountsTag.getIntOr(key, 0));
+	private static void writeCounts(CompoundTag tag, String key, Map<String, Integer> counts) {
+		CompoundTag stored = new CompoundTag();
+		for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+			stored.putInt(entry.getKey(), entry.getValue());
 		}
-
-		return new Nemesis(name, level, killCounts);
-	}
-
-	@Override
-	public String tagName() {
-		return "nemesis";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_RED;
+		tag.put(key, stored);
 	}
 
 	@Override
@@ -87,14 +50,14 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 	}
 
 	public float bonusDamagePercent() {
-		return this.level * 0.05f;
+		return traitLevel() * 0.05f;
 	}
 
 	private String getMostKilledEntity() {
 		String mostKilled = null;
 		int maxCount = 0;
 
-		for (Map.Entry<String, Integer> entry : killCounts.entrySet()) {
+		for (Map.Entry<String, Integer> entry : killCounts.get().entrySet()) {
 			if (entry.getValue() > maxCount) {
 				maxCount = entry.getValue();
 				mostKilled = entry.getKey();
@@ -109,7 +72,7 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 		if (mostKilled == null) {
 			return 0;
 		}
-		return killCounts.getOrDefault(mostKilled, 0);
+		return killCounts.get().getOrDefault(mostKilled, 0);
 	}
 
 	private String getEntityDisplayName(String registryName) {
@@ -149,11 +112,6 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
-	}
-
-	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		String entityKey = EntityType.getKey(hurtee.getType()).toString();
 		String mostKilled = getMostKilledEntity();
@@ -169,7 +127,6 @@ public class Nemesis extends LeveledModifier implements EntityHurtModifier, Enti
 	public void onKill(ItemStack itemstack, LivingEntity victim, LivingEntity killer) {
 		String entityKey = EntityType.getKey(victim.getType()).toString();
 
-		int currentCount = killCounts.getOrDefault(entityKey, 0);
-		killCounts.put(entityKey, currentCount + 1);
+		killCounts.get().merge(entityKey, 1, Integer::sum);
 	}
 }

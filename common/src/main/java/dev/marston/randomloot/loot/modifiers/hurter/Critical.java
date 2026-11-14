@@ -12,40 +12,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 
-
 public class Critical extends AbstractModifier implements EntityHurtModifier {
-
-	public Critical(String name) {
-		this.name = name;
-	}
-
-	public Critical() {
-		this.name = "Critical";
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Critical(tag.getStringOr(NAME, "Critical"));
-	}
-
-	@Override
-	public String tagName() {
-		return "critical";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GOLD;
-	}
-
 	@Override
 	public String description() {
 		return "Always critically strikes enemy.";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
 	}
 
 	@Override

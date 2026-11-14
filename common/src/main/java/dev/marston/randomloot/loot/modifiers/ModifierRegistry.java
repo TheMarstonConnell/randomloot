@@ -17,18 +17,32 @@ import dev.marston.randomloot.loot.modifiers.users.FireBall;
 import dev.marston.randomloot.loot.modifiers.users.FirePlace;
 import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
 import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
+import dev.marston.randomloot.loot.ToolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffects;
+
+import static dev.marston.randomloot.loot.modifiers.TraitDeclaration.*;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Trait registry: the table of every trait's {@link TraitDeclaration}, and the one place
+ * a trait instance is made.
+ *
+ * <p>It keeps one instance of each trait for itself - what {@link #getModifiers} and the
+ * static fields hold - for anything that only asks about a trait: the gate, the wiki,
+ * the config toggles. Gear never carries that instance. {@link #loadModifier}
+ * builds a new one from the declaration for every trait read off gear, and a grant
+ * stores a new one too ({@link Modifier#granted}).
+ */
 public class ModifierRegistry {
 
 	private static final HashMap<String, Modifier> Modifiers = new HashMap<>();
+	private static final HashMap<String, TraitDeclaration> Declarations = new HashMap<>();
 	private static final HashMap<String, Boolean> ModifierEnabled = new HashMap<>();
 
 	public static Map<String, Modifier> getModifiers() {
@@ -58,15 +72,18 @@ public class ModifierRegistry {
 	public static Modifier FIRE_BALL = register(new FireBall());
 
 	public static Modifier FLAMING = register(new Fire());
-	public static Modifier CRITICAL = register(new Critical());
-	public static Modifier CHARGING = register(new Charging());
+	public static Modifier CRITICAL = trait("critical", "Critical", ChatFormatting.GOLD, WEAPONS, Group.HURTERS)
+			.make(Critical::new);
+	public static Modifier CHARGING = trait("charged", "Charged", ChatFormatting.YELLOW, WEAPONS, Group.HURTERS)
+			.make(Charging::new);
 	public static Modifier COMBO = register(new Combo());
 	public static Modifier DRAINING = register(new Draining());
 	public static Modifier POISONOUS = register(new HurtEffect("Poisonous", "poison", 5, MobEffects.POISON, ChatFormatting.DARK_GREEN));
 	public static Modifier WITHERING = register(new HurtEffect("Withering", "wither", 3, MobEffects.WITHER, ChatFormatting.DARK_GRAY));
 	public static Modifier BLINDING = register(new HurtEffect("Blinding", "blinding", 4, MobEffects.BLINDNESS, ChatFormatting.BLUE));
 	public static Modifier BEZERK = register(new Bezerk());
-	public static Modifier NEMESIS = register(new Nemesis());
+	public static Modifier NEMESIS = trait("nemesis", "Nemesis", ChatFormatting.DARK_RED, WEAPONS, Group.HURTERS)
+			.levels(1, 3).make(Nemesis::new);
 	public static Modifier SOULBOUND = register(new Soulbound());
 	public static Modifier EXECUTIONER = register(new Executioner());
 	public static Modifier CROWD_PLEASER = register(new CrowdPleaser());
@@ -105,7 +122,8 @@ public class ModifierRegistry {
 	public static Modifier UNBREAKING = register(new Unbreaking());
 	public static Modifier FEASTING = register(new Feasting());
 
-	public static Modifier FRAGILE = register(new Fragile());
+	public static Modifier FRAGILE = trait("fragile", "Fragile", ChatFormatting.WHITE, HAND_HELD, Group.BREAKERS,
+			Group.HURTERS, Group.STATS).levels(1, 3).make(Fragile::new);
 	public static Modifier CLUNKY = register(new Clunky());
 
 	// Armor-only traits
@@ -143,7 +161,27 @@ public class ModifierRegistry {
 		return modifier;
 	}
 
+	/** Starts the declaration of a trait; see {@link TraitDeclaration}. */
+	static TraitDeclaration trait(String tag, String name, ChatFormatting color, Set<ToolType> fits,
+			TraitDeclaration.Group... groups) {
+		return new TraitDeclaration(tag, name, color, fits, groups);
+	}
+
+	/** Registers a finished declaration and returns the registry's own instance of the trait. */
+	static Modifier register(TraitDeclaration declaration) {
+		Declarations.put(declaration.tag, declaration);
+		return register(declaration.create());
+	}
+
+	/** A new instance of the named trait holding what {@code tag} stores, or null for a name nobody registered. */
 	public static Modifier loadModifier(String name, CompoundTag tag) {
+		TraitDeclaration declaration = Declarations.get(name);
+		if (declaration != null) {
+			AbstractModifier trait = declaration.create();
+			trait.load(tag);
+			return trait;
+		}
+
 		Modifier m = Modifiers.get(name);
 		if (m == null) {
 			return null;
