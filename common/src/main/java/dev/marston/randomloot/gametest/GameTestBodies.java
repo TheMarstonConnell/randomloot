@@ -401,10 +401,19 @@ public final class GameTestBodies {
 		assertThornyReflectsDamageTaken(helper, mobWearer, mobAttacker,
 				mobWearer.damageSources().mobAttack(mobAttacker));
 
+		// A witch shrugs off 85% of magic in her own override of the last reduction, so
+		// she tells "after the reductions" from "inside the shared one": a hook on
+		// LivingEntity.getDamageAfterMagicAbsorb itself runs before her share comes off.
+		LivingEntity witch = helper.spawn(EntityTypes.WITCH, new BlockPos(1, 2, 1));
+		LivingEntity witchAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		witchAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+		assertThornyReflectsDamageTaken(helper, witch, witchAttacker,
+				witch.damageSources().indirectMagic(witchAttacker, witchAttacker));
+
 		helper.succeed();
 	}
 
-	/** Hits a maxed-Thorny wearer through heavy armor and checks what comes back at the attacker. */
+	/** Hits a maxed-Thorny wearer who mitigates most of it and checks what comes back at the attacker. */
 	private static void assertThornyReflectsDamageTaken(GameTestHelper helper, LivingEntity wearer,
 			LivingEntity attacker, DamageSource source) {
 		wearer.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "thorny"));
@@ -423,7 +432,7 @@ public final class GameTestBodies {
 		String who = wearer.getType().getDescriptionId();
 
 		helper.assertTrue(taken > 0.0f && taken < hit * 0.6f,
-				who + ": armor should soak a large part of the hit, took " + taken + " of " + hit);
+				who + ": a large part of the hit should be mitigated, took " + taken + " of " + hit);
 		helper.assertTrue(Math.abs(reflected - taken * share) < 0.01f,
 				who + ": thorny should reflect " + share + " of the " + taken + " the wearer took (" + taken * share
 						+ "), not of the " + hit + " dealt (" + hit * share + "); reflected " + reflected);
