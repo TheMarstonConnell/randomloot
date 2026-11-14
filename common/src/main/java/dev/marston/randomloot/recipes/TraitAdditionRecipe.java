@@ -8,11 +8,11 @@ import java.util.Optional;
 import org.jetbrains.annotations.Nullable;
 
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.TraitEligibility;
+import dev.marston.randomloot.loot.TraitGrant;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.core.Holder;
@@ -134,10 +134,13 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 				menu.getSlot(SmithingMenu.BASE_SLOT).getItem(), menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem());
 
 		// A shift-click has already moved the taken stack into the inventory, out of
-		// reach. The inputs are still whole and assemble to the same gear. Only an add
+		// reach. The inputs are still whole and change to the same gear. Only a grant
 		// obtains a trait; the Subtraction Template shares this recipe and takes one off.
-		if (player instanceof ServerPlayer serverPlayer && input.template().is(ModItems.MOD_ADD.get())) {
-			ModCriteria.traitsObtained(serverPlayer, recipe.assemble(input), TraitObtainedTrigger.SOURCE_CRAFTED);
+		if (player instanceof ServerPlayer serverPlayer) {
+			TraitGrant.Outcome outcome = recipe.change(input);
+			if (outcome != null) {
+				outcome.obtainedBy(serverPlayer, TraitObtainedTrigger.SOURCE_CRAFTED);
+			}
 		}
 
 		// Vanilla's onTake shrinks every input by one; the rest of additionCost leaves the
@@ -209,43 +212,39 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		return true;
 	}
 
-	private ItemStack getResult(SmithingRecipeInput input) {
+	/**
+	 * What this recipe makes of its inputs: a copy of the base gear with the trait granted
+	 * (Addition Template) or taken off (Subtraction Template), and what happened to it.
+	 * Null for a trait id the registry does not know, which {@link #matches} never accepts.
+	 */
+	@Nullable
+	private TraitGrant.Outcome change(SmithingRecipeInput input) {
+		Modifier trait = ModifierRegistry.getModifier(this.trait);
+		if (trait == null) {
+			RandomLoot.LOGGER.warn("Unknown modifier trait in recipe: {}", this.trait);
+			return null;
+		}
 
-			ItemStack tool = input.base();
+		ItemStack result = LootUtils.CloneItem(input.base());
+		TraitGrant.Outcome outcome = input.template().is(ModItems.MOD_ADD.get())
+				? TraitGrant.grant(result, trait, this.worldSeed)
+				: TraitGrant.remove(result, trait);
 
-			ItemStack template = input.template();
+		// Stamped as the result is built, not as it is taken: nothing can get at the
+		// stack a shift-click takes (see onTake), and the preview shows the name the
+		// player will actually get. The table re-forges every trait the gear carries,
+		// not only the one it grants.
+		if (this.worldSeed != null) {
+			TraitGrant.restamp(result, this.worldSeed);
+		}
 
-			ItemStack stack = LootUtils.CloneItem(tool);
-
-			Modifier modToAdd = ModifierRegistry.getModifier(this.trait);
-
-			if (modToAdd == null) {
-				RandomLoot.LOGGER.warn("Unknown modifier trait in recipe: {}", this.trait);
-				return stack;
-			}
-
-			if (template.is(ModItems.MOD_ADD.get())) {
-				LootUtils.addModifier(stack, modToAdd);
-			} else if (template.is(ModItems.MOD_SUB.get())) {
-				LootUtils.removeModifier(stack, modToAdd);
-			}
-
-			// Stamped as the result is built, not as it is taken: nothing can get at the
-			// stack a shift-click takes (see onTake), and the preview now shows the name
-			// the player will actually get.
-			if (this.worldSeed != null) {
-				LootUtils.applyWorldForgers(stack, this.worldSeed);
-			}
-
-			return stack;
+		return outcome;
 	}
-
-
-
 
 	@Override
 	public ItemStack assemble(SmithingRecipeInput input) {
-		return this.getResult(input);
+		TraitGrant.Outcome outcome = change(input);
+		return outcome == null ? LootUtils.CloneItem(input.base()) : outcome.gear();
 	}
 
 	@Override

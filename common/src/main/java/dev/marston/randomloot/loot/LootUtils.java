@@ -410,17 +410,15 @@ public class LootUtils {
 
 		if (holder.level() instanceof ServerLevel serverLevel
 				&& holder.getRandom().nextDouble() < Config.LevelUpTraitChance) {
-			Set<String> before = Set.copyOf(rawTraitNames(item));
-
-			Modifier rolled = generateNewTrait(item, holder.getRandom(), serverLevel.getSeed());
+			TraitGrant.Outcome rolled = generateNewTrait(item, holder.getRandom(), serverLevel.getSeed());
 			if (rolled != null && holder instanceof ServerPlayer player) {
-				String key = before.contains(rolled.tagName())
+				String key = rolled.kind() == TraitGrant.Kind.LEVELED
 						? "message.randomloot.level_up_trait_leveled"
 						: "message.randomloot.level_up_trait";
-				Component trait = rolled.displayName().copy().withStyle(rolled.color());
+				Component trait = rolled.trait().displayName().copy().withStyle(rolled.trait().color());
 				player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
 
-				ModCriteria.traitsObtained(player, item, TraitObtainedTrigger.SOURCE_LEVELED);
+				rolled.obtainedBy(player, TraitObtainedTrigger.SOURCE_LEVELED);
 			}
 		}
 
@@ -525,26 +523,10 @@ public class LootUtils {
 		return tags;
 	}
 
-	public static void addModifier(ItemStack item, Modifier mod) {
-
-		CompoundTag existing = GearTags.read(item, Modifier.MODTAG);
-
-		if (!existing.contains(mod.tagName())) { // tag doesn't exist so we're adding a new trait.
-			GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
-			return;
-		}
-
-		Modifier oldModifier = mod.fromNBT(existing.getCompoundOrEmpty(mod.tagName()));
-
-		if (!oldModifier.canLevel()) {
-			return;
-		}
-
-		oldModifier.levelUp();
-		GearTags.mutate(item, Modifier.MODTAG,
-				modifiers -> modifiers.put(oldModifier.tagName(), oldModifier.toNBT()));
-	}
-
+	/**
+	 * Rewrites a trait the gear already carries, so a trait can save its own state.
+	 * Putting a trait on or taking one off is {@link TraitGrant}'s.
+	 */
 	public static void updateModifier(ItemStack item, Modifier mod) {
 
 		if (!hasRawTrait(item, mod.tagName())) { // not on the gear, nothing to update
@@ -552,12 +534,6 @@ public class LootUtils {
 		}
 
 		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
-	}
-
-	public static ItemStack removeModifier(ItemStack item, Modifier mod) {
-		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.remove(mod.tagName()));
-
-		return item;
 	}
 
 	public static void setStats(ItemStack stack, float goodness) {
@@ -768,10 +744,11 @@ public class LootUtils {
 	}
 
 	/**
-	 * Rolls one eligible trait onto the gear and returns it, or does nothing and returns
-	 * null when none are eligible.
+	 * Rolls one eligible trait onto the gear and returns what the grant did, or does
+	 * nothing and returns null when none are eligible.
 	 */
-	public static @Nullable Modifier generateNewTrait(ItemStack stack, RandomSource random, long worldSeed) {
+	public static @Nullable TraitGrant.Outcome generateNewTrait(ItemStack stack, RandomSource random,
+			long worldSeed) {
 
 		// One context for the whole sweep: the gear doesn't change while we pick.
 		TraitEligibility.GearContext ctx = TraitEligibility.contextOf(stack);
@@ -795,30 +772,12 @@ public class LootUtils {
 
 		int choice = random.nextInt(size);
 
-		Modifier m = allowedMods.get(choice).forWorld(worldSeed);
-
-		addModifier(stack, m);
-
-		return m;
+		return TraitGrant.grant(stack, allowedMods.get(choice), worldSeed);
 	}
 
 	public static void generateInitialTraits(ItemStack stack, int count, RandomSource random, long worldSeed) {
 		for (int i = 0; i < count; i++) {
 			generateNewTrait(stack, random, worldSeed);
-		}
-	}
-
-	/**
-	 * Re-resolves world-dependent traits (see {@link Modifier#forWorld}) against this
-	 * world. Called as a trait recipe builds its result, so smithed gear carries the
-	 * world's forger however it is taken out of the table.
-	 */
-	public static void applyWorldForgers(ItemStack stack, long worldSeed) {
-		for (Modifier mod : getModifiers(stack)) {
-			Modifier resolved = mod.forWorld(worldSeed);
-			if (resolved != mod) {
-				updateModifier(stack, resolved);
-			}
 		}
 	}
 

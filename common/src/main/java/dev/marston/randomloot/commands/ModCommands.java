@@ -9,6 +9,7 @@ import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.TraitEligibility;
+import dev.marston.randomloot.loot.TraitGrant;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.commands.CommandSourceStack;
@@ -46,7 +47,7 @@ public class ModCommands {
 			return builder.buildFuture();
 		}
 		return SharedSuggestionProvider.suggest(ModifierRegistry.getModifiers().values().stream()
-				.filter(mod -> addBlocker(held, mod) == null).map(Modifier::tagName), builder);
+				.filter(mod -> TraitEligibility.check(held, mod).allowed()).map(Modifier::tagName), builder);
 	};
 
 	private static final SuggestionProvider<CommandSourceStack> HELD_TRAITS = (ctx, builder) -> {
@@ -128,20 +129,6 @@ public class ModCommands {
 		return held;
 	}
 
-	private static boolean hasTrait(ItemStack held, String tagName) {
-		return LootUtils.getModifiers(held).stream().anyMatch(m -> m.tagName().equals(tagName));
-	}
-
-	/**
-	 * Why {@code mod} can't be added to {@code held}, or {@code null} when it can. Shared
-	 * by the add executor and its tab-completion so the suggestions never offer a trait
-	 * the command would refuse - and with the case roll and the smithing table, via
-	 * {@link TraitEligibility}.
-	 */
-	private static Component addBlocker(ItemStack held, Modifier mod) {
-		return TraitEligibility.check(held, mod).reason(mod);
-	}
-
 	private static int addTrait(CommandSourceStack source, String traitName) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 
@@ -157,17 +144,13 @@ public class ModCommands {
 			return 0;
 		}
 
-		Component blocker = addBlocker(held, mod);
-		if (blocker != null) {
-			source.sendFailure(blocker);
+		TraitGrant.Outcome outcome = TraitGrant.grant(held, mod, source.getLevel().getSeed());
+		if (!outcome.granted()) {
+			source.sendFailure(outcome.refusal());
 			return 0;
 		}
 
-		boolean leveling = hasTrait(held, mod.tagName());
-
-		LootUtils.addModifier(held, mod.forWorld(source.getLevel().getSeed()));
-
-		boolean leveled = leveling;
+		boolean leveled = outcome.kind() == TraitGrant.Kind.LEVELED;
 		source.sendSuccess(() -> Component.literal(leveled ? "Leveled up " : "Added ").append(mod.displayName())
 				.append(leveled ? " on " : " to ").append(held.getDisplayName()), true);
 		return 1;
@@ -188,15 +171,13 @@ public class ModCommands {
 			return 0;
 		}
 
-		// Check the raw tag, not getModifiers(): config-disabled traits are still on the
-		// item and should still be removable.
-		if (!LootUtils.hasRawTrait(held, mod.tagName())) {
-			source.sendFailure(Component.empty().append("This gear does not have ").append(mod.displayName())
-					.append("."));
+		// No gate on the way out: a config-disabled trait is still on the item and
+		// should still be removable.
+		TraitGrant.Outcome outcome = TraitGrant.remove(held, mod);
+		if (!outcome.changed()) {
+			source.sendFailure(outcome.refusal());
 			return 0;
 		}
-
-		LootUtils.removeModifier(held, mod);
 
 		source.sendSuccess(() -> Component.literal("Removed ").append(mod.displayName()).append(" from ")
 				.append(held.getDisplayName()), true);

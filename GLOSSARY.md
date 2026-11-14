@@ -43,3 +43,7 @@ _Avoid_: glue, bridge, platform code
 **Gametest table**:
 The one list of the gametests that both loaders run. A shared gametest exists by having a row in it, so it cannot be present on one loader and missing on the other.
 _Avoid_: test registry, test list, test manifest
+
+**Trait grant**:
+The one operation that puts a trait on a piece of gear or takes one off, and reports what happened: added, leveled, removed, or refused and why. A case roll, a level-up, the smithing table and the admin command all change gear's traits through it.
+_Avoid_: add modifier, apply trait, trait change

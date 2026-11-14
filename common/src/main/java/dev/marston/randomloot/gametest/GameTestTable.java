@@ -62,7 +62,10 @@ public final class GameTestTable {
 	}
 
 	private static final List<Row> ROWS = List.of(
-			row("modifier_roundtrip", GameTestBodies::modifierRoundTrip),
+			row("trait_grant_adds_then_levels", GameTestBodies::traitGrantAddsThenLevels),
+			row("trait_grant_refuses_what_the_gate_refuses", GameTestBodies::traitGrantRefusesWhatTheGateRefuses),
+			row("trait_grant_removes", GameTestBodies::traitGrantRemoves),
+			row("trait_grant_stamps_world_forger", GameTestBodies::traitGrantStampsWorldForger),
 			row("gen_tool", GameTestBodies::genTool),
 			row("gen_tool_dispenser", GameTestBodies::genToolDispenser),
 			row("dispenser_opens_case", GameTestBodies::dispenserOpensCase),
@@ -80,7 +83,6 @@ public final class GameTestTable {
 			row("tool_repairable", GameTestBodies::toolRepairable),
 			row("armor_components", GameTestBodies::armorComponents),
 			row("forger_world_constant", GameTestBodies::forgerWorldConstant),
-			row("dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger),
 			row("armor_xp_on_damage", GameTestBodies::armorXpOnDamage),
 			row("thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer),
 			row("migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents),
