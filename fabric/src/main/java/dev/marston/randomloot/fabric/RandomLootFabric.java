@@ -66,8 +66,8 @@ public class RandomLootFabric implements ModInitializer {
         GameHooks.bind(GameHook.KILL);
 
         // Wired by mixin rather than a Fabric API callback - see randomloot.fabric.mixins.json.
-        // LivingEntityMixin (@ModifyReturnValue on getDamageAfterMagicAbsorb, the last
-        // reduction before damage lands), ItemStackMixin (hurtAndBreak), PlayerMixin
+        // LivingEntityMixin and PlayerMixin (@WrapOperation on getDamageAfterMagicAbsorb
+        // inside each class's actuallyHurt), ItemStackMixin (hurtAndBreak), PlayerMixin
         // (getDestroySpeed), AnvilMenuMixin, SmithingMenuMixin (onTake).
         GameHooks.bind(GameHook.DAMAGE_PRE);
         GameHooks.bind(GameHook.ARMOR_HURT);
@@ -75,7 +75,7 @@ public class RandomLootFabric implements ModInitializer {
         GameHooks.bind(GameHook.ANVIL_COMBINE);
         GameHooks.bind(GameHook.SMITHING_TAKE);
 
-        // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin.
+        // Armor XP from damage soaked; the pre-damage trait hook lives in LivingEntityMixin and PlayerMixin.
         ServerLivingEntityEvents.AFTER_DAMAGE.register((entity, source, baseDamage, damageTaken, blocked) -> {
             if (!blocked) {
                 ArmorDispatcher.onLivingDamagePost(entity, damageTaken);

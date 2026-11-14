@@ -58,8 +58,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
 
     @Override
     public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
+        CompoundTag tag = super.toNBT();
         tag.putLong(SEED, seed != null ? seed : new Random().nextLong());
         return tag;
     }
