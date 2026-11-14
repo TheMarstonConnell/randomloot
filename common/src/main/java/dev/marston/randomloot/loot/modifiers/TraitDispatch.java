@@ -30,7 +30,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * common is decided here, once, so a trait class states only its own rule:
  * <ul>
  * <li>the gear's traits are loaded once per event, without the config-disabled ones;
- * <li>gear still in its reveal roll is inert (see each event for the two that are not yet);
+ * <li>gear still in its reveal roll is inert (the two armor events are the exception);
  * <li>a hit trait that reads pre-hit state ({@link PreHitModifier}) runs before the rest;
  * <li>hooks that change the world run on the server only;
  * <li>a trait whose stored state changed in its hook is written back to the gear, and a
@@ -151,10 +151,10 @@ public final class TraitDispatch {
 		}
 	}
 
-	/** The killer's weapon is credited with a kill. Fires for a weapon still in its reveal roll. */
+	/** The killer's weapon is credited with a kill. */
 	public static void kill(ItemStack weapon, LivingEntity victim, LivingEntity killer) {
 		Level level = victim.level();
-		if (level.isClientSide()) {
+		if (level.isClientSide() || LootUtils.isRolling(weapon)) {
 			return;
 		}
 
