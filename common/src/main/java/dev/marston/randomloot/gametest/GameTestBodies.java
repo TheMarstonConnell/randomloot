@@ -359,9 +359,9 @@ public final class GameTestBodies {
 
 	/**
 	 * Gear still in its reveal roll is inert: trait dispatch runs none of its traits and
-	 * spends none of its durability, for a hit, a broken block, a right-click, a tick or
-	 * a kill. Each case runs on live gear first, so the rolling half cannot pass by doing
-	 * nothing.
+	 * spends none of its durability, for a hit, a broken block, a right-click, a tick, a
+	 * kill, a stat read or a direct durability charge. Each case runs on live gear first,
+	 * so the rolling half cannot pass by doing nothing.
 	 */
 	public static void traitDispatchLeavesRollingGearInert(GameTestHelper helper) {
 		ServerLevel level = helper.getLevel();
@@ -439,6 +439,14 @@ public final class GameTestBodies {
 			helper.assertTrue(storedTrait(nemesis, "nemesis").equals(kills) == rolling,
 					"a kill with a " + state + " sword: Nemesis " + (rolling ? "must not" : "should") + " count it");
 			victim.discard();
+
+			// Stats and a direct charge: Fragile speeds the tool up, and five points cost five.
+			ItemStack fragile = gear(helper, ToolType.PICKAXE, rolling, "fragile");
+			helper.assertTrue((TraitDispatch.statMultiplier(fragile) > 1.0f) != rolling,
+					"a " + state + " pickaxe: Fragile " + (rolling ? "must not" : "should") + " raise its stats");
+			TraitDispatch.spendDurability(fragile, 5, player, EquipmentSlot.MAINHAND);
+			helper.assertTrue(fragile.getDamageValue() == (rolling ? 0 : 5),
+					"a durability charge on a " + state + " pickaxe cost " + fragile.getDamageValue());
 		}
 
 		helper.succeed();
