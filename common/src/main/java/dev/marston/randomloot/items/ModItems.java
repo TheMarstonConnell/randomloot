@@ -53,8 +53,14 @@ public class ModItems {
     }
 
     /**
-     * The creative tab the mod's items are listed in: vanilla's Tools & Utilities. Built
-     * from its id because the constant in CreativeModeTabs is private to vanilla.
+     * The creative tab the mod's items are listed in: vanilla's Tools & Utilities.
+     *
+     * <p>Built from its id because common cannot name
+     * {@code CreativeModeTabs.TOOLS_AND_UTILITIES}. That field is private in vanilla, which
+     * is all common compiles against. NeoForge's patched jar and Fabric API's access
+     * widener each make it public, so code in a loader project can use it - the shims did,
+     * before the choice of tab moved here - but the same line in common fails
+     * {@code :common:compileJava} with "TOOLS_AND_UTILITIES has private access".
      */
     public static final ResourceKey<CreativeModeTab> CREATIVE_TAB = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
             Identifier.withDefaultNamespace("tools_and_utilities"));
