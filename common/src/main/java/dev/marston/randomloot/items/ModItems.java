@@ -13,11 +13,9 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 public class ModItems {
@@ -64,16 +62,5 @@ public class ModItems {
     /** Items shown in {@link #CREATIVE_TAB}, in display order. */
     public static List<Item> creativeTabItems() {
         return List.of(TOOL.get(), ARMOR.get(), CASE.get(), MOD_ADD.get(), MOD_SUB.get(), ESSENCE.get());
-    }
-
-    /** Hands the mod's items to {@code output} when {@code tab} is {@link #CREATIVE_TAB}; any other tab is left alone. */
-    public static void addToCreativeTab(ResourceKey<CreativeModeTab> tab, Consumer<ItemStack> output) {
-        if (!CREATIVE_TAB.equals(tab)) {
-            return;
-        }
-
-        for (Item item : creativeTabItems()) {
-            output.accept(new ItemStack(item));
-        }
     }
 }

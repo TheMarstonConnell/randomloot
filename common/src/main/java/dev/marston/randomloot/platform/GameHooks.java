@@ -1,7 +1,6 @@
 package dev.marston.randomloot.platform;
 
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -56,6 +55,12 @@ import net.minecraft.world.level.storage.loot.LootContext;
  */
 public final class GameHooks {
 
+	/**
+	 * One flag per hook, not an EnumSet: hooks arrive on more than one thread (the server's,
+	 * the client's, the config file watcher's). Setting an array element touches that
+	 * hook's flag alone; an EnumSet add rewrites the one word every hook shares and can
+	 * undo another thread's.
+	 */
 	private static final boolean[] DELIVERED = new boolean[GameHook.values().length];
 
 	private GameHooks() {
@@ -135,6 +140,7 @@ public final class GameHooks {
 	 * the same hit with a shield blocking half, 1.5 taken       2
 	 * the same hit with a shield blocking all of it             0
 	 * fall for 6, maxed Featherweight cancels it                0
+	 * hit for 4, then 10 inside its invulnerability         4 + 6
 	 * killing hit on a wearer with 20 max health               20
 	 * </pre>
 	 */
@@ -274,7 +280,13 @@ public final class GameHooks {
 	 */
 	public static void creativeTab(ResourceKey<CreativeModeTab> tab, Consumer<ItemStack> output) {
 		delivered(GameHook.CREATIVE_TAB);
-		ModItems.addToCreativeTab(tab, output);
+		if (!ModItems.CREATIVE_TAB.equals(tab)) {
+			return;
+		}
+
+		for (Item item : ModItems.creativeTabItems()) {
+			output.accept(new ItemStack(item));
+		}
 	}
 
 	/**
@@ -326,30 +338,34 @@ public final class GameHooks {
 
 	/**
 	 * {@link GameHook#LOOT_INJECTION}, for a loader whose hook sees the tables as they
-	 * roll: returns the stacks to add to this table's drops.
+	 * roll: gives {@code drops} the stacks to add to this table's drops.
 	 *
 	 * <p><b>Stage</b>: after {@code table} produced its own drops. <b>Side</b>: server.
 	 * <b>Scope</b>: every table with an id that rolls, a table rolled from inside
 	 * another included. {@link LootInjection} keeps that to one roll per loot context.
 	 * This is Fabric's shape; see {@link LootInjection} for how the two differ.
+	 *
+	 * <p>Pinned, like the per-item form, by {@code loot_injection_rolls_once_per_chest}:
+	 * exactly one case and one template per roll with both chances at 1.
 	 */
-	public static List<ItemStack> lootInjection(Identifier table, LootContext context) {
+	public static void lootInjection(Identifier table, LootContext context, Consumer<ItemStack> drops) {
 		delivered(GameHook.LOOT_INJECTION);
-		return LootInjection.rollOncePerContext(table, context);
+		LootInjection.rollOncePerContext(table, context, drops);
 	}
 
 	/**
 	 * {@link GameHook#LOOT_INJECTION}, for a loader whose hook runs once per injected
-	 * item on a finished roll: returns the stacks of {@code item} to add.
+	 * item on a finished roll: gives {@code drops} the stacks of {@code item} to add.
 	 *
 	 * <p><b>Stage</b>: after the whole roll, nested tables included, produced its drops.
 	 * <b>Side</b>: server. <b>Scope</b>: once per top-level roll and injected item, with
 	 * the id of the table that was asked for. This is NeoForge's shape, one global loot
 	 * modifier per item; see {@link LootInjection} for how the two differ.
 	 */
-	public static List<ItemStack> lootInjection(Identifier queriedTable, LootContext context, Item item) {
+	public static void lootInjection(Identifier queriedTable, LootContext context, Item item,
+			Consumer<ItemStack> drops) {
 		delivered(GameHook.LOOT_INJECTION);
-		return LootInjection.rollItem(queriedTable, context, item);
+		LootInjection.rollItem(queriedTable, context, item, drops);
 	}
 
 	/**

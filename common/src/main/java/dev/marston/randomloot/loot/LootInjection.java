@@ -7,16 +7,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.storage.loot.LootContext;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
+import java.util.function.Consumer;
 
 /**
  * Loot injection: which loot tables hand out cases and templates, at what chance, and
- * the roll itself. A loader shim only says which table rolled and adds the stacks it
- * gets back.
+ * the roll itself. A loader shim only says which table rolled and where the stacks go.
  *
  * <p>The two loaders see a roll differently, and each keeps the scope it has:
  * <ul>
@@ -85,48 +84,45 @@ public final class LootInjection {
 			.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
 
 	/**
-	 * The stacks of one injected item to add to a finished roll of {@code queriedTable}:
-	 * none when the table is not an injection target or {@code item} is not injected.
-	 * For a loader that calls once per item and top-level roll.
+	 * Gives {@code drops} the stacks of one injected item to add to a finished roll of
+	 * {@code queriedTable}: none when the table is not an injection target or
+	 * {@code item} is not injected. For a loader that calls once per item and top-level
+	 * roll.
 	 */
-	public static List<ItemStack> rollItem(Identifier queriedTable, LootContext context, Item item) {
+	public static void rollItem(Identifier queriedTable, LootContext context, Item item, Consumer<ItemStack> drops) {
 		if (!matchesTable(queriedTable.getPath())) {
-			return List.of();
+			return;
 		}
 
-		List<ItemStack> stacks = new ArrayList<>(1);
 		for (Entry entry : entries()) {
 			if (entry.item() == item) {
-				roll(entry, context, stacks);
+				roll(entry, context, drops);
 			}
 		}
-		return stacks;
 	}
 
 	/**
-	 * The stacks to add to the drops of {@code table}: every injected item's roll the
-	 * first time a matching table is seen for {@code context}, and none after that. For
-	 * a loader that calls for every table in a roll, nested ones included - without the
-	 * once, a table that rolls other matching tables paid out once per table (the trial
-	 * vault's {@code reward} rolls {@code reward_common}, {@code _rare} and
-	 * {@code _unique}).
+	 * Gives {@code drops} the stacks to add to the drops of {@code table}: every injected
+	 * item's roll the first time a matching table is seen for {@code context}, and none
+	 * after that. For a loader that calls for every table in a roll, nested ones
+	 * included - without the once, a table that rolls other matching tables paid out once
+	 * per table (the trial vault's {@code reward} rolls {@code reward_common},
+	 * {@code _rare} and {@code _unique}).
 	 */
-	public static List<ItemStack> rollOncePerContext(Identifier table, LootContext context) {
+	public static void rollOncePerContext(Identifier table, LootContext context, Consumer<ItemStack> drops) {
 		if (!matchesTable(table.getPath()) || !ROLLED.add(context)) {
-			return List.of();
+			return;
 		}
 
-		List<ItemStack> stacks = new ArrayList<>(2);
 		for (Entry entry : entries()) {
-			roll(entry, context, stacks);
+			roll(entry, context, drops);
 		}
-		return stacks;
 	}
 
 	/** One draw from the context's random per entry, whatever the outcome. */
-	private static void roll(Entry entry, LootContext context, List<ItemStack> stacks) {
+	private static void roll(Entry entry, LootContext context, Consumer<ItemStack> drops) {
 		if (context.getRandom().nextDouble() < entry.chance()) {
-			stacks.add(new ItemStack(entry.item()));
+			drops.accept(new ItemStack(entry.item()));
 		}
 	}
 }
