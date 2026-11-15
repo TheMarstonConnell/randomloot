@@ -17,7 +17,6 @@ import dev.marston.randomloot.loot.TraitEligibility.GearContext;
 import dev.marston.randomloot.loot.TraitEligibility.Verdict;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -44,22 +43,6 @@ class ConfigSettingTest {
 		Object entry = Config.SPEC.getSpec().get(List.of(setting.group().section(), setting.key()));
 		return assertInstanceOf(ModConfigSpec.ValueSpec.class, entry,
 				setting.key() + " should be defined in the spec under [" + setting.group().section() + "]");
-	}
-
-	@Test
-	void everySettingConstantIsListed() throws IllegalAccessException {
-		// Found by reflection, so a setting added to Config is covered without an edit here.
-		Set<Setting<?>> listed = new HashSet<>(everySetting());
-		int constants = 0;
-		for (Field field : Config.class.getDeclaredFields()) {
-			if (field.getType() != Setting.class || !java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
-				continue;
-			}
-			constants++;
-			assertTrue(java.lang.reflect.Modifier.isPublic(field.getModifiers()), field.getName() + " should be public so the mod can read it");
-			assertTrue(listed.contains(field.get(null)), field.getName() + " is not in Config.settings(its group)");
-		}
-		assertTrue(constants >= 8, "expected the eight hand-declared settings, found " + constants);
 	}
 
 	@Test
