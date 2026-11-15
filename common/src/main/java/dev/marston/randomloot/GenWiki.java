@@ -35,12 +35,12 @@ import java.util.function.Consumer;
 public final class GenWiki {
 
     /** The trait recipes the server loaded, by trait tag name; sorted, which is the order LOOT.md lists them in. */
-    private final SortedMap<String, RecipeCost> recipes;
+    private final SortedMap<String, TraitAdditionRecipe> recipes;
 
     /** Traits MODIFIERS.md has an entry for but no recipe loaded for. Any at all fails the render. */
     private final Set<String> withoutRecipe = new TreeSet<>();
 
-    private GenWiki(SortedMap<String, RecipeCost> recipes) {
+    private GenWiki(SortedMap<String, TraitAdditionRecipe> recipes) {
         this.recipes = recipes;
     }
 
@@ -87,14 +87,14 @@ public final class GenWiki {
         String recipe = "n/a";
         // The count is what the Addition Template charges; one item is implied.
         String cost = "";
-        RecipeCost loaded = recipes.get(tag);
+        TraitAdditionRecipe loaded = recipes.get(tag);
         if (loaded == null) {
             // Never reaches a file: render() throws once every page has been through.
             withoutRecipe.add(tag);
         } else {
-            recipe = loaded.itemId();
-            if (loaded.count() > 1) {
-                cost = " \u00d7" + loaded.count();
+            recipe = loaded.additionItem().getRegisteredName();
+            if (loaded.additionCount() > 1) {
+                cost = " \u00d7" + loaded.additionCount();
             }
         }
         write("### " + docName(m), f);
@@ -561,16 +561,17 @@ public final class GenWiki {
         write("| Trait | Required Item | Count |", f);
         write("|-------|---------------|-------|", f);
 
-        for (Map.Entry<String, RecipeCost> entry : recipes.entrySet()) {
+        for (Map.Entry<String, TraitAdditionRecipe> entry : recipes.entrySet()) {
             String traitName = entry.getKey();
-            RecipeCost cost = entry.getValue();
+            TraitAdditionRecipe recipe = entry.getValue();
             // The recipe's tag name and the trait's display name can differ
             // (e.g. trait_necrotic is the "Draining" trait), so resolve
             // through the registry and only fall back to the tag name.
             Modifier mod = ModifierRegistry.getModifier(traitName);
             String displayName = mod != null ? docName(mod)
                     : traitName.substring(0, 1).toUpperCase() + traitName.substring(1).replace("_", " ");
-            write("| " + displayName + " | `" + cost.itemId() + "` | " + cost.count() + " |", f);
+            write("| " + displayName + " | `" + recipe.additionItem().getRegisteredName() + "` | "
+                    + recipe.additionCount() + " |", f);
         }
         write("", f);
     }
@@ -718,21 +719,16 @@ public final class GenWiki {
         return page.toString();
     }
 
-    /** A trait recipe's addition item and how many of it the Addition Template charges. */
-    private record RecipeCost(String itemId, int count) {
-    }
-
     /** A trait's recipe has the id {@code randomloot:trait_<tag>}. */
     private static final String RECIPE_PREFIX = "trait_";
 
-    private static SortedMap<String, RecipeCost> traitRecipes(Collection<RecipeHolder<?>> loadedRecipes) {
-        SortedMap<String, RecipeCost> byTrait = new TreeMap<>();
+    private static SortedMap<String, TraitAdditionRecipe> traitRecipes(Collection<RecipeHolder<?>> loadedRecipes) {
+        SortedMap<String, TraitAdditionRecipe> byTrait = new TreeMap<>();
         for (RecipeHolder<?> holder : loadedRecipes) {
             Identifier id = holder.id().identifier();
             if (holder.value() instanceof TraitAdditionRecipe recipe && id.getNamespace().equals(RandomLoot.MODID)
                     && id.getPath().startsWith(RECIPE_PREFIX)) {
-                byTrait.put(id.getPath().substring(RECIPE_PREFIX.length()),
-                        new RecipeCost(recipe.additionItem().getRegisteredName(), recipe.additionCount()));
+                byTrait.put(id.getPath().substring(RECIPE_PREFIX.length()), recipe);
             }
         }
         return byTrait;
