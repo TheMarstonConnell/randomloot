@@ -26,9 +26,6 @@ public final class GearRoll {
 	private GearRoll() {
 	}
 
-	/** {@link Rolled#texture} for a type that has no looks to pick from. */
-	public static final int NO_TEXTURE = -1;
-
 	private static final ToolType[] TOOLS = { ToolType.PICKAXE, ToolType.AXE, ToolType.SHOVEL, ToolType.SWORD };
 	private static final ToolType[] ARMOR = { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS,
 			ToolType.BOOTS };
@@ -54,7 +51,7 @@ public final class GearRoll {
 	 *
 	 * @param traits  what the gear stores for its traits, keyed by tag name, exactly as
 	 *                {@link TraitGrant} leaves it on a stack
-	 * @param texture the look's index within the type's range, or {@link #NO_TEXTURE}
+	 * @param texture the look's index within the type's range
 	 */
 	public record Rolled(ToolType type, float goodness, Place place, @Nullable Owner owner, CompoundTag traits,
 			String name, String nameColor, String lore, int texture) {
@@ -67,9 +64,9 @@ public final class GearRoll {
 	}
 
 	/**
-	 * Rolls gear of a set type: {@link GearStats#startingTraits} picks, a name, lore and a
-	 * look. A pick of a trait the gear already has levels it, so the gear can end up with
-	 * fewer traits than picks.
+	 * Rolls gear of a set type, one of the eight: {@link GearStats#startingTraits} picks, a
+	 * name, lore and a look. A pick of a trait the gear already has levels it, so the gear
+	 * can end up with fewer traits than picks.
 	 */
 	public static Rolled ofType(ToolType type, float goodness, Scene scene, RandomSource random) {
 		Place place = scene.place();
@@ -94,8 +91,7 @@ public final class GearRoll {
 		String lore = "Discovered by " + opener + " in " + readableBiome(place.biomeKey()) + ", forged by " + forger
 				+ ".";
 
-		int looks = LootUtils.textureCount(type);
-		int texture = looks > 0 ? random.nextInt(looks) : NO_TEXTURE;
+		int texture = random.nextInt(LootUtils.textureCount(type));
 
 		return new Rolled(type, goodness, place, scene.owner(), traits, name, nameColor(place.dimension()), lore,
 				texture);
