@@ -81,6 +81,7 @@ class GearRollTest {
 	@Test
 	void goodnessEarnsExactlyItsStartingTraitPicks() {
 		RandomSource random = RandomSource.create(3L);
+		// 0 goodness is base gear, what /randomloot give makes: no picks, so no traits.
 		// 30 goodness is 15 picks, far more than armor has traits: picks repeat and level.
 		for (float goodness : new float[] { 0.0f, 1.9f, 2.0f, 7.5f, 12.0f, 30.0f }) {
 			for (ToolType type : new ToolType[] { ToolType.PICKAXE, ToolType.SWORD, ToolType.BOOTS }) {
@@ -234,15 +235,6 @@ class GearRollTest {
 			}
 		}
 		assertTrue(found > 0, "400 shovels with six picks each should include a Grace");
-	}
-
-	@Test
-	void baseGearHasNoTraits() {
-		GearRoll.Rolled base = GearRoll.ofType(ToolType.SWORD, 0.0f, scene(PLAINS), RandomSource.create(8L));
-
-		assertEquals(ToolType.SWORD, base.type());
-		assertEquals(0.0f, base.goodness());
-		assertTrue(base.traits().isEmpty(), "goodness 0 earns no picks: " + base.traits());
 	}
 
 	@Test
