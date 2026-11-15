@@ -4,10 +4,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static dev.marston.randomloot.loot.modifiers.ModifierRegistry.getModifier;
 
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import net.minecraft.world.entity.EquipmentSlot;
 import org.junit.jupiter.api.Test;
 
@@ -18,15 +18,9 @@ import org.junit.jupiter.api.Test;
  */
 class ArmorTraitGatingTest {
 
-	/** A trait as gear carries it: a fresh instance, never the registry's own. */
-	private static Modifier trait(String tag) {
-		Modifier registered = ModifierRegistry.getModifier(tag);
-		return registered.fromNBT(registered.toNBT());
-	}
-
 	@Test
 	void armorTraitsNeverApplyToHandTools() {
-		Modifier[] armorTraits = { trait("thorny"), trait("bulwark"), trait("adrenaline"), trait("magnetized"), trait("featherweight") };
+		Modifier[] armorTraits = { getModifier("thorny"), getModifier("bulwark"), getModifier("adrenaline"), getModifier("magnetized"), getModifier("featherweight") };
 
 		for (Modifier trait : armorTraits) {
 			for (ToolType tool : new ToolType[] { ToolType.PICKAXE, ToolType.AXE, ToolType.SHOVEL, ToolType.SWORD }) {
@@ -37,7 +31,7 @@ class ArmorTraitGatingTest {
 
 	@Test
 	void generalArmorTraitsApplyToEveryPiece() {
-		Modifier[] generalArmorTraits = { trait("thorny"), trait("bulwark"), trait("adrenaline"), trait("magnetized") };
+		Modifier[] generalArmorTraits = { getModifier("thorny"), getModifier("bulwark"), getModifier("adrenaline"), getModifier("magnetized") };
 
 		for (Modifier trait : generalArmorTraits) {
 			for (ToolType piece : new ToolType[] { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS }) {
@@ -48,7 +42,7 @@ class ArmorTraitGatingTest {
 
 	@Test
 	void featherweightIsBootsOnly() {
-		Modifier featherweight = trait("featherweight");
+		Modifier featherweight = getModifier("featherweight");
 
 		assertTrue(featherweight.forTool(ToolType.BOOTS));
 		assertFalse(featherweight.forTool(ToolType.HELMET));
@@ -58,7 +52,7 @@ class ArmorTraitGatingTest {
 
 	@Test
 	void unbreakingAppliesToArmor() {
-		assertTrue(trait("unbreaking").forTool(ToolType.CHESTPLATE));
+		assertTrue(getModifier("unbreaking").forTool(ToolType.CHESTPLATE));
 	}
 
 	/**
@@ -68,7 +62,7 @@ class ArmorTraitGatingTest {
 	 */
 	@Test
 	void toolCombatTraitsStayOffArmor() {
-		Modifier[] toolTraits = { trait("fierce"), trait("fragile"), trait("munchies"), trait("feasting"), trait("chaotic") };
+		Modifier[] toolTraits = { getModifier("fierce"), getModifier("fragile"), getModifier("munchies"), getModifier("feasting"), getModifier("chaotic") };
 
 		for (Modifier trait : toolTraits) {
 			for (ToolType piece : new ToolType[] { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS }) {
