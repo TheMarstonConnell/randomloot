@@ -626,8 +626,8 @@ public class LootUtils {
 	 *
 	 * <p>We want the loot to get better over time for players, and the opener's
 	 * cases-opened stat is what says how far along they are. Goodness rides a square-root
-	 * curve of it ({@link GearStats#goodnessForCases}): tools keep improving without
-	 * getting out of hand, a new one is comparable to the leveled one the player already
+	 * curve of it ({@link GearStats#goodnessForCases}): gear keeps improving without
+	 * getting out of hand, a new piece is comparable to the leveled one the player already
 	 * carries, and it comes with a clean XP slate so it levels faster again.
 	 */
 	public static ItemStack openCase(ServerPlayer player) {
