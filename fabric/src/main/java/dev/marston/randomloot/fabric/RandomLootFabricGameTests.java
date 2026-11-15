@@ -5,8 +5,11 @@ import dev.marston.randomloot.gametest.GameTestBodies;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import net.minecraft.gametest.framework.GameTestHelper;
 
 
@@ -299,15 +302,33 @@ public class RandomLootFabricGameTests {
     }
 
     /**
-     * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
-     * NeoForge writes, and its values reached the Config fields.
+     * Fabric-only: the values in randomloot-common.toml are the values the mod runs with.
+     *
+     * <p>The gametest server's config file is seeded with one value off its default (the
+     * seedGametestConfig task in fabric/build.gradle), because a file of defaults reads
+     * the same whether or not anything was loaded: the Config fields start out holding
+     * the defaults. That is how this test used to pass while Fabric ignored the file at
+     * startup - Forge Config API Port loads it inside ConfigRegistry.register, and the
+     * mod was adding its loading listener after that call.
      */
     @GameTest(maxTicks = MAX_TICKS)
-    public void configLoads(GameTestHelper helper) {
+    public void configLoads(GameTestHelper helper) throws IOException {
         Path config = FabricLoader.getInstance().getConfigDir()
                 .resolve("randomloot-common.toml");
         helper.assertTrue(Files.exists(config),
                 "FCAP should generate randomloot-common.toml, looked at " + config);
+
+        Matcher inFile = Pattern.compile("(?m)^\\s*livingWhispersPerMinute\\s*=\\s*(\\d+)")
+                .matcher(Files.readString(config));
+        helper.assertTrue(inFile.find(), "livingWhispersPerMinute should be in " + config);
+        int whispers = Integer.parseInt(inFile.group(1));
+        helper.assertTrue(whispers != Config.LIVING_WHISPERS_OPTION.defaultValue(),
+                "the gametest config should set livingWhispersPerMinute off its default of "
+                        + Config.LIVING_WHISPERS_OPTION.defaultValue() + " (seedGametestConfig in fabric/build.gradle);"
+                        + " run this through ./gradlew :fabric:runGametest");
+        helper.assertTrue(Config.LivingWhispersPerMinute == whispers,
+                "the mod should run with the file's livingWhispersPerMinute of " + whispers + ", runs with "
+                        + Config.LivingWhispersPerMinute);
 
         helper.assertTrue(Config.CaseChance > 0.0 && Config.CaseChance <= 1.0,
                 "caseChance should be loaded and sane, got " + Config.CaseChance);
