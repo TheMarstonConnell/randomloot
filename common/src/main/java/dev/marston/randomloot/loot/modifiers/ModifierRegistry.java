@@ -44,8 +44,8 @@ import java.util.Set;
  */
 public class ModifierRegistry {
 
-	private static final HashMap<String, Modifier> Modifiers = new HashMap<>();
-	private static final HashMap<String, TraitDeclaration> Declarations = new HashMap<>();
+	/** The registry's own instance of each trait, by tag. Each carries its declaration. */
+	private static final HashMap<String, AbstractModifier> Modifiers = new HashMap<>();
 
 	public static Map<String, Modifier> getModifiers() {
 		return Collections.unmodifiableMap(Modifiers);
@@ -198,9 +198,9 @@ public class ModifierRegistry {
 
 	private static Set<Modifier> inGroup(Group group) {
 		Set<Modifier> members = new HashSet<>();
-		for (TraitDeclaration declaration : Declarations.values()) {
-			if (declaration.groups.contains(group)) {
-				members.add(Modifiers.get(declaration.tag));
+		for (AbstractModifier trait : Modifiers.values()) {
+			if (trait.declaration.groups.contains(group)) {
+				members.add(trait);
 			}
 		}
 		return Collections.unmodifiableSet(members);
@@ -238,24 +238,23 @@ public class ModifierRegistry {
 
 	/** Registers a finished declaration and returns the registry's own instance of the trait. */
 	static Modifier register(TraitDeclaration declaration) {
-		if (Declarations.containsKey(declaration.tag)) {
+		if (Modifiers.containsKey(declaration.tag)) {
 			throw new IllegalStateException("Cannot register modifier twice: " + declaration.tag);
 		}
 
-		Modifier registered = declaration.create();
-		Declarations.put(declaration.tag, declaration);
+		AbstractModifier registered = declaration.create();
 		Modifiers.put(declaration.tag, registered);
 		return registered;
 	}
 
 	/** A new instance of the named trait holding what {@code tag} stores, or null for a name nobody registered. */
 	public static Modifier loadModifier(String name, CompoundTag tag) {
-		TraitDeclaration declaration = Declarations.get(name);
-		if (declaration == null) {
+		AbstractModifier registered = Modifiers.get(name);
+		if (registered == null) {
 			return null;
 		}
 
-		AbstractModifier trait = declaration.create();
+		AbstractModifier trait = registered.declaration.create();
 		trait.load(tag);
 		return trait;
 	}

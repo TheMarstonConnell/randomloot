@@ -32,19 +32,8 @@ public final class TraitDeclaration {
 	public enum Group {
 		BREAKERS,
 		/** Right-click traits. A piece of gear answers a right-click once, so it carries only one of them. */
-		USERS(true),
-		HURTERS, HOLDERS, STATS, WEARERS, MISC;
-
-		/** Whether two traits of this group can never share a piece of gear. */
-		final boolean oneAPiece;
-
-		Group() {
-			this(false);
-		}
-
-		Group(boolean oneAPiece) {
-			this.oneAPiece = oneAPiece;
-		}
+		USERS,
+		HURTERS, HOLDERS, STATS, WEARERS, MISC
 	}
 
 	/** Swords and axes. */
@@ -159,12 +148,8 @@ public final class TraitDeclaration {
 		if (this.excludes.contains(other.tag) || other.excludes.contains(this.tag)) {
 			return true;
 		}
-		for (Group group : this.groups) {
-			if (group.oneAPiece && other.groups.contains(group)) {
-				return true;
-			}
-		}
-		return false;
+		// Two right-click traits: gear answers a right-click once.
+		return this.groups.contains(Group.USERS) && other.groups.contains(Group.USERS);
 	}
 
 	/** A new instance of the trait, as a fresh grant starts out. */
