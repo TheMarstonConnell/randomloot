@@ -1743,7 +1743,7 @@ public final class GameTestBodies {
 		helper.assertTrue(listed.stream().filter(expected::contains).count() == expected.size(),
 				"each of the mod's items should be listed once");
 
-		// CreativeModeTabs keeps its keys private, so the combat tab's is built from its id.
+		// Built from its id for the reason ModItems.CREATIVE_TAB is: vanilla keeps these keys private.
 		ResourceKey<CreativeModeTab> combat = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
 				Identifier.withDefaultNamespace("combat"));
 		for (ItemStack stack : buildCreativeTab(helper, combat).getDisplayItems()) {
