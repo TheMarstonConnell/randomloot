@@ -909,6 +909,18 @@ public final class GameTestBodies {
 		assertArmorXpFromHit(helper, "a fall Featherweight cancels", faller, EquipmentSlot.FEET,
 				faller.damageSources().fall(), 6.0f, 0.0f, 0);
 
+		// A bigger hit inside the first one's invulnerability counts for the difference: 4,
+		// then 10 that lands as 6. It is the other path through hurtServer to the hook.
+		ServerPlayer twice = chestplateWearer(helper, attacker, 0.0);
+		helper.hurt(twice, twice.damageSources().generic(), 4.0f);
+		helper.hurt(twice, twice.damageSources().generic(), 10.0f);
+		helper.assertTrue(twice.getMaxHealth() - twice.getHealth() == 10.0f,
+				"hits for 4 then 10 in one invulnerability window should take 10 health, took "
+						+ (twice.getMaxHealth() - twice.getHealth()));
+		helper.assertTrue(LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)) == 10,
+				"hits for 4 then 10 in one invulnerability window should earn 4 + 6 armor XP, earned "
+						+ LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)));
+
 		// A killing hit counts, capped at the wearer's 20 health. Fabric gave 0.
 		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
 		ItemStack zombieChest = newArmor(ToolType.CHESTPLATE);

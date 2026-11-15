@@ -57,7 +57,7 @@ public class CaseLootModifier extends LootModifier {
     @Override
     protected @NotNull ObjectArrayList<ItemStack> doApply(ObjectArrayList<ItemStack> generatedLoot,
                                                           LootContext context) {
-        generatedLoot.addAll(GameHooks.lootInjection(context.getQueriedLootTableId(), context, item));
+        GameHooks.lootInjection(context.getQueriedLootTableId(), context, item, generatedLoot::add);
         return generatedLoot;
     }
 }

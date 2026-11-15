@@ -73,6 +73,6 @@ public class RandomLootFabric implements ModInitializer {
         // Fired for every table as it rolls, nested ones included; a table defined inline
         // has no id and is skipped. NeoForge's shim is the case_item global loot modifier.
         LootTableEvents.MODIFY_DROPS.register((table, context, drops) -> table.unwrapKey().ifPresent(key ->
-                drops.addAll(GameHooks.lootInjection(key.identifier(), context))));
+                GameHooks.lootInjection(key.identifier(), context, drops::add)));
     }
 }
