@@ -741,11 +741,9 @@ public class LootUtils {
 		lore.putString("itemLore", rolled.lore());
 		GearTags.write(gear, GearTags.LORE, lore);
 
-		if (rolled.texture() != GearRoll.NO_TEXTURE) {
-			CompoundTag cosmetics = new CompoundTag();
-			cosmetics.putInt("texture", rolled.texture());
-			GearTags.write(gear, GearTags.COSMETICS, cosmetics);
-		}
+		CompoundTag cosmetics = new CompoundTag();
+		cosmetics.putInt("texture", rolled.texture());
+		GearTags.write(gear, GearTags.COSMETICS, cosmetics);
 
 		setItemName(gear, rolled.name(), rolled.nameColor());
 
