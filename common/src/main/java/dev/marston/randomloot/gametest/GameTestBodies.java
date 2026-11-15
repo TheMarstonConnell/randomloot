@@ -652,17 +652,17 @@ public final class GameTestBodies {
 	 * biome, has no owner, and still rolls positive goodness off the machine curve.
 	 */
 	public static void genToolDispenser(GameTestHelper helper) {
-		ItemStack tool = LootUtils.dispenseCase(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		ItemStack gear = LootUtils.dispenseCase(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
 
-		helper.assertTrue(LootUtils.getToolType(tool) != ToolType.NULL, "dispensed item should have a real type");
-		helper.assertTrue(LootUtils.getStats(tool) > 0f, "dispensed item should have positive goodness");
+		helper.assertTrue(LootUtils.getToolType(gear) != ToolType.NULL, "dispensed item should have a real type");
+		helper.assertTrue(LootUtils.getStats(gear) > 0f, "dispensed item should have positive goodness");
 
-		String biomeKey = LootUtils.getBiomeKey(tool);
+		String biomeKey = LootUtils.getBiomeKey(gear);
 		helper.assertTrue(!biomeKey.isEmpty() && !biomeKey.equals("unknown"),
 				"dispensed item should record the dispenser's biome, got: " + biomeKey);
-		helper.assertTrue(LootUtils.getOwnerUUID(tool).isEmpty()
-				&& LootUtils.getItemLore(tool).startsWith("Discovered by a machine in "),
-				"dispensed item should have no owner, got lore: " + LootUtils.getItemLore(tool));
+		helper.assertTrue(LootUtils.getOwnerUUID(gear).isEmpty()
+				&& LootUtils.getItemLore(gear).startsWith("Discovered by a machine in "),
+				"dispensed item should have no owner, got lore: " + LootUtils.getItemLore(gear));
 
 		helper.succeed();
 	}
