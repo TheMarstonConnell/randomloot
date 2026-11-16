@@ -1,6 +1,7 @@
 package dev.marston.randomloot.neoforge;
 
 import dev.marston.randomloot.loot.LootArmorItem;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.core.Holder;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -14,8 +15,8 @@ public class NeoForgeLootArmorItem extends LootArmorItem {
 
     @Override
     public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
-        Boolean common = supportsEnchantmentCommon(stack, enchantment);
-        return common != null ? common : super.supportsEnchantment(stack, enchantment);
+        return GameHooks.enchantGate(stack, enchantment, true, false,
+                () -> super.supportsEnchantment(stack, enchantment));
     }
 
     @Override
