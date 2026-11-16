@@ -1,21 +1,9 @@
 package dev.marston.randomloot.neoforge;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.commands.ModCommands;
-import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
-import dev.marston.randomloot.loot.modifiers.KillDispatcher;
-import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
-import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
-import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
-import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.inventory.SmithingMenu;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.config.ModConfigEvent;
@@ -31,78 +19,60 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.Map;
 
-/** Routes NeoForge game-bus events to the loader-neutral dispatchers. */
+/**
+ * The NeoForge shim for the loader hook contract: each handler unpacks one NeoForge
+ * event and makes one call to {@link GameHooks}, whose javadoc says what that hook has
+ * to be handed. No handler decides anything.
+ *
+ * <p>Four hooks are not events and are wired elsewhere: AFTER_USE_ITEM by
+ * {@code mixin/ServerPlayerGameModeMixin}, ENCHANT_GATE by the {@code supportsEnchantment}
+ * overrides on {@link NeoForgeLootItem} and {@link NeoForgeLootArmorItem}, and
+ * LOOT_INJECTION by {@code CaseLootModifier} with its two files in
+ * {@code data/randomloot/loot_modifiers/}.
+ */
 @EventBusSubscriber(modid = RandomLoot.MODID)
 public final class NeoForgeEvents {
 
     private NeoForgeEvents() {
     }
 
-    /**
-     * Declares the hooks routed below. @EventBusSubscriber wires them by annotation, so
-     * there is nothing to call at registration time - this is the checked inventory.
-     * Keep it in step with the handlers; loader_hooks_all_bound fails if a GameHook is
-     * never bound.
-     */
-    public static void bindHooks() {
-        GameHooks.bind(GameHook.KILL);
-        GameHooks.bind(GameHook.DAMAGE_PRE);
-        GameHooks.bind(GameHook.DAMAGE_POST);
-        GameHooks.bind(GameHook.ARMOR_HURT);
-        GameHooks.bind(GameHook.BREAK_SPEED);
-        // Wired by mixin, not an event: mixin/ServerPlayerGameModeMixin (useItem RETURN).
-        GameHooks.bind(GameHook.AFTER_USE_ITEM);
-        GameHooks.bind(GameHook.SERVER_TICK);
-        GameHooks.bind(GameHook.SERVER_STOPPING);
-        GameHooks.bind(GameHook.COMMANDS);
-        GameHooks.bind(GameHook.CONFIG);
-        GameHooks.bind(GameHook.CREATIVE_TAB);
-        GameHooks.bind(GameHook.ANVIL_COMBINE);
-        // Item-extension overrides on NeoForgeLootItem / NeoForgeLootArmorItem.
-        GameHooks.bind(GameHook.ENCHANT_GATE);
-        // The case_item global loot modifier; see data/randomloot/loot_modifiers/.
-        GameHooks.bind(GameHook.LOOT_INJECTION);
-        GameHooks.bind(GameHook.SMITHING_TAKE);
-    }
-
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        KillDispatcher.onLivingDeath(event.getEntity(), event.getSource());
+        GameHooks.kill(event.getEntity(), event.getSource());
     }
 
     @SubscribeEvent
     public static void onLivingDamagePre(LivingDamageEvent.Pre event) {
-        event.setNewDamage(ArmorDispatcher.onLivingDamagePre(event.getEntity(), event.getSource(), event.getNewDamage()));
+        event.setNewDamage(GameHooks.damagePre(event.getEntity(), event.getSource(), event.getNewDamage()));
     }
 
     @SubscribeEvent
     public static void onLivingDamagePost(LivingDamageEvent.Post event) {
-        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getInflictedDamage());
+        GameHooks.damagePost(event.getEntity(), event.getInflictedDamage());
     }
 
     @SubscribeEvent
     public static void onArmorHurt(ArmorHurtEvent event) {
         for (Map.Entry<EquipmentSlot, ArmorHurtEvent.ArmorEntry> entry : event.getArmorMap().entrySet()) {
             ArmorHurtEvent.ArmorEntry armorEntry = entry.getValue();
-            event.setNewDamage(entry.getKey(), ArmorDispatcher.onArmorHurt(event.getEntity(),
+            event.setNewDamage(entry.getKey(), GameHooks.armorHurt(event.getEntity(),
                     armorEntry.armorItemStack, entry.getKey(), armorEntry.newDamage));
         }
     }
 
     @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-        event.setNewSpeed(Soulbound.modifyBreakSpeed(event.getEntity(), event.getNewSpeed()));
+        event.setNewSpeed(GameHooks.breakSpeed(event.getEntity(), event.getNewSpeed()));
     }
 
     /**
-     * Blocks anvil-combining two Random Loot items entirely. isCombineRepairable=false
-     * only stops the durability-merge branch; the enchant-transfer branch would still
-     * produce a result and destroy the right item's identity. Fabric mirrors this in
-     * AnvilMenuMixin.
+     * Cancelling the event empties the result. isCombineRepairable=false on the two item
+     * classes is not enough: it only stops the durability merge, and the enchantment
+     * transfer would still produce a result. Fabric's shim is AnvilMenuMixin.
      */
     @SubscribeEvent
     public static void onAnvilUpdate(AnvilUpdateEvent event) {
-        if (LootUtils.isLootGear(event.getLeft()) && LootUtils.isLootGear(event.getRight())) {
+        if (GameHooks.blocksAnvilCombine(event.getLeft(), event.getRight())) {
             event.setCanceled(true);
         }
     }
@@ -112,44 +82,41 @@ public final class NeoForgeEvents {
      * shift-click (from onQuickCraft) alike. The event's javadoc warns against touching
      * the inputs because vanilla is about to decrement them; shrinking the addition
      * further is exactly the point here, and vanilla re-reads the slot before its own
-     * shrink. getResult() is no use to the hook: on a shift-click it is a copy of gear
-     * that is already in the inventory. Fabric mirrors this in SmithingMenuMixin.
+     * shrink. The event carries the player and not the menu, and getResult() is no use:
+     * on a shift-click it is a copy of gear that is already in the inventory. Fabric's
+     * shim is SmithingMenuMixin.
      */
     @SubscribeEvent
     public static void onItemSmithed(PlayerEvent.ItemSmithedEvent event) {
         if (event.getEntity().containerMenu instanceof SmithingMenu menu) {
-            TraitAdditionRecipe.onTake(menu, event.getEntity());
+            GameHooks.smithingTake(menu, event.getEntity());
         }
     }
 
     @SubscribeEvent
     public static void onServerTick(ServerTickEvent.Post event) {
-        BlockHighlighter.onServerTick();
+        GameHooks.serverTick();
     }
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
-        BlockHighlighter.onServerStopping();
+        GameHooks.serverStopping();
     }
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
-        ModCommands.register(event.getDispatcher());
+        GameHooks.commands(event.getDispatcher());
     }
 
     // Mod-bus events below: @EventBusSubscriber auto-routes by event type in 26.x.
 
     @SubscribeEvent
     public static void onConfigLoad(ModConfigEvent event) {
-        Config.onLoad();
+        GameHooks.config();
     }
 
     @SubscribeEvent
     public static void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
-            for (Item item : ModItems.creativeTabItems()) {
-                event.accept(item);
-            }
-        }
+        GameHooks.creativeTab(event.getTabKey(), event::accept);
     }
 }
