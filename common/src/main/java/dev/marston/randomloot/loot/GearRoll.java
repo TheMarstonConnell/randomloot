@@ -19,7 +19,11 @@ import net.minecraft.util.RandomSource;
  * share, the trait picks and the texture range be checked from a JUnit test with a seed,
  * where the old procedure could only be asked whether it had produced something.
  *
- * <p>Config values come in as arguments. The callers in {@link LootUtils} read them.
+ * <p>The config's numbers (goodness, the armor chance, the level-up chance) come in as
+ * arguments; the callers in {@link LootUtils} read them. One thing is read from the config
+ * on the way: which traits are switched on. That question is the gate's
+ * ({@link TraitEligibility}), which answers it the same way for every caller, so with the
+ * same toggles the same arguments decide the same gear.
  */
 public final class GearRoll {
 
