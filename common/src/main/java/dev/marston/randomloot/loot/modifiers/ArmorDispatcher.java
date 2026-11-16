@@ -14,8 +14,9 @@ import java.util.List;
  * Routes damage taken by a wearer to their Random Armor pieces: wearer-hurt
  * traits ({@link WearerHurtModifier}), armor XP (armor levels from absorbing
  * hits, like tools level from swinging), and Unbreaking's chance to skip armor
- * durability loss. Each loader's event shim calls these from its damage
- * events.
+ * durability loss. Reached from both loaders through
+ * {@link dev.marston.randomloot.platform.GameHooks}, whose {@code damagePre},
+ * {@code damagePost} and {@code armorHurt} say what a loader hands each method.
  */
 public final class ArmorDispatcher {
 

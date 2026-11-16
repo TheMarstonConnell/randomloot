@@ -1,6 +1,6 @@
 package dev.marston.randomloot.fabric.mixin;
 
-import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -9,10 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Fabric stand-in for NeoForge's isCombineRepairable=false: every Random
- * Tool/Armor piece is unique (type, traits, XP live on the stack), so
- * vanilla's combine-two-of-the-same-item recipe would destroy the right
- * item's identity and act as a cheap repair loop.
+ * Fabric's shim for ANVIL_COMBINE, where NeoForge cancels its AnvilUpdateEvent: after
+ * vanilla worked out a result, empty it when common says this pair must not combine.
  */
 @Mixin(AnvilMenu.class)
 public abstract class AnvilMenuMixin {
@@ -23,7 +21,7 @@ public abstract class AnvilMenuMixin {
         ItemStack left = self.getSlot(0).getItem();
         ItemStack right = self.getSlot(1).getItem();
 
-        if (LootUtils.isLootGear(left) && LootUtils.isLootGear(right)) {
+        if (GameHooks.blocksAnvilCombine(left, right)) {
             self.getSlot(2).set(ItemStack.EMPTY);
         }
     }
