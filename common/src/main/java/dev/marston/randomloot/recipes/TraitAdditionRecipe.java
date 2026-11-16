@@ -233,8 +233,9 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		// Stamped as the result is built, not as it is taken: nothing can get at the
 		// stack a shift-click takes (see onTake), and the preview shows the name the
 		// player will actually get. The table re-forges every trait the gear carries,
-		// not only the one it grants.
-		if (this.worldSeed != null) {
+		// not only the one it grants. A refused change is no change: that gear goes
+		// back exactly as it came.
+		if (outcome.changed() && this.worldSeed != null) {
 			TraitGrant.restamp(result, this.worldSeed);
 		}
 
