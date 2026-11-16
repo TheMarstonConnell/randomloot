@@ -1,8 +1,6 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import dev.marston.randomloot.Config;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -34,10 +32,6 @@ public final class KillDispatcher {
 			return;
 		}
 
-		for (Modifier mod : LootUtils.getModifiers(weapon)) {
-			if (mod instanceof EntityKillModifier killMod && Config.traitEnabled(mod.tagName())) {
-				killMod.onKill(weapon, victim, killer);
-			}
-		}
+		TraitDispatch.kill(weapon, victim, killer);
 	}
 }

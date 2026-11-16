@@ -47,3 +47,27 @@ _Avoid_: event API, hook registry, bindings
 **Gametest table**:
 The one list of the gametests that both loaders run. A shared gametest exists by having a row in it, so it cannot be present on one loader and missing on the other.
 _Avoid_: test registry, test list, test manifest
+
+**Trait declaration**:
+The one statement of what a trait is apart from its rule: the tag gear stores it under, its name and colour, the gear types it fits, the traits it will not share gear with, how far it levels and which wiki groups it sits in. Whatever needs one of those facts reads it from there.
+_Avoid_: trait definition, trait config (config is the toml file), registration
+
+**Trait registry**:
+The module that holds every trait declaration and makes trait instances from them, a new one for each grant and for each trait read off gear. It owns how a trait is stored and read back, the one levelling scheme, and it applies a declared conflict to both traits of the pair.
+_Avoid_: modifier list, role sets, prototype (the registry's own instance of a trait is never put on gear)
+
+**Trait grant**:
+The one operation that puts a trait on a piece of gear or takes one off, and reports what happened: added, leveled, removed, or refused and why. A case roll, a level-up, the smithing table and the admin command all change gear's traits through it.
+_Avoid_: add modifier, apply trait, trait change
+
+**Trait dispatch**:
+The one path a game event takes to the traits on a piece of gear: a hit, a broken block, a right-click, a tick, a kill, damage to the wearer. It settles what every trait shares, such as which ones run, in what order, what gets saved and what durability is spent, so a trait only states its own rule.
+_Avoid_: trait loop, event bus, handler
+
+**Gear roll**:
+The decision of what a case produces: the gear's type, traits, name, lore and look, made from plain facts and chance before any item exists. Stamping is the single step that then makes the item.
+_Avoid_: generation, gen tool, loot roll
+
+**XP step**:
+What a gain of XP does to a piece of gear's level: the level it ends on, the XP left over and how many levels it gained. Each level gained is then applied as one level-up.
+_Avoid_: level-up loop, XP loop

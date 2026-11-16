@@ -62,8 +62,15 @@ public final class GameTestTable {
 	}
 
 	private static final List<Row> ROWS = List.of(
-			row("modifier_roundtrip", GameTestBodies::modifierRoundTrip),
-			row("gen_tool", GameTestBodies::genTool),
+			row("trait_grant_adds_then_levels", GameTestBodies::traitGrantAddsThenLevels),
+			row("trait_grant_refuses_what_the_gate_refuses", GameTestBodies::traitGrantRefusesWhatTheGateRefuses),
+			row("trait_grant_removes", GameTestBodies::traitGrantRemoves),
+			row("trait_grant_stamps_world_forger", GameTestBodies::traitGrantStampsWorldForger),
+			row("trait_dispatch_runs_pre_hit_traits_first", GameTestBodies::traitDispatchRunsPreHitTraitsFirst),
+			row("trait_dispatch_leaves_rolling_gear_inert", GameTestBodies::traitDispatchLeavesRollingGearInert),
+			row("trait_dispatch_saves_only_changed_traits", GameTestBodies::traitDispatchSavesOnlyChangedTraits),
+			row("unbreaking_rolls_per_durability_point", GameTestBodies::unbreakingRollsPerDurabilityPoint),
+			row("stamp_writes_what_the_gear_roll_decided", GameTestBodies::stampWritesWhatTheGearRollDecided),
 			row("gen_tool_dispenser", GameTestBodies::genToolDispenser),
 			row("dispenser_opens_case", GameTestBodies::dispenserOpensCase),
 			row("case_opens_into_hand", GameTestBodies::caseOpensIntoHand),
@@ -79,8 +86,6 @@ public final class GameTestTable {
 			row("new_trait_recipes_load", GameTestBodies::newTraitRecipesLoad),
 			row("tool_repairable", GameTestBodies::toolRepairable),
 			row("armor_components", GameTestBodies::armorComponents),
-			row("forger_world_constant", GameTestBodies::forgerWorldConstant),
-			row("dirt_place_world_forger", GameTestBodies::dirtPlaceWorldForger),
 			row("armor_xp_on_damage", GameTestBodies::armorXpOnDamage),
 			row("thorny_reflects_for_player", GameTestBodies::thornyReflectsForPlayer),
 			row("migration_restores_derived_components", GameTestBodies::migrationRestoresDerivedComponents),

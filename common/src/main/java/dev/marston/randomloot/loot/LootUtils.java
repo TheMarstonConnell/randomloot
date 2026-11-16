@@ -12,8 +12,6 @@ import dev.marston.randomloot.component.ToolModifier;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import dev.marston.randomloot.loot.modifiers.Unbreaking;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.item.properties.numeric.RangeSelectItemModelProperty;
@@ -30,22 +28,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.stats.StatType;
 import net.minecraft.stats.Stats;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.ItemOwner;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.equipment.Equippable;
@@ -57,7 +50,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
-import java.util.Map.Entry;
 
 public class LootUtils {
 
@@ -318,37 +310,6 @@ public class LootUtils {
 		return true;
 	}
 
-	/**
-	 * Spends durability on a loot tool, giving its Unbreaking trait a roll per point
-	 * first. Every durability cost a tool pays goes through here - block breaks, hits,
-	 * stripping and pathing, the right-click traits, and the extra blocks area traits
-	 * break - so a maxed "Unbreakable" tool really is. (Worn armor takes damage inside
-	 * vanilla and is covered by {@code ArmorDispatcher.onArmorHurt} instead.)
-	 */
-	public static void damageGear(ItemStack stack, int amount, @Nullable LivingEntity holder, EquipmentSlot slot) {
-		if (holder == null || amount <= 0 || stack.isEmpty()) {
-			return;
-		}
-
-		// getModifiers already drops config-disabled traits, and a trait appears at most once.
-		for (Modifier mod : getModifiers(stack)) {
-			if (mod instanceof Unbreaking unbreaking) {
-				int spent = 0;
-				for (int i = 0; i < amount; i++) {
-					if (!unbreaking.test(holder.level())) {
-						spent++;
-					}
-				}
-				amount = spent;
-				break;
-			}
-		}
-
-		if (amount > 0) {
-			stack.hurtAndBreak(amount, holder, slot);
-		}
-	}
-
 	public static void addLoreLine(ListTag lore, String text, String color) {
 		JsonObject value = new JsonObject();
 
@@ -387,20 +348,10 @@ public class LootUtils {
 	}
 
 	/**
-	 * The combined multiplier the stack's StatsModifier traits apply to dig speed and
-	 * defense. getModifiers already filters out config-disabled traits.
+	 * One level-up's effects, in order: the goodness bump, the sound, and on the server
+	 * the chance of a bonus trait with its chat line and criteria.
 	 */
-	public static float statMultiplier(ItemStack stack) {
-		float statMod = 1.0f;
-		for (Modifier mod : getModifiers(stack)) {
-			if (mod instanceof StatsModifier sm) {
-				statMod *= sm.getStats(stack);
-			}
-		}
-		return statMod;
-	}
-
-	public static ItemStack levelUp(ItemStack item, LivingEntity holder) {
+	private static void levelUp(ItemStack item, LivingEntity holder, double bonusTraitChance) {
 
 		float stats = GearStats.leveledGoodness(getStats(item));
 		setStats(item, stats);
@@ -408,25 +359,27 @@ public class LootUtils {
 		holder.level().playSound(null, holder.getX(), holder.getY(), holder.getZ(), SoundEvents.PLAYER_LEVELUP,
 				holder.getSoundSource(), 1.0f, 1.0f);
 
-		if (holder.level() instanceof ServerLevel serverLevel
-				&& holder.getRandom().nextDouble() < Config.LevelUpTraitChance) {
-			Set<String> before = Set.copyOf(rawTraitNames(item));
-
-			Modifier rolled = generateNewTrait(item, holder.getRandom(), serverLevel.getSeed());
-			if (rolled != null && holder instanceof ServerPlayer player) {
-				String key = before.contains(rolled.tagName())
-						? "message.randomloot.level_up_trait_leveled"
-						: "message.randomloot.level_up_trait";
-				Component trait = rolled.displayName().copy().withStyle(rolled.color());
-				player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
-
-				ModCriteria.traitsObtained(player, item, TraitObtainedTrigger.SOURCE_LEVELED);
-			}
+		if (!(holder.level() instanceof ServerLevel serverLevel)) {
+			return;
 		}
 
-		return item;
+		Modifier bonus = GearRoll.bonusTrait(TraitEligibility.contextOf(item), bonusTraitChance, holder.getRandom());
+		if (bonus == null) {
+			return;
+		}
+
+		TraitGrant.Outcome rolled = TraitGrant.grant(item, bonus, serverLevel.getSeed());
+		if (holder instanceof ServerPlayer player) {
+			String key = rolled.kind() == TraitGrant.Kind.LEVELED
+					? "message.randomloot.level_up_trait_leveled"
+					: "message.randomloot.level_up_trait";
+			Component trait = rolled.trait().displayName().copy().withStyle(rolled.trait().color());
+			player.sendSystemMessage(Component.translatable(key, item.getHoverName(), trait));
+
+			rolled.obtainedBy(player, TraitObtainedTrigger.SOURCE_LEVELED);
+		}
 	}
-	
+
 	/**
 	 * Cheap "does this stack carry an enabled trait" check - a key lookup on the raw
 	 * component, without deserializing the whole modifier list like getModifiers does.
@@ -451,35 +404,23 @@ public class LootUtils {
 		return GearTags.read(stack, Modifier.MODTAG).keySet();
 	}
 
+	/**
+	 * Gives the gear XP. {@link GearStats#xpStep} decides where that leaves it; each level
+	 * gained is then applied as a level-up, in order, before the new level is written.
+	 */
 	public static void addXp(ItemStack item, LivingEntity holder, int amount) {
+		GearStats.XpStep step = GearStats.xpStep(getLevel(item), getXP(item), amount);
 
-		CompoundTag tag = GearTags.read(item, GearTags.XP);
-
-		int level = tag.getIntOr("level", 0);
-
-		// long, and floored at zero: a huge grant used to wrap the int negative, leaving
-		// gear that could never level again. The floor repairs stacks that already did.
-		long xp = Math.max(0, tag.getIntOr("xp", 0));
-
-		xp += amount;
-
-		int max = getMaxXP(level);
-
-		boolean leveled = false;
-		while (xp >= max) {
-			xp = xp - max;
-			level++;
-			levelUp(item, holder);
-			leveled = true;
-			max = getMaxXP(level);
+		double bonusTraitChance = Config.LevelUpTraitChance;
+		for (int i = 0; i < step.levelsGained(); i++) {
+			levelUp(item, holder, bonusTraitChance);
 		}
 
-		if (leveled) {
-			ModCriteria.toolLeveled(holder, level);
+		if (step.levelsGained() > 0) {
+			ModCriteria.toolLeveled(holder, step.level());
 		}
 
-		// The loop leaves xp below max, which is an int.
-		setLevelAndXP(item, level, (int) xp);
+		setLevelAndXP(item, step.level(), step.xp());
 	}
 
 	public static int getLevel(ItemStack item) {
@@ -500,10 +441,16 @@ public class LootUtils {
 	}
 
 	public static List<Modifier> getModifiers(ItemStack item) {
+		return getModifiers(GearTags.read(item, Modifier.MODTAG));
+	}
+
+	/**
+	 * The enabled traits a tag of stored traits holds: what {@link Modifier#MODTAG} is
+	 * on a stack, or what a {@link GearRoll} has decided so far.
+	 */
+	public static List<Modifier> getModifiers(CompoundTag modifiers) {
 
 		ArrayList<Modifier> tags = new ArrayList<Modifier>();
-
-		CompoundTag modifiers = GearTags.read(item, Modifier.MODTAG);
 
         Set<String> mods = modifiers.keySet();
 
@@ -525,26 +472,10 @@ public class LootUtils {
 		return tags;
 	}
 
-	public static void addModifier(ItemStack item, Modifier mod) {
-
-		CompoundTag existing = GearTags.read(item, Modifier.MODTAG);
-
-		if (!existing.contains(mod.tagName())) { // tag doesn't exist so we're adding a new trait.
-			GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
-			return;
-		}
-
-		Modifier oldModifier = mod.fromNBT(existing.getCompoundOrEmpty(mod.tagName()));
-
-		if (!oldModifier.canLevel()) {
-			return;
-		}
-
-		oldModifier.levelUp();
-		GearTags.mutate(item, Modifier.MODTAG,
-				modifiers -> modifiers.put(oldModifier.tagName(), oldModifier.toNBT()));
-	}
-
+	/**
+	 * Rewrites a trait the gear already carries, so a trait can save its own state.
+	 * Putting a trait on or taking one off is {@link TraitGrant}'s.
+	 */
 	public static void updateModifier(ItemStack item, Modifier mod) {
 
 		if (!hasRawTrait(item, mod.tagName())) { // not on the gear, nothing to update
@@ -552,12 +483,6 @@ public class LootUtils {
 		}
 
 		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.put(mod.tagName(), mod.toNBT()));
-	}
-
-	public static ItemStack removeModifier(ItemStack item, Modifier mod) {
-		GearTags.mutate(item, Modifier.MODTAG, modifiers -> modifiers.remove(mod.tagName()));
-
-		return item;
 	}
 
 	public static void setStats(ItemStack stack, float goodness) {
@@ -568,24 +493,12 @@ public class LootUtils {
 		return GearTags.read(stack, GearTags.STATS).getFloatOr("goodness", 0f);
 	}
 
-	public static void setBiomeTemperature(ItemStack stack, float temperature) {
-		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putFloat("biomeTemp", temperature));
-	}
-
 	public static float getBiomeTemperature(ItemStack stack) {
 		return GearTags.read(stack, GearTags.INFO).getFloatOr("biomeTemp", 0.7f);
 	}
 
-	public static void setBiomeKey(ItemStack stack, String biomeKey) {
-		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("biomeKey", biomeKey));
-	}
-
 	public static String getBiomeKey(ItemStack stack) {
 		return GearTags.read(stack, GearTags.INFO).getStringOr("biomeKey", "");
-	}
-
-	public static void setDimension(ItemStack stack, String dimension) {
-		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("dimension", dimension));
 	}
 
 	public static String getDimension(ItemStack stack) {
@@ -598,10 +511,6 @@ public class LootUtils {
 
 	public static String getOwnerUUID(ItemStack stack) {
 		return GearTags.read(stack, GearTags.INFO).getStringOr("ownerUUID", "");
-	}
-
-	public static void setOwnerName(ItemStack stack, String name) {
-		GearTags.mutate(stack, GearTags.INFO, tag -> tag.putString("ownerName", name));
 	}
 
 	public static String getOwnerName(ItemStack stack) {
@@ -675,85 +584,6 @@ public class LootUtils {
 		return GearTags.read(stack, GearTags.COSMETICS).getIntOr("texture", 0);
 	}
 
-	private static void storeBiomeData(ItemStack lootItem, Level level, @Nullable BlockPos pos) {
-		if (pos == null) {
-			setBiomeTemperature(lootItem, 0.7f);
-			return;
-		}
-
-		Holder<Biome> biomeHolder = level.getBiome(pos);
-		setBiomeTemperature(lootItem, biomeHolder.value().getBaseTemperature());
-
-		// Store biome key for modifier filtering
-		String biomeKey = "unknown";
-		if (biomeHolder.unwrapKey().isPresent()) {
-			biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
-		} else {
-			// Fallback: search registry for this biome
-			Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
-			for (var entry : biomeRegistry.entrySet()) {
-				if (entry.getValue() == biomeHolder.value()) {
-					biomeKey = entry.getKey().identifier().toString();
-					break;
-				}
-			}
-		}
-
-		setBiomeKey(lootItem, biomeKey);
-		setDimension(lootItem, level.dimension().identifier().toString());
-	}
-
-	private static String biomeKeyToReadableName(String biomeKey) {
-		if (biomeKey == null || biomeKey.isEmpty() || biomeKey.equals("unknown")) {
-			return "an Unknown Biome";
-		}
-
-		// Remove namespace (minecraft:desert -> desert)
-		String biomeName = biomeKey.contains(":") ? biomeKey.substring(biomeKey.indexOf(":") + 1) : biomeKey;
-
-		// Replace underscores with spaces and capitalize each word
-		String[] words = biomeName.split("_");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (word.isEmpty()) continue;  // Skip empty strings from split
-			if (result.length() > 0) result.append(" ");
-			result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
-		}
-
-		return "a " + result.toString();
-	}
-
-	private static void generateLore(ItemStack lootItem, Level level, Player player) {
-		String nameColor = "#50ab4b";
-		float temp = getBiomeTemperature(lootItem); // Get stored temperature
-
-		if (level.dimension().equals(Level.NETHER)) {
-			nameColor = "#FF8C19";
-		} else if (level.dimension().equals(Level.END)) {
-			nameColor = "#C419FF";
-		}
-
-		LootUtils.setItemName(lootItem, NameGenerator.generateNameWPrefix(level.getRandom(), temp, level.isRaining()), nameColor);
-
-		// Forgers are world-constant per temperature band, not rolled per item.
-		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
-		String forger = NameGenerator.forgerForWorld(worldSeed, temp);
-
-		String name = "a machine";
-		if (player != null) {
-			name = player.getDisplayName().getString();
-		}
-
-		// Get biome name for lore
-		String biomeKey = getBiomeKey(lootItem);
-		String biomeName = biomeKeyToReadableName(biomeKey);
-
-		String loreText = "Discovered by " + name + " in " + biomeName + ", forged by " + forger + ".";
-
-		LootUtils.setItemLore(lootItem, loreText);
-
-	}
-
 	public static ToolType getToolType(ItemStack item) {
 		String type = GearTags.read(item, GearTags.INFO).getStringOr("type", "");
 		if (type.isEmpty()) {
@@ -765,61 +595,6 @@ public class LootUtils {
 	public static ItemStack setToolType(ItemStack item, ToolType type) {
 		GearTags.mutate(item, GearTags.INFO, tag -> tag.putString("type", type.name()));
 		return item;
-	}
-
-	/**
-	 * Rolls one eligible trait onto the gear and returns it, or does nothing and returns
-	 * null when none are eligible.
-	 */
-	public static @Nullable Modifier generateNewTrait(ItemStack stack, RandomSource random, long worldSeed) {
-
-		// One context for the whole sweep: the gear doesn't change while we pick.
-		TraitEligibility.GearContext ctx = TraitEligibility.contextOf(stack);
-
-		ArrayList<Modifier> allowedMods = new ArrayList<Modifier>();
-
-		for (Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
-			Modifier newMod = entry.getValue();
-
-			if (TraitEligibility.check(ctx, newMod).allowed()) {
-				allowedMods.add(newMod);
-			}
-
-		}
-
-		int size = allowedMods.size();
-
-		if (size == 0) {
-			return null;
-		}
-
-		int choice = random.nextInt(size);
-
-		Modifier m = allowedMods.get(choice).forWorld(worldSeed);
-
-		addModifier(stack, m);
-
-		return m;
-	}
-
-	public static void generateInitialTraits(ItemStack stack, int count, RandomSource random, long worldSeed) {
-		for (int i = 0; i < count; i++) {
-			generateNewTrait(stack, random, worldSeed);
-		}
-	}
-
-	/**
-	 * Re-resolves world-dependent traits (see {@link Modifier#forWorld}) against this
-	 * world. Called as a trait recipe builds its result, so smithed gear carries the
-	 * world's forger however it is taken out of the table.
-	 */
-	public static void applyWorldForgers(ItemStack stack, long worldSeed) {
-		for (Modifier mod : getModifiers(stack)) {
-			Modifier resolved = mod.forWorld(worldSeed);
-			if (resolved != mod) {
-				updateModifier(stack, resolved);
-			}
-		}
 	}
 
 	public static int getToolMaxTextures(ItemStack stack) {
@@ -845,149 +620,138 @@ public class LootUtils {
 		setTexture(stack, addToolTextures(stack, count));
 	}
 
-	public static ItemStack genTool(Player player, Level level) {
-		return genTool(player, level, player != null ? player.blockPosition() : null);
+	/**
+	 * A player opens a case: gear rolled at their progression, with the case criteria
+	 * fired. The caller decides where the item goes (hand slot, inventory, ...).
+	 *
+	 * <p>We want the loot to get better over time for players, and the opener's
+	 * cases-opened stat is what says how far along they are. Goodness rides a square-root
+	 * curve of it ({@link GearStats#goodnessForCases}): gear keeps improving without
+	 * getting out of hand, a new piece is comparable to the leveled one the player already
+	 * carries, and it comes with a clean XP slate so it levels faster again.
+	 */
+	public static ItemStack openCase(ServerPlayer player) {
+		// The case's use stat is awarded after this runs, so this is the cases opened
+		// before the one in hand. The curve counts that one itself; the criteria wants
+		// it counted, hence the + 1 below.
+		int openedBefore = player.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get()));
+		float goodness = GearStats.goodnessForCases(openedBefore, Config.Goodness);
+
+		ItemStack gear = rollAt(player.level(), player.blockPosition(), goodness, player);
+
+		ModCriteria.caseOpened(player, openedBefore + 1, getToolType(gear));
+		ModCriteria.traitsObtained(player, gear, TraitObtainedTrigger.SOURCE_GENERATED);
+
+		return gear;
 	}
 
-	public static ItemStack genTool(Player player, Level level, @Nullable BlockPos pos) {
-
-		/**
-		 * We want to be able to make the loot get better over time for players. This is
-		 * pretty trivial with the statistics of a player since we can just check how
-		 * many cases they've opened. The more cases they've opened, the better their
-		 * tools will be. We do this on a SQRT curve to ensure that tools get better
-		 * over time without getting out of hand. Since the tools level pretty closely
-		 * to this curve we can expect that users won't constantly feel like they should
-		 * use the same tool since it's already leveled up to be better than what these
-		 * new tools start at. But at the same time, players won't feel sad abandoning
-		 * their old tools in favor of these new ones since they're comparable AND these
-		 * new ones have a clean XP slate so they can level faster again.
-		 */
-		if (level.isClientSide()) {
-			return ItemStack.EMPTY;
+	/**
+	 * A machine (a dispenser) opens a case. There is no opener stat to read, so the gear
+	 * rides the curve of the most progressed online player, scaled down by config.
+	 * Deliberately awards no stats and fires no criteria: dispensers must not farm
+	 * progression.
+	 */
+	public static ItemStack dispenseCase(ServerLevel level, BlockPos pos) {
+		int best = 0;
+		for (ServerPlayer p : level.getServer().getPlayerList().getPlayers()) {
+			best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
 		}
+		float goodness = GearStats.goodnessForCases(best, Config.Goodness * Config.DispenserGoodness);
 
-		float goodness;
-		if (player != null) {
-			ServerPlayer sPlayer = (ServerPlayer) player;
-			StatType<Item> itemUsed = Stats.ITEM_USED;
-			int count = sPlayer.getStats().getValue(itemUsed.get(ModItems.CASE.get()));
-			goodness = GearStats.goodnessForCases(count, Config.Goodness);
-		} else {
-			goodness = machineGoodness(level);
-		}
+		return rollAt(level, pos, goodness, null);
+	}
 
-		ToolType m;
-		if (level.getRandom().nextFloat() < Config.ArmorChance) {
-			int armorType = level.getRandom().nextInt(4);
-			m = switch (armorType) {
-			case 0: {
-				yield ToolType.HELMET;
-			}
-			case 1: {
-				yield ToolType.CHESTPLATE;
-			}
-			case 2: {
-				yield ToolType.LEGGINGS;
-			}
-			default: {
-				yield ToolType.BOOTS;
-			}
-			};
-		} else {
-			int toolType = level.getRandom().nextInt(4);
-			m = switch (toolType) {
-			case 0: {
-				yield ToolType.PICKAXE;
-			}
-			case 1: {
-				yield ToolType.AXE;
-			}
-			case 2: {
-				yield ToolType.SHOVEL;
-			}
-			default: {
-				yield ToolType.SWORD;
-			}
-			};
-		}
-
-		return buildTool(player, level, pos, m, goodness);
+	private static ItemStack rollAt(Level level, BlockPos pos, float goodness, @Nullable Player opener) {
+		return stamp(GearRoll.roll(goodness, sceneAt(level, pos, opener), Config.ArmorChance, level.getRandom()));
 	}
 
 	/**
 	 * Builds a tool/armor piece of the given type and goodness: stats, biome + owner
 	 * data, name/lore, random texture, and {@code floor(goodness / 2)} starting traits.
+	 * At goodness 0 that is base gear with no traits, which is what
+	 * {@code /randomloot give} hands out.
 	 */
-	public static ItemStack buildTool(@Nullable Player player, Level level, @Nullable BlockPos pos, ToolType type,
+	public static ItemStack buildTool(@Nullable Player player, Level level, BlockPos pos, ToolType type,
 			float goodness) {
 
 		if (level.isClientSide()) {
 			return ItemStack.EMPTY;
 		}
 
-		int traits = GearStats.startingTraits(goodness);
-
-		ItemStack lootItem = new ItemStack(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
-
-		LootUtils.setStats(lootItem, goodness);
-
-		lootItem = setToolType(lootItem, type);
-
-		int textureCount = getToolMaxTextures(lootItem);
-
-		// Store biome data BEFORE generating traits (so biome-restricted modifiers work)
-		storeBiomeData(lootItem, level, pos);
-
-		// Store owner data for Soulbound modifier
-		if (player != null) {
-			setOwnerUUID(lootItem, player.getStringUUID());
-			setOwnerName(lootItem, player.getDisplayName().getString());
-		}
-
-		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
-		generateInitialTraits(lootItem, traits, level.getRandom(), worldSeed);
-
-		generateLore(lootItem, level, player);
-
-		if (textureCount > 0) {
-			LootUtils.setTexture(lootItem, level.getRandom().nextInt(textureCount));
-		}
-
-		return lootItem;
+		return stamp(GearRoll.ofType(type, goodness, sceneAt(level, pos, player), level.getRandom()));
 	}
 
-	/**
-	 * Goodness for caseless openers (dispensers). There is no opener stat to read,
-	 * so ride the curve of the most progressed online player, scaled down by
-	 * config. Deliberately awards no stats: dispensers must not farm progression.
-	 */
-	private static float machineGoodness(Level level) {
-		int best = 0;
-		MinecraftServer server = level.getServer();
-		if (server != null) {
-			for (ServerPlayer p : server.getPlayerList().getPlayers()) {
-				best = Math.max(best, p.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())));
+	/** Reads what a {@link GearRoll} needs to know about where, and for whom, gear is being made. */
+	private static GearRoll.Scene sceneAt(Level level, BlockPos pos, @Nullable Player opener) {
+		Holder<Biome> biomeHolder = level.getBiome(pos);
+
+		String biomeKey = "unknown";
+		if (biomeHolder.unwrapKey().isPresent()) {
+			biomeKey = biomeHolder.unwrapKey().get().identifier().toString();
+		} else {
+			// Fallback: search registry for this biome
+			Registry<Biome> biomeRegistry = level.registryAccess().lookupOrThrow(Registries.BIOME);
+			for (var entry : biomeRegistry.entrySet()) {
+				if (entry.getValue() == biomeHolder.value()) {
+					biomeKey = entry.getKey().identifier().toString();
+					break;
+				}
 			}
 		}
-		return GearStats.goodnessForCases(best, Config.Goodness * Config.DispenserGoodness);
+
+		GearRoll.Place place = new GearRoll.Place(biomeKey, biomeHolder.value().getBaseTemperature(),
+				level.dimension().identifier().toString());
+		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
+		GearRoll.Owner owner = opener == null ? null
+				: new GearRoll.Owner(opener.getStringUUID(), opener.getDisplayName().getString());
+
+		return new GearRoll.Scene(place, worldSeed, level.isRaining(), owner);
 	}
 
 	/**
-	 * Generates a tool for the player and fires the case-opened criteria. The
-	 * caller decides where the item goes (hand slot, inventory, ...).
+	 * Makes the item a {@link GearRoll} decided on. This is the one place generated gear
+	 * is written: every namespace goes on raw, and the vanilla components that derive
+	 * from them are built once at the end instead of once per field.
 	 */
-	public static ItemStack generateTool(ServerPlayer player, Level level) {
+	public static ItemStack stamp(GearRoll.Rolled rolled) {
+		ToolType type = rolled.type();
+		ItemStack gear = new ItemStack(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get());
 
-		ItemStack lootItem = genTool(player, level);
+		CompoundTag stats = new CompoundTag();
+		stats.putFloat("goodness", rolled.goodness());
+		GearTags.write(gear, GearTags.STATS, stats);
 
-		// The ITEM_USED stat for the case is awarded after this runs, so +1
-		// counts the case being opened right now.
-		int casesOpened = player.getStats().getValue(Stats.ITEM_USED.get(ModItems.CASE.get())) + 1;
-		ModCriteria.caseOpened(player, casesOpened, getToolType(lootItem));
-		ModCriteria.traitsObtained(player, lootItem, TraitObtainedTrigger.SOURCE_GENERATED);
+		CompoundTag info = new CompoundTag();
+		info.putString("type", type.name());
+		info.putFloat("biomeTemp", rolled.place().temperature());
+		info.putString("biomeKey", rolled.place().biomeKey());
+		info.putString("dimension", rolled.place().dimension());
+		// Owner data is what Soulbound checks.
+		if (rolled.owner() != null) {
+			info.putString("ownerUUID", rolled.owner().uuid());
+			info.putString("ownerName", rolled.owner().name());
+		}
+		GearTags.write(gear, GearTags.INFO, info);
 
-		return lootItem;
+		if (!rolled.traits().isEmpty()) {
+			GearTags.write(gear, Modifier.MODTAG, rolled.traits().copy());
+		}
+
+		CompoundTag lore = new CompoundTag();
+		lore.putString("itemLore", rolled.lore());
+		GearTags.write(gear, GearTags.LORE, lore);
+
+		CompoundTag cosmetics = new CompoundTag();
+		cosmetics.putInt("texture", rolled.texture());
+		GearTags.write(gear, GearTags.COSMETICS, cosmetics);
+
+		setItemName(gear, rolled.name(), rolled.nameColor());
+
+		// Worn armor's slot and look come from the type and texture just written.
+		updateEquippable(gear);
+		refreshDerivedComponents(gear);
+
+		return gear;
 	}
 
 	private static final int[] ROMAN_VALUES = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };

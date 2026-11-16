@@ -13,12 +13,7 @@ import dev.marston.randomloot.loot.TraitEligibility;
 import dev.marston.randomloot.loot.TraitEligibility.GearContext;
 import dev.marston.randomloot.loot.TraitEligibility.Verdict;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.breakers.Excavator;
-import dev.marston.randomloot.loot.modifiers.breakers.Lumbering;
-import dev.marston.randomloot.loot.modifiers.breakers.Veiny;
-import dev.marston.randomloot.loot.modifiers.hurter.Fierce;
-import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
-import dev.marston.randomloot.loot.modifiers.wearers.Thorny;
+import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -28,19 +23,25 @@ import org.junit.jupiter.api.Test;
  */
 class TraitEligibilityTest {
 
+	/** A trait as gear carries it: a fresh instance, never the registry's own. */
+	private static Modifier trait(String tag) {
+		Modifier registered = ModifierRegistry.getModifier(tag);
+		return registered.fromNBT(registered.toNBT());
+	}
+
 	private static GearContext gear(ToolType type, Modifier... existing) {
 		return GearContext.of(type, List.of(existing));
 	}
 
 	@Test
 	void allowsATraitThatFitsTheGear() {
-		assertTrue(TraitEligibility.check(gear(ToolType.SWORD), new Fierce()).allowed());
-		assertTrue(TraitEligibility.check(gear(ToolType.CHESTPLATE), new Thorny()).allowed());
+		assertTrue(TraitEligibility.check(gear(ToolType.SWORD), trait("fierce")).allowed());
+		assertTrue(TraitEligibility.check(gear(ToolType.CHESTPLATE), trait("thorny")).allowed());
 	}
 
 	@Test
 	void rejectsTraitsThatDoNotFitTheGearType() {
-		TraitEligibility.Result result = TraitEligibility.check(gear(ToolType.SWORD), new Thorny());
+		TraitEligibility.Result result = TraitEligibility.check(gear(ToolType.SWORD), trait("thorny"));
 
 		assertFalse(result.allowed());
 		assertEquals(Verdict.WRONG_TYPE, result.verdict());
@@ -49,18 +50,18 @@ class TraitEligibilityTest {
 	@Test
 	void rejectsBiomeRestrictedTraitsOutsideTheirBiome() {
 		// Void-Touched is End-only; the default context is an overworld biome.
-		TraitEligibility.Result overworld = TraitEligibility.check(gear(ToolType.PICKAXE), new VoidTouched());
+		TraitEligibility.Result overworld = TraitEligibility.check(gear(ToolType.PICKAXE), trait("void_touched"));
 		assertEquals(Verdict.WRONG_BIOME, overworld.verdict());
 
 		GearContext end = new GearContext(ToolType.PICKAXE, "minecraft:the_end", 0.5f, "minecraft:the_end",
 				List.of(), false, true);
-		assertTrue(TraitEligibility.check(end, new VoidTouched()).allowed());
+		assertTrue(TraitEligibility.check(end, trait("void_touched")).allowed());
 	}
 
 	@Test
 	void rejectsIncompatibleTraitsAndNamesTheConflict() {
-		Modifier veiny = new Veiny();
-		TraitEligibility.Result result = TraitEligibility.check(gear(ToolType.PICKAXE, veiny), new Excavator());
+		Modifier veiny = trait("veiny");
+		TraitEligibility.Result result = TraitEligibility.check(gear(ToolType.PICKAXE, veiny), trait("excavator"));
 
 		assertEquals(Verdict.INCOMPATIBLE, result.verdict());
 		assertNotNull(result.conflict());
@@ -70,8 +71,8 @@ class TraitEligibilityTest {
 	@Test
 	void rejectsAnIncompatiblePairInEitherOrder() {
 		// Lumbering names Veiny as a conflict; Veiny's own list only names Excavator.
-		Modifier veiny = new Veiny();
-		Modifier lumbering = new Lumbering();
+		Modifier veiny = trait("veiny");
+		Modifier lumbering = trait("lumbering");
 
 		assertEquals(Verdict.INCOMPATIBLE,
 				TraitEligibility.check(gear(ToolType.AXE, lumbering), veiny).verdict(),
@@ -85,7 +86,7 @@ class TraitEligibilityTest {
 
 	@Test
 	void rejectsARepeatOfATraitThatCannotLevel() {
-		Modifier veiny = new Veiny();
+		Modifier veiny = trait("veiny");
 		assertFalse(veiny.canLevel(), "this test assumes Veiny does not level");
 
 		TraitEligibility.Result result = TraitEligibility.check(gear(ToolType.PICKAXE, veiny), veiny);
@@ -95,7 +96,7 @@ class TraitEligibilityTest {
 
 	@Test
 	void allowsARepeatOfATraitThatStillLevels() {
-		Modifier thorny = new Thorny();
+		Modifier thorny = trait("thorny");
 		assertTrue(thorny.canLevel(), "this test assumes a fresh Thorny can still level");
 
 		assertTrue(TraitEligibility.check(gear(ToolType.CHESTPLATE, thorny), thorny).allowed());
@@ -105,12 +106,12 @@ class TraitEligibilityTest {
 	void rejectsGearThatIsStillRolling() {
 		GearContext rolling = new GearContext(ToolType.SWORD, "", 0.7f, "minecraft:overworld", List.of(), true, true);
 
-		assertEquals(Verdict.ROLLING, TraitEligibility.check(rolling, new Fierce()).verdict());
+		assertEquals(Verdict.ROLLING, TraitEligibility.check(rolling, trait("fierce")).verdict());
 	}
 
 	@Test
 	void everyRefusalExplainsItself() {
-		Modifier thorny = new Thorny();
+		Modifier thorny = trait("thorny");
 
 		assertNull(TraitEligibility.check(gear(ToolType.CHESTPLATE), thorny).reason(thorny),
 				"an allowed trait has no refusal to explain");

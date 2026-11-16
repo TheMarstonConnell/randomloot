@@ -2,7 +2,6 @@ package dev.marston.randomloot.loot.modifiers;
 
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.hurter.EarlyBird;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -54,21 +53,16 @@ public final class ArmorDispatcher {
 		}
 
 		// This is the one place both loaders call before damage lands on any living
-		// entity, so Early Bird records the victim's untouched health from here - for
-		// every hit, since each one has to set or clear that record.
-		EarlyBird.notePreDamage(wearer);
+		// entity, so traits that read pre-hit state take their note from here - for
+		// every hit, since each one has to set or clear that note.
+		TraitDispatch.beforeDamage(wearer);
 
 		if (damage <= 0.0f) {
 			return damage;
 		}
 
-		// getModifiers already filters config-disabled traits.
 		for (ItemStack stack : wornLootArmor(wearer)) {
-			for (Modifier mod : LootUtils.getModifiers(stack)) {
-				if (mod instanceof WearerHurtModifier whm) {
-					damage = whm.onWearerHurt(stack, wearer, source, damage);
-				}
-			}
+			damage = TraitDispatch.wearerHurt(stack, wearer, source, damage);
 		}
 
 		return Math.max(0.0f, damage);
@@ -95,7 +89,7 @@ public final class ArmorDispatcher {
 
 	/**
 	 * Durability hook for a single armor piece about to take damage. Returns the
-	 * (possibly zeroed) durability damage after Unbreaking rolls.
+	 * (possibly reduced) durability damage after Unbreaking rolls.
 	 *
 	 * <p>The slot gate lives here rather than in the shims because the two loaders
 	 * deliver very different scopes: NeoForge's ArmorHurtEvent fires only for armor
@@ -118,12 +112,6 @@ public final class ArmorDispatcher {
 			return durabilityDamage;
 		}
 
-		// getModifiers already filters config-disabled traits.
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-			if (mod instanceof Unbreaking unbreaking && unbreaking.test(wearer.level())) {
-				return 0.0f;
-			}
-		}
-		return durabilityDamage;
+		return TraitDispatch.armorDurability(stack, wearer.level(), durabilityDamage);
 	}
 }

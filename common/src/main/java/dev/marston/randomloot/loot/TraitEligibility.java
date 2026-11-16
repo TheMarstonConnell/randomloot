@@ -14,10 +14,11 @@ import net.minecraft.world.item.ItemStack;
  * Whether a trait may be added to a piece of loot gear, and why not when it can't.
  *
  * <p>The rule used to be written three times - once for the case roll
- * ({@link LootUtils#generateNewTrait}), once for {@code /randomloot trait add}, and once
+ * ({@link GearRoll#pickTrait}), once for {@code /randomloot trait add}, and once
  * for the smithing table - and the three copies disagreed: smithing skipped the config
  * toggle, the compatibility check and the level cap, so it would consume the template
  * and the addition item and hand back an unchanged tool. All three now ask this module.
+ * It only answers: {@link TraitGrant} asks it and then makes the change.
  *
  * <p>{@link #check(GearContext, Modifier)} works off a {@link GearContext} rather than an
  * {@code ItemStack} so the rule can be exercised without a bound item registry; the
@@ -125,9 +126,9 @@ public final class TraitEligibility {
 				if (!existing.canLevel()) {
 					return new Result(Verdict.ALREADY_MAXED, existing, ctx.type());
 				}
-			} else if (!existing.compatible(trait) || !trait.compatible(existing)) {
-				// Both are asked: a conflict only one of the pair declares (Lumbering
-				// names Veiny, Veiny does not name Lumbering) holds in either order.
+			} else if (!existing.compatible(trait)) {
+				// A conflict is declared on one trait of a pair and holds in either
+				// order: the registry applies it both ways.
 				return new Result(Verdict.INCOMPATIBLE, existing, ctx.type());
 			}
 		}

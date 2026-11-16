@@ -1,15 +1,12 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.Identifier;
@@ -30,37 +27,17 @@ import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
-public class Prospector extends LeveledModifier implements BlockBreakModifier {
-
-	private int totalFinds;
-
+public class Prospector extends AbstractModifier implements BlockBreakModifier {
 	private static final String TOTAL_FINDS = "totalFinds";
+
+	private final Stored<Integer> totalFinds = stored(TOTAL_FINDS, 0);
+
 	private static final float BASE_CHANCE = 0.03f;
 	private static final float CHANCE_PER_LEVEL = 0.01f;
 
 	private static final ResourceKey<LootTable> LOOT_TABLE = ResourceKey.create(
 			Registries.LOOT_TABLE,
 			Identifier.fromNamespaceAndPath("randomloot", "prospector_drops"));
-
-	public Prospector(String name, int level, int totalFinds) {
-		this.name = name;
-		this.level = level;
-		this.totalFinds = totalFinds;
-	}
-
-	public Prospector() {
-		this("Prospector", 1, 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 10;
-	}
 
 	private boolean isStoneBlock(BlockState state) {
 		return state.is(BlockTags.BASE_STONE_OVERWORLD) || state.is(BlockTags.BASE_STONE_NETHER);
@@ -77,19 +54,16 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity entity) {
 		Level level = entity.level();
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		if (!isStoneBlock(broken)) {
-			return false;
+			return;
 		}
 
-		float chance = BASE_CHANCE + (this.level * CHANCE_PER_LEVEL);
+		float chance = BASE_CHANCE + (traitLevel() * CHANCE_PER_LEVEL);
 		if (level.getRandom().nextFloat() > chance) {
-			return false;
+			return;
 		}
 
 		ServerLevel serverLevel = (ServerLevel) level;
@@ -105,54 +79,22 @@ public class Prospector extends LeveledModifier implements BlockBreakModifier {
 
 		if (!drops.isEmpty()) {
 			level.playSound(null, pos, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 0.5f, 1.2f);
-			this.totalFinds++;
-			LootUtils.updateModifier(itemstack, this);
+			this.totalFinds.set(this.totalFinds.get() + 1);
 		}
-
-		return false;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = super.toNBT();
-		tag.putInt(TOTAL_FINDS, totalFinds);
-		return tag;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Prospector(
-				tag.getStringOr(NAME, "Prospector"),
-				ModifierConstants.getLevel(tag, 1),
-				tag.getIntOr(TOTAL_FINDS, 0));
-	}
-
-	@Override
-	public String tagName() {
-		return "prospector";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GOLD;
 	}
 
 	@Override
 	public String description() {
-		int chancePercent = (int) ((BASE_CHANCE + (this.level * CHANCE_PER_LEVEL)) * 100);
+		int chancePercent = (int) ((BASE_CHANCE + (traitLevel() * CHANCE_PER_LEVEL)) * 100);
 		return "Mining stone has a " + chancePercent + "% chance to discover bonus minerals.";
 	}
 
 	@Override
 	public Component writeDetailsToLore(Level level) {
-		if (totalFinds == 0) {
+		if (totalFinds.get() == 0) {
 			return Modifier.makeComp("No minerals found yet", ChatFormatting.GRAY);
 		}
-		return Modifier.makeComp(totalFinds + " minerals found", ChatFormatting.GRAY);
+		return Modifier.makeComp(totalFinds.get() + " minerals found", ChatFormatting.GRAY);
 	}
 
-	@Override
-	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.PICKAXE);
-	}
 }
