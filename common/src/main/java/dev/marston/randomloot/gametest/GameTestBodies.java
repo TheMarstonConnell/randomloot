@@ -1829,6 +1829,20 @@ public final class GameTestBodies {
 		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
 
+		// A refused change changes nothing. The table only assembles what matched, but
+		// handed gear the gate refuses, assemble has to give it back as it was: the
+		// re-forging of forger names belongs to a change, and the recipe knows this
+		// world's seed by now from the matches above.
+		ItemStack refused = newTool(ToolType.SWORD);
+		CompoundTag foreignGrace = ModifierRegistry.getModifier("dirt_place").toNBT();
+		foreignGrace.putString(Modifier.NAME, "Nobody's Grace");
+		TraitGrant.force(refused, ModifierRegistry.loadModifier("dirt_place", foreignGrace));
+		ItemStack handedBack = thorny.assemble(new SmithingRecipeInput(addTemplate, refused, cactus));
+		helper.assertTrue(
+				GearTags.read(handedBack, Modifier.MODTAG).equals(GearTags.read(refused, Modifier.MODTAG)),
+				"assembling gear the gate refuses should leave its traits as they were, got "
+						+ GearTags.read(handedBack, Modifier.MODTAG) + " from " + GearTags.read(refused, Modifier.MODTAG));
+
 		helper.succeed();
 	}
 
