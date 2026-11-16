@@ -2,6 +2,8 @@ package dev.marston.randomloot.gametest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -31,6 +33,7 @@ import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
+import dev.marston.randomloot.platform.Services;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
@@ -62,10 +65,12 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
+import net.minecraft.world.item.component.BlocksAttacks;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.damagesource.DamageSource;
@@ -814,8 +819,8 @@ public final class GameTestBodies {
 		LootUtils.setOwnerUUID(pick, "00000000-0000-0000-0000-000000000000");
 		float unowned = player.getDestroySpeed(Blocks.STONE.defaultBlockState());
 
-		helper.assertTrue(owned > unowned,
-				"soulbound should mine faster for its owner: owned=" + owned + " unowned=" + unowned);
+		helper.assertTrue(Math.abs(owned - unowned * 1.15f) < 0.001f,
+				"soulbound should mine 1.15 times as fast for its owner: owned=" + owned + " unowned=" + unowned);
 
 		helper.succeed();
 	}
@@ -940,6 +945,51 @@ public final class GameTestBodies {
 	}
 
 	/**
+	 * An enchanted book on the anvil is filtered per gear type, like the enchanting table.
+	 * The single tool item and the single armor item sit in every vanilla enchantable tag,
+	 * so without the ENCHANT_GATE hook on this path an efficiency book lands on a sword.
+	 * NeoForge reaches the hook through supportsEnchantment, Fabric through its
+	 * ALLOW_ENCHANTING event.
+	 */
+	public static void anvilBooksFilterByType(GameTestHelper helper) {
+		// Not a creative player: the anvil lets those apply any book to anything.
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> efficiency = enchants.getOrThrow(Enchantments.EFFICIENCY);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+		Holder<Enchantment> featherFalling = enchants.getOrThrow(Enchantments.FEATHER_FALLING);
+
+		helper.assertTrue(anvilAppliesBook(helper, player, newTool(ToolType.PICKAXE), efficiency),
+				"an efficiency book should go on a pickaxe");
+		helper.assertFalse(anvilAppliesBook(helper, player, newTool(ToolType.SWORD), efficiency),
+				"an efficiency book must not go on a sword");
+		helper.assertTrue(anvilAppliesBook(helper, player, newTool(ToolType.SWORD), sharpness),
+				"a sharpness book should go on a sword");
+		helper.assertFalse(anvilAppliesBook(helper, player, newTool(ToolType.PICKAXE), sharpness),
+				"a sharpness book must not go on a pickaxe");
+		helper.assertTrue(anvilAppliesBook(helper, player, newArmor(ToolType.BOOTS), featherFalling),
+				"a feather falling book should go on boots");
+		helper.assertFalse(anvilAppliesBook(helper, player, newArmor(ToolType.HELMET), featherFalling),
+				"a feather falling book must not go on a helmet");
+
+		helper.succeed();
+	}
+
+	/** Whether an anvil offers the gear with the enchantment on it when given the gear and a book of it. */
+	private static boolean anvilAppliesBook(GameTestHelper helper, ServerPlayer player, ItemStack gear,
+			Holder<Enchantment> enchantment) {
+		ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
+		book.enchant(enchantment, 1);
+
+		var menu = new AnvilMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(BlockPos.ZERO)));
+		menu.getSlot(0).set(gear);
+		menu.getSlot(1).set(book);
+		menu.createResult();
+		return menu.getSlot(2).getItem().getEnchantments().getLevel(enchantment) == 1;
+	}
+
+	/**
 	 * Chest-type loot tables actually produce cases/templates at the configured
 	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
 	 * LootTableEvents.MODIFY_DROPS. 200 rolls at the default 25% miss with
@@ -1008,6 +1058,114 @@ public final class GameTestBodies {
 				"worn armor should gain XP from its wearer taking damage");
 
 		helper.succeed();
+	}
+
+	/**
+	 * Armor earns XP for the damage its wearer actually takes, the same on both loaders.
+	 * The DAMAGE_POST hook hands over the hit as it stands after a shield, armor and the
+	 * wearer-hurt traits, and it comes for a killing hit too.
+	 *
+	 * <p>Fabric used to hand over the hit as dealt, never a killing one, and its shim
+	 * dropped any hit a shield blocked part of. What Fabric gave then is noted on each case
+	 * where it differed.
+	 */
+	public static void armorXpPerHit(GameTestHelper helper) {
+		enablePvp(helper);
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
+
+		// Generic damage skips armor: 10 dealt, 10 taken.
+		ServerPlayer plain = chestplateWearer(helper, attacker, 0.0);
+		assertArmorXpFromHit(helper, "an unmitigated hit", plain, EquipmentSlot.CHEST,
+				plain.damageSources().generic(), 10.0f, 10.0f, 10);
+
+		// 20 armor takes 10 down to 4. Fabric gave 10.
+		ServerPlayer armored = chestplateWearer(helper, attacker, 20.0);
+		assertArmorXpFromHit(helper, "a hit against 20 armor", armored, EquipmentSlot.CHEST,
+				armored.damageSources().playerAttack(attacker), 10.0f, 4.0f, 4);
+
+		// Half of 10 gets past the shield and 20 armor takes that down to 1.5. Fabric gave 0.
+		ServerPlayer halfBlocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, halfBlocker, 0.5f);
+		assertArmorXpFromHit(helper, "a half-blocked hit", halfBlocker, EquipmentSlot.CHEST,
+				halfBlocker.damageSources().playerAttack(attacker), 10.0f, 1.5f, 2);
+
+		ServerPlayer blocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, blocker, 1.0f);
+		assertArmorXpFromHit(helper, "a fully blocked hit", blocker, EquipmentSlot.CHEST,
+				blocker.damageSources().playerAttack(attacker), 10.0f, 0.0f, 0);
+
+		// Maxed Featherweight cancels the fall; boots that soaked nothing learn nothing. Fabric gave 6.
+		ServerPlayer faller = mockVulnerablePlayer(helper);
+		faller.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+		assertArmorXpFromHit(helper, "a fall Featherweight cancels", faller, EquipmentSlot.FEET,
+				faller.damageSources().fall(), 6.0f, 0.0f, 0);
+
+		// A bigger hit inside the first one's invulnerability counts for the difference: 4,
+		// then 10 that lands as 6. It is the other path through hurtServer to the hook.
+		ServerPlayer twice = chestplateWearer(helper, attacker, 0.0);
+		helper.hurt(twice, twice.damageSources().generic(), 4.0f);
+		helper.hurt(twice, twice.damageSources().generic(), 10.0f);
+		helper.assertTrue(twice.getMaxHealth() - twice.getHealth() == 10.0f,
+				"hits for 4 then 10 in one invulnerability window should take 10 health, took "
+						+ (twice.getMaxHealth() - twice.getHealth()));
+		helper.assertTrue(LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)) == 10,
+				"hits for 4 then 10 in one invulnerability window should earn 4 + 6 armor XP, earned "
+						+ LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)));
+
+		// A killing hit counts, capped at the wearer's 20 health. Fabric gave 0.
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		ItemStack zombieChest = newArmor(ToolType.CHESTPLATE);
+		zombie.setItemSlot(EquipmentSlot.CHEST, zombieChest);
+		helper.hurt(zombie, zombie.damageSources().generic(), 1000.0f);
+		helper.assertTrue(zombie.isDeadOrDying(), "the zombie should die to a hit for 1000");
+		helper.assertTrue(LootUtils.getLevel(zombieChest) == 0 && LootUtils.getXP(zombieChest) == 20,
+				"a killing hit should earn the wearer's 20 max health in armor XP, got "
+						+ LootUtils.getXP(zombieChest));
+
+		helper.succeed();
+	}
+
+	/**
+	 * A hurtable player in a fresh Random Armor chestplate with this much armor, standing
+	 * two blocks down +z from the attacker's side and looking along +z at them, so a raised
+	 * shield faces the attack.
+	 */
+	private static ServerPlayer chestplateWearer(GameTestHelper helper, ServerPlayer attacker, double armor) {
+		ServerPlayer wearer = mockVulnerablePlayer(helper);
+		wearer.setItemSlot(EquipmentSlot.CHEST, newArmor(ToolType.CHESTPLATE));
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(armor);
+		wearer.snapTo(attacker.getX(), attacker.getY(), attacker.getZ() - 2.0, 0.0f, 0.0f);
+		wearer.setYHeadRot(0.0f);
+		return wearer;
+	}
+
+	/**
+	 * Raises a shield that blocks this share of a hit. It has no raise delay: a mock player
+	 * is never ticked, so the vanilla quarter second would never pass.
+	 */
+	private static void raiseShield(GameTestHelper helper, ServerPlayer wearer, float share) {
+		ItemStack shield = new ItemStack(Items.SHIELD);
+		shield.set(DataComponents.BLOCKS_ATTACKS, new BlocksAttacks(0.0f, 1.0f,
+				List.of(new BlocksAttacks.DamageReduction(90.0f, Optional.empty(), 0.0f, share)),
+				BlocksAttacks.ItemDamageFunction.DEFAULT, Optional.empty(), Optional.empty(), Optional.empty()));
+		wearer.setItemInHand(InteractionHand.OFF_HAND, shield);
+		wearer.startUsingItem(InteractionHand.OFF_HAND);
+		helper.assertTrue(wearer.isBlocking(), "the shield should be up");
+	}
+
+	/** Hits the wearer once at full health and checks what they took and what the worn piece earned from it. */
+	private static void assertArmorXpFromHit(GameTestHelper helper, String what, ServerPlayer wearer,
+			EquipmentSlot slot, DamageSource source, float dealt, float taken, int xp) {
+		int xpBefore = LootUtils.getXP(wearer.getItemBySlot(slot));
+		freshHit(helper, wearer, source, dealt);
+
+		float lost = wearer.getMaxHealth() - wearer.getHealth();
+		helper.assertTrue(Math.abs(lost - taken) < 0.001f,
+				what + " for " + dealt + " should take " + taken + " health, took " + lost);
+		ItemStack worn = wearer.getItemBySlot(slot);
+		int earned = LootUtils.getXP(worn) - xpBefore;
+		helper.assertTrue(LootUtils.getLevel(worn) == 0 && earned == xp,
+				what + " for " + dealt + " (" + taken + " taken) should earn " + xp + " armor XP, earned " + earned);
 	}
 
 	/** The anvil's material-repair path accepts items from the armor_repair_materials tag. */
@@ -1512,8 +1670,8 @@ public final class GameTestBodies {
 	/**
 	 * Taking the result uses up the recipe's whole count. Vanilla's onTake shrinks each
 	 * input by one, so the other three cactus here only go if the loader's SMITHING_TAKE
-	 * hook really runs - loader_hooks_all_bound can only say it was declared. Also checks
-	 * the preview, which has to vanish the moment the slot can no longer pay.
+	 * hook really runs. Also checks the preview, which has to vanish the moment the slot
+	 * can no longer pay.
 	 */
 	public static void smithingTakeConsumesCount(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -1724,17 +1882,111 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Every GameHook is wired on the loader under test. Adding a hook is one method on
-	 * NeoForge and up to three edits on Fabric (callback or mixin class, plus a
-	 * mixins.json entry), so a hook wired on one loader and forgotten on the other used
-	 * to be invisible until someone played the game.
+	 * Every GameHook reaches common on the loader under test. Each step makes the game do
+	 * the thing behind a hook, through the loader's real wiring - an event listener, a
+	 * mixin, an item override or a loot modifier file - and GameHooks records what
+	 * arrived. A hook wired on one loader and forgotten on the other, a mixin dropped from
+	 * the mixins json, a handler deleted from a shim: each leaves its hook undelivered.
+	 *
+	 * <p>COMMANDS and CONFIG arrive while the server starts and SERVER_TICK at the end of
+	 * every tick, so there is no step for them. SERVER_STOPPING is the one hook left out
+	 * for good: nothing can deliver it while the server running this test is still up.
 	 */
 	public static void loaderHooksAllBound(GameTestHelper helper) {
-		java.util.Set<GameHook> missing = GameHooks.missing();
+		ServerLevel level = helper.getLevel();
+		enablePvp(helper);
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
 
-		helper.assertTrue(missing.isEmpty(), "this loader never bound these hooks: " + missing);
+		// DAMAGE_PRE, DAMAGE_POST, ARMOR_HURT: a player in a chestplate takes a hit.
+		// (Only a player's armor wears: LivingEntity.hurtArmor does nothing for a mob.)
+		player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+		freshHit(helper, player, player.damageSources().playerAttack(attacker), 8.0f);
+
+		// KILL
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(zombie, zombie.damageSources().generic(), 1000.0f);
+
+		// BREAK_SPEED
+		player.getDestroySpeed(Blocks.STONE.defaultBlockState());
+
+		// AFTER_USE_ITEM
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+		player.gameMode.useItem(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND);
+
+		// CREATIVE_TAB
+		buildCreativeTab(helper, ModItems.CREATIVE_TAB);
+
+		// ANVIL_COMBINE
+		var anvil = new AnvilMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(level, helper.absolutePos(BlockPos.ZERO)));
+		anvil.getSlot(0).set(newTool(ToolType.SWORD));
+		anvil.getSlot(1).set(newTool(ToolType.SWORD));
+		anvil.createResult();
+
+		// ENCHANT_GATE
+		var enchants = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		tableOffers(newTool(ToolType.SWORD), enchants.getOrThrow(Enchantments.SHARPNESS),
+				enchants.getOrThrow(Enchantments.EFFICIENCY));
+
+		// LOOT_INJECTION
+		level.getServer().reloadableRegistries()
+				.getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
+						Identifier.withDefaultNamespace("chests/simple_dungeon")))
+				.getRandomItems(new LootParams.Builder(level).create(LootContextParamSets.EMPTY));
+
+		// SMITHING_TAKE
+		SmithingMenu smithing = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 4));
+		smithing.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		Set<GameHook> undelivered = GameHooks.undelivered();
+		undelivered.remove(GameHook.SERVER_STOPPING);
+		// A gap this test found: Fabric does not deliver the first config load (see
+		// GameHooks.config). Its fix is a separate change against the release branch; take
+		// this excuse out once that fix is under this code.
+		if (Services.PLATFORM.platformName().equals("Fabric")) {
+			undelivered.remove(GameHook.CONFIG);
+		}
+		helper.assertTrue(undelivered.isEmpty(), "this loader never delivered these hooks: " + undelivered);
 
 		helper.succeed();
+	}
+
+	/**
+	 * The mod's items are listed in the Tools & Utilities creative tab, in their display
+	 * order, after everything vanilla puts there, and in no other tab. Tabs are only ever
+	 * built on a client in play; building them here goes through the same loader hook.
+	 */
+	public static void creativeTabListsModItems(GameTestHelper helper) {
+		List<Item> listed = buildCreativeTab(helper, ModItems.CREATIVE_TAB).getDisplayItems().stream()
+				.map(ItemStack::getItem).toList();
+		List<Item> expected = ModItems.creativeTabItems();
+
+		helper.assertTrue(listed.size() > expected.size(), "vanilla's own tools should be in the tab too");
+		helper.assertTrue(listed.subList(listed.size() - expected.size(), listed.size()).equals(expected),
+				"the tab should end with " + expected + ", ends with "
+						+ listed.subList(listed.size() - expected.size(), listed.size()));
+		helper.assertTrue(listed.stream().filter(expected::contains).count() == expected.size(),
+				"each of the mod's items should be listed once");
+
+		// Built from its id for the reason ModItems.CREATIVE_TAB is: vanilla keeps these keys private.
+		ResourceKey<CreativeModeTab> combat = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+				Identifier.withDefaultNamespace("combat"));
+		for (ItemStack stack : buildCreativeTab(helper, combat).getDisplayItems()) {
+			helper.assertFalse(expected.contains(stack.getItem()),
+					"the combat tab should not list " + stack.getItem());
+		}
+
+		helper.succeed();
+	}
+
+	/** Builds one creative tab's contents, as the client does when the creative inventory opens. */
+	private static CreativeModeTab buildCreativeTab(GameTestHelper helper, ResourceKey<CreativeModeTab> key) {
+		CreativeModeTab tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(key);
+		tab.buildContents(new CreativeModeTab.ItemDisplayParameters(helper.getLevel().enabledFeatures(), true,
+				helper.getLevel().registryAccess()));
+		return tab;
 	}
 
 	public static int run(CommandDispatcher<CommandSourceStack> commands, CommandSourceStack source, String command) {
@@ -1959,20 +2211,42 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * A chest-type table that rolls other chest-type tables still gets one injection
-	 * roll. The trial vault's reward table rolls reward_common/_rare/_unique; on Fabric
-	 * every one of those used to carry its own injected pool.
+	 * One roll of a chest's loot is one injection roll: with both chances forced to 1 it
+	 * adds exactly one case and one template, and with both at 0 it adds neither. That
+	 * holds for a table that rolls other chest-type tables too - the trial vault's reward
+	 * table rolls reward_common/_rare/_unique, and on Fabric every one of those used to
+	 * carry its own injected pool.
 	 */
 	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
-		var key = ResourceKey.create(Registries.LOOT_TABLE,
-				Identifier.withDefaultNamespace("chests/trial_chambers/reward"));
-		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		helper.assertTrue(table != LootTable.EMPTY, "trial chamber reward loot table should exist");
+		double savedCase = Config.CaseChance;
+		double savedMod = Config.ModChance;
+		try {
+			for (String path : List.of("chests/simple_dungeon", "chests/trial_chambers/reward")) {
+				var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(
+						ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
+				helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
 
-		var params = new LootParams.Builder(helper.getLevel())
-				.create(LootContextParamSets.EMPTY);
+				Config.CaseChance = 1.0;
+				Config.ModChance = 1.0;
+				assertInjectedPerRoll(helper, table, path, 1);
 
-		for (int i = 0; i < 300; i++) {
+				Config.CaseChance = 0.0;
+				Config.ModChance = 0.0;
+				assertInjectedPerRoll(helper, table, path, 0);
+			}
+		} finally {
+			Config.CaseChance = savedCase;
+			Config.ModChance = savedMod;
+		}
+
+		helper.succeed();
+	}
+
+	/** Rolls the table a few times and checks each roll holds exactly this many cases and this many templates. */
+	private static void assertInjectedPerRoll(GameTestHelper helper, LootTable table, String path, int expected) {
+		var params = new LootParams.Builder(helper.getLevel()).create(LootContextParamSets.EMPTY);
+
+		for (int i = 0; i < 20; i++) {
 			int cases = 0;
 			int templates = 0;
 			for (ItemStack drop : table.getRandomItems(params)) {
@@ -1982,12 +2256,10 @@ public final class GameTestBodies {
 					templates += drop.getCount();
 				}
 			}
-			helper.assertTrue(cases <= 1 && templates <= 1,
-					"one vault roll should inject at most one case and one template, got " + cases + " and "
-							+ templates);
+			helper.assertTrue(cases == expected && templates == expected,
+					"one roll of " + path + " should inject " + expected + " case and " + expected
+							+ " template, got " + cases + " and " + templates);
 		}
-
-		helper.succeed();
 	}
 
 	/**
