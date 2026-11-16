@@ -40,6 +40,10 @@ _Avoid_: roll on its own (a roll is also any random draw, such as a trait roll),
 A loader's own code that routes that loader's game events into the shared code. There are two, one per loader, and neither holds game logic.
 _Avoid_: glue, bridge, platform code
 
+**Loader hook contract**:
+The list of game events the shared code needs from a loader, each with what a loader shim must hand over: at which moment of the event, on which side, and for which cases. Both shims answer to the same contract, so what an event means for gear is decided once, behind it.
+_Avoid_: event API, hook registry, bindings
+
 **Gametest table**:
 The one list of the gametests that both loaders run. A shared gametest exists by having a row in it, so it cannot be present on one loader and missing on the other.
 _Avoid_: test registry, test list, test manifest
