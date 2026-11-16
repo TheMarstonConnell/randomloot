@@ -1,6 +1,6 @@
 package dev.marston.randomloot.fabric.mixin;
 
-import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.level.ServerPlayerGameMode;
 import net.minecraft.world.InteractionHand;
@@ -24,12 +24,12 @@ public abstract class ServerPlayerGameModeMixin {
     @Inject(method = "useItem", at = @At("RETURN"))
     private void randomloot$afterUseItem(ServerPlayer player, Level level, ItemStack itemStack, InteractionHand hand,
             CallbackInfoReturnable<InteractionResult> cir) {
-        LootItem.afterUseItem(player, hand, cir.getReturnValue());
+        GameHooks.afterUseItem(player, hand, cir.getReturnValue());
     }
 
     @Inject(method = "useItemOn", at = @At("RETURN"))
     private void randomloot$afterUseItemOn(ServerPlayer player, Level level, ItemStack itemStack, InteractionHand hand,
             BlockHitResult hitResult, CallbackInfoReturnable<InteractionResult> cir) {
-        LootItem.afterUseItemOn(player, hand, cir.getReturnValue());
+        GameHooks.afterUseItemOn(player, hand, cir.getReturnValue());
     }
 }
