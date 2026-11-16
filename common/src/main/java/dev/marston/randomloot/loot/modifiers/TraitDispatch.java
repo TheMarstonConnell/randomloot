@@ -29,7 +29,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>A caller names the event and hands over its arguments. What the events have in
  * common is decided here, once, so a trait class states only its own rule:
  * <ul>
- * <li>the gear's traits are loaded once per event, without the config-disabled ones;
+ * <li>the gear's traits are loaded once for an event's hooks and the durability the event
+ * itself costs, without the config-disabled ones;
  * <li>gear still in its reveal roll is inert, worn or held;
  * <li>a hit trait that reads pre-hit state ({@link PreHitModifier}) runs before the rest;
  * <li>hooks that change the world run on the server only;
@@ -216,6 +217,11 @@ public final class TraitDispatch {
 	 * goes through here - stripping and pathing, the right-click traits, the extra
 	 * blocks area traits break - so a maxed "Unbreakable" tool really is. Never call
 	 * {@code hurtAndBreak} on loot gear directly.
+	 *
+	 * <p>Each call loads the gear's traits to find Unbreaking, as the old
+	 * {@code damageGear} did, also when a trait calls it from inside its own hook. Only
+	 * the one point {@link #hit} and {@link #blockBroken} charge is spent with the traits
+	 * the dispatch already holds.
 	 */
 	public static void spendDurability(ItemStack tool, int points, @Nullable LivingEntity holder,
 			EquipmentSlot slot) {
@@ -273,10 +279,10 @@ public final class TraitDispatch {
 		return result;
 	}
 
-	private static void spend(ItemStack gear, List<Modifier> traits, int points, @Nullable LivingEntity holder,
+	private static void spend(ItemStack gear, List<Modifier> traits, int points, LivingEntity holder,
 			EquipmentSlot slot) {
 		// A hook may have used the gear up before its own event's point is spent.
-		if (holder == null || points <= 0 || gear.isEmpty()) {
+		if (gear.isEmpty()) {
 			return;
 		}
 
