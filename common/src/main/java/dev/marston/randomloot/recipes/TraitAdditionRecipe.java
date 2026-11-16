@@ -215,7 +215,8 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 	/**
 	 * What this recipe makes of its inputs: a copy of the base gear with the trait granted
 	 * (Addition Template) or taken off (Subtraction Template), and what happened to it.
-	 * Null for a trait id the registry does not know, which {@link #matches} never accepts.
+	 * Null when the recipe has nothing to do: a trait id the registry does not know, or a
+	 * template that is neither of the two. {@link #matches} never accepts either.
 	 */
 	@Nullable
 	private TraitGrant.Outcome change(SmithingRecipeInput input) {
@@ -226,9 +227,14 @@ public class TraitAdditionRecipe implements SmithingRecipe {
 		}
 
 		ItemStack result = LootUtils.CloneItem(input.base());
-		TraitGrant.Outcome outcome = input.template().is(ModItems.MOD_ADD.get())
-				? TraitGrant.grant(result, trait, this.worldSeed)
-				: TraitGrant.remove(result, trait);
+		TraitGrant.Outcome outcome;
+		if (input.template().is(ModItems.MOD_ADD.get())) {
+			outcome = TraitGrant.grant(result, trait, this.worldSeed);
+		} else if (input.template().is(ModItems.MOD_SUB.get())) {
+			outcome = TraitGrant.remove(result, trait);
+		} else {
+			return null;
+		}
 
 		// Stamped as the result is built, not as it is taken: nothing can get at the
 		// stack a shift-click takes (see onTake), and the preview shows the name the
