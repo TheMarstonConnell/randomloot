@@ -1804,6 +1804,13 @@ public final class GameTestBodies {
 				"assembling gear the gate refuses should leave its traits as they were, got "
 						+ GearTags.read(handedBack, Modifier.MODTAG) + " from " + GearTags.read(refused, Modifier.MODTAG));
 
+		// The recipe acts for its two templates and no other. Handed anything else in
+		// the template slot, assemble takes nothing off the gear.
+		ItemStack kept = thorny.assemble(new SmithingRecipeInput(new ItemStack(Items.PAPER), mismatched, cactus));
+		helper.assertTrue(hasTrait(kept, "thorny"),
+				"a template that is neither of the two must not remove the trait, got "
+						+ GearTags.read(kept, Modifier.MODTAG));
+
 		helper.succeed();
 	}
 
