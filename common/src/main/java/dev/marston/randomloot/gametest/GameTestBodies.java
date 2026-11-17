@@ -36,7 +36,6 @@ import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
-import dev.marston.randomloot.platform.Services;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.commands.CommandSource;
@@ -2242,12 +2241,6 @@ public final class GameTestBodies {
 
 		Set<GameHook> undelivered = GameHooks.undelivered();
 		undelivered.remove(GameHook.SERVER_STOPPING);
-		// A gap this test found: Fabric does not deliver the first config load (see
-		// GameHooks.config). Its fix is a separate change against the release branch; take
-		// this excuse out once that fix is under this code.
-		if (Services.PLATFORM.platformName().equals("Fabric")) {
-			undelivered.remove(GameHook.CONFIG);
-		}
 		helper.assertTrue(undelivered.isEmpty(), "this loader never delivered these hooks: " + undelivered);
 
 		helper.succeed();

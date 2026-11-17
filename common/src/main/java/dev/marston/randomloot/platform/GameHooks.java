@@ -253,14 +253,13 @@ public final class GameHooks {
 	 * <p><b>Stage</b>: after {@link Config#SPEC} holds the new values. <b>Side</b>:
 	 * both. <b>Scope</b>: the first load and every reload of {@code randomloot-common.toml}.
 	 *
-	 * <p><b>Fabric does not deliver the first load.</b> Forge Config API Port reads the
-	 * file inside {@code ConfigRegistry.register}, and the Fabric shim adds its loading
-	 * listener after that call, so the values in the file only arrive if the file is
-	 * edited while the game runs. Measured with {@code caseChance = 0.5} in the file:
-	 * NeoForge runs with 0.5, Fabric with the default 0.25. The fix, adding the
-	 * listeners before the config is registered, is a change of its own against the
-	 * release branch and is not in this code yet; until it is,
-	 * {@code loader_hooks_all_bound} excuses this one hook on Fabric.
+	 * <p><b>The Fabric shim adds its listeners before it registers the config.</b> Forge
+	 * Config API Port reads the file inside {@code ConfigRegistry.register}, so a loading
+	 * listener added after that call never hears the first load, and the values in the
+	 * file then only arrive if it is edited while the game runs. The shim once had that
+	 * order; measured then with {@code caseChance = 0.5} in the file, NeoForge ran with
+	 * 0.5 and Fabric with the default 0.25. {@code loader_hooks_all_bound} fails on
+	 * either loader when the first load does not arrive.
 	 */
 	public static void config() {
 		delivered(GameHook.CONFIG);
