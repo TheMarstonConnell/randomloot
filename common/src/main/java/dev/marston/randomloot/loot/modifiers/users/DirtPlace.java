@@ -2,10 +2,8 @@ package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.NameGenerator;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -21,47 +19,35 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.phys.shapes.CollisionContext;
 
-
 public class DirtPlace extends PlaceOnUseModifier {
 
-	public DirtPlace(String name, int damage) {
-		this.name = name;
-		this.damage = damage;
-	}
-
 	public DirtPlace() {
-		this(NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace", 1);
+		super(1);
 	}
 
+	/**
+	 * Gear that stores its Grace without a name gets a forger rolled on the spot, as it
+	 * always has. Every grant writes a name, so only a stored tag that lost its own gets
+	 * here. The registry's own Grace rolls nothing: it is the declared, plain "Grace".
+	 */
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new DirtPlace(
-			tag.getStringOr(NAME, NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace"),
-			tag.getIntOr(DAMAGE, 1)
-		);
+	protected String nameWhenNotStored() {
+		return NameGenerator.generateForger(RandomSource.create(), 0.5f) + "'s Grace";
 	}
 
 	@Override
 	public Modifier forWorld(long worldSeed) {
+		DirtPlace forged = (DirtPlace) fromNBT(toNBT());
 		// 0.5f lands in the temperate band, matching the random roll this replaces.
-		return new DirtPlace(NameGenerator.forgerForWorld(worldSeed, 0.5f) + "'s Grace", this.damage);
-	}
-
-	@Override
-	public String tagName() {
-		return "dirt_place";
+		forged.name = NameGenerator.forgerForWorld(worldSeed, 0.5f) + "'s Grace";
+		return forged;
 	}
 
 	@Override
 	public boolean hasDynamicName() {
-		// Each instance is named after a randomly generated forger ("<Forger>'s Grace"),
-		// so there is no stable name to translate.
+		// On gear it is named after a forger ("<Forger>'s Grace"), the world's when the
+		// grant knew its world, so there is no one name to translate.
 		return true;
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_GREEN;
 	}
 
 	private boolean canPlace(BlockPlaceContext ctx, BlockState state) {
@@ -116,6 +102,6 @@ public class DirtPlace extends PlaceOnUseModifier {
 	@Override
 	public String description() {
 		return "Right clicking on a block while crouching with the tool in hand will place a dirt block and use "
-				+ this.damage + " durability points.";
+				+ this.damage.get() + " durability points.";
 	}
 }

@@ -1,6 +1,9 @@
 package dev.marston.randomloot.gametest;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import com.mojang.brigadier.CommandDispatcher;
@@ -9,14 +12,22 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestion;
 
 import dev.marston.randomloot.Config;
+import dev.marston.randomloot.GenWiki;
 import dev.marston.randomloot.RandomLoot;
+import dev.marston.randomloot.advancements.TraitObtainedTrigger;
+import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
+import dev.marston.randomloot.loot.GearRoll;
+import dev.marston.randomloot.loot.GearStats;
 import dev.marston.randomloot.loot.GearTags;
+import dev.marston.randomloot.loot.LootGearItem;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.NameGenerator;
+import dev.marston.randomloot.loot.TraitEligibility;
+import dev.marston.randomloot.loot.TraitGrant;
 import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -24,10 +35,11 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
-import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
 import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import dev.marston.randomloot.recipes.TraitAdditionRecipe;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
+import net.minecraft.commands.CommandSource;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,6 +48,7 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ServerboundPlayerLoadedPacket;
 import net.minecraft.resources.Identifier;
@@ -52,20 +65,27 @@ import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Pose;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.component.BlocksAttacks;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SmithingMenu;
+import net.minecraft.world.item.crafting.RecipeHolder;
 import net.minecraft.world.item.crafting.SmithingRecipeInput;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -89,8 +109,8 @@ import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Loader-neutral gametest bodies, shared by the NeoForge registration
- * (RandomLootGameTests) and the Fabric one (RandomLootFabricGameTests).
+ * Loader-neutral gametest bodies. Each one runs on both loaders once it has a row in
+ * {@link GameTestTable}; a body without a row never runs (GameTestTableTest catches that).
  * Everything here uses only vanilla + common APIs.
  */
 public final class GameTestBodies {
@@ -98,51 +118,540 @@ public final class GameTestBodies {
 	private GameTestBodies() {
 	}
 
-	/** Adding then removing a trait round-trips through the tool's data component (the smithing core). */
-	public static void modifierRoundTrip(GameTestHelper helper) {
-		ItemStack tool = newTool(ToolType.SWORD);
+	/**
+	 * Trait grant, the way in: a trait the gear lacks is ADDED, a repeat of one that levels
+	 * is LEVELED up to its cap, and from there it is refused with the gear left exactly as
+	 * it was. Only an outcome that granted something counts as obtaining a trait.
+	 */
+	public static void traitGrantAddsThenLevels(GameTestHelper helper) {
+		Long seed = helper.getLevel().getSeed();
+		Modifier thorny = ModifierRegistry.getModifier("thorny");
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
 
-		Modifier critical = ModifierRegistry.getModifier("critical");
-		LootUtils.addModifier(tool, critical);
-		helper.assertTrue(hasTrait(tool, "critical"), "trait should be present after addModifier");
+		// The stack-free form of the grant, kept in step: it has to store the same thing.
+		CompoundTag asTag = new CompoundTag();
+		TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed, RandomSource.create());
 
-		LootUtils.removeModifier(tool, critical);
-		helper.assertFalse(hasTrait(tool, "critical"), "trait should be gone after removeModifier");
+		TraitGrant.Outcome added = TraitGrant.grant(chestplate, thorny, seed);
+		helper.assertTrue(added.kind() == TraitGrant.Kind.ADDED,
+				"a trait the gear lacks should be ADDED, got " + added.kind());
+		helper.assertTrue(added.granted() && added.changed() && added.refusal() == null && added.gear() == chestplate,
+				"an ADDED outcome is a grant on the stack it was given, with nothing to explain");
+		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny"),
+				"the gear should carry Thorny at its first level, got " + traitName(chestplate, "thorny"));
 
-		helper.succeed();
-	}
+		TraitGrant.Kind leveledAsTag = TraitGrant.grant(TraitEligibility.contextOf(chestplate), asTag, thorny, seed, RandomSource.create());
+		TraitGrant.Outcome leveled = TraitGrant.grant(chestplate, thorny, seed);
+		helper.assertTrue(leveledAsTag == TraitGrant.Kind.LEVELED
+						&& asTag.equals(GearTags.read(chestplate, Modifier.MODTAG)),
+				"a grant onto a tag should store what a grant onto a stack stores, got " + asTag + " and "
+						+ GearTags.read(chestplate, Modifier.MODTAG));
+		helper.assertTrue(leveled.kind() == TraitGrant.Kind.LEVELED && leveled.granted(),
+				"a repeat of a trait that levels should be LEVELED, got " + leveled.kind());
+		helper.assertTrue(traitName(chestplate, "thorny").equals("Thorny II"),
+				"the gear's own Thorny should have gone up a level, got " + traitName(chestplate, "thorny"));
 
-	/** genTool() produces a real, typed item with positive goodness (covers the RNG/biome path). */
-	public static void genTool(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack tool = LootUtils.genTool(player, helper.getLevel());
+		// Keep granting until the cap answers.
+		ItemStack before;
+		TraitGrant.Outcome last;
+		int grants = 2;
+		do {
+			before = chestplate.copy();
+			last = TraitGrant.grant(chestplate, thorny, seed);
+		} while (last.kind() == TraitGrant.Kind.LEVELED && ++grants < 64);
 
-		ToolType type = LootUtils.getToolType(tool);
-		helper.assertTrue(type != ToolType.NULL, "generated item should have a real type");
-		if (type.isArmor()) {
-			helper.assertTrue(tool.is(ModItems.ARMOR.get()), "armor rolls should produce the RandomLoot armor item");
-			helper.assertTrue(tool.get(DataComponents.EQUIPPABLE) != null, "generated armor should be equippable");
-		} else {
-			helper.assertTrue(tool.is(ModItems.TOOL.get()), "tool rolls should produce the RandomLoot tool");
-		}
-		helper.assertTrue(LootUtils.getStats(tool) > 0f, "generated item should have positive goodness");
+		helper.assertTrue(last.kind() == TraitGrant.Kind.REFUSED
+						&& last.gate().verdict() == TraitEligibility.Verdict.ALREADY_MAXED,
+				"a trait at its cap should be refused as ALREADY_MAXED after " + grants + " grants, got " + last.kind());
+		helper.assertTrue(!last.granted() && !last.changed() && last.refusal() != null,
+				"a refusal changes nothing and explains itself");
+		helper.assertTrue(ItemStack.matches(before, chestplate), "a refused grant must leave the gear as it was");
+
+		ServerPlayer granted = helper.makeMockServerPlayerInLevel();
+		leveled.obtainedBy(granted, TraitObtainedTrigger.SOURCE_CRAFTED);
+		assertAdvancementDone(helper, granted, "add_trait");
+		ServerPlayer refused = helper.makeMockServerPlayerInLevel();
+		last.obtainedBy(refused, TraitObtainedTrigger.SOURCE_CRAFTED);
+		helper.assertFalse(advancementDone(helper, refused, "add_trait"),
+				"a refused grant must not count as obtaining a trait");
 
 		helper.succeed();
 	}
 
 	/**
-	 * genTool() with no player (the dispenser path) records the dispense position's
-	 * biome and still rolls positive goodness off the machine curve.
+	 * Trait grant refuses whatever the gate refuses: it says which rule it was, explains
+	 * it for a player and leaves the gear alone. One case per gate reason.
+	 */
+	public static void traitGrantRefusesWhatTheGateRefuses(GameTestHelper helper) {
+		Modifier critical = ModifierRegistry.getModifier("critical");
+		Modifier veiny = ModifierRegistry.getModifier("veiny");
+
+		assertRefused(helper, new ItemStack(Items.STICK), critical, TraitEligibility.Verdict.NOT_GEAR);
+
+		ItemStack rolling = newTool(ToolType.SWORD);
+		LootUtils.startRoll(rolling, helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS);
+		assertRefused(helper, rolling, critical, TraitEligibility.Verdict.ROLLING);
+
+		assertRefused(helper, newTool(ToolType.SWORD), ModifierRegistry.getModifier("thorny"),
+				TraitEligibility.Verdict.WRONG_TYPE);
+		// Void-Touched is End-only. Test gear has no biome, which reads as the overworld.
+		assertRefused(helper, newTool(ToolType.PICKAXE), ModifierRegistry.getModifier("void_touched"),
+				TraitEligibility.Verdict.WRONG_BIOME);
+
+		ItemStack veinyPickaxe = newTool(ToolType.PICKAXE);
+		TraitGrant.force(veinyPickaxe, veiny);
+		assertRefused(helper, veinyPickaxe, ModifierRegistry.getModifier("excavator"),
+				TraitEligibility.Verdict.INCOMPATIBLE);
+		// Veiny has a single level, so a second one is refused, not silently dropped.
+		assertRefused(helper, veinyPickaxe, veiny, TraitEligibility.Verdict.ALREADY_MAXED);
+
+		try (Config.Substitution off = Config.traitToggle("critical").substitute(false)) {
+			assertRefused(helper, newTool(ToolType.SWORD), critical, TraitEligibility.Verdict.DISABLED);
+		}
+
+		helper.succeed();
+	}
+
+	/** Granting the trait is refused for the given reason, explains itself and changes nothing. */
+	private static void assertRefused(GameTestHelper helper, ItemStack gear, Modifier trait,
+			TraitEligibility.Verdict why) {
+		ItemStack before = gear.copy();
+		TraitGrant.Outcome outcome = TraitGrant.grant(gear, trait, helper.getLevel().getSeed());
+
+		helper.assertTrue(outcome.kind() == TraitGrant.Kind.REFUSED && outcome.gate().verdict() == why,
+				trait.tagName() + " should be refused as " + why + ", got " + outcome.kind()
+						+ (outcome.gate() == null ? "" : " as " + outcome.gate().verdict()));
+		helper.assertTrue(!outcome.granted() && !outcome.changed() && outcome.refusal() != null,
+				"a refusal changes nothing and explains itself (" + why + ")");
+		helper.assertTrue(ItemStack.matches(before, gear),
+				"a refused grant must leave the gear as it was (" + why + ")");
+	}
+
+	/**
+	 * Trait grant, the way out: a trait on the gear is REMOVED and one that is not there is
+	 * NOT_PRESENT. No gate stands in the way, so a trait on the wrong kind of gear, or one
+	 * switched off in the config, still comes off. Removing obtains nothing.
+	 */
+	public static void traitGrantRemoves(GameTestHelper helper) {
+		Modifier critical = ModifierRegistry.getModifier("critical");
+		Modifier thorny = ModifierRegistry.getModifier("thorny");
+
+		ItemStack sword = newTool(ToolType.SWORD);
+		TraitGrant.grant(sword, critical, helper.getLevel().getSeed());
+		helper.assertTrue(LootUtils.hasRawTrait(sword, "critical"), "the sword should start with critical");
+
+		TraitGrant.Outcome removed = TraitGrant.remove(sword, critical);
+		helper.assertTrue(removed.kind() == TraitGrant.Kind.REMOVED,
+				"a trait on the gear should be REMOVED, got " + removed.kind());
+		helper.assertTrue(removed.changed() && !removed.granted() && removed.refusal() == null,
+				"a removal changes the gear, grants nothing and has nothing to explain");
+		helper.assertFalse(LootUtils.hasRawTrait(sword, "critical"), "a removed trait should be gone from the gear");
+
+		ItemStack bare = sword.copy();
+		TraitGrant.Outcome absent = TraitGrant.remove(sword, critical);
+		helper.assertTrue(absent.kind() == TraitGrant.Kind.NOT_PRESENT && !absent.changed()
+				&& absent.refusal() != null, "a trait the gear lacks should be NOT_PRESENT, got " + absent.kind());
+		helper.assertTrue(ItemStack.matches(bare, sword), "removing a trait that is not there must change nothing");
+
+		ItemStack thornySword = newTool(ToolType.SWORD);
+		TraitGrant.force(thornySword, thorny);
+		helper.assertTrue(TraitGrant.remove(thornySword, thorny).kind() == TraitGrant.Kind.REMOVED,
+				"a trait on the wrong kind of gear should still come off");
+
+		ItemStack switchedOff = newTool(ToolType.SWORD);
+		TraitGrant.force(switchedOff, critical);
+		try (Config.Substitution off = Config.traitToggle("critical").substitute(false)) {
+			helper.assertTrue(TraitGrant.remove(switchedOff, critical).kind() == TraitGrant.Kind.REMOVED,
+					"a trait switched off in the config should still come off");
+		}
+
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		removed.obtainedBy(player, TraitObtainedTrigger.SOURCE_CRAFTED);
+		helper.assertFalse(advancementDone(helper, player, "add_trait"),
+				"removing a trait must not count as obtaining one");
+
+		helper.succeed();
+	}
+
+	/**
+	 * A trait named after a forger goes on as this world's. Grant stamps the trait it adds
+	 * and leaves the rest of the gear alone; restamp, the smithing table's sweep, re-forges
+	 * everything the gear carries.
+	 */
+	public static void traitGrantStampsWorldForger(GameTestHelper helper) {
+		Modifier dirtPlace = ModifierRegistry.getModifier("dirt_place");
+		// The registry's own Grace names no forger, so a grant that skipped the stamp
+		// cannot pass by matching the world's.
+		helper.assertTrue(dirtPlace.name().equals("Grace"),
+				"the registry's Grace should be named plainly, got " + dirtPlace.name());
+		long seed = 0;
+		String expected = worldGrace(seed);
+
+		ItemStack shovel = newTool(ToolType.SHOVEL);
+		TraitGrant.Outcome granted = TraitGrant.grant(shovel, dirtPlace, seed);
+		helper.assertTrue(granted.kind() == TraitGrant.Kind.ADDED && granted.trait().name().equals(expected),
+				"the outcome should name the trait after the world's forger, got " + granted.trait().name());
+		helper.assertTrue(traitName(shovel, "dirt_place").equals(expected),
+				"granted dirt_place should be named after the world's forger, got "
+						+ traitName(shovel, "dirt_place") + " expected " + expected);
+
+		ItemStack noWorld = newTool(ToolType.SHOVEL);
+		TraitGrant.grant(noWorld, dirtPlace, null);
+		helper.assertTrue(traitName(noWorld, "dirt_place").equals("Grace"),
+				"with no world to forge for, the trait should go on as plain Grace, got "
+						+ traitName(noWorld, "dirt_place"));
+
+		ItemStack foreign = newTool(ToolType.SWORD);
+		TraitGrant.force(foreign, graceOf("Nobody"));
+		TraitGrant.grant(foreign, ModifierRegistry.getModifier("critical"), seed);
+		helper.assertTrue(traitName(foreign, "dirt_place").equals("Nobody's Grace"),
+				"granting another trait should not re-forge one already on the gear, got "
+						+ traitName(foreign, "dirt_place"));
+
+		TraitGrant.restamp(foreign, seed);
+		helper.assertTrue(traitName(foreign, "dirt_place").equals(expected),
+				"restamp should re-forge a trait the gear came in with, got " + traitName(foreign, "dirt_place"));
+
+		helper.succeed();
+	}
+
+	/** A Grace (dirt_place) as gear from some other world might carry it, credited to a made-up forger. */
+	private static Modifier graceOf(String forger) {
+		CompoundTag stored = ModifierRegistry.getModifier("dirt_place").toNBT();
+		stored.putString("name", forger + "'s Grace");
+		return ModifierRegistry.loadModifier("dirt_place", stored);
+	}
+
+	/** DirtPlace's name in a world with this seed: its temperate forger's Grace. */
+	private static String worldGrace(long seed) {
+		// 0.5f is the temperate band DirtPlace asks for.
+		return NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace";
+	}
+
+	/** The name of the trait as the gear carries it, level included, or "nothing". */
+	private static String traitName(ItemStack gear, String tagName) {
+		return LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals(tagName)).map(Modifier::name)
+				.findFirst().orElse("nothing");
+	}
+
+	/**
+	 * Trait dispatch runs a hit trait that reads pre-hit state before the weapon's other
+	 * hit traits. Another trait's bonus damage is a damage event too and overwrites the
+	 * note, so a sword with Feasting and Early Bird has to out-damage one with Feasting
+	 * alone. (Feasting's key iterates ahead of Early Bird's in the trait tag, so in
+	 * stored order it would go first.)
+	 */
+	public static void traitDispatchRunsPreHitTraitsFirst(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+
+		float[] lost = new float[2];
+		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
+		for (int i = 0; i < traitSets.length; i++) {
+			ItemStack sword = gear(helper, ToolType.SWORD, false, traitSets[i]);
+			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			// The swing itself, which is the damage event the note is taken from.
+			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
+			float afterHit = target.getHealth();
+			TraitDispatch.hit(sword, target, player);
+			lost[i] = afterHit - target.getHealth();
+		}
+		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
+		helper.assertTrue(lost[0] > lost[1],
+				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
+						+ lost[0] + " vs " + lost[1]);
+
+		helper.succeed();
+	}
+
+	/**
+	 * Gear still in its reveal roll is inert: trait dispatch runs none of its traits and
+	 * spends none of its durability, for a hit, a broken block, a right-click, a tick, a
+	 * kill, a stat read, a direct durability charge, or - worn - damage to its wearer and
+	 * to the piece itself. Each case runs on live gear first, so the rolling half cannot
+	 * pass by doing nothing.
+	 */
+	public static void traitDispatchLeavesRollingGearInert(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+		// Off the block the dirt goes on, and crouching for the placing trait. A mock
+		// player never ticks its own pose.
+		player.setPos(helper.absoluteVec(new Vec3(0.5, 1.0, 0.5)));
+		player.setShiftKeyDown(true);
+		player.setPose(Pose.CROUCHING);
+		BlockPos floor = new BlockPos(1, 0, 1);
+		BlockPos onFloor = floor.above();
+		helper.setBlock(floor, Blocks.STONE);
+
+		for (boolean rolling : new boolean[] { false, true }) {
+			String state = rolling ? "rolling" : "live";
+
+			// Hit: Critical adds bonus damage and the hit costs one durability.
+			ItemStack sword = gear(helper, ToolType.SWORD, rolling, "critical");
+			LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			float health = zombie.getHealth();
+			TraitDispatch.hit(sword, zombie, player);
+			helper.assertTrue((zombie.getHealth() < health) != rolling,
+					"a hit with a " + state + " sword: Critical " + (rolling ? "must not" : "should") + " fire");
+			helper.assertTrue(sword.getDamageValue() == (rolling ? 0 : 1),
+					"a hit with a " + state + " sword cost " + sword.getDamageValue() + " durability");
+			zombie.discard();
+
+			// Break: Learning counts the block and the break costs one durability.
+			ItemStack pick = gear(helper, ToolType.PICKAXE, rolling, "learning");
+			CompoundTag counted = storedTrait(pick, "learning");
+			TraitDispatch.blockBroken(pick, Blocks.STONE.defaultBlockState(), helper.absolutePos(onFloor), player);
+			helper.assertTrue(storedTrait(pick, "learning").equals(counted) == rolling,
+					"a block broken with a " + state + " pickaxe: Learning "
+							+ (rolling ? "must not" : "should") + " count it");
+			helper.assertTrue(pick.getDamageValue() == (rolling ? 0 : 1),
+					"a block broken with a " + state + " pickaxe cost " + pick.getDamageValue() + " durability");
+
+			// Right-click anywhere: Flame Thrower fires and pays durability for it.
+			ItemStack thrower = gear(helper, ToolType.SWORD, rolling, "flame_thrower");
+			player.setItemInHand(InteractionHand.MAIN_HAND, thrower);
+			helper.assertTrue(TraitDispatch.usesAnywhere(thrower) != rolling,
+					"a " + state + " sword " + (rolling ? "must not" : "should") + " claim the click");
+			helper.assertTrue(TraitDispatch.use(thrower, level, player, InteractionHand.MAIN_HAND) != rolling,
+					"a right-click with a " + state + " sword: Flame Thrower "
+							+ (rolling ? "must not" : "should") + " fire");
+			helper.assertTrue((thrower.getDamageValue() > 0) != rolling,
+					"a right-click with a " + state + " sword cost " + thrower.getDamageValue() + " durability");
+			level.getEntitiesOfClass(LargeFireball.class, player.getBoundingBox().inflate(8.0))
+					.forEach(LargeFireball::discard);
+
+			// Right-click on a block: Grace places dirt for a crouching holder.
+			ItemStack shovel = gear(helper, ToolType.SHOVEL, rolling, "dirt_place");
+			player.setItemInHand(InteractionHand.MAIN_HAND, shovel);
+			BlockPos clicked = helper.absolutePos(floor);
+			InteractionResult placed = TraitDispatch.useOn(new UseOnContext(player, InteractionHand.MAIN_HAND,
+					new BlockHitResult(Vec3.atCenterOf(clicked), Direction.UP, clicked, false)));
+			helper.assertTrue(placed.consumesAction() != rolling, "a click on a block with a " + state
+					+ " shovel: the placing trait " + (rolling ? "must not" : "should") + " take it");
+			helper.assertTrue(helper.getBlockState(onFloor).is(Blocks.DIRT) != rolling,
+					"a " + state + " shovel " + (rolling ? "must not" : "should") + " place dirt");
+			helper.setBlock(onFloor, Blocks.AIR);
+
+			// Tick: Hasty gives its holder Haste.
+			ItemStack hasty = gear(helper, ToolType.PICKAXE, rolling, "hasty");
+			player.removeEffect(MobEffects.HASTE);
+			TraitDispatch.tick(hasty, level, player);
+			helper.assertTrue(player.hasEffect(MobEffects.HASTE) != rolling,
+					"a tick of a " + state + " pickaxe: Hasty " + (rolling ? "must not" : "should") + " run");
+
+			// Kill: Nemesis counts what its weapon kills.
+			ItemStack nemesis = gear(helper, ToolType.SWORD, rolling, "nemesis");
+			CompoundTag kills = storedTrait(nemesis, "nemesis");
+			LivingEntity victim = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+			TraitDispatch.kill(nemesis, victim, player);
+			helper.assertTrue(storedTrait(nemesis, "nemesis").equals(kills) == rolling,
+					"a kill with a " + state + " sword: Nemesis " + (rolling ? "must not" : "should") + " count it");
+			victim.discard();
+
+			// Stats and a direct charge: Fragile speeds the tool up, and five points cost five.
+			ItemStack fragile = gear(helper, ToolType.PICKAXE, rolling, "fragile");
+			helper.assertTrue((TraitDispatch.statMultiplier(fragile) > 1.0f) != rolling,
+					"a " + state + " pickaxe: Fragile " + (rolling ? "must not" : "should") + " raise its stats");
+			TraitDispatch.spendDurability(fragile, 5, player, EquipmentSlot.MAINHAND);
+			helper.assertTrue(fragile.getDamageValue() == (rolling ? 0 : 5),
+					"a durability charge on a " + state + " pickaxe cost " + fragile.getDamageValue());
+
+			// Damage to the wearer: Featherweight takes some of a fall.
+			ItemStack boots = gear(helper, ToolType.BOOTS, rolling, "featherweight");
+			float fall = TraitDispatch.wearerHurt(boots, player, player.damageSources().fall(), 10.0f);
+			helper.assertTrue((fall < 10.0f) != rolling, "a fall in " + state + " boots: Featherweight "
+					+ (rolling ? "must not" : "should") + " soften it, the wearer takes " + fall + " of 10");
+
+			// Damage to the worn piece: Unbreaking rolls for each point. All 100 points
+			// getting through live armor is a 1 in several billion chance.
+			ItemStack chestplate = gear(helper, ToolType.CHESTPLATE, rolling, "unbreaking");
+			float charged = TraitDispatch.armorDurability(chestplate, level, 100.0f);
+			helper.assertTrue((charged < 100.0f) != rolling, "a hit on a " + state + " chestplate: Unbreaking "
+					+ (rolling ? "must not" : "should") + " roll, the piece is charged " + charged + " of 100");
+		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * Trait dispatch saves a trait whose hook changed what it stores, and writes nothing
+	 * for one that did not. A write to a held stack resets the block its holder is
+	 * mining, and rewriting an untouched trait would move it off a legacy key it still
+	 * reads. Traits never save themselves.
+	 */
+	public static void traitDispatchSavesOnlyChangedTraits(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+
+		// Dexterous remembers when it last hit.
+		ItemStack sword = gear(helper, ToolType.SWORD, false, "combo");
+		TraitDispatch.hit(sword, zombie, player);
+		long lastHit = storedTrait(sword, "combo").getLongOr(ModifierConstants.CHARGED, -1L);
+		helper.assertTrue(lastHit == level.getGameTime(),
+				"a hit should save the time Dexterous last struck, got " + lastHit);
+
+		// A second hit in the same tick leaves that time as it is, so there is nothing to save.
+		Object traitsAfterFirstHit = sword.get(ModDataComponents.TOOL_MODIFIER.get());
+		TraitDispatch.hit(sword, zombie, player);
+		helper.assertTrue(sword.get(ModDataComponents.TOOL_MODIFIER.get()) == traitsAfterFirstHit,
+				"a hit that changed no trait's state must not rewrite the gear's traits");
+
+		// Nemesis counts what its weapon kills.
+		ItemStack nemesis = gear(helper, ToolType.SWORD, false, "nemesis");
+		TraitDispatch.kill(nemesis, zombie, player);
+		int kills = storedTrait(nemesis, "nemesis").getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		helper.assertTrue(kills == 1, "a kill should be saved on Nemesis, got " + kills);
+
+		// A hold trait stores nothing new, tick after tick. This one sits on the gear
+		// under the legacy level key, which a rewrite would replace.
+		ItemStack pick = newTool(ToolType.PICKAXE);
+		CompoundTag legacy = ModifierRegistry.getModifier("hasty").toNBT();
+		legacy.remove(ModifierConstants.LEVEL);
+		legacy.putInt(ModifierConstants.LEGACY_LEVEL, 2);
+		GearTags.mutate(pick, Modifier.MODTAG, traits -> traits.put("hasty", legacy));
+		Object traitsBeforeTicks = pick.get(ModDataComponents.TOOL_MODIFIER.get());
+		player.removeEffect(MobEffects.HASTE);
+		for (int tick = 0; tick < 3; tick++) {
+			TraitDispatch.tick(pick, level, player);
+		}
+		MobEffectInstance haste = player.getEffect(MobEffects.HASTE);
+		helper.assertTrue(haste != null && haste.getAmplifier() == 2,
+				"Hasty should have run at the level its legacy key holds");
+		helper.assertTrue(pick.get(ModDataComponents.TOOL_MODIFIER.get()) == traitsBeforeTicks,
+				"ticking a hold trait must not write to the gear");
+		helper.assertTrue(storedTrait(pick, "hasty").equals(legacy),
+				"an untouched trait should keep its legacy key, got " + storedTrait(pick, "hasty"));
+
+		helper.succeed();
+	}
+
+	/**
+	 * Unbreaking has one rule for tools and worn armor: a roll for every point of
+	 * durability. Armor used to get a single roll that cancelled the whole hit or none of
+	 * it, so at Unbreaking's first level (20%) a 100-point hit cost the piece 0 or 100.
+	 * Rolled per point it lands in between; all 100 falling the same way is a 1 in
+	 * several billion chance.
+	 */
+	public static void unbreakingRollsPerDurabilityPoint(GameTestHelper helper) {
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.SWORD));
+
+		ItemStack axe = gear(helper, ToolType.AXE, false, "unbreaking");
+		helper.assertTrue(axe.getMaxDamage() > 100, "the axe has to survive 100 points to be measured");
+		TraitDispatch.spendDurability(axe, 100, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() > 0 && axe.getDamageValue() < 100,
+				"a tool should roll Unbreaking per point, spent " + axe.getDamageValue() + " of 100");
+
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
+		TraitGrant.force(chestplate, ModifierRegistry.getModifier("unbreaking"));
+		float charged = TraitDispatch.armorDurability(chestplate, helper.getLevel(), 100.0f);
+		helper.assertTrue(charged > 0.0f && charged < 100.0f,
+				"worn armor should roll Unbreaking per point, charged " + charged + " of 100");
+
+		// A piece without the trait is charged exactly what vanilla asked for.
+		helper.assertTrue(TraitDispatch.armorDurability(newArmor(ToolType.CHESTPLATE), helper.getLevel(), 2.5f) == 2.5f,
+				"armor without Unbreaking should be charged the hit as it came");
+
+		helper.succeed();
+	}
+
+	/** Gear of the given type at goodness 4 with the given traits, put into its reveal roll if asked. */
+	private static ItemStack gear(GameTestHelper helper, ToolType type, boolean rolling, String... traits) {
+		ItemStack gear = type.isArmor() ? newArmor(type) : newTool(type);
+		LootUtils.setStats(gear, 4.0f);
+		for (String trait : traits) {
+			TraitGrant.force(gear, ModifierRegistry.getModifier(trait));
+		}
+		if (rolling) {
+			LootUtils.startRoll(gear, helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS);
+		}
+		return gear;
+	}
+
+	/** What the gear stores for a trait. */
+	private static CompoundTag storedTrait(ItemStack gear, String tagName) {
+		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty(tagName);
+	}
+
+	/**
+	 * Stamping makes the item the gear roll decided on, and nothing reads differently
+	 * off the stack: a tool and an armor piece, checked field by field through the
+	 * accessors the rest of the mod uses. The vanilla components that derive from those
+	 * fields are built once, at the end, so they have to match what a refresh would give.
+	 */
+	public static void stampWritesWhatTheGearRollDecided(GameTestHelper helper) {
+		ServerLevel level = helper.getLevel();
+		GearRoll.Scene scene = new GearRoll.Scene(new GearRoll.Place("minecraft:jungle", 0.95f, "minecraft:the_nether"),
+				level.getSeed(), false, new GearRoll.Owner("11111111-2222-3333-4444-555555555555", "Tester"));
+
+		for (ToolType type : new ToolType[] { ToolType.SWORD, ToolType.CHESTPLATE }) {
+			// Goodness 6 earns three trait picks.
+			GearRoll.Rolled rolled = GearRoll.ofType(type, 6.0f, scene, RandomSource.create(type.ordinal()));
+			ItemStack gear = LootUtils.stamp(rolled);
+
+			helper.assertTrue(gear.is(type.isArmor() ? ModItems.ARMOR.get() : ModItems.TOOL.get()),
+					type + " should be stamped onto the " + (type.isArmor() ? "armor" : "tool") + " item");
+			helper.assertTrue(LootUtils.getToolType(gear) == type && LootUtils.getStats(gear) == 6.0f,
+					type + " should carry its type and goodness");
+			helper.assertTrue(LootUtils.getBiomeKey(gear).equals("minecraft:jungle")
+							&& LootUtils.getBiomeTemperature(gear) == 0.95f
+							&& LootUtils.getDimension(gear).equals("minecraft:the_nether"),
+					type + " should carry where it was made");
+			helper.assertTrue(LootUtils.getOwnerUUID(gear).equals("11111111-2222-3333-4444-555555555555")
+					&& LootUtils.getOwnerName(gear).equals("Tester"), type + " should carry who opened it");
+			helper.assertTrue(LootUtils.getTextureIndex(gear) == rolled.texture(), type + " should carry its look");
+			helper.assertTrue(LootUtils.getItemLore(gear).equals(rolled.lore()), type + " should carry its lore");
+
+			Component name = gear.get(DataComponents.CUSTOM_NAME);
+			helper.assertTrue(name != null && name.getString().equals(rolled.name())
+							&& name.getStyle().getColor().serialize().equalsIgnoreCase(rolled.nameColor()),
+					type + " should be named " + rolled.name() + " in " + rolled.nameColor() + ", got " + name);
+
+			helper.assertTrue(!rolled.traits().isEmpty() && GearTags.read(gear, Modifier.MODTAG).equals(rolled.traits()),
+					type + " should store the traits exactly as rolled, got " + GearTags.read(gear, Modifier.MODTAG));
+			helper.assertFalse(GearTags.has(gear, GearTags.XP), type + " should start with no XP written");
+
+			helper.assertTrue((gear.get(DataComponents.EQUIPPABLE) != null) == type.isArmor(),
+					"only armor should be equippable, " + type);
+			LootGearItem item = (LootGearItem) gear.getItem();
+			helper.assertTrue(!heldAttributes(gear).modifiers().isEmpty()
+							&& heldAttributes(gear).equals(item.buildAttributeModifiers(gear)),
+					type + " should be stamped with the attributes its stats and traits give");
+			helper.assertTrue(gear.getMaxDamage() == LootGearItem.computeMaxDamage(gear),
+					type + " should be stamped with its own durability");
+		}
+
+		// A player's case, through the entry point the case item uses: the scene is read
+		// off the world, so the lore credits this world's forger for the biome's band.
+		ServerPlayer player = helper.makeMockServerPlayerInLevel();
+		ItemStack opened = LootUtils.openCase(player);
+		helper.assertTrue(LootUtils.getStats(opened) == GearStats.goodnessForCases(0, Config.GOODNESS.get()),
+				"a first case should roll first-case goodness, got " + LootUtils.getStats(opened));
+		helper.assertTrue(LootUtils.getOwnerUUID(opened).equals(player.getStringUUID()),
+				"an opened case should record its opener");
+		String forger = NameGenerator.forgerForWorld(level.getSeed(), LootUtils.getBiomeTemperature(opened));
+		helper.assertTrue(LootUtils.getItemLore(opened).endsWith(", forged by " + forger + "."),
+				"an opened case should credit this world's forger, " + forger + ", got "
+						+ LootUtils.getItemLore(opened));
+
+		helper.succeed();
+	}
+
+	/**
+	 * A case opened by a machine (the dispenser path) records the dispense position's
+	 * biome, has no owner, and still rolls positive goodness off the machine curve.
 	 */
 	public static void genToolDispenser(GameTestHelper helper) {
-		ItemStack tool = LootUtils.genTool(null, helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
+		ItemStack gear = LootUtils.dispenseCase(helper.getLevel(), helper.absolutePos(BlockPos.ZERO));
 
-		helper.assertTrue(LootUtils.getToolType(tool) != ToolType.NULL, "dispensed item should have a real type");
-		helper.assertTrue(LootUtils.getStats(tool) > 0f, "dispensed item should have positive goodness");
+		helper.assertTrue(LootUtils.getToolType(gear) != ToolType.NULL, "dispensed item should have a real type");
+		helper.assertTrue(LootUtils.getStats(gear) > 0f, "dispensed item should have positive goodness");
 
-		String biomeKey = LootUtils.getBiomeKey(tool);
+		String biomeKey = LootUtils.getBiomeKey(gear);
 		helper.assertTrue(!biomeKey.isEmpty() && !biomeKey.equals("unknown"),
 				"dispensed item should record the dispenser's biome, got: " + biomeKey);
+		helper.assertTrue(LootUtils.getOwnerUUID(gear).isEmpty()
+				&& LootUtils.getItemLore(gear).startsWith("Discovered by a machine in "),
+				"dispensed item should have no owner, got lore: " + LootUtils.getItemLore(gear));
 
 		helper.succeed();
 	}
@@ -329,76 +838,63 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
-	/** Every item generated in the same world (same temperature band) credits the same forger. */
-	public static void forgerWorldConstant(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-
-		String firstForger = null;
-		for (int i = 0; i < 4; i++) {
-			ItemStack item = LootUtils.genTool(player, helper.getLevel());
-			String lore = LootUtils.getItemLore(item);
-
-			int at = lore.indexOf("forged by ");
-			helper.assertTrue(at >= 0, "item lore should credit a forger, got: " + lore);
-			String forger = lore.substring(at + "forged by ".length()).replace(".", "");
-
-			if (firstForger == null) {
-				firstForger = forger;
-			}
-			helper.assertTrue(firstForger.equals(forger),
-					"forger should be world-constant, got " + forger + " and " + firstForger);
-		}
-
-		helper.succeed();
-	}
-
-	/** DirtPlace's "<Forger>'s Grace" name resolves to this world's temperate forger. */
-	public static void dirtPlaceWorldForger(GameTestHelper helper) {
-		long seed = helper.getLevel().getSeed();
-
-		ItemStack tool = newTool(ToolType.SHOVEL);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("dirt_place").forWorld(seed));
-
-		Modifier dirtPlace = LootUtils.getModifiers(tool).stream()
-				.filter(m -> m.tagName().equals("dirt_place")).findFirst().orElse(null);
-		helper.assertTrue(dirtPlace != null, "dirt_place trait should be on the tool");
-
-		String expected = NameGenerator.forgerForWorld(seed, 0.5f) + "'s Grace";
-		helper.assertTrue(dirtPlace.name().equals(expected),
-				"dirt_place should be named after the world's forger, got " + dirtPlace.name()
-						+ " expected " + expected);
-
-		helper.succeed();
-	}
-
 	/**
-	 * Wearer-hurt traits fire when a PLAYER takes damage. Regression: on Fabric the
-	 * armor-trait hook was a mixin into LivingEntity.actuallyHurt, which Player
-	 * overrides - so Thorny (and every WearerHurtModifier) silently did nothing for
-	 * players while passing the zombie-based tests.
+	 * Thorny reflects a share of the damage its wearer took, for a player and for a mob.
+	 *
+	 * <p>Two Fabric regressions live here. The armor-trait hook was once a mixin into
+	 * LivingEntity.actuallyHurt, which Player re-implements, so Thorny (and every
+	 * WearerHurtModifier) silently did nothing for players while the zombie-based tests
+	 * passed. Later it wrapped the actuallyHurt call, which handed the traits the hit
+	 * before armor where NeoForge's LivingDamageEvent.Pre hands them the damage after it:
+	 * for the hit below Thorny reflected 7.5 on Fabric and 3.0 on NeoForge.
 	 */
 	public static void thornyReflectsForPlayer(GameTestHelper helper) {
-		ServerPlayer player = mockVulnerablePlayer(helper);
-
-		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chest, ModifierRegistry.getModifier("thorny"));
-		player.setItemSlot(EquipmentSlot.CHEST, chest);
-
 		// A player attacker: mob damage scales with difficulty and zeroes out on the
 		// gametest server's Peaceful setting before it ever reaches the armor hooks.
 		// PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer.
 		enablePvp(helper);
+		ServerPlayer player = mockVulnerablePlayer(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
-		float attackerHealth = attacker.getHealth();
-		float wearerHealth = player.getHealth();
+		assertThornyReflectsDamageTaken(helper, player, attacker, player.damageSources().playerAttack(attacker));
 
-		helper.hurt(player, player.damageSources().playerAttack(attacker), 6.0f);
-
-		helper.assertTrue(player.getHealth() < wearerHealth, "the wearer should take damage");
-		helper.assertTrue(attacker.getHealth() < attackerHealth,
-				"thorny should reflect damage back at the attacker when the wearer is a player");
+		// The mob wearer is a witch. She shrugs off 85% of magic in her own override of
+		// the last reduction, so she also tells "after the reductions" from "inside the
+		// shared one": a hook on LivingEntity.getDamageAfterMagicAbsorb itself runs before
+		// her share comes off.
+		LivingEntity witch = helper.spawn(EntityTypes.WITCH, new BlockPos(1, 2, 1));
+		// The attacker is a mob too, for the Peaceful reason again: a mob's thorns would
+		// scale to nothing against a player. Its own 2 armor would shave the reflected hit.
+		LivingEntity witchAttacker = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		witchAttacker.getAttribute(Attributes.ARMOR).setBaseValue(0.0);
+		assertThornyReflectsDamageTaken(helper, witch, witchAttacker,
+				witch.damageSources().indirectMagic(witchAttacker, witchAttacker));
 
 		helper.succeed();
+	}
+
+	/** Hits a maxed-Thorny wearer who mitigates most of it and checks what comes back at the attacker. */
+	private static void assertThornyReflectsDamageTaken(GameTestHelper helper, LivingEntity wearer,
+			LivingEntity attacker, DamageSource source) {
+		wearer.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "thorny"));
+		// Full diamond's worth of armor, so the hit before and after it are far apart.
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(20.0);
+
+		float hit = 10.0f;
+		// Maxed Thorny: 15% at level 0 and 15% more for each of its 4 levels.
+		float share = 0.75f;
+		float wearerHealth = wearer.getHealth();
+		float attackerHealth = attacker.getHealth();
+		helper.hurt(wearer, source, hit);
+
+		float taken = wearerHealth - wearer.getHealth();
+		float reflected = attackerHealth - attacker.getHealth();
+		String who = wearer.getType().getDescriptionId();
+
+		helper.assertTrue(taken > 0.0f && taken < hit * 0.6f,
+				who + ": a large part of the hit should be mitigated, took " + taken + " of " + hit);
+		helper.assertTrue(Math.abs(reflected - taken * share) < 0.01f,
+				who + ": thorny should reflect " + share + " of the " + taken + " the wearer took (" + taken * share
+						+ "), not of the " + hit + " dealt (" + hit * share + "); reflected " + reflected);
 	}
 
 	/**
@@ -443,7 +939,7 @@ public final class GameTestBodies {
 		Modifier mod = ModifierRegistry.getModifier(trait);
 		// First add lands at the base level; every repeat levels it up until maxed.
 		for (int i = 0; i < 16; i++) {
-			LootUtils.addModifier(piece, mod);
+			TraitGrant.force(piece, mod);
 		}
 		return piece;
 	}
@@ -512,7 +1008,7 @@ public final class GameTestBodies {
 	public static void adrenalineGrantsSpeed(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
 		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chest, ModifierRegistry.getModifier("adrenaline"));
+		TraitGrant.force(chest, ModifierRegistry.getModifier("adrenaline"));
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
 		helper.assertFalse(player.hasEffect(MobEffects.SPEED), "no speed before the hit");
@@ -577,7 +1073,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
 		ItemStack pick = newTool(ToolType.PICKAXE);
-		LootUtils.addModifier(pick, ModifierRegistry.getModifier("soulbound"));
+		TraitGrant.force(pick, ModifierRegistry.getModifier("soulbound"));
 		LootUtils.setOwnerUUID(pick, player.getStringUUID());
 		player.setItemInHand(InteractionHand.MAIN_HAND, pick);
 
@@ -586,8 +1082,8 @@ public final class GameTestBodies {
 		LootUtils.setOwnerUUID(pick, "00000000-0000-0000-0000-000000000000");
 		float unowned = player.getDestroySpeed(Blocks.STONE.defaultBlockState());
 
-		helper.assertTrue(owned > unowned,
-				"soulbound should mine faster for its owner: owned=" + owned + " unowned=" + unowned);
+		helper.assertTrue(Math.abs(owned - unowned * 1.15f) < 0.001f,
+				"soulbound should mine 1.15 times as fast for its owner: owned=" + owned + " unowned=" + unowned);
 
 		helper.succeed();
 	}
@@ -712,6 +1208,51 @@ public final class GameTestBodies {
 	}
 
 	/**
+	 * An enchanted book on the anvil is filtered per gear type, like the enchanting table.
+	 * The single tool item and the single armor item sit in every vanilla enchantable tag,
+	 * so without the ENCHANT_GATE hook on this path an efficiency book lands on a sword.
+	 * NeoForge reaches the hook through supportsEnchantment, Fabric through its
+	 * ALLOW_ENCHANTING event.
+	 */
+	public static void anvilBooksFilterByType(GameTestHelper helper) {
+		// Not a creative player: the anvil lets those apply any book to anything.
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		Holder<Enchantment> efficiency = enchants.getOrThrow(Enchantments.EFFICIENCY);
+		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
+		Holder<Enchantment> featherFalling = enchants.getOrThrow(Enchantments.FEATHER_FALLING);
+
+		helper.assertTrue(anvilAppliesBook(helper, player, newTool(ToolType.PICKAXE), efficiency),
+				"an efficiency book should go on a pickaxe");
+		helper.assertFalse(anvilAppliesBook(helper, player, newTool(ToolType.SWORD), efficiency),
+				"an efficiency book must not go on a sword");
+		helper.assertTrue(anvilAppliesBook(helper, player, newTool(ToolType.SWORD), sharpness),
+				"a sharpness book should go on a sword");
+		helper.assertFalse(anvilAppliesBook(helper, player, newTool(ToolType.PICKAXE), sharpness),
+				"a sharpness book must not go on a pickaxe");
+		helper.assertTrue(anvilAppliesBook(helper, player, newArmor(ToolType.BOOTS), featherFalling),
+				"a feather falling book should go on boots");
+		helper.assertFalse(anvilAppliesBook(helper, player, newArmor(ToolType.HELMET), featherFalling),
+				"a feather falling book must not go on a helmet");
+
+		helper.succeed();
+	}
+
+	/** Whether an anvil offers the gear with the enchantment on it when given the gear and a book of it. */
+	private static boolean anvilAppliesBook(GameTestHelper helper, ServerPlayer player, ItemStack gear,
+			Holder<Enchantment> enchantment) {
+		ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
+		book.enchant(enchantment, 1);
+
+		var menu = new AnvilMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(BlockPos.ZERO)));
+		menu.getSlot(0).set(gear);
+		menu.getSlot(1).set(book);
+		menu.createResult();
+		return menu.getSlot(2).getItem().getEnchantments().getLevel(enchantment) == 1;
+	}
+
+	/**
 	 * Chest-type loot tables actually produce cases/templates at the configured
 	 * chance: NeoForge via the case_item global loot modifier, Fabric via the
 	 * LootTableEvents.MODIFY_DROPS. 200 rolls at the default 25% miss with
@@ -782,6 +1323,114 @@ public final class GameTestBodies {
 		helper.succeed();
 	}
 
+	/**
+	 * Armor earns XP for the damage its wearer actually takes, the same on both loaders.
+	 * The DAMAGE_POST hook hands over the hit as it stands after a shield, armor and the
+	 * wearer-hurt traits, and it comes for a killing hit too.
+	 *
+	 * <p>Fabric used to hand over the hit as dealt, never a killing one, and its shim
+	 * dropped any hit a shield blocked part of. What Fabric gave then is noted on each case
+	 * where it differed.
+	 */
+	public static void armorXpPerHit(GameTestHelper helper) {
+		enablePvp(helper);
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
+
+		// Generic damage skips armor: 10 dealt, 10 taken.
+		ServerPlayer plain = chestplateWearer(helper, attacker, 0.0);
+		assertArmorXpFromHit(helper, "an unmitigated hit", plain, EquipmentSlot.CHEST,
+				plain.damageSources().generic(), 10.0f, 10.0f, 10);
+
+		// 20 armor takes 10 down to 4. Fabric gave 10.
+		ServerPlayer armored = chestplateWearer(helper, attacker, 20.0);
+		assertArmorXpFromHit(helper, "a hit against 20 armor", armored, EquipmentSlot.CHEST,
+				armored.damageSources().playerAttack(attacker), 10.0f, 4.0f, 4);
+
+		// Half of 10 gets past the shield and 20 armor takes that down to 1.5. Fabric gave 0.
+		ServerPlayer halfBlocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, halfBlocker, 0.5f);
+		assertArmorXpFromHit(helper, "a half-blocked hit", halfBlocker, EquipmentSlot.CHEST,
+				halfBlocker.damageSources().playerAttack(attacker), 10.0f, 1.5f, 2);
+
+		ServerPlayer blocker = chestplateWearer(helper, attacker, 20.0);
+		raiseShield(helper, blocker, 1.0f);
+		assertArmorXpFromHit(helper, "a fully blocked hit", blocker, EquipmentSlot.CHEST,
+				blocker.damageSources().playerAttack(attacker), 10.0f, 0.0f, 0);
+
+		// Maxed Featherweight cancels the fall; boots that soaked nothing learn nothing. Fabric gave 6.
+		ServerPlayer faller = mockVulnerablePlayer(helper);
+		faller.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+		assertArmorXpFromHit(helper, "a fall Featherweight cancels", faller, EquipmentSlot.FEET,
+				faller.damageSources().fall(), 6.0f, 0.0f, 0);
+
+		// A bigger hit inside the first one's invulnerability counts for the difference: 4,
+		// then 10 that lands as 6. It is the other path through hurtServer to the hook.
+		ServerPlayer twice = chestplateWearer(helper, attacker, 0.0);
+		helper.hurt(twice, twice.damageSources().generic(), 4.0f);
+		helper.hurt(twice, twice.damageSources().generic(), 10.0f);
+		helper.assertTrue(twice.getMaxHealth() - twice.getHealth() == 10.0f,
+				"hits for 4 then 10 in one invulnerability window should take 10 health, took "
+						+ (twice.getMaxHealth() - twice.getHealth()));
+		helper.assertTrue(LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)) == 10,
+				"hits for 4 then 10 in one invulnerability window should earn 4 + 6 armor XP, earned "
+						+ LootUtils.getXP(twice.getItemBySlot(EquipmentSlot.CHEST)));
+
+		// A killing hit counts, capped at the wearer's 20 health. Fabric gave 0.
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		ItemStack zombieChest = newArmor(ToolType.CHESTPLATE);
+		zombie.setItemSlot(EquipmentSlot.CHEST, zombieChest);
+		helper.hurt(zombie, zombie.damageSources().generic(), 1000.0f);
+		helper.assertTrue(zombie.isDeadOrDying(), "the zombie should die to a hit for 1000");
+		helper.assertTrue(LootUtils.getLevel(zombieChest) == 0 && LootUtils.getXP(zombieChest) == 20,
+				"a killing hit should earn the wearer's 20 max health in armor XP, got "
+						+ LootUtils.getXP(zombieChest));
+
+		helper.succeed();
+	}
+
+	/**
+	 * A hurtable player in a fresh Random Armor chestplate with this much armor, standing
+	 * two blocks down +z from the attacker's side and looking along +z at them, so a raised
+	 * shield faces the attack.
+	 */
+	private static ServerPlayer chestplateWearer(GameTestHelper helper, ServerPlayer attacker, double armor) {
+		ServerPlayer wearer = mockVulnerablePlayer(helper);
+		wearer.setItemSlot(EquipmentSlot.CHEST, newArmor(ToolType.CHESTPLATE));
+		wearer.getAttribute(Attributes.ARMOR).setBaseValue(armor);
+		wearer.snapTo(attacker.getX(), attacker.getY(), attacker.getZ() - 2.0, 0.0f, 0.0f);
+		wearer.setYHeadRot(0.0f);
+		return wearer;
+	}
+
+	/**
+	 * Raises a shield that blocks this share of a hit. It has no raise delay: a mock player
+	 * is never ticked, so the vanilla quarter second would never pass.
+	 */
+	private static void raiseShield(GameTestHelper helper, ServerPlayer wearer, float share) {
+		ItemStack shield = new ItemStack(Items.SHIELD);
+		shield.set(DataComponents.BLOCKS_ATTACKS, new BlocksAttacks(0.0f, 1.0f,
+				List.of(new BlocksAttacks.DamageReduction(90.0f, Optional.empty(), 0.0f, share)),
+				BlocksAttacks.ItemDamageFunction.DEFAULT, Optional.empty(), Optional.empty(), Optional.empty()));
+		wearer.setItemInHand(InteractionHand.OFF_HAND, shield);
+		wearer.startUsingItem(InteractionHand.OFF_HAND);
+		helper.assertTrue(wearer.isBlocking(), "the shield should be up");
+	}
+
+	/** Hits the wearer once at full health and checks what they took and what the worn piece earned from it. */
+	private static void assertArmorXpFromHit(GameTestHelper helper, String what, ServerPlayer wearer,
+			EquipmentSlot slot, DamageSource source, float dealt, float taken, int xp) {
+		int xpBefore = LootUtils.getXP(wearer.getItemBySlot(slot));
+		freshHit(helper, wearer, source, dealt);
+
+		float lost = wearer.getMaxHealth() - wearer.getHealth();
+		helper.assertTrue(Math.abs(lost - taken) < 0.001f,
+				what + " for " + dealt + " should take " + taken + " health, took " + lost);
+		ItemStack worn = wearer.getItemBySlot(slot);
+		int earned = LootUtils.getXP(worn) - xpBefore;
+		helper.assertTrue(LootUtils.getLevel(worn) == 0 && earned == xp,
+				what + " for " + dealt + " (" + taken + " taken) should earn " + xp + " armor XP, earned " + earned);
+	}
+
 	/** The anvil's material-repair path accepts items from the armor_repair_materials tag. */
 	public static void armorRepairable(GameTestHelper helper) {
 		ItemStack armor = new ItemStack(ModItems.ARMOR.get());
@@ -829,8 +1478,8 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("haileys_wrath"));
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("nemesis"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("haileys_wrath"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("nemesis"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 		int damageBefore = tool.getDamageValue();
 		int xpBefore = LootUtils.getXP(tool);
@@ -869,7 +1518,7 @@ public final class GameTestBodies {
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("catalyst"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("catalyst"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		for (int i = 0; i < 200; i++) {
@@ -926,7 +1575,7 @@ public final class GameTestBodies {
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
 		ItemStack tool = newTool(ToolType.SWORD);
-		LootUtils.addModifier(tool, ModifierRegistry.getModifier("stench"));
+		TraitGrant.force(tool, ModifierRegistry.getModifier("stench"));
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
@@ -964,23 +1613,45 @@ public final class GameTestBodies {
 	 */
 	public static void levelUpRollsTrait(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		double saved = Config.LevelUpTraitChance;
 
-		try {
-			Config.LevelUpTraitChance = 1.0;
+		try (Config.Substitution always = Config.LEVEL_UP_TRAIT_CHANCE.substitute(1.0)) {
 			ItemStack rolled = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(rolled, player, 500);
 			helper.assertTrue(LootUtils.rawTraitNames(rolled).size() == 1,
 					"one level-up at chance 1.0 should roll one trait, got " + LootUtils.rawTraitNames(rolled));
+		}
 
-			Config.LevelUpTraitChance = 0.0;
+		try (Config.Substitution never = Config.LEVEL_UP_TRAIT_CHANCE.substitute(0.0)) {
 			ItemStack plain = newTool(ToolType.PICKAXE);
 			LootUtils.addXp(plain, player, 1600);
 			helper.assertTrue(LootUtils.rawTraitNames(plain).isEmpty(),
 					"level-ups at chance 0.0 should roll no traits, got " + LootUtils.rawTraitNames(plain));
-		} finally {
-			Config.LevelUpTraitChance = saved;
 		}
+
+		helper.succeed();
+	}
+
+	/**
+	 * A trait switched off in the config stays written on the gear but stops being one
+	 * of its traits: {@code getModifiers} is what every trait dispatch reads.
+	 */
+	public static void disabledTraitIsFiltered(GameTestHelper helper) {
+		ItemStack armor = newArmor(ToolType.CHESTPLATE);
+		TraitGrant.force(armor, ModifierRegistry.getModifier("thorny"));
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1 && LootUtils.hasEnabledModifier(armor, "thorny"),
+				"an enabled trait should be one of the gear's traits, got " + LootUtils.getModifiers(armor));
+
+		try (Config.Substitution off = Config.traitToggle("thorny").substitute(false)) {
+			helper.assertTrue(LootUtils.getModifiers(armor).isEmpty(),
+					"a disabled trait should be filtered out, got " + LootUtils.getModifiers(armor));
+			helper.assertTrue(!LootUtils.hasEnabledModifier(armor, "thorny"),
+					"a disabled trait should not count as enabled on the gear");
+			helper.assertTrue(LootUtils.hasRawTrait(armor, "thorny"),
+					"a disabled trait should still be written on the gear, so it can be removed");
+		}
+
+		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1,
+				"the trait should be back once the toggle is, got " + LootUtils.getModifiers(armor));
 
 		helper.succeed();
 	}
@@ -1008,11 +1679,14 @@ public final class GameTestBodies {
 	}
 
 	private static void assertAdvancementDone(GameTestHelper helper, ServerPlayer player, String id) {
+		helper.assertTrue(advancementDone(helper, player, id), "gameplay sequence should complete advancement: " + id);
+	}
+
+	private static boolean advancementDone(GameTestHelper helper, ServerPlayer player, String id) {
 		var advancement = helper.getLevel().getServer().getAdvancements()
 				.get(Identifier.fromNamespaceAndPath(RandomLoot.MODID, id));
 		helper.assertTrue(advancement != null, "advancement should be loaded: " + id);
-		helper.assertTrue(player.getAdvancements().getOrStartProgress(advancement).isDone(),
-				"gameplay sequence should complete advancement: " + id);
+		return player.getAdvancements().getOrStartProgress(advancement).isDone();
 	}
 
 	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
@@ -1068,6 +1742,37 @@ public final class GameTestBodies {
 		helper.assertTrue(run(commands, source, "randomloot trait remove critical") == 1,
 				"trait remove should succeed");
 		helper.assertFalse(hasTrait(player.getMainHandItem(), "critical"), "trait remove should strip the trait");
+
+		// The reply names the trait as it went onto the gear. Grace is named after this
+		// world's forger, while the registry's own copy carries one rolled at start-up
+		// (the same forger one start in six, when this cannot tell the two apart).
+		List<String> replies = new ArrayList<>();
+		CommandSourceStack listening = source.withSource(new CommandSource() {
+			@Override
+			public void sendSystemMessage(Component message) {
+				replies.add(message.getString());
+			}
+
+			@Override
+			public boolean acceptsSuccess() {
+				return true;
+			}
+
+			@Override
+			public boolean acceptsFailure() {
+				return true;
+			}
+
+			@Override
+			public boolean shouldInformAdmins() {
+				return false;
+			}
+		});
+		helper.assertTrue(run(commands, listening, "randomloot trait add dirt_place") == 1,
+				"trait add should accept dirt_place on a sword");
+		String onGear = traitName(player.getMainHandItem(), "dirt_place");
+		helper.assertTrue(replies.size() == 1 && replies.get(0).startsWith("Added " + onGear + " to "),
+				"the reply should name the trait as it is on the gear, " + onGear + ", got " + replies);
 
 		// Tab-completion for `trait add` only offers traits the command would accept.
 		ParseResults<CommandSourceStack> parse = commands.parse("randomloot trait add ", source);
@@ -1130,9 +1835,30 @@ public final class GameTestBodies {
 		helper.assertFalse(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
 				"the subtraction template must not match gear that lacks the trait");
 		ItemStack mismatched = newTool(ToolType.SWORD);
-		LootUtils.addModifier(mismatched, ModifierRegistry.getModifier("thorny"));
+		TraitGrant.force(mismatched, ModifierRegistry.getModifier("thorny"));
 		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
+
+		// A refused change changes nothing. The table only assembles what matched, but
+		// handed gear the gate refuses, assemble has to give it back as it was: the
+		// re-forging of forger names belongs to a change, and the recipe knows this
+		// world's seed by now from the matches above.
+		ItemStack refused = newTool(ToolType.SWORD);
+		CompoundTag foreignGrace = ModifierRegistry.getModifier("dirt_place").toNBT();
+		foreignGrace.putString(Modifier.NAME, "Nobody's Grace");
+		TraitGrant.force(refused, ModifierRegistry.loadModifier("dirt_place", foreignGrace));
+		ItemStack handedBack = thorny.assemble(new SmithingRecipeInput(addTemplate, refused, cactus));
+		helper.assertTrue(
+				GearTags.read(handedBack, Modifier.MODTAG).equals(GearTags.read(refused, Modifier.MODTAG)),
+				"assembling gear the gate refuses should leave its traits as they were, got "
+						+ GearTags.read(handedBack, Modifier.MODTAG) + " from " + GearTags.read(refused, Modifier.MODTAG));
+
+		// The recipe acts for its two templates and no other. Handed anything else in
+		// the template slot, assemble takes nothing off the gear.
+		ItemStack kept = thorny.assemble(new SmithingRecipeInput(new ItemStack(Items.PAPER), mismatched, cactus));
+		helper.assertTrue(hasTrait(kept, "thorny"),
+				"a template that is neither of the two must not remove the trait, got "
+						+ GearTags.read(kept, Modifier.MODTAG));
 
 		helper.succeed();
 	}
@@ -1150,7 +1876,7 @@ public final class GameTestBodies {
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
-		LootUtils.addModifier(sword, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(sword, graceOf("Nobody"));
 
 		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
@@ -1185,13 +1911,12 @@ public final class GameTestBodies {
 
 	/**
 	 * The gear's DirtPlace is named after this world's forger. Callers smith gear that
-	 * starts with a made-up forger: the registry prototype's random one matches the
-	 * world's one time in six, which would let a missing stamp pass.
+	 * starts with a made-up forger, as gear brought in from another world would, so it is
+	 * the smithing table's stamp that is checked.
 	 */
 	private static void assertWorldForger(GameTestHelper helper, ItemStack gear) {
-		String expected = NameGenerator.forgerForWorld(helper.getLevel().getSeed(), 0.5f) + "'s Grace";
-		String forged = LootUtils.getModifiers(gear).stream().filter(m -> m.tagName().equals("dirt_place"))
-				.map(Modifier::name).findFirst().orElse("nothing");
+		String expected = worldGrace(helper.getLevel().getSeed());
+		String forged = traitName(gear, "dirt_place");
 		helper.assertTrue(expected.equals(forged),
 				"smithed gear should credit this world's forger, got " + forged + " expected " + expected);
 	}
@@ -1220,6 +1945,38 @@ public final class GameTestBodies {
 		}
 
 		helper.succeed();
+	}
+
+	/**
+	 * Wiki generation from this server's loaded data: every trait MODIFIERS.md lists has
+	 * a recipe that loaded, and the docs render without throwing. In a run started with
+	 * {@code RL_PROD=false} this row is also what writes the docs (see {@link GenWiki}),
+	 * so a failure here fails that run instead of committing a wrong page.
+	 */
+	public static void wikiGenerates(GameTestHelper helper) {
+		GenWiki.generate(helper.getLevel().recipeAccess().getRecipes());
+		helper.succeed();
+	}
+
+	/**
+	 * A trait whose recipe did not load stops wiki generation and is named in the
+	 * failure. It used to be written out as "crafting: n/a" with a warning in the log,
+	 * and a release shipped with all 68 entries reading that way.
+	 */
+	public static void wikiNeedsEveryTraitRecipe(GameTestHelper helper) {
+		List<RecipeHolder<?>> withoutThorny = helper.getLevel().recipeAccess().getRecipes().stream()
+				.filter(h -> !h.id().identifier().getPath().equals("trait_thorny"))
+				.toList();
+
+		try {
+			GenWiki.render(withoutThorny);
+		} catch (IllegalStateException expected) {
+			helper.assertTrue(expected.getMessage().contains("thorny"),
+					"the failure should name the trait with no recipe, got: " + expected.getMessage());
+			helper.succeed();
+			return;
+		}
+		throw helper.assertionException(Component.literal("rendering the wiki without Thorny's recipe should fail"));
 	}
 
 	/** The datapack's recipe for a trait, as loaded. */
@@ -1251,8 +2008,8 @@ public final class GameTestBodies {
 	/**
 	 * Taking the result uses up the recipe's whole count. Vanilla's onTake shrinks each
 	 * input by one, so the other three cactus here only go if the loader's SMITHING_TAKE
-	 * hook really runs - loader_hooks_all_bound can only say it was declared. Also checks
-	 * the preview, which has to vanish the moment the slot can no longer pay.
+	 * hook really runs. Also checks the preview, which has to vanish the moment the slot
+	 * can no longer pay.
 	 */
 	public static void smithingTakeConsumesCount(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
@@ -1294,7 +2051,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		// DirtPlace never rolls on armor; it is here as the one trait named after a forger.
 		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(chestplate, new DirtPlace("Nobody's Grace", 1));
+		TraitGrant.force(chestplate, graceOf("Nobody"));
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), chestplate,
 				new ItemStack(Items.CACTUS, 10));
 
@@ -1321,12 +2078,14 @@ public final class GameTestBodies {
 	/**
 	 * Through a real menu, the removal template previews with one item and takes one.
 	 * Stripping a trait for the full price again would make undoing Spelunking cost a
-	 * second stack of torches.
+	 * second stack of torches. Nor is it adding a trait: the take hook serves both
+	 * templates and used to fire the crafted-trait criterion behind add_trait for either.
+	 * (smithingShiftClickConsumesCount is the control: an add does complete it.)
 	 */
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
-		LootUtils.addModifier(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+		TraitGrant.force(thornyChestplate, ModifierRegistry.getModifier("thorny"));
 
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
 				new ItemStack(Items.CACTUS));
@@ -1343,8 +2102,41 @@ public final class GameTestBodies {
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
 		helper.assertTrue(left.is(Items.CACTUS) && left.getCount() == 9,
 				"removing a trait should consume exactly 1 of 10 cactus, left " + left.getCount());
+		helper.assertFalse(advancementDone(helper, player, "add_trait"),
+				"removing a trait must not complete add_trait");
 
 		helper.succeed();
+	}
+
+	/**
+	 * Each Chaotic grant rolls a seed of its own. The registry holds one Chaotic, and
+	 * every grant - case roll, level-up roll, command, smithing table - ends in
+	 * TraitGrant writing that one onto the gear. So the seed it picked for itself at
+	 * start-up went onto every Chaotic tool granted until the server restarted, and they
+	 * all swung in step.
+	 */
+	public static void chaoticGrantsRollOwnSeeds(GameTestHelper helper) {
+		Modifier chaotic = ModifierRegistry.getModifier("chaotic");
+
+		List<ItemStack> tools = List.of(newTool(ToolType.SWORD), newTool(ToolType.SWORD), newTool(ToolType.SWORD));
+		tools.forEach(tool -> TraitGrant.force(tool, chaotic));
+		List<CompoundTag> granted = tools.stream().map(GameTestBodies::chaoticData).toList();
+		helper.assertTrue(granted.stream().distinct().count() == 3,
+				"three chaotic grants should carry three seeds, got " + granted);
+
+		// Only the grant rolls: a seed that is on the gear stays there through a rewrite.
+		ItemStack tool = tools.get(0);
+		LootUtils.updateModifier(tool, LootUtils.getModifiers(tool).get(0));
+		helper.assertTrue(chaoticData(tool).equals(granted.get(0)),
+				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(tool) + " after "
+						+ granted.get(0));
+
+		helper.succeed();
+	}
+
+	/** What the gear stores for its Chaotic trait: the name and the seed. */
+	private static CompoundTag chaoticData(ItemStack gear) {
+		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty("chaotic");
 	}
 
 	/**
@@ -1428,17 +2220,105 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * Every GameHook is wired on the loader under test. Adding a hook is one method on
-	 * NeoForge and up to three edits on Fabric (callback or mixin class, plus a
-	 * mixins.json entry), so a hook wired on one loader and forgotten on the other used
-	 * to be invisible until someone played the game.
+	 * Every GameHook reaches common on the loader under test. Each step makes the game do
+	 * the thing behind a hook, through the loader's real wiring - an event listener, a
+	 * mixin, an item override or a loot modifier file - and GameHooks records what
+	 * arrived. A hook wired on one loader and forgotten on the other, a mixin dropped from
+	 * the mixins json, a handler deleted from a shim: each leaves its hook undelivered.
+	 *
+	 * <p>COMMANDS and CONFIG arrive while the server starts and SERVER_TICK at the end of
+	 * every tick, so there is no step for them. SERVER_STOPPING is the one hook left out
+	 * for good: nothing can deliver it while the server running this test is still up.
 	 */
 	public static void loaderHooksAllBound(GameTestHelper helper) {
-		java.util.Set<GameHook> missing = GameHooks.missing();
+		ServerLevel level = helper.getLevel();
+		enablePvp(helper);
+		ServerPlayer player = mockVulnerablePlayer(helper);
+		ServerPlayer attacker = mockVulnerablePlayer(helper);
 
-		helper.assertTrue(missing.isEmpty(), "this loader never bound these hooks: " + missing);
+		// DAMAGE_PRE, DAMAGE_POST, ARMOR_HURT: a player in a chestplate takes a hit.
+		// (Only a player's armor wears: LivingEntity.hurtArmor does nothing for a mob.)
+		player.setItemSlot(EquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+		freshHit(helper, player, player.damageSources().playerAttack(attacker), 8.0f);
+
+		// KILL
+		LivingEntity zombie = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
+		helper.hurt(zombie, zombie.damageSources().generic(), 1000.0f);
+
+		// BREAK_SPEED
+		player.getDestroySpeed(Blocks.STONE.defaultBlockState());
+
+		// AFTER_USE_ITEM
+		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(Items.STICK));
+		player.gameMode.useItem(player, level, player.getMainHandItem(), InteractionHand.MAIN_HAND);
+
+		// CREATIVE_TAB
+		buildCreativeTab(helper, ModItems.CREATIVE_TAB);
+
+		// ANVIL_COMBINE
+		var anvil = new AnvilMenu(1, player.getInventory(),
+				ContainerLevelAccess.create(level, helper.absolutePos(BlockPos.ZERO)));
+		anvil.getSlot(0).set(newTool(ToolType.SWORD));
+		anvil.getSlot(1).set(newTool(ToolType.SWORD));
+		anvil.createResult();
+
+		// ENCHANT_GATE
+		var enchants = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
+		tableOffers(newTool(ToolType.SWORD), enchants.getOrThrow(Enchantments.SHARPNESS),
+				enchants.getOrThrow(Enchantments.EFFICIENCY));
+
+		// LOOT_INJECTION
+		level.getServer().reloadableRegistries()
+				.getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
+						Identifier.withDefaultNamespace("chests/simple_dungeon")))
+				.getRandomItems(new LootParams.Builder(level).create(LootContextParamSets.EMPTY));
+
+		// SMITHING_TAKE
+		SmithingMenu smithing = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()),
+				newArmor(ToolType.CHESTPLATE), new ItemStack(Items.CACTUS, 4));
+		smithing.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.PICKUP, player);
+
+		Set<GameHook> undelivered = GameHooks.undelivered();
+		undelivered.remove(GameHook.SERVER_STOPPING);
+		helper.assertTrue(undelivered.isEmpty(), "this loader never delivered these hooks: " + undelivered);
 
 		helper.succeed();
+	}
+
+	/**
+	 * The mod's items are listed in the Tools & Utilities creative tab, in their display
+	 * order, after everything vanilla puts there, and in no other tab. Tabs are only ever
+	 * built on a client in play; building them here goes through the same loader hook.
+	 */
+	public static void creativeTabListsModItems(GameTestHelper helper) {
+		List<Item> listed = buildCreativeTab(helper, ModItems.CREATIVE_TAB).getDisplayItems().stream()
+				.map(ItemStack::getItem).toList();
+		List<Item> expected = ModItems.creativeTabItems();
+
+		helper.assertTrue(listed.size() > expected.size(), "vanilla's own tools should be in the tab too");
+		helper.assertTrue(listed.subList(listed.size() - expected.size(), listed.size()).equals(expected),
+				"the tab should end with " + expected + ", ends with "
+						+ listed.subList(listed.size() - expected.size(), listed.size()));
+		helper.assertTrue(listed.stream().filter(expected::contains).count() == expected.size(),
+				"each of the mod's items should be listed once");
+
+		// Built from its id for the reason ModItems.CREATIVE_TAB is: vanilla keeps these keys private.
+		ResourceKey<CreativeModeTab> combat = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+				Identifier.withDefaultNamespace("combat"));
+		for (ItemStack stack : buildCreativeTab(helper, combat).getDisplayItems()) {
+			helper.assertFalse(expected.contains(stack.getItem()),
+					"the combat tab should not list " + stack.getItem());
+		}
+
+		helper.succeed();
+	}
+
+	/** Builds one creative tab's contents, as the client does when the creative inventory opens. */
+	private static CreativeModeTab buildCreativeTab(GameTestHelper helper, ResourceKey<CreativeModeTab> key) {
+		CreativeModeTab tab = BuiltInRegistries.CREATIVE_MODE_TAB.getValueOrThrow(key);
+		tab.buildContents(new CreativeModeTab.ItemDisplayParameters(helper.getLevel().enabledFeatures(), true,
+				helper.getLevel().registryAccess()));
+		return tab;
 	}
 
 	public static int run(CommandDispatcher<CommandSourceStack> commands, CommandSourceStack source, String command) {
@@ -1454,7 +2334,7 @@ public final class GameTestBodies {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
 		for (String trait : traits) {
-			LootUtils.addModifier(tool, ModifierRegistry.getModifier(trait));
+			TraitGrant.force(tool, ModifierRegistry.getModifier(trait));
 		}
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 		return player;
@@ -1645,12 +2525,12 @@ public final class GameTestBodies {
 		Modifier unbreaking = ModifierRegistry.getModifier("unbreaking");
 		// First add lands at the base level; every repeat levels it up until maxed.
 		for (int i = 0; i < 16; i++) {
-			LootUtils.addModifier(axe, unbreaking);
+			TraitGrant.force(axe, unbreaking);
 		}
 		ServerPlayer player = survivalPlayerHolding(helper, axe);
 
-		LootUtils.damageGear(axe, 25, player, EquipmentSlot.MAINHAND);
-		helper.assertTrue(axe.getDamageValue() == 0, "damageGear should spend nothing on an Unbreakable tool");
+		TraitDispatch.spendDurability(axe, 25, player, EquipmentSlot.MAINHAND);
+		helper.assertTrue(axe.getDamageValue() == 0, "spending durability should cost an Unbreakable tool nothing");
 
 		BlockPos logPos = new BlockPos(1, 1, 1);
 		helper.setBlock(logPos, Blocks.OAK_LOG);
@@ -1663,20 +2543,37 @@ public final class GameTestBodies {
 	}
 
 	/**
-	 * A chest-type table that rolls other chest-type tables still gets one injection
-	 * roll. The trial vault's reward table rolls reward_common/_rare/_unique; on Fabric
-	 * every one of those used to carry its own injected pool.
+	 * One roll of a chest's loot is one injection roll: with both chances forced to 1 it
+	 * adds exactly one case and one template, and with both at 0 it adds neither. That
+	 * holds for a table that rolls other chest-type tables too - the trial vault's reward
+	 * table rolls reward_common/_rare/_unique, and on Fabric every one of those used to
+	 * carry its own injected pool.
 	 */
 	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
-		var key = ResourceKey.create(Registries.LOOT_TABLE,
-				Identifier.withDefaultNamespace("chests/trial_chambers/reward"));
-		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		helper.assertTrue(table != LootTable.EMPTY, "trial chamber reward loot table should exist");
+		for (String path : List.of("chests/simple_dungeon", "chests/trial_chambers/reward")) {
+			var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(
+					ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
+			helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
 
-		var params = new LootParams.Builder(helper.getLevel())
-				.create(LootContextParamSets.EMPTY);
+			try (Config.Substitution cases = Config.CASE_CHANCE.substitute(1.0);
+					Config.Substitution templates = Config.MOD_CHANCE.substitute(1.0)) {
+				assertInjectedPerRoll(helper, table, path, 1);
+			}
 
-		for (int i = 0; i < 300; i++) {
+			try (Config.Substitution cases = Config.CASE_CHANCE.substitute(0.0);
+					Config.Substitution templates = Config.MOD_CHANCE.substitute(0.0)) {
+				assertInjectedPerRoll(helper, table, path, 0);
+			}
+		}
+
+		helper.succeed();
+	}
+
+	/** Rolls the table a few times and checks each roll holds exactly this many cases and this many templates. */
+	private static void assertInjectedPerRoll(GameTestHelper helper, LootTable table, String path, int expected) {
+		var params = new LootParams.Builder(helper.getLevel()).create(LootContextParamSets.EMPTY);
+
+		for (int i = 0; i < 20; i++) {
 			int cases = 0;
 			int templates = 0;
 			for (ItemStack drop : table.getRandomItems(params)) {
@@ -1686,12 +2583,10 @@ public final class GameTestBodies {
 					templates += drop.getCount();
 				}
 			}
-			helper.assertTrue(cases <= 1 && templates <= 1,
-					"one vault roll should inject at most one case and one template, got " + cases + " and "
-							+ templates);
+			helper.assertTrue(cases == expected && templates == expected,
+					"one roll of " + path + " should inject " + expected + " case and " + expected
+							+ " template, got " + cases + " and " + templates);
 		}
-
-		helper.succeed();
 	}
 
 	/**
@@ -1733,29 +2628,6 @@ public final class GameTestBodies {
 		earlyBird.hurtEnemy(sword, hitTwice, player);
 		helper.assertTrue(hitTwice.getHealth() == hitTwiceAfter,
 				"Early Bird should not reuse an earlier same-tick full-health hit for a wounded target");
-
-		// Another trait's bonus hit overwrites that record too, so the tool runs Early
-		// Bird before its other traits. Through the real LootItem.hurtEnemy: a sword with
-		// Feasting and Early Bird must out-damage one with Feasting alone. (Feasting's key
-		// iterates ahead of Early Bird's in the trait tag, so it would otherwise go first.)
-		float[] lost = new float[2];
-		String[][] traitSets = { { "feasting", "early_bird" }, { "feasting" } };
-		for (int i = 0; i < traitSets.length; i++) {
-			ItemStack traited = newTool(ToolType.SWORD);
-			LootUtils.setStats(traited, 4.0f);
-			for (String trait : traitSets[i]) {
-				LootUtils.addModifier(traited, ModifierRegistry.getModifier(trait));
-			}
-			LivingEntity target = helper.spawn(EntityTypes.ZOMBIE, new BlockPos(1, 2, 1));
-			helper.hurt(target, target.damageSources().playerAttack(player), 6.0f);
-			float afterHit = target.getHealth();
-			((LootItem) traited.getItem()).hurtEnemy(traited, target, player);
-			lost[i] = afterHit - target.getHealth();
-		}
-		helper.assertTrue(lost[1] > 0.0f, "Feasting should add bonus damage for a well-fed attacker");
-		helper.assertTrue(lost[0] > lost[1],
-				"Early Bird should still trigger when the tool has another bonus-damage trait, lost "
-						+ lost[0] + " vs " + lost[1]);
 
 		helper.succeed();
 	}

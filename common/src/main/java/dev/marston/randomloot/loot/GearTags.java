@@ -94,8 +94,10 @@ public final class GearTags {
 
 	/**
 	 * Writes a namespace <em>without</em> refreshing derived components. This is the raw
-	 * layer: use {@link #mutate} unless you are deliberately building a stack that has
-	 * not had its components stamped (the migration GameTest does exactly that).
+	 * layer: use {@link #mutate} unless you write several namespaces and refresh once
+	 * yourself ({@link LootUtils#stamp} does, for freshly generated gear), or are
+	 * deliberately building a stack that has not had its components stamped (the
+	 * migration GameTest does exactly that).
 	 */
 	public static void write(ItemStack stack, String namespace, CompoundTag tag) {
 		replaceTags(stack, tags -> tags.put(namespace, tag));

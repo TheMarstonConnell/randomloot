@@ -25,7 +25,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * loader's event shim.
  */
 public abstract class BlockHighlighter extends AbstractModifier implements HoldModifier {
-
 	/** Half-extent of the cube scanned around the holder. */
 	private static final int SCAN_RADIUS = 10;
 	/** Ticks between scans; the 20^3 block sweep is too expensive to run every tick. */

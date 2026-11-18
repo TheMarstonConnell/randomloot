@@ -1,10 +1,7 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.advancements.triggers.CriteriaTriggers;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -20,31 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.gameevent.GameEvent;
 
-
 public class FirePlace extends PlaceOnUseModifier {
 
-	public FirePlace(String name, int damage) {
-		this.name = name;
-		this.damage = damage;
-	}
-
 	public FirePlace() {
-		this("Fire Starter", 2);
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new FirePlace(tag.getStringOr(NAME, "Fire Starter"), tag.getIntOr(DAMAGE, 2));
-	}
-
-	@Override
-	public String tagName() {
-		return "fire_place";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.RED;
+		super(2);
 	}
 
 	@Override
@@ -82,6 +58,6 @@ public class FirePlace extends PlaceOnUseModifier {
 	@Override
 	public String description() {
 		return "Right clicking on the top of a block while crouching with the tool in hand will start a fire and use "
-				+ this.damage + " durability points.";
+				+ this.damage.get() + " durability points.";
 	}
 }

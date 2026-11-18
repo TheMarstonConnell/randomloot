@@ -2,15 +2,34 @@ package dev.marston.randomloot.loot;
 
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.items.ModItems;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.storage.loot.LootContext;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.WeakHashMap;
+import java.util.function.Consumer;
 
 /**
- * The loot-injection policy - which tables receive cases/templates and at what
- * chance. Owned by common so the loaders only differ in delivery mechanism:
- * NeoForge applies it per-roll via the case_item global loot modifier, Fabric
- * appends to a table's finished drops via LootTableEvents.MODIFY_DROPS.
+ * Loot injection: which loot tables hand out cases and templates, at what chance, and
+ * the roll itself. A loader shim only says which table rolled and where the stacks go.
+ *
+ * <p>The two loaders see a roll differently, and each keeps the scope it has:
+ * <ul>
+ * <li><b>NeoForge</b> runs a global loot modifier on the finished roll, once per
+ * injected item, with the id of the table that was asked for. A table rolled from
+ * inside that one is never seen. {@link #rollItem}.</li>
+ * <li><b>Fabric</b> is told about every table with an id as it rolls, the tables rolled
+ * from inside another included; they share the outer table's {@link LootContext}, so
+ * the roll happens once per context. {@link #rollOncePerContext}.</li>
+ * </ul>
+ * For every roll vanilla 26.3 can make the two inject the same: checked against all
+ * 1,447 vanilla loot tables. They differ only when a datapack or another mod nests a
+ * matching table inside one that does not match: Fabric injects there and NeoForge does
+ * not.
  */
 public final class LootInjection {
 
@@ -41,7 +60,7 @@ public final class LootInjection {
 			return false;
 		}
 
-		for (String match : Config.LootTableMatches) {
+		for (String match : Config.LOOT_TABLE_MATCHES.get()) {
 			if (tablePath.contains(match)) {
 				return true;
 			}
@@ -52,17 +71,58 @@ public final class LootInjection {
 	/** Every injected item with its current configured chance. */
 	public static List<Entry> entries() {
 		return List.of(
-				new Entry(ModItems.CASE.get(), Config.CaseChance),
-				new Entry(ModItems.MOD_ADD.get(), Config.ModChance));
+				new Entry(ModItems.CASE.get(), Config.CASE_CHANCE.get()),
+				new Entry(ModItems.MOD_ADD.get(), Config.MOD_CHANCE.get()));
 	}
 
-	/** The configured chance for an injectable item, or -1 when the item isn't injected. */
-	public static double chanceFor(Item item) {
+	/**
+	 * Loot contexts that have had their roll. A table that rolls other tables hands them
+	 * its own context, so this keeps one chest (or vault) to one roll. Weak keys: a
+	 * context is garbage once its generation finishes.
+	 */
+	private static final Set<LootContext> ROLLED = Collections
+			.synchronizedSet(Collections.newSetFromMap(new WeakHashMap<>()));
+
+	/**
+	 * Gives {@code drops} the stacks of one injected item to add to a finished roll of
+	 * {@code queriedTable}: none when the table is not an injection target or
+	 * {@code item} is not injected. For a loader that calls once per item and top-level
+	 * roll.
+	 */
+	public static void rollItem(Identifier queriedTable, LootContext context, Item item, Consumer<ItemStack> drops) {
+		if (!matchesTable(queriedTable.getPath())) {
+			return;
+		}
+
 		for (Entry entry : entries()) {
 			if (entry.item() == item) {
-				return entry.chance();
+				roll(entry, context, drops);
 			}
 		}
-		return -1.0;
+	}
+
+	/**
+	 * Gives {@code drops} the stacks to add to the drops of {@code table}: every injected
+	 * item's roll the first time a matching table is seen for {@code context}, and none
+	 * after that. For a loader that calls for every table in a roll, nested ones
+	 * included - without the once, a table that rolls other matching tables paid out once
+	 * per table (the trial vault's {@code reward} rolls {@code reward_common},
+	 * {@code _rare} and {@code _unique}).
+	 */
+	public static void rollOncePerContext(Identifier table, LootContext context, Consumer<ItemStack> drops) {
+		if (!matchesTable(table.getPath()) || !ROLLED.add(context)) {
+			return;
+		}
+
+		for (Entry entry : entries()) {
+			roll(entry, context, drops);
+		}
+	}
+
+	/** One draw from the context's random per entry, whatever the outcome. */
+	private static void roll(Entry entry, LootContext context, Consumer<ItemStack> drops) {
+		if (context.getRandom().nextDouble() < entry.chance()) {
+			drops.accept(new ItemStack(entry.item()));
+		}
 	}
 }

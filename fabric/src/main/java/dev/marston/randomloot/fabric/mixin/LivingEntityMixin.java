@@ -2,27 +2,68 @@ package dev.marston.randomloot.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
+import dev.marston.randomloot.fabric.DamageTakenCarrier;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.LivingEntity;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Fabric stand-in for NeoForge's LivingDamageEvent.Pre (wearer-hurt armor traits).
+ * Fabric's shim for DAMAGE_PRE and DAMAGE_POST, where NeoForge has LivingDamageEvent.Pre
+ * and .Post.
  *
- * <p>Wraps the actuallyHurt CALL SITES in hurtServer rather than injecting into
- * actuallyHurt itself: Player overrides actuallyHurt, so a HEAD injection into
- * the LivingEntity method never fires for players (the common case for armor).
+ * <p><b>DAMAGE_PRE.</b> NeoForge fires its event inside actuallyHurt once armor,
+ * protection enchantments and Resistance have reduced the hit, and before absorption
+ * hearts soak any of it. getDamageAfterMagicAbsorb is the last of those reductions, so
+ * the value its call returns is the same number. This hook used to wrap the actuallyHurt
+ * call in hurtServer instead, which handed the traits the hit before any reduction:
+ * Thorny reflected a share of the raw hit on Fabric and of the damage taken on NeoForge.
+ *
+ * <p>It wraps the call, not the method. Witch overrides getDamageAfterMagicAbsorb and
+ * takes her own 85% off magic after super returns; an injection into the method runs
+ * before that, the call's result (and NeoForge's event) come after it.
+ *
+ * <p>Player has its own actuallyHurt and never runs this one, so PlayerMixin wraps the
+ * same call there. A wrap on one of the two silently skips the other's entities.
+ *
+ * <p><b>DAMAGE_POST.</b> NeoForge's Post event comes at the end of hurtServer with the
+ * damage as DAMAGE_PRE left it. Fabric API's AFTER_DAMAGE is not that: it reports the
+ * hit before armor and does not fire for a killing hit. So the amount DAMAGE_PRE
+ * answered is kept on the entity and handed over at the tail of hurtServer, which is
+ * past the point where a dying entity has died. Every path that gets as far as
+ * actuallyHurt reaches that tail, and a hit a trait deals back to this entity from
+ * inside DAMAGE_PRE has run its whole hurtServer before the amount is stored.
  */
 @Mixin(LivingEntity.class)
-public abstract class LivingEntityMixin {
+public abstract class LivingEntityMixin implements DamageTakenCarrier {
 
-    @WrapOperation(method = "hurtServer", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/world/entity/LivingEntity;actuallyHurt(Lnet/minecraft/server/level/ServerLevel;Lnet/minecraft/world/damagesource/DamageSource;F)V"))
-    private void randomloot$wearerHurtTraits(LivingEntity instance, ServerLevel level, DamageSource source,
-            float damage, Operation<Void> original) {
-        original.call(instance, level, source, ArmorDispatcher.onLivingDamagePre(instance, source, damage));
+    @Unique
+    private float randomloot$damageTaken;
+
+    @Override
+    public void randomloot$setDamageTaken(float damage) {
+        this.randomloot$damageTaken = damage;
+    }
+
+    @WrapOperation(method = "actuallyHurt", at = @At(value = "INVOKE",
+            target = "Lnet/minecraft/world/entity/LivingEntity;getDamageAfterMagicAbsorb(Lnet/minecraft/world/damagesource/DamageSource;F)F"))
+    private float randomloot$wearerHurtTraits(LivingEntity instance, DamageSource source, float damage,
+            Operation<Float> original) {
+        float taken = GameHooks.damagePre(instance, source, original.call(instance, source, damage));
+        this.randomloot$damageTaken = taken;
+        return taken;
+    }
+
+    @Inject(method = "hurtServer", at = @At("TAIL"))
+    private void randomloot$afterHurt(ServerLevel level, DamageSource source, float damage,
+            CallbackInfoReturnable<Boolean> cir) {
+        float taken = this.randomloot$damageTaken;
+        this.randomloot$damageTaken = 0.0f;
+        GameHooks.damagePost((LivingEntity) (Object) this, taken);
     }
 }

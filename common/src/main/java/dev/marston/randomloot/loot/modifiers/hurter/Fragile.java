@@ -1,56 +1,21 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class Fragile extends LeveledModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
-
+public class Fragile extends AbstractModifier implements EntityHurtModifier, BlockBreakModifier, StatsModifier {
 	private static final float STAT_BOOST = 0.25f; // 25% boost
-
-	public Fragile() {
-		this("Fragile", 1);
-	}
-
-	public Fragile(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 3;
-	}
-
-	@Override
-	public String tagName() {
-		return "fragile";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.WHITE;
-	}
 
 	@Override
 	public String description() {
@@ -59,7 +24,7 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 
 	private float getDurabilityMultiplier() {
 		// Level 1: 2.0x, Level 2: 1.6x, Level 3: 1.25x
-		switch (level) {
+		switch (traitLevel()) {
 			case 1: return 2.0f;
 			case 2: return 1.6f;
 			case 3: return 1.25f;
@@ -70,27 +35,12 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 	/** Chance-based extra durability cost: 2.0x -> always, 1.6x -> 60%, 1.25x -> 25%. */
 	private void tryExtraDamage(ItemStack itemstack, ServerPlayer player) {
 		if (player.level().getRandom().nextFloat() < (getDurabilityMultiplier() - 1.0f)) {
-			LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+			TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 		}
 	}
 
 	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Fragile(tag.getStringOr(NAME, "Fragile"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		// Its payoff lives in tool-only hooks, so on armor it would be a confusing no-op.
-		return !type.isArmor();
-	}
-
-	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		if (hurtee.level().isClientSide()) {
-			return false;
-		}
-
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// The "25% more damage" half of the trait. getStats only reaches mining speed,
 		// so without this a Fragile sword paid the durability cost for nothing.
 		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
@@ -99,21 +49,13 @@ public class Fragile extends LeveledModifier implements EntityHurtModifier, Bloc
 		if (hurter instanceof ServerPlayer player) {
 			tryExtraDamage(itemstack, player);
 		}
-
-		return false;
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
-		if (player.level().isClientSide()) {
-			return false;
-		}
-
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 		if (player instanceof ServerPlayer serverPlayer) {
 			tryExtraDamage(itemstack, serverPlayer);
 		}
-
-		return false;
 	}
 
 	@Override

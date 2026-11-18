@@ -1,14 +1,9 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -16,59 +11,17 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
-public class Scorched extends LeveledModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
-
-	public Scorched(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public Scorched() {
-		this("Scorched", 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 0;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Scorched(tag.getStringOr(NAME, "Scorched"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String tagName() {
-		return "scorched";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GOLD;
-	}
-
+public class Scorched extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 	@Override
 	public String description() {
-		int duration = 4 + (this.level * 2);
+		int duration = 4 + (traitLevel() * 2);
 		return "Sets enemies on fire for " + duration + " seconds. Grants fire resistance while held.";
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
-	}
-
-	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		int fireDuration = (4 + (this.level * 2)) * 20;
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+		int fireDuration = (4 + (traitLevel() * 2)) * 20;
 		hurtee.setRemainingFireTicks(fireDuration);
-		return false;
 	}
 
 	@Override

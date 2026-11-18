@@ -3,13 +3,9 @@ package dev.marston.randomloot.loot.modifiers.hurter;
 import java.util.List;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
@@ -17,28 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier {
-
     private static final double SEARCH_RADIUS = 10.0;
     private static final float BONUS_PER_MOB = 0.05f; // 5% per mob
     private static final float MAX_BONUS = 0.50f; // 50% max bonus
-
-    public CrowdPleaser() {
-        this.name = "Crowd Pleaser";
-    }
-
-    public CrowdPleaser(String name) {
-        this.name = name;
-    }
-
-    @Override
-    public String tagName() {
-        return "crowd_pleaser";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.LIGHT_PURPLE;
-    }
 
     @Override
     public String description() {
@@ -46,22 +23,8 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
     }
 
     @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        return new CrowdPleaser(tag.getStringOr(NAME, "Crowd Pleaser"));
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        return isWeapon(type);
-    }
-
-    @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         Level level = hurtee.level();
-        if (level.isClientSide()) {
-            return false;
-        }
-
         // Get the type of entity being attacked
         EntityType<?> targetType = hurtee.getType();
         
@@ -86,7 +49,5 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
             dealBonusDamage(hurtee, hurter, baseDamage * bonusPercent);
         }
-
-        return false;
     }
 }

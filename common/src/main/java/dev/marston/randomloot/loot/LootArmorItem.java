@@ -3,8 +3,7 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
-import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -47,7 +46,7 @@ public class LootArmorItem extends LootGearItem {
 	}
 
 	public static float getDefense(ItemStack stack, ToolType type) {
-		return GearStats.defense(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
+		return GearStats.defense(LootUtils.getStats(stack), type, TraitDispatch.statMultiplier(stack));
 	}
 
 	public static float getToughness(ItemStack stack, ToolType type) {

@@ -1,47 +1,26 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EffectModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
 public class Effect extends EffectModifier implements HoldModifier {
 
-	public Effect(String name, String tagname, int power, int duration, Holder<MobEffect> effect,
-			ChatFormatting format) {
-		super(name, tagname, power, duration, effect, format);
-	}
-
-	public Effect(String name, String tagname, int duration, Holder<MobEffect> effect, ChatFormatting format) {
-		this(name, tagname, 0, duration, effect, format);
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Effect(tag.getStringOr(NAME, this.name), this.tagname, tag.getIntOr(POWER, 0), this.duration,
-				this.effect, this.format);
+	public Effect(Holder<MobEffect> effect, int duration) {
+		super(effect, duration);
 	}
 
 	@Override
 	public String description() {
 		return "While holding or wearing this item, get the "
 				+ effect.value().getDisplayName().getString().toLowerCase() + " "
-				+ LootUtils.roman(this.power + 1) + " effect.";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type) || type.isArmor();
+				+ LootUtils.roman(power() + 1) + " effect.";
 	}
 
 	@Override
