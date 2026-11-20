@@ -9,7 +9,9 @@ import dev.marston.randomloot.loot.ModTemplate;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.tags.TagKey;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 
 import java.util.HashMap;
@@ -52,7 +54,20 @@ public class ModItems {
     public static void init() {
     }
 
-    /** Items shown in the Tools & Utilities creative tab, in display order. */
+    /**
+     * The creative tab the mod's items are listed in: vanilla's Tools & Utilities.
+     *
+     * <p>Built from its id because common cannot name
+     * {@code CreativeModeTabs.TOOLS_AND_UTILITIES}. That field is private in vanilla, which
+     * is all common compiles against. NeoForge's patched jar and Fabric API's access
+     * widener each make it public, so code in a loader project can use it - the shims did,
+     * before the choice of tab moved here - but the same line in common fails
+     * {@code :common:compileJava} with "TOOLS_AND_UTILITIES has private access".
+     */
+    public static final ResourceKey<CreativeModeTab> CREATIVE_TAB = ResourceKey.create(Registries.CREATIVE_MODE_TAB,
+            ResourceLocation.withDefaultNamespace("tools_and_utilities"));
+
+    /** Items shown in {@link #CREATIVE_TAB}, in display order. */
     public static List<Item> creativeTabItems() {
         return List.of(TOOL.get(), ARMOR.get(), CASE.get(), MOD_ADD.get(), MOD_SUB.get(), ESSENCE.get());
     }

@@ -1,15 +1,8 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -17,69 +10,16 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
-public class Hasty extends LeveledModifier implements HoldModifier {
-
-	/** Legacy NBT key; old items stored the haste amplifier separately, always equal to level. */
-	private final static String POWER = "power";
-
-	public Hasty(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public Hasty() {
-		this("Hasty", 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 0;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 1;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = super.toNBT();
-		// Keep writing the legacy key so older readers still see the haste amplifier.
-		tag.putInt(POWER, level);
-		return tag;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Hasty(NbtCompat.getStringOr(tag, NAME, "Hasty"),
-				ModifierConstants.getLevel(tag, NbtCompat.getIntOr(tag, POWER, 0)));
-	}
-
-	@Override
-	public String tagName() {
-		return "hasty";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.BLUE;
-	}
-
+public class Hasty extends AbstractModifier implements HoldModifier {
 	@Override
 	public String description() {
-		return "While holding or wearing this item, get the Haste " + LootUtils.roman(this.level + 1) + " effect.";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type) || type.isArmor();
+		return "While holding or wearing this item, get the Haste " + LootUtils.roman(traitLevel() + 1) + " effect.";
 	}
 
 	@Override
 	public void hold(ItemStack stack, Level level, Entity holder) {
 		// hold() runs every tick; a too-short duration makes the effect timer flicker.
-		MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 40, this.level, true, false);
+		MobEffectInstance haste = new MobEffectInstance(MobEffects.DIG_SPEED, 40, traitLevel(), true, false);
 
 		if (holder instanceof LivingEntity le) {
 			le.addEffect(haste);

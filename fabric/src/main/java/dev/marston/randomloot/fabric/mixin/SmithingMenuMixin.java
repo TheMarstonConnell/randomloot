@@ -1,6 +1,6 @@
 package dev.marston.randomloot.fabric.mixin;
 
-import dev.marston.randomloot.recipes.TraitAdditionRecipe;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.ItemStack;
@@ -21,6 +21,6 @@ public abstract class SmithingMenuMixin {
 
     @Inject(method = "onTake", at = @At("HEAD"))
     private void randomloot$traitRecipeTake(Player player, ItemStack carried, CallbackInfo ci) {
-        TraitAdditionRecipe.onTake((SmithingMenu) (Object) this, player);
+        GameHooks.smithingTake((SmithingMenu) (Object) this, player);
     }
 }

@@ -1,19 +1,34 @@
 package dev.marston.randomloot.fabric;
 
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.gametest.GameTestBodies;
-import net.fabricmc.loader.api.FabricLoader;
+import dev.marston.randomloot.gametest.GameTestTable;
 import net.fabricmc.fabric.api.gametest.v1.FabricGameTest;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.gametest.framework.GameTest;
+import net.minecraft.gametest.framework.GameTestGenerator;
+import net.minecraft.gametest.framework.GameTestHelper;
+import net.minecraft.gametest.framework.GameTestRegistry;
+import net.minecraft.gametest.framework.TestFunction;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import net.minecraft.gametest.framework.GameTestHelper;
-
+import java.util.Collection;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
- * Fabric registration for the shared gametest bodies in {@link GameTestBodies}.
- * Run headless with {@code ./gradlew :fabric:runGametest}.
+ * Fabric adapter for the gametest table ({@link GameTestTable}), plus the
+ * Fabric-only tests. Run headless with {@code ./gradlew :fabric:runGametest}.
+ *
+ * <p>Shared tests are not declared here: {@link #shared()} hands the framework every
+ * row of the table, under the same {@code randomloot.<name>} test names NeoForge
+ * uses. Only a test that makes sense on Fabric alone is written as a
+ * {@code @GameTest} method below (this class is the {@code fabric-gametest}
+ * entrypoint). One of them, {@link #gametestTableRegistered}, checks that the rows
+ * really were registered.
  *
  * <p>The two enchant-filtering tests are NeoForge-only (they exercise the
  * supportsEnchantment item extension; Fabric wires the same common logic through
@@ -24,294 +39,65 @@ public class RandomLootFabricGameTests implements FabricGameTest {
 
     private static final int MAX_TICKS = 200;
 
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void modifierRoundtrip(GameTestHelper helper) {
-        GameTestBodies.modifierRoundTrip(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void genTool(GameTestHelper helper) {
-        GameTestBodies.genTool(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void genToolDispenser(GameTestHelper helper) {
-        GameTestBodies.genToolDispenser(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void dispenserOpensCase(GameTestHelper helper) {
-        GameTestBodies.dispenserOpensCase(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void caseOpensIntoHand(GameTestHelper helper) {
-        GameTestBodies.caseOpensIntoHand(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void caseRollReveal(GameTestHelper helper) {
-        GameTestBodies.caseRollReveal(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void deterministicRollLifecycles(GameTestHelper helper) {
-        GameTestBodies.deterministicRollLifecycles(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void breakBlock(GameTestHelper helper) {
-        GameTestBodies.breakBlock(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void advancementsLoad(GameTestHelper helper) {
-        GameTestBodies.advancementsLoad(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void xpLevelCurve(GameTestHelper helper) {
-        GameTestBodies.xpLevelCurve(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void killTraitHooks(GameTestHelper helper) {
-        GameTestBodies.killTraitHooks(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void catalystExtendsEffects(GameTestHelper helper) {
-        GameTestBodies.catalystExtendsEffects(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void stenchDebuffsMobs(GameTestHelper helper) {
-        GameTestBodies.stenchDebuffsMobs(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void newTraitRecipesLoad(GameTestHelper helper) {
-        GameTestBodies.newTraitRecipesLoad(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void toolRepairable(GameTestHelper helper) {
-        GameTestBodies.toolRepairable(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void armorComponents(GameTestHelper helper) {
-        GameTestBodies.armorComponents(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void forgerWorldConstant(GameTestHelper helper) {
-        GameTestBodies.forgerWorldConstant(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void dirtPlaceWorldForger(GameTestHelper helper) {
-        GameTestBodies.dirtPlaceWorldForger(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void armorXpOnDamage(GameTestHelper helper) {
-        GameTestBodies.armorXpOnDamage(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void thornyReflectsForPlayer(GameTestHelper helper) {
-        GameTestBodies.thornyReflectsForPlayer(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void armorRepairable(GameTestHelper helper) {
-        GameTestBodies.armorRepairable(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void adminCommands(GameTestHelper helper) {
-        GameTestBodies.adminCommands(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void smithingTraitGating(GameTestHelper helper) {
-        GameTestBodies.smithingTraitGating(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void smithingCraftSequence(GameTestHelper helper) {
-        GameTestBodies.smithingCraftSequence(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void traitRecipeCountsLoad(GameTestHelper helper) {
-        GameTestBodies.traitRecipeCountsLoad(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void smithingTakeConsumesCount(GameTestHelper helper) {
-        GameTestBodies.smithingTakeConsumesCount(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void smithingShiftClickConsumesCount(GameTestHelper helper) {
-        GameTestBodies.smithingShiftClickConsumesCount(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void smithingRemovalCostsOne(GameTestHelper helper) {
-        GameTestBodies.smithingRemovalCostsOne(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void singleLevelEffectsStopAtLevelOne(GameTestHelper helper) {
-        GameTestBodies.singleLevelEffectsStopAtLevelOne(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void clonePreservesEnchantments(GameTestHelper helper) {
-        GameTestBodies.clonePreservesEnchantments(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void loaderHooksAllBound(GameTestHelper helper) {
-        GameTestBodies.loaderHooksAllBound(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void lootInjectionAddsCases(GameTestHelper helper) {
-        GameTestBodies.lootInjectionAddsCases(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
-        GameTestBodies.lootInjectionSkipsBlockDrops(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void migrationRestoresDerivedComponents(GameTestHelper helper) {
-        GameTestBodies.migrationRestoresDerivedComponents(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void featherweightSoftensFallDamage(GameTestHelper helper) {
-        GameTestBodies.featherweightSoftensFallDamage(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void adrenalineGrantsSpeed(GameTestHelper helper) {
-        GameTestBodies.adrenalineGrantsSpeed(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void bulwarkBlocksSomeHits(GameTestHelper helper) {
-        GameTestBodies.bulwarkBlocksSomeHits(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void unbreakingSkipsArmorDurability(GameTestHelper helper) {
-        GameTestBodies.unbreakingSkipsArmorDurability(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void soulboundOwnerMinesFaster(GameTestHelper helper) {
-        GameTestBodies.soulboundOwnerMinesFaster(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void enchantingTableFiltersByType(GameTestHelper helper) {
-        GameTestBodies.enchantingTableFiltersByType(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void axeToolActions(GameTestHelper helper) {
-        GameTestBodies.axeToolActions(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void shovelFlattens(GameTestHelper helper) {
-        GameTestBodies.shovelFlattens(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void anvilCannotCombineLootGear(GameTestHelper helper) {
-        GameTestBodies.anvilCannotCombineLootGear(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void lumberingFellsTree(GameTestHelper helper) {
-        GameTestBodies.lumberingFellsTree(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void veinyBreaksVein(GameTestHelper helper) {
-        GameTestBodies.veinyBreaksVein(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void meltingKeepsStackCount(GameTestHelper helper) {
-        GameTestBodies.meltingKeepsStackCount(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void areaBreakKeepsShulkerContents(GameTestHelper helper) {
-        GameTestBodies.areaBreakKeepsShulkerContents(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void detectingMarkersAreDiscarded(GameTestHelper helper) {
-        GameTestBodies.detectingMarkersAreDiscarded(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void armorXpIsCapped(GameTestHelper helper) {
-        GameTestBodies.armorXpIsCapped(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void unbreakableToolKeepsDurability(GameTestHelper helper) {
-        GameTestBodies.unbreakableToolKeepsDurability(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void lootInjectionRollsOncePerChest(GameTestHelper helper) {
-        GameTestBodies.lootInjectionRollsOncePerChest(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void earlyBirdReadsPreHitHealth(GameTestHelper helper) {
-        GameTestBodies.earlyBirdReadsPreHitHealth(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void statBoostTraitsBoostMelee(GameTestHelper helper) {
-        GameTestBodies.statBoostTraitsBoostMelee(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
-        GameTestBodies.rightClickTraitsYieldToUsableOffhand(helper);
-    }
-
-    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void toolModAloneDoesNotReequip(GameTestHelper helper) {
-        GameTestBodies.toolModAloneDoesNotReequip(helper);
+    /** Shared tests: whatever the common table lists, so both loaders run the same set. */
+    @GameTestGenerator
+    public static Collection<TestFunction> shared() {
+        return GameTestTable.testFunctions();
     }
 
     /**
-     * Fabric-only: Forge Config API Port generated the same randomloot-common.toml
-     * NeoForge writes, and its values reached the Config fields.
+     * Fabric-only: every row of the gametest table reached the test registry.
+     *
+     * <p>The rows go in through a generator method, not one annotated method each. If
+     * that route stopped working, the shared tests would vanish and the run would
+     * still pass. This test is registered by the annotation route, so it is still
+     * there to fail.
      */
     @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
-    public void configLoads(GameTestHelper helper) {
+    public void gametestTableRegistered(GameTestHelper helper) {
+        Set<String> registered = GameTestRegistry.getAllTestFunctions().stream()
+                .map(TestFunction::testName).collect(Collectors.toSet());
+        for (GameTestTable.Row row : GameTestTable.rows()) {
+            helper.assertTrue(registered.contains(row.id()),
+                    "gametest table row was not registered on Fabric: " + row.id());
+        }
+
+        helper.succeed();
+    }
+
+    /**
+     * Fabric-only: the values in randomloot-common.toml are the values the mod runs with.
+     *
+     * <p>The gametest server's config file is seeded with one value off its default (the
+     * seedGametestConfig task in fabric/build.gradle), because a file of defaults reads
+     * the same whether or not anything was loaded: every setting starts out holding
+     * its default. That is how this test used to pass while Fabric ignored the file at
+     * startup - Forge Config API Port loads it inside ConfigRegistry.register, and the
+     * mod was adding its loading listener after that call.
+     */
+    @GameTest(template = FabricGameTest.EMPTY_STRUCTURE, timeoutTicks = MAX_TICKS)
+    public void configLoads(GameTestHelper helper) throws IOException {
         Path config = FabricLoader.getInstance().getConfigDir()
                 .resolve("randomloot-common.toml");
         helper.assertTrue(Files.exists(config),
                 "FCAP should generate randomloot-common.toml, looked at " + config);
 
-        helper.assertTrue(Config.CaseChance > 0.0 && Config.CaseChance <= 1.0,
-                "caseChance should be loaded and sane, got " + Config.CaseChance);
+        Matcher inFile = Pattern.compile("(?m)^\\s*livingWhispersPerMinute\\s*=\\s*(\\d+)")
+                .matcher(Files.readString(config));
+        helper.assertTrue(inFile.find(), "livingWhispersPerMinute should be in " + config);
+        int whispers = Integer.parseInt(inFile.group(1));
+        helper.assertTrue(whispers != Config.LIVING_WHISPERS_PER_MINUTE.defaultValue(),
+                "the gametest config should set livingWhispersPerMinute off its default of "
+                        + Config.LIVING_WHISPERS_PER_MINUTE.defaultValue() + " (seedGametestConfig in fabric/build.gradle);"
+                        + " run this through ./gradlew :fabric:runGametest");
+        int running = Config.LIVING_WHISPERS_PER_MINUTE.get();
+        helper.assertTrue(running == whispers,
+                "the mod should run with the file's livingWhispersPerMinute of " + whispers + ", runs with "
+                        + running);
+
+        double caseChance = Config.CASE_CHANCE.get();
+        helper.assertTrue(caseChance > 0.0 && caseChance <= 1.0,
+                "caseChance should be loaded and sane, got " + caseChance);
         helper.assertTrue(Config.traitEnabled("thorny"),
                 "traits should default to enabled");
 
