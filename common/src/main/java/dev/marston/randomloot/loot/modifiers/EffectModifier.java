@@ -1,95 +1,43 @@
 package dev.marston.randomloot.loot.modifiers;
 
-import dev.marston.randomloot.loot.LootUtils;
-import net.minecraft.ChatFormatting;
-import net.minecraft.core.Holder;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 
 /**
- * Base for modifiers that apply a vanilla {@link MobEffect} and level up by raising the
- * effect's amplifier ("power"). Holds the power/duration/color fields, NBT shape,
- * roman-numeral naming and leveling rules that {@code holders.Effect} and
- * {@code hurter.HurtEffect} used to copy from each other.
- *
- * <p>Subclasses provide {@link #description()}, {@code forTool(...)},
- * {@code fromNBT(...)} and the behavior hook that actually applies
- * {@link #makeInstance()}.
+ * Base for traits that apply a vanilla {@link MobEffect} and level by raising its
+ * amplifier ("power"). Which effect and for how long are the rule; the name, colour and
+ * level range of each of the eight are declared in {@link ModifierRegistry}.
  */
 public abstract class EffectModifier extends AbstractModifier {
-
-	protected static final String POWER = "power";
 	/** Effects level from power 0 (shown as I) to 4 (shown as V). */
-	protected static final int MAX_POWER = 4;
+	private static final int MAX_POWER = 4;
 
-	protected final String tagname;
 	protected final MobEffect effect;
+	/** In seconds. */
 	protected final int duration;
-	protected final ChatFormatting format;
-	protected int power;
 
-	protected EffectModifier(String name, String tagname, int power, int duration, MobEffect effect,
-			ChatFormatting format) {
-		this.name = name;
-		this.tagname = tagname;
-		this.duration = duration;
+	protected EffectModifier(MobEffect effect, int duration) {
 		this.effect = effect;
-		this.format = format;
-		// Gear leveled before an effect was capped reads back at the cap.
-		this.power = Math.min(power, maxPower());
+		this.duration = duration;
 	}
 
 	/**
-	 * Highest power this trait levels to. Vanilla only calls {@code hasEffect} for Blindness
-	 * and Fire Resistance and never reads their amplifier, so those stay at level I: another
-	 * level would be paid for and change nothing.
+	 * Highest power a trait for this effect levels to. Vanilla only calls {@code hasEffect}
+	 * for Blindness and Fire Resistance and never reads their amplifier, so those stay at
+	 * level I: another level would be paid for and change nothing.
 	 */
-	private int maxPower() {
+	public static int maxPower(MobEffect effect) {
 		return effect == MobEffects.BLINDNESS || effect == MobEffects.FIRE_RESISTANCE ? 0 : MAX_POWER;
+	}
+
+	/** The effect's amplifier: the trait's level, which effects store as their power. */
+	protected final int power() {
+		return traitLevel();
 	}
 
 	/** The effect instance this modifier applies: duration is in seconds, no particles. */
 	protected MobEffectInstance makeInstance() {
-		return new MobEffectInstance(effect, duration * 20, power, false, false);
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-		CompoundTag tag = new CompoundTag();
-
-		tag.putString(NAME, name);
-		tag.putInt(POWER, power);
-
-		return tag;
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return format;
-	}
-
-	@Override
-	public String name() {
-		if (this.power == 0) {
-			return name;
-		}
-		return name + " " + LootUtils.roman(this.power + 1);
-	}
-
-	@Override
-	public String tagName() {
-		return tagname;
-	}
-
-	@Override
-	public boolean canLevel() {
-		return this.power < maxPower();
-	}
-
-	@Override
-	public void levelUp() {
-		this.power++;
+		return new MobEffectInstance(effect, duration * 20, power(), false, false);
 	}
 }

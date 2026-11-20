@@ -2,7 +2,7 @@ package dev.marston.randomloot.fabric.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -12,10 +12,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Fabric stand-in for Forge's AnvilUpdateEvent cancel: every Random
- * Tool/Armor piece is unique (type, traits, XP live on the stack), so
- * vanilla's combine-two-of-the-same-item recipe would destroy the right
- * item's identity and act as a cheap repair loop.
+ * Fabric's shim for ANVIL_COMBINE, where Forge cancels its AnvilUpdateEvent: after
+ * vanilla worked out a result, empty it when common says this pair must not combine.
+ * Also the anvil half of its shim for ENCHANT_GATE.
  */
 @Mixin(AnvilMenu.class)
 public abstract class AnvilMenuMixin {
@@ -29,10 +28,7 @@ public abstract class AnvilMenuMixin {
     @WrapOperation(method = "createResult", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/item/enchantment/Enchantment;canEnchant(Lnet/minecraft/world/item/ItemStack;)Z"))
     private boolean randomloot$gearEnchantGate(Enchantment enchantment, ItemStack stack, Operation<Boolean> original) {
-        if (LootUtils.isLootGear(stack)) {
-            return LootUtils.gearAcceptsEnchantment(stack, enchantment);
-        }
-        return original.call(enchantment, stack);
+        return GameHooks.enchantGate(stack, enchantment, true, false, () -> original.call(enchantment, stack));
     }
 
     @Inject(method = "createResult", at = @At("TAIL"))
@@ -41,7 +37,7 @@ public abstract class AnvilMenuMixin {
         ItemStack left = self.getSlot(0).getItem();
         ItemStack right = self.getSlot(1).getItem();
 
-        if (LootUtils.isLootGear(left) && LootUtils.isLootGear(right)) {
+        if (GameHooks.blocksAnvilCombine(left, right)) {
             self.getSlot(2).set(ItemStack.EMPTY);
         }
     }

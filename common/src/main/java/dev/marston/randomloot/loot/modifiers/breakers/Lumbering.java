@@ -1,18 +1,14 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
 import java.util.HashSet;
 import java.util.Set;
 
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -22,40 +18,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 public class Lumbering extends AbstractModifier implements BlockBreakModifier {
-
 	private static final int MAX_BLOCKS = 64;
-
-	public Lumbering() {
-		this.name = "Lumbering";
-	}
-
-	public Lumbering(String name) {
-		this.name = name;
-	}
-
-	@Override
-	public String tagName() {
-		return "lumbering";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_GREEN;
-	}
 
 	@Override
 	public String description() {
 		return "Breaking a log fells all connected logs";
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Lumbering(NbtCompat.getStringOr(tag, NAME, "Lumbering"));
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return type.equals(ToolType.AXE);
 	}
 
 	private boolean isLog(BlockState state) {
@@ -99,18 +66,15 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 		if (!(p instanceof ServerPlayer player)) {
-			return false;
+			return;
 		}
 
 		Level level = player.level();
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		if (!isLog(broken)) {
-			return false;
+			return;
 		}
 
 		// Seed the search with the block the player broke instead of re-reading it:
@@ -128,7 +92,7 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 			if (isLog(logState)) {
 				boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, logPos, player, level, logState);
 				if (destroyed) {
-					LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+					TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 
 					if (itemstack.isEmpty()) {
 						break;
@@ -136,12 +100,5 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 				}
 			}
 		}
-
-		return false;
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		return !(mod instanceof Veiny);
 	}
 }

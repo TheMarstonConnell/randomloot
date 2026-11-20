@@ -3,7 +3,7 @@ package dev.marston.randomloot.fabric.mixin;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
-import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -26,9 +26,6 @@ public abstract class EnchantmentHelperMixin {
             target = "Lnet/minecraft/world/item/enchantment/EnchantmentCategory;canEnchant(Lnet/minecraft/world/item/Item;)Z"))
     private static boolean randomloot$gearEnchantGate(EnchantmentCategory category, Item item,
             Operation<Boolean> original, @Local(argsOnly = true) ItemStack stack, @Local Enchantment enchantment) {
-        if (LootUtils.isLootGear(stack)) {
-            return LootUtils.gearAcceptsEnchantment(stack, enchantment);
-        }
-        return original.call(category, item);
+        return GameHooks.enchantGate(stack, enchantment, true, false, () -> original.call(category, item));
     }
 }

@@ -5,14 +5,12 @@ import dev.marston.randomloot.loot.NbtCompat;
 import net.minecraft.nbt.CompoundTag;
 
 public final class ModifierConstants {
-	public static final String NAME = "name";
 	public static final String LEVEL = "trait_level";
 	/** Key leveled traits used before {@link #LEVEL} was unified; still read for back-compat. */
 	public static final String LEGACY_LEVEL = "level";
 	public static final String POWER = "power";
 	public static final String POINTS = "points";
 	public static final String CHARGED = "charged";
-	public static final String COUNT = "count";
 
 	private ModifierConstants() {
 	}

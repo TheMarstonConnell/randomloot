@@ -23,8 +23,6 @@ public class RandomLootForge {
 
         ModLootModifiers.register(modEventBus);
 
-        ForgeEvents.bindHooks();
-
         // In-world GameTests (only run when the gametest system is enabled, e.g. runGameTestServer).
         RandomLootGameTests.init(modEventBus);
 

@@ -1,17 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
@@ -23,59 +16,17 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
 
-
-public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
-
-	public Frozen(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public Frozen() {
-		this("Frozen", 0);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 0;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 2; // Max level 3 (0, 1, 2)
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Frozen(NbtCompat.getStringOr(tag, NAME, "Frozen"), ModifierConstants.getLevel(tag, 0));
-	}
-
-	@Override
-	public String tagName() {
-		return "frozen";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.AQUA;
-	}
-
+public class Frozen extends AbstractModifier implements EntityHurtModifier, HoldModifier, BiomeRestrictedModifier {
 	@Override
 	public String description() {
-		int radius = 3 + this.level;
+		int radius = 3 + traitLevel();
 		return "Slows enemies on hit. Creates " + radius + " block radius of frosted ice on water.";
 	}
 
 	@Override
-	public boolean forTool(ToolType type) {
-		return isWeapon(type);
-	}
-
-	@Override
-	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
+	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		int duration = 3 * 20;
-		hurtee.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, this.level + 1, false, true));
-		return false;
+		hurtee.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, duration, traitLevel() + 1, false, true));
 	}
 
 	@Override
@@ -88,7 +39,7 @@ public class Frozen extends LeveledModifier implements EntityHurtModifier, HoldM
 		BlockPos centerPos = player.blockPosition().below();
 
 		// Radius scales with level: 3.0, 4.0, 5.0
-		double radius = 3.0 + this.level;
+		double radius = 3.0 + traitLevel();
 
 		// Create circular pattern of frosted ice (like Frost Walker but wider)
 		int radiusInt = (int) Math.ceil(radius);

@@ -1,13 +1,6 @@
 package dev.marston.randomloot.forge;
 
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.commands.ModCommands;
-import dev.marston.randomloot.loot.LootUtils;
-import dev.marston.randomloot.loot.modifiers.ArmorDispatcher;
-import dev.marston.randomloot.loot.modifiers.KillDispatcher;
-import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
-import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
-import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -20,50 +13,29 @@ import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.event.TickEvent;
 
-/** Routes Forge game-bus events to the loader-neutral dispatchers. */
+/**
+ * The Forge shim for the loader hook contract: each handler unpacks one Forge event and
+ * makes one call to {@link GameHooks}, whose javadoc says what that hook has to be
+ * handed. No handler decides anything.
+ *
+ * <p>The mod-bus events (CONFIG, CREATIVE_TAB) are in {@link ForgeModEvents}: a
+ * subscriber class listens on one bus. Four more hooks are not events and are wired
+ * elsewhere: AFTER_USE_ITEM by {@code mixin/ServerPlayerGameModeMixin}, SMITHING_TAKE by
+ * {@code mixin/SmithingMenuMixin} (Forge 1.20.1 has no ItemSmithedEvent), ENCHANT_GATE by
+ * the {@code canApplyAtEnchantingTable} overrides on {@link ForgeLootItem} and
+ * {@link ForgeLootArmorItem} (the table) and {@code mixin/AnvilMenuMixin} (books), and
+ * LOOT_INJECTION by {@code CaseLootModifier} with its two files in
+ * {@code data/randomloot/loot_modifiers/}.
+ */
 @Mod.EventBusSubscriber(modid = RandomLoot.MODID)
 public final class ForgeEvents {
 
     private ForgeEvents() {
     }
 
-    /**
-     * Declares the hooks routed below. @EventBusSubscriber wires them by annotation, so
-     * there is nothing to call at registration time - this is the checked inventory.
-     * Keep it in step with the handlers; loader_hooks_all_bound fails if a GameHook is
-     * never bound.
-     */
-    public static void bindHooks() {
-        GameHooks.bind(GameHook.KILL);
-        GameHooks.bind(GameHook.DAMAGE_PRE);
-        GameHooks.bind(GameHook.DAMAGE_POST);
-        // No event: vanilla only damages ArmorItem instances, so
-        // ArmorDispatcher.onLivingDamagePost spends armor durability (and rolls
-        // Unbreaking through onArmorHurt) itself.
-        GameHooks.bind(GameHook.ARMOR_HURT);
-        GameHooks.bind(GameHook.BREAK_SPEED);
-        // Wired by mixin, not an event: mixin/ServerPlayerGameModeMixin (useItem and
-        // useItemOn RETURN). No Forge event sees the result of a use.
-        GameHooks.bind(GameHook.AFTER_USE_ITEM);
-        GameHooks.bind(GameHook.SERVER_TICK);
-        GameHooks.bind(GameHook.SERVER_STOPPING);
-        GameHooks.bind(GameHook.COMMANDS);
-        GameHooks.bind(GameHook.CONFIG);
-        GameHooks.bind(GameHook.CREATIVE_TAB);
-        GameHooks.bind(GameHook.ANVIL_COMBINE);
-        // Table: canApplyAtEnchantingTable on ForgeLootItem / ForgeLootArmorItem.
-        // Anvil: mixin/AnvilMenuMixin (vanilla asks Enchantment.canEnchant there).
-        GameHooks.bind(GameHook.ENCHANT_GATE);
-        // The case_item global loot modifier; see data/randomloot/loot_modifiers/.
-        GameHooks.bind(GameHook.LOOT_INJECTION);
-        // Wired by mixin: mixin/SmithingMenuMixin (onTake HEAD). Forge 1.20.1 has no
-        // ItemSmithedEvent (26.x routes this through it), so both loaders carry the mixin.
-        GameHooks.bind(GameHook.SMITHING_TAKE);
-    }
-
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
-        KillDispatcher.onLivingDeath(event.getEntity(), event.getSource());
+        GameHooks.kill(event.getEntity(), event.getSource());
     }
 
     /**
@@ -74,28 +46,25 @@ public final class ForgeEvents {
      */
     @SubscribeEvent
     public static void onLivingDamagePre(LivingDamageEvent event) {
-        event.setAmount(ArmorDispatcher.onLivingDamagePre(event.getEntity(), event.getSource(), event.getAmount()));
+        event.setAmount(GameHooks.damagePre(event.getEntity(), event.getSource(), event.getAmount()));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onLivingDamagePost(LivingDamageEvent event) {
-        ArmorDispatcher.onLivingDamagePost(event.getEntity(), event.getSource(), event.getAmount());
+        GameHooks.damagePost(event.getEntity(), event.getSource(), event.getAmount());
     }
 
     @SubscribeEvent
     public static void onBreakSpeed(PlayerEvent.BreakSpeed event) {
-        event.setNewSpeed(Soulbound.modifyBreakSpeed(event.getEntity(), event.getNewSpeed()));
+        event.setNewSpeed(GameHooks.breakSpeed(event.getEntity(), event.getNewSpeed()));
     }
 
     /**
-     * Blocks anvil-combining two Random Loot items entirely. isCombineRepairable=false
-     * only stops the durability-merge branch; the enchant-transfer branch would still
-     * produce a result and destroy the right item's identity. Fabric mirrors this in
-     * AnvilMenuMixin.
+     * Cancelling the event empties the result. Fabric's shim is AnvilMenuMixin.
      */
     @SubscribeEvent
     public static void onAnvilUpdate(AnvilUpdateEvent event) {
-        if (LootUtils.isLootGear(event.getLeft()) && LootUtils.isLootGear(event.getRight())) {
+        if (GameHooks.blocksAnvilCombine(event.getLeft(), event.getRight())) {
             event.setCanceled(true);
         }
     }
@@ -103,18 +72,18 @@ public final class ForgeEvents {
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            BlockHighlighter.onServerTick();
+            GameHooks.serverTick();
         }
     }
 
     @SubscribeEvent
     public static void onServerStopping(ServerStoppingEvent event) {
-        BlockHighlighter.onServerStopping();
+        GameHooks.serverStopping();
     }
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
-        ModCommands.register(event.getDispatcher());
+        GameHooks.commands(event.getDispatcher());
     }
 
 }
