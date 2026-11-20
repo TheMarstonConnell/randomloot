@@ -1,0 +1,1222 @@
+absorption [empty] {} -> {name:"Appley",power:0}
+    name=Appley | canLevel=true | description=While holding or wearing this item, get the absorption I effect. | details=none
+absorption [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=While holding or wearing this item, get the absorption I effect. | details=none
+absorption [stray key] {name:"Appley",power:0,stray:1b} -> {name:"Appley",power:0}
+    name=Appley | canLevel=true | description=While holding or wearing this item, get the absorption I effect. | details=none
+absorption [power=-1] {name:"Appley",power:-1} -> {name:"Appley",power:-1}
+    name=Appley Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the absorption Invalid Roman Number Value effect. | details=none
+absorption [power=0] {name:"Appley",power:0} -> {name:"Appley",power:0}
+    name=Appley | canLevel=true | description=While holding or wearing this item, get the absorption I effect. | details=none
+absorption [power=1] {name:"Appley",power:1} -> {name:"Appley",power:1}
+    name=Appley II | canLevel=true | description=While holding or wearing this item, get the absorption II effect. | details=none
+absorption [power=2] {name:"Appley",power:2} -> {name:"Appley",power:2}
+    name=Appley III | canLevel=true | description=While holding or wearing this item, get the absorption III effect. | details=none
+absorption [power=3] {name:"Appley",power:3} -> {name:"Appley",power:3}
+    name=Appley IV | canLevel=true | description=While holding or wearing this item, get the absorption IV effect. | details=none
+absorption [power=9] {name:"Appley",power:9} -> {name:"Appley",power:4}
+    name=Appley V | canLevel=false | description=While holding or wearing this item, get the absorption V effect. | details=none
+absorption [power=40] {name:"Appley",power:40} -> {name:"Appley",power:4}
+    name=Appley V | canLevel=false | description=While holding or wearing this item, get the absorption V effect. | details=none
+adrenaline [empty] {} -> {name:"Adrenaline",trait_level:0}
+    name=Adrenaline | canLevel=true | description=Taking damage grants speed I for 5 seconds. | details=none
+adrenaline [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Taking damage grants speed I for 5 seconds. | details=none
+adrenaline [stray key] {name:"Adrenaline",stray:1b,trait_level:0} -> {name:"Adrenaline",trait_level:0}
+    name=Adrenaline | canLevel=true | description=Taking damage grants speed I for 5 seconds. | details=none
+adrenaline [trait_level=-1] {name:"Adrenaline",trait_level:-1} -> {name:"Adrenaline",trait_level:-1}
+    name=Adrenaline Invalid Roman Number Value | canLevel=true | description=Taking damage grants speed Invalid Roman Number Value for 5 seconds. | details=none
+adrenaline [legacy level=-1] {level:-1,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:-1}
+    name=Adrenaline Invalid Roman Number Value | canLevel=true | description=Taking damage grants speed Invalid Roman Number Value for 5 seconds. | details=none
+adrenaline [trait_level=0] {name:"Adrenaline",trait_level:0} -> {name:"Adrenaline",trait_level:0}
+    name=Adrenaline | canLevel=true | description=Taking damage grants speed I for 5 seconds. | details=none
+adrenaline [legacy level=0] {level:0,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:0}
+    name=Adrenaline | canLevel=true | description=Taking damage grants speed I for 5 seconds. | details=none
+adrenaline [trait_level=1] {name:"Adrenaline",trait_level:1} -> {name:"Adrenaline",trait_level:1}
+    name=Adrenaline II | canLevel=true | description=Taking damage grants speed II for 5 seconds. | details=none
+adrenaline [legacy level=1] {level:1,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:1}
+    name=Adrenaline II | canLevel=true | description=Taking damage grants speed II for 5 seconds. | details=none
+adrenaline [trait_level=2] {name:"Adrenaline",trait_level:2} -> {name:"Adrenaline",trait_level:2}
+    name=Adrenaline III | canLevel=true | description=Taking damage grants speed III for 5 seconds. | details=none
+adrenaline [legacy level=2] {level:2,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:2}
+    name=Adrenaline III | canLevel=true | description=Taking damage grants speed III for 5 seconds. | details=none
+adrenaline [trait_level=3] {name:"Adrenaline",trait_level:3} -> {name:"Adrenaline",trait_level:3}
+    name=Adrenaline IV | canLevel=true | description=Taking damage grants speed IV for 5 seconds. | details=none
+adrenaline [legacy level=3] {level:3,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:3}
+    name=Adrenaline IV | canLevel=true | description=Taking damage grants speed IV for 5 seconds. | details=none
+adrenaline [trait_level=9] {name:"Adrenaline",trait_level:9} -> {name:"Adrenaline",trait_level:9}
+    name=Adrenaline X | canLevel=false | description=Taking damage grants speed X for 5 seconds. | details=none
+adrenaline [legacy level=9] {level:9,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:9}
+    name=Adrenaline X | canLevel=false | description=Taking damage grants speed X for 5 seconds. | details=none
+adrenaline [trait_level=40] {name:"Adrenaline",trait_level:40} -> {name:"Adrenaline",trait_level:40}
+    name=Adrenaline XLI | canLevel=false | description=Taking damage grants speed XLI for 5 seconds. | details=none
+adrenaline [legacy level=40] {level:40,name:"Adrenaline"} -> {name:"Adrenaline",trait_level:40}
+    name=Adrenaline XLI | canLevel=false | description=Taking damage grants speed XLI for 5 seconds. | details=none
+aquatic [empty] {} -> {name:"Aquatic",trait_level:0}
+    name=Aquatic | canLevel=true | description=Grants water breathing and Haste II when underwater. | details=none
+aquatic [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Grants water breathing and Haste II when underwater. | details=none
+aquatic [stray key] {name:"Aquatic",stray:1b,trait_level:0} -> {name:"Aquatic",trait_level:0}
+    name=Aquatic | canLevel=true | description=Grants water breathing and Haste II when underwater. | details=none
+aquatic [trait_level=-1] {name:"Aquatic",trait_level:-1} -> {name:"Aquatic",trait_level:-1}
+    name=Aquatic Invalid Roman Number Value | canLevel=true | description=Grants water breathing and Haste I when underwater. | details=none
+aquatic [legacy level=-1] {level:-1,name:"Aquatic"} -> {name:"Aquatic",trait_level:-1}
+    name=Aquatic Invalid Roman Number Value | canLevel=true | description=Grants water breathing and Haste I when underwater. | details=none
+aquatic [trait_level=0] {name:"Aquatic",trait_level:0} -> {name:"Aquatic",trait_level:0}
+    name=Aquatic | canLevel=true | description=Grants water breathing and Haste II when underwater. | details=none
+aquatic [legacy level=0] {level:0,name:"Aquatic"} -> {name:"Aquatic",trait_level:0}
+    name=Aquatic | canLevel=true | description=Grants water breathing and Haste II when underwater. | details=none
+aquatic [trait_level=1] {name:"Aquatic",trait_level:1} -> {name:"Aquatic",trait_level:1}
+    name=Aquatic II | canLevel=true | description=Grants water breathing and Haste III when underwater. | details=none
+aquatic [legacy level=1] {level:1,name:"Aquatic"} -> {name:"Aquatic",trait_level:1}
+    name=Aquatic II | canLevel=true | description=Grants water breathing and Haste III when underwater. | details=none
+aquatic [trait_level=2] {name:"Aquatic",trait_level:2} -> {name:"Aquatic",trait_level:2}
+    name=Aquatic III | canLevel=false | description=Grants water breathing and Haste IV when underwater. | details=none
+aquatic [legacy level=2] {level:2,name:"Aquatic"} -> {name:"Aquatic",trait_level:2}
+    name=Aquatic III | canLevel=false | description=Grants water breathing and Haste IV when underwater. | details=none
+aquatic [trait_level=3] {name:"Aquatic",trait_level:3} -> {name:"Aquatic",trait_level:3}
+    name=Aquatic IV | canLevel=false | description=Grants water breathing and Haste V when underwater. | details=none
+aquatic [legacy level=3] {level:3,name:"Aquatic"} -> {name:"Aquatic",trait_level:3}
+    name=Aquatic IV | canLevel=false | description=Grants water breathing and Haste V when underwater. | details=none
+aquatic [trait_level=9] {name:"Aquatic",trait_level:9} -> {name:"Aquatic",trait_level:9}
+    name=Aquatic X | canLevel=false | description=Grants water breathing and Haste XI when underwater. | details=none
+aquatic [legacy level=9] {level:9,name:"Aquatic"} -> {name:"Aquatic",trait_level:9}
+    name=Aquatic X | canLevel=false | description=Grants water breathing and Haste XI when underwater. | details=none
+aquatic [trait_level=40] {name:"Aquatic",trait_level:40} -> {name:"Aquatic",trait_level:40}
+    name=Aquatic XLI | canLevel=false | description=Grants water breathing and Haste XLII when underwater. | details=none
+aquatic [legacy level=40] {level:40,name:"Aquatic"} -> {name:"Aquatic",trait_level:40}
+    name=Aquatic XLI | canLevel=false | description=Grants water breathing and Haste XLII when underwater. | details=none
+attracting [empty] {} -> {name:"Magnetic"}
+    name=Magnetic | canLevel=false | description=Upon breaking a block (allowed by tool type), all items at that block's position will teleport to you. | details=none
+attracting [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Upon breaking a block (allowed by tool type), all items at that block's position will teleport to you. | details=none
+attracting [stray key] {name:"Magnetic",stray:1b} -> {name:"Magnetic"}
+    name=Magnetic | canLevel=false | description=Upon breaking a block (allowed by tool type), all items at that block's position will teleport to you. | details=none
+bezerk [empty] {} -> {name:"Bezerk"}
+    name=Bezerk | canLevel=false | description=Deals more damage at lower player health. | details=none
+bezerk [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Deals more damage at lower player health. | details=none
+bezerk [stray key] {name:"Bezerk",stray:1b} -> {name:"Bezerk"}
+    name=Bezerk | canLevel=false | description=Deals more damage at lower player health. | details=none
+blinding [empty] {} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [stray key] {name:"Blinding",power:0,stray:1b} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=-1] {name:"Blinding",power:-1} -> {name:"Blinding",power:-1}
+    name=Blinding Invalid Roman Number Value | canLevel=true | description=When attacking with tool, apply the blindness Invalid Roman Number Value effect to the target for 4 seconds. | details=none
+blinding [power=0] {name:"Blinding",power:0} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=1] {name:"Blinding",power:1} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=2] {name:"Blinding",power:2} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=3] {name:"Blinding",power:3} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=9] {name:"Blinding",power:9} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+blinding [power=40] {name:"Blinding",power:40} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+bulwark [empty] {} -> {name:"Bulwark",trait_level:0}
+    name=Bulwark | canLevel=true | description=Has a 10% chance of halving damage taken. | details=none
+bulwark [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Has a 10% chance of halving damage taken. | details=none
+bulwark [stray key] {name:"Bulwark",stray:1b,trait_level:0} -> {name:"Bulwark",trait_level:0}
+    name=Bulwark | canLevel=true | description=Has a 10% chance of halving damage taken. | details=none
+bulwark [trait_level=-1] {name:"Bulwark",trait_level:-1} -> {name:"Bulwark",trait_level:-1}
+    name=Bulwark Invalid Roman Number Value | canLevel=true | description=Has a 0% chance of halving damage taken. | details=none
+bulwark [legacy level=-1] {level:-1,name:"Bulwark"} -> {name:"Bulwark",trait_level:-1}
+    name=Bulwark Invalid Roman Number Value | canLevel=true | description=Has a 0% chance of halving damage taken. | details=none
+bulwark [trait_level=0] {name:"Bulwark",trait_level:0} -> {name:"Bulwark",trait_level:0}
+    name=Bulwark | canLevel=true | description=Has a 10% chance of halving damage taken. | details=none
+bulwark [legacy level=0] {level:0,name:"Bulwark"} -> {name:"Bulwark",trait_level:0}
+    name=Bulwark | canLevel=true | description=Has a 10% chance of halving damage taken. | details=none
+bulwark [trait_level=1] {name:"Bulwark",trait_level:1} -> {name:"Bulwark",trait_level:1}
+    name=Bulwark II | canLevel=true | description=Has a 20% chance of halving damage taken. | details=none
+bulwark [legacy level=1] {level:1,name:"Bulwark"} -> {name:"Bulwark",trait_level:1}
+    name=Bulwark II | canLevel=true | description=Has a 20% chance of halving damage taken. | details=none
+bulwark [trait_level=2] {name:"Bulwark",trait_level:2} -> {name:"Bulwark",trait_level:2}
+    name=Bulwark III | canLevel=true | description=Has a 30% chance of halving damage taken. | details=none
+bulwark [legacy level=2] {level:2,name:"Bulwark"} -> {name:"Bulwark",trait_level:2}
+    name=Bulwark III | canLevel=true | description=Has a 30% chance of halving damage taken. | details=none
+bulwark [trait_level=3] {name:"Bulwark",trait_level:3} -> {name:"Bulwark",trait_level:3}
+    name=Bulwark IV | canLevel=true | description=Has a 40% chance of halving damage taken. | details=none
+bulwark [legacy level=3] {level:3,name:"Bulwark"} -> {name:"Bulwark",trait_level:3}
+    name=Bulwark IV | canLevel=true | description=Has a 40% chance of halving damage taken. | details=none
+bulwark [trait_level=9] {name:"Bulwark",trait_level:9} -> {name:"Bulwark",trait_level:9}
+    name=Bulwark X | canLevel=false | description=Has a 100% chance of halving damage taken. | details=none
+bulwark [legacy level=9] {level:9,name:"Bulwark"} -> {name:"Bulwark",trait_level:9}
+    name=Bulwark X | canLevel=false | description=Has a 100% chance of halving damage taken. | details=none
+bulwark [trait_level=40] {name:"Bulwark",trait_level:40} -> {name:"Bulwark",trait_level:40}
+    name=Bulwark XLI | canLevel=false | description=Has a 410% chance of halving damage taken. | details=none
+bulwark [legacy level=40] {level:40,name:"Bulwark"} -> {name:"Bulwark",trait_level:40}
+    name=Bulwark XLI | canLevel=false | description=Has a 410% chance of halving damage taken. | details=none
+busted [empty] {} -> {name:"Busted"}
+    name=Busted | canLevel=false | description=Dig speed is increased as tool durability drops. | details=none
+busted [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Dig speed is increased as tool durability drops. | details=none
+busted [stray key] {name:"Busted",stray:1b} -> {name:"Busted"}
+    name=Busted | canLevel=false | description=Dig speed is increased as tool durability drops. | details=none
+catalyst [empty] {} -> {name:"Catalyst",trait_level:1}
+    name=Catalyst | canLevel=true | description=While held or worn, your beneficial status effects last up to 2x longer. | details=none
+catalyst [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=While held or worn, your beneficial status effects last up to 2x longer. | details=none
+catalyst [stray key] {name:"Catalyst",stray:1b,trait_level:1} -> {name:"Catalyst",trait_level:1}
+    name=Catalyst | canLevel=true | description=While held or worn, your beneficial status effects last up to 2x longer. | details=none
+catalyst [trait_level=-1] {name:"Catalyst",trait_level:-1} -> {name:"Catalyst",trait_level:-1}
+    name=Catalyst Invalid Roman Number Value | canLevel=true | description=While held or worn, your beneficial status effects last up to 0x longer. | details=none
+catalyst [legacy level=-1] {level:-1,name:"Catalyst"} -> {name:"Catalyst",trait_level:-1}
+    name=Catalyst Invalid Roman Number Value | canLevel=true | description=While held or worn, your beneficial status effects last up to 0x longer. | details=none
+catalyst [trait_level=0] {name:"Catalyst",trait_level:0} -> {name:"Catalyst",trait_level:0}
+    name=Catalyst Invalid Roman Number Value | canLevel=true | description=While held or worn, your beneficial status effects last up to 1x longer. | details=none
+catalyst [legacy level=0] {level:0,name:"Catalyst"} -> {name:"Catalyst",trait_level:0}
+    name=Catalyst Invalid Roman Number Value | canLevel=true | description=While held or worn, your beneficial status effects last up to 1x longer. | details=none
+catalyst [trait_level=1] {name:"Catalyst",trait_level:1} -> {name:"Catalyst",trait_level:1}
+    name=Catalyst | canLevel=true | description=While held or worn, your beneficial status effects last up to 2x longer. | details=none
+catalyst [legacy level=1] {level:1,name:"Catalyst"} -> {name:"Catalyst",trait_level:1}
+    name=Catalyst | canLevel=true | description=While held or worn, your beneficial status effects last up to 2x longer. | details=none
+catalyst [trait_level=2] {name:"Catalyst",trait_level:2} -> {name:"Catalyst",trait_level:2}
+    name=Catalyst II | canLevel=true | description=While held or worn, your beneficial status effects last up to 3x longer. | details=none
+catalyst [legacy level=2] {level:2,name:"Catalyst"} -> {name:"Catalyst",trait_level:2}
+    name=Catalyst II | canLevel=true | description=While held or worn, your beneficial status effects last up to 3x longer. | details=none
+catalyst [trait_level=3] {name:"Catalyst",trait_level:3} -> {name:"Catalyst",trait_level:3}
+    name=Catalyst III | canLevel=false | description=While held or worn, your beneficial status effects last up to 4x longer. | details=none
+catalyst [legacy level=3] {level:3,name:"Catalyst"} -> {name:"Catalyst",trait_level:3}
+    name=Catalyst III | canLevel=false | description=While held or worn, your beneficial status effects last up to 4x longer. | details=none
+catalyst [trait_level=9] {name:"Catalyst",trait_level:9} -> {name:"Catalyst",trait_level:9}
+    name=Catalyst IX | canLevel=false | description=While held or worn, your beneficial status effects last up to 10x longer. | details=none
+catalyst [legacy level=9] {level:9,name:"Catalyst"} -> {name:"Catalyst",trait_level:9}
+    name=Catalyst IX | canLevel=false | description=While held or worn, your beneficial status effects last up to 10x longer. | details=none
+catalyst [trait_level=40] {name:"Catalyst",trait_level:40} -> {name:"Catalyst",trait_level:40}
+    name=Catalyst XL | canLevel=false | description=While held or worn, your beneficial status effects last up to 41x longer. | details=none
+catalyst [legacy level=40] {level:40,name:"Catalyst"} -> {name:"Catalyst",trait_level:40}
+    name=Catalyst XL | canLevel=false | description=While held or worn, your beneficial status effects last up to 41x longer. | details=none
+chaotic [empty] {} -> {chaoticSeed:12345L,name:"Chaotic"}
+    name=Chaotic | canLevel=false | description=Melee damage bonus randomly fluctuates every 5 seconds, up to +50% | details=empty[style={color=gray}, siblings=[literal{Unknown}]]
+chaotic [renamed] {chaoticSeed:42L,name:"Renamed"} -> {chaoticSeed:42L,name:"Renamed"}
+    name=Renamed | canLevel=false | description=Melee damage bonus randomly fluctuates every 5 seconds, up to +50% | details=empty[style={color=gray}, siblings=[literal{Unknown}]]
+chaotic [stray key] {chaoticSeed:42L,name:"Chaotic",stray:1b} -> {chaoticSeed:42L,name:"Chaotic"}
+    name=Chaotic | canLevel=false | description=Melee damage bonus randomly fluctuates every 5 seconds, up to +50% | details=empty[style={color=gray}, siblings=[literal{Unknown}]]
+charged [empty] {} -> {charged:0L,name:"Charged",points:10}
+    name=Charged | canLevel=false | description=After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [renamed] {charged:0L,name:"Renamed",points:10} -> {charged:0L,name:"Renamed",points:10}
+    name=Renamed | canLevel=false | description=After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [stray key] {charged:0L,name:"Charged",points:10,stray:1b} -> {charged:0L,name:"Charged",points:10}
+    name=Charged | canLevel=false | description=After 10 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=-1] {charged:0L,name:"Charged",points:-1} -> {charged:0L,name:"Charged",points:-1}
+    name=Charged | canLevel=false | description=After -1 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=0] {charged:0L,name:"Charged",points:0} -> {charged:0L,name:"Charged",points:0}
+    name=Charged | canLevel=false | description=After 0 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=1] {charged:0L,name:"Charged",points:1} -> {charged:0L,name:"Charged",points:1}
+    name=Charged | canLevel=false | description=After 1 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=2] {charged:0L,name:"Charged",points:2} -> {charged:0L,name:"Charged",points:2}
+    name=Charged | canLevel=false | description=After 2 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=3] {charged:0L,name:"Charged",points:3} -> {charged:0L,name:"Charged",points:3}
+    name=Charged | canLevel=false | description=After 3 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=9] {charged:0L,name:"Charged",points:9} -> {charged:0L,name:"Charged",points:9}
+    name=Charged | canLevel=false | description=After 9 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+charged [points=40] {charged:0L,name:"Charged",points:40} -> {charged:0L,name:"Charged",points:40}
+    name=Charged | canLevel=false | description=After 40 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+clunky [empty] {} -> {name:"Clunky"}
+    name=Clunky | canLevel=false | description=Applies slowness to holder but extra knockback on hit | details=none
+clunky [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Applies slowness to holder but extra knockback on hit | details=none
+clunky [stray key] {name:"Clunky",stray:1b} -> {name:"Clunky"}
+    name=Clunky | canLevel=false | description=Applies slowness to holder but extra knockback on hit | details=none
+combo [empty] {} -> {charged:0L,name:"Dexterous",points:2}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. | details=none
+combo [renamed] {charged:0L,name:"Renamed",points:2} -> {charged:0L,name:"Renamed",points:2}
+    name=Renamed | canLevel=false | description=Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. | details=none
+combo [stray key] {charged:0L,name:"Dexterous",points:2,stray:1b} -> {charged:0L,name:"Dexterous",points:2}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=-1] {charged:0L,name:"Dexterous",points:-1} -> {charged:0L,name:"Dexterous",points:-1}
+    name=Dexterous | canLevel=false | description=Hitting enemies within -1 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=0] {charged:0L,name:"Dexterous",points:0} -> {charged:0L,name:"Dexterous",points:0}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 0 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=1] {charged:0L,name:"Dexterous",points:1} -> {charged:0L,name:"Dexterous",points:1}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 1 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=2] {charged:0L,name:"Dexterous",points:2} -> {charged:0L,name:"Dexterous",points:2}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 2 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=3] {charged:0L,name:"Dexterous",points:3} -> {charged:0L,name:"Dexterous",points:3}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 3 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=9] {charged:0L,name:"Dexterous",points:9} -> {charged:0L,name:"Dexterous",points:9}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 9 seconds after hitting them deals an extra 25% damage. | details=none
+combo [points=40] {charged:0L,name:"Dexterous",points:40} -> {charged:0L,name:"Dexterous",points:40}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 40 seconds after hitting them deals an extra 25% damage. | details=none
+critical [empty] {} -> {name:"Critical"}
+    name=Critical | canLevel=false | description=Always critically strikes enemy. | details=none
+critical [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Always critically strikes enemy. | details=none
+critical [stray key] {name:"Critical",stray:1b} -> {name:"Critical"}
+    name=Critical | canLevel=false | description=Always critically strikes enemy. | details=none
+crowd_pleaser [empty] {} -> {name:"Crowd Pleaser"}
+    name=Crowd Pleaser | canLevel=false | description=Deals bonus damage based on nearby mobs of the same type | details=none
+crowd_pleaser [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Deals bonus damage based on nearby mobs of the same type | details=none
+crowd_pleaser [stray key] {name:"Crowd Pleaser",stray:1b} -> {name:"Crowd Pleaser"}
+    name=Crowd Pleaser | canLevel=false | description=Deals bonus damage based on nearby mobs of the same type | details=none
+detecting [empty] {} -> {name:"Detecting"}
+    name=Detecting | canLevel=false | description=While held or worn, ores around you will glow. | details=none
+detecting [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=While held or worn, ores around you will glow. | details=none
+detecting [stray key] {name:"Detecting",stray:1b} -> {name:"Detecting"}
+    name=Detecting | canLevel=false | description=While held or worn, ores around you will glow. | details=none
+dirt_place [empty] {} -> {DAMAGE:1,name:"<a forger>'s Grace"}
+    name=<a forger>'s Grace | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. | details=none
+dirt_place [renamed] {DAMAGE:1,name:"Renamed"} -> {DAMAGE:1,name:"Renamed"}
+    name=Renamed | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. | details=none
+dirt_place [stray key] {DAMAGE:1,name:"Lushious's Grace",stray:1b} -> {DAMAGE:1,name:"Lushious's Grace"}
+    name=Lushious's Grace | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. | details=none
+early_bird [empty] {} -> {name:"Early Bird",trait_level:1}
+    name=Early Bird | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [stray key] {name:"Early Bird",stray:1b,trait_level:1} -> {name:"Early Bird",trait_level:1}
+    name=Early Bird | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [trait_level=-1] {name:"Early Bird",trait_level:-1} -> {name:"Early Bird",trait_level:-1}
+    name=Early Bird Invalid Roman Number Value | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [legacy level=-1] {level:-1,name:"Early Bird"} -> {name:"Early Bird",trait_level:-1}
+    name=Early Bird Invalid Roman Number Value | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [trait_level=0] {name:"Early Bird",trait_level:0} -> {name:"Early Bird",trait_level:0}
+    name=Early Bird Invalid Roman Number Value | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [legacy level=0] {level:0,name:"Early Bird"} -> {name:"Early Bird",trait_level:0}
+    name=Early Bird Invalid Roman Number Value | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [trait_level=1] {name:"Early Bird",trait_level:1} -> {name:"Early Bird",trait_level:1}
+    name=Early Bird | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [legacy level=1] {level:1,name:"Early Bird"} -> {name:"Early Bird",trait_level:1}
+    name=Early Bird | canLevel=true | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [trait_level=2] {name:"Early Bird",trait_level:2} -> {name:"Early Bird",trait_level:2}
+    name=Early Bird II | canLevel=true | description=Deals 25% extra damage to full-health targets | details=none
+early_bird [legacy level=2] {level:2,name:"Early Bird"} -> {name:"Early Bird",trait_level:2}
+    name=Early Bird II | canLevel=true | description=Deals 25% extra damage to full-health targets | details=none
+early_bird [trait_level=3] {name:"Early Bird",trait_level:3} -> {name:"Early Bird",trait_level:3}
+    name=Early Bird III | canLevel=false | description=Deals 40% extra damage to full-health targets | details=none
+early_bird [legacy level=3] {level:3,name:"Early Bird"} -> {name:"Early Bird",trait_level:3}
+    name=Early Bird III | canLevel=false | description=Deals 40% extra damage to full-health targets | details=none
+early_bird [trait_level=9] {name:"Early Bird",trait_level:9} -> {name:"Early Bird",trait_level:9}
+    name=Early Bird IX | canLevel=false | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [legacy level=9] {level:9,name:"Early Bird"} -> {name:"Early Bird",trait_level:9}
+    name=Early Bird IX | canLevel=false | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [trait_level=40] {name:"Early Bird",trait_level:40} -> {name:"Early Bird",trait_level:40}
+    name=Early Bird XL | canLevel=false | description=Deals 15% extra damage to full-health targets | details=none
+early_bird [legacy level=40] {level:40,name:"Early Bird"} -> {name:"Early Bird",trait_level:40}
+    name=Early Bird XL | canLevel=false | description=Deals 15% extra damage to full-health targets | details=none
+excavator [empty] {} -> {name:"Excavator"}
+    name=Excavator | canLevel=false | description=Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. | details=none
+excavator [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. | details=none
+excavator [stray key] {name:"Excavator",stray:1b} -> {name:"Excavator"}
+    name=Excavator | canLevel=false | description=Breaking blocks while crouching mines a 3x3 area perpendicular to the surface. | details=none
+executioner [empty] {} -> {name:"Executioner",trait_level:1}
+    name=Executioner | canLevel=true | description=Instantly kills mobs below 20% health | details=none
+executioner [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=Instantly kills mobs below 20% health | details=none
+executioner [stray key] {name:"Executioner",stray:1b,trait_level:1} -> {name:"Executioner",trait_level:1}
+    name=Executioner | canLevel=true | description=Instantly kills mobs below 20% health | details=none
+executioner [trait_level=-1] {name:"Executioner",trait_level:-1} -> {name:"Executioner",trait_level:-1}
+    name=Executioner Invalid Roman Number Value | canLevel=true | description=Instantly kills mobs below 10% health | details=none
+executioner [legacy level=-1] {level:-1,name:"Executioner"} -> {name:"Executioner",trait_level:-1}
+    name=Executioner Invalid Roman Number Value | canLevel=true | description=Instantly kills mobs below 10% health | details=none
+executioner [trait_level=0] {name:"Executioner",trait_level:0} -> {name:"Executioner",trait_level:0}
+    name=Executioner Invalid Roman Number Value | canLevel=true | description=Instantly kills mobs below 15% health | details=none
+executioner [legacy level=0] {level:0,name:"Executioner"} -> {name:"Executioner",trait_level:0}
+    name=Executioner Invalid Roman Number Value | canLevel=true | description=Instantly kills mobs below 15% health | details=none
+executioner [trait_level=1] {name:"Executioner",trait_level:1} -> {name:"Executioner",trait_level:1}
+    name=Executioner | canLevel=true | description=Instantly kills mobs below 20% health | details=none
+executioner [legacy level=1] {level:1,name:"Executioner"} -> {name:"Executioner",trait_level:1}
+    name=Executioner | canLevel=true | description=Instantly kills mobs below 20% health | details=none
+executioner [trait_level=2] {name:"Executioner",trait_level:2} -> {name:"Executioner",trait_level:2}
+    name=Executioner II | canLevel=true | description=Instantly kills mobs below 25% health | details=none
+executioner [legacy level=2] {level:2,name:"Executioner"} -> {name:"Executioner",trait_level:2}
+    name=Executioner II | canLevel=true | description=Instantly kills mobs below 25% health | details=none
+executioner [trait_level=3] {name:"Executioner",trait_level:3} -> {name:"Executioner",trait_level:3}
+    name=Executioner III | canLevel=true | description=Instantly kills mobs below 30% health | details=none
+executioner [legacy level=3] {level:3,name:"Executioner"} -> {name:"Executioner",trait_level:3}
+    name=Executioner III | canLevel=true | description=Instantly kills mobs below 30% health | details=none
+executioner [trait_level=9] {name:"Executioner",trait_level:9} -> {name:"Executioner",trait_level:9}
+    name=Executioner IX | canLevel=false | description=Instantly kills mobs below 60% health | details=none
+executioner [legacy level=9] {level:9,name:"Executioner"} -> {name:"Executioner",trait_level:9}
+    name=Executioner IX | canLevel=false | description=Instantly kills mobs below 60% health | details=none
+executioner [trait_level=40] {name:"Executioner",trait_level:40} -> {name:"Executioner",trait_level:40}
+    name=Executioner XL | canLevel=false | description=Instantly kills mobs below 215% health | details=none
+executioner [legacy level=40] {level:40,name:"Executioner"} -> {name:"Executioner",trait_level:40}
+    name=Executioner XL | canLevel=false | description=Instantly kills mobs below 215% health | details=none
+explode [empty] {} -> {name:"Explosive",power:4.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [renamed] {name:"Renamed",power:4.0f} -> {name:"Renamed",power:4.0f}
+    name=Renamed | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [stray key] {name:"Explosive",power:4.0f,stray:1b} -> {name:"Explosive",power:4.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=-1] {name:"Explosive",power:-1.0f} -> {name:"Explosive",power:-1.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=0] {name:"Explosive",power:0.0f} -> {name:"Explosive",power:0.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=1] {name:"Explosive",power:1.0f} -> {name:"Explosive",power:1.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=2] {name:"Explosive",power:2.0f} -> {name:"Explosive",power:2.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=3] {name:"Explosive",power:3.0f} -> {name:"Explosive",power:3.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=9] {name:"Explosive",power:9.0f} -> {name:"Explosive",power:9.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+explode [power=40] {name:"Explosive",power:40.0f} -> {name:"Explosive",power:40.0f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+feasting [empty] {} -> {name:"Feasting"}
+    name=Feasting | canLevel=false | description=Performance scales with hunger level | details=none
+feasting [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Performance scales with hunger level | details=none
+feasting [stray key] {name:"Feasting",stray:1b} -> {name:"Feasting"}
+    name=Feasting | canLevel=false | description=Performance scales with hunger level | details=none
+featherweight [empty] {} -> {name:"Featherweight",trait_level:0}
+    name=Featherweight | canLevel=true | description=Reduces fall damage by 25%. | details=none
+featherweight [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Reduces fall damage by 25%. | details=none
+featherweight [stray key] {name:"Featherweight",stray:1b,trait_level:0} -> {name:"Featherweight",trait_level:0}
+    name=Featherweight | canLevel=true | description=Reduces fall damage by 25%. | details=none
+featherweight [trait_level=-1] {name:"Featherweight",trait_level:-1} -> {name:"Featherweight",trait_level:-1}
+    name=Featherweight Invalid Roman Number Value | canLevel=true | description=Reduces fall damage by 0%. | details=none
+featherweight [legacy level=-1] {level:-1,name:"Featherweight"} -> {name:"Featherweight",trait_level:-1}
+    name=Featherweight Invalid Roman Number Value | canLevel=true | description=Reduces fall damage by 0%. | details=none
+featherweight [trait_level=0] {name:"Featherweight",trait_level:0} -> {name:"Featherweight",trait_level:0}
+    name=Featherweight | canLevel=true | description=Reduces fall damage by 25%. | details=none
+featherweight [legacy level=0] {level:0,name:"Featherweight"} -> {name:"Featherweight",trait_level:0}
+    name=Featherweight | canLevel=true | description=Reduces fall damage by 25%. | details=none
+featherweight [trait_level=1] {name:"Featherweight",trait_level:1} -> {name:"Featherweight",trait_level:1}
+    name=Featherweight II | canLevel=true | description=Reduces fall damage by 50%. | details=none
+featherweight [legacy level=1] {level:1,name:"Featherweight"} -> {name:"Featherweight",trait_level:1}
+    name=Featherweight II | canLevel=true | description=Reduces fall damage by 50%. | details=none
+featherweight [trait_level=2] {name:"Featherweight",trait_level:2} -> {name:"Featherweight",trait_level:2}
+    name=Featherweight III | canLevel=true | description=Reduces fall damage by 75%. | details=none
+featherweight [legacy level=2] {level:2,name:"Featherweight"} -> {name:"Featherweight",trait_level:2}
+    name=Featherweight III | canLevel=true | description=Reduces fall damage by 75%. | details=none
+featherweight [trait_level=3] {name:"Featherweight",trait_level:3} -> {name:"Featherweight",trait_level:3}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 100%. | details=none
+featherweight [legacy level=3] {level:3,name:"Featherweight"} -> {name:"Featherweight",trait_level:3}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 100%. | details=none
+featherweight [trait_level=9] {name:"Featherweight",trait_level:9} -> {name:"Featherweight",trait_level:9}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 250%. | details=none
+featherweight [legacy level=9] {level:9,name:"Featherweight"} -> {name:"Featherweight",trait_level:9}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 250%. | details=none
+featherweight [trait_level=40] {name:"Featherweight",trait_level:40} -> {name:"Featherweight",trait_level:40}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 1025%. | details=none
+featherweight [legacy level=40] {level:40,name:"Featherweight"} -> {name:"Featherweight",trait_level:40}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 1025%. | details=none
+fierce [empty] {} -> {name:"Fierce"}
+    name=Fierce | canLevel=false | description=Deals more damage as durability decreases | details=none
+fierce [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Deals more damage as durability decreases | details=none
+fierce [stray key] {name:"Fierce",stray:1b} -> {name:"Fierce"}
+    name=Fierce | canLevel=false | description=Deals more damage as durability decreases | details=none
+filling [empty] {} -> {name:"Filling",power:0}
+    name=Filling | canLevel=true | description=While holding or wearing this item, get the saturation I effect. | details=none
+filling [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=While holding or wearing this item, get the saturation I effect. | details=none
+filling [stray key] {name:"Filling",power:0,stray:1b} -> {name:"Filling",power:0}
+    name=Filling | canLevel=true | description=While holding or wearing this item, get the saturation I effect. | details=none
+filling [power=-1] {name:"Filling",power:-1} -> {name:"Filling",power:-1}
+    name=Filling Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the saturation Invalid Roman Number Value effect. | details=none
+filling [power=0] {name:"Filling",power:0} -> {name:"Filling",power:0}
+    name=Filling | canLevel=true | description=While holding or wearing this item, get the saturation I effect. | details=none
+filling [power=1] {name:"Filling",power:1} -> {name:"Filling",power:1}
+    name=Filling II | canLevel=true | description=While holding or wearing this item, get the saturation II effect. | details=none
+filling [power=2] {name:"Filling",power:2} -> {name:"Filling",power:2}
+    name=Filling III | canLevel=true | description=While holding or wearing this item, get the saturation III effect. | details=none
+filling [power=3] {name:"Filling",power:3} -> {name:"Filling",power:3}
+    name=Filling IV | canLevel=true | description=While holding or wearing this item, get the saturation IV effect. | details=none
+filling [power=9] {name:"Filling",power:9} -> {name:"Filling",power:4}
+    name=Filling V | canLevel=false | description=While holding or wearing this item, get the saturation V effect. | details=none
+filling [power=40] {name:"Filling",power:40} -> {name:"Filling",power:4}
+    name=Filling V | canLevel=false | description=While holding or wearing this item, get the saturation V effect. | details=none
+fire_place [empty] {} -> {DAMAGE:2,name:"Fire Starter"}
+    name=Fire Starter | canLevel=false | description=Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points. | details=none
+fire_place [renamed] {DAMAGE:2,name:"Renamed"} -> {DAMAGE:2,name:"Renamed"}
+    name=Renamed | canLevel=false | description=Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points. | details=none
+fire_place [stray key] {DAMAGE:2,name:"Fire Starter",stray:1b} -> {DAMAGE:2,name:"Fire Starter"}
+    name=Fire Starter | canLevel=false | description=Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 2 durability points. | details=none
+fire_resistance [empty] {} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [stray key] {name:"Heat Resistant",power:0,stray:1b} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=-1] {name:"Heat Resistant",power:-1} -> {name:"Heat Resistant",power:-1}
+    name=Heat Resistant Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the fire resistance Invalid Roman Number Value effect. | details=none
+fire_resistance [power=0] {name:"Heat Resistant",power:0} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=1] {name:"Heat Resistant",power:1} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=2] {name:"Heat Resistant",power:2} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=3] {name:"Heat Resistant",power:3} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=9] {name:"Heat Resistant",power:9} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+fire_resistance [power=40] {name:"Heat Resistant",power:40} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+flame_thrower [empty] {} -> {DAMAGE:20,name:"Flame Thrower"}
+    name=Flame Thrower | canLevel=false | description=Right clicking throws a fire ball. | details=none
+flame_thrower [renamed] {DAMAGE:20,name:"Renamed"} -> {DAMAGE:20,name:"Renamed"}
+    name=Renamed | canLevel=false | description=Right clicking throws a fire ball. | details=none
+flame_thrower [stray key] {DAMAGE:20,name:"Flame Thrower",stray:1b} -> {DAMAGE:20,name:"Flame Thrower"}
+    name=Flame Thrower | canLevel=false | description=Right clicking throws a fire ball. | details=none
+flaming [empty] {} -> {name:"Flaming",points:2}
+    name=Flaming | canLevel=true | description=Sets enemy on fire for 2 seconds. | details=none
+flaming [renamed] {name:"Renamed",points:2} -> {name:"Renamed",points:2}
+    name=Renamed | canLevel=true | description=Sets enemy on fire for 2 seconds. | details=none
+flaming [stray key] {name:"Flaming",points:2,stray:1b} -> {name:"Flaming",points:2}
+    name=Flaming | canLevel=true | description=Sets enemy on fire for 2 seconds. | details=none
+flaming [points=-1] {name:"Flaming",points:-1} -> {name:"Flaming",points:-1}
+    name=Flaming Invalid Roman Number Value | canLevel=true | description=Sets enemy on fire for -1 seconds. | details=none
+flaming [points=0] {name:"Flaming",points:0} -> {name:"Flaming",points:0}
+    name=Flaming Invalid Roman Number Value | canLevel=true | description=Sets enemy on fire for 0 seconds. | details=none
+flaming [points=1] {name:"Flaming",points:1} -> {name:"Flaming",points:1}
+    name=Flaming Invalid Roman Number Value | canLevel=true | description=Sets enemy on fire for 1 seconds. | details=none
+flaming [points=2] {name:"Flaming",points:2} -> {name:"Flaming",points:2}
+    name=Flaming | canLevel=true | description=Sets enemy on fire for 2 seconds. | details=none
+flaming [points=3] {name:"Flaming",points:3} -> {name:"Flaming",points:3}
+    name=Flaming II | canLevel=true | description=Sets enemy on fire for 3 seconds. | details=none
+flaming [points=9] {name:"Flaming",points:9} -> {name:"Flaming",points:9}
+    name=Flaming VIII | canLevel=false | description=Sets enemy on fire for 9 seconds. | details=none
+flaming [points=40] {name:"Flaming",points:40} -> {name:"Flaming",points:40}
+    name=Flaming XXXIX | canLevel=false | description=Sets enemy on fire for 40 seconds. | details=none
+fragile [empty] {} -> {name:"Fragile",trait_level:1}
+    name=Fragile | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [stray key] {name:"Fragile",stray:1b,trait_level:1} -> {name:"Fragile",trait_level:1}
+    name=Fragile | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [trait_level=-1] {name:"Fragile",trait_level:-1} -> {name:"Fragile",trait_level:-1}
+    name=Fragile Invalid Roman Number Value | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [legacy level=-1] {level:-1,name:"Fragile"} -> {name:"Fragile",trait_level:-1}
+    name=Fragile Invalid Roman Number Value | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [trait_level=0] {name:"Fragile",trait_level:0} -> {name:"Fragile",trait_level:0}
+    name=Fragile Invalid Roman Number Value | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [legacy level=0] {level:0,name:"Fragile"} -> {name:"Fragile",trait_level:0}
+    name=Fragile Invalid Roman Number Value | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [trait_level=1] {name:"Fragile",trait_level:1} -> {name:"Fragile",trait_level:1}
+    name=Fragile | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [legacy level=1] {level:1,name:"Fragile"} -> {name:"Fragile",trait_level:1}
+    name=Fragile | canLevel=true | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [trait_level=2] {name:"Fragile",trait_level:2} -> {name:"Fragile",trait_level:2}
+    name=Fragile II | canLevel=true | description=25% more damage and speed, but loses durability 1.6x as fast | details=none
+fragile [legacy level=2] {level:2,name:"Fragile"} -> {name:"Fragile",trait_level:2}
+    name=Fragile II | canLevel=true | description=25% more damage and speed, but loses durability 1.6x as fast | details=none
+fragile [trait_level=3] {name:"Fragile",trait_level:3} -> {name:"Fragile",trait_level:3}
+    name=Fragile III | canLevel=false | description=25% more damage and speed, but loses durability 1.3x as fast | details=none
+fragile [legacy level=3] {level:3,name:"Fragile"} -> {name:"Fragile",trait_level:3}
+    name=Fragile III | canLevel=false | description=25% more damage and speed, but loses durability 1.3x as fast | details=none
+fragile [trait_level=9] {name:"Fragile",trait_level:9} -> {name:"Fragile",trait_level:9}
+    name=Fragile IX | canLevel=false | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [legacy level=9] {level:9,name:"Fragile"} -> {name:"Fragile",trait_level:9}
+    name=Fragile IX | canLevel=false | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [trait_level=40] {name:"Fragile",trait_level:40} -> {name:"Fragile",trait_level:40}
+    name=Fragile XL | canLevel=false | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+fragile [legacy level=40] {level:40,name:"Fragile"} -> {name:"Fragile",trait_level:40}
+    name=Fragile XL | canLevel=false | description=25% more damage and speed, but loses durability 2.0x as fast | details=none
+frozen [empty] {} -> {name:"Frozen",trait_level:0}
+    name=Frozen | canLevel=true | description=Slows enemies on hit. Creates 3 block radius of frosted ice on water. | details=none
+frozen [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Slows enemies on hit. Creates 3 block radius of frosted ice on water. | details=none
+frozen [stray key] {name:"Frozen",stray:1b,trait_level:0} -> {name:"Frozen",trait_level:0}
+    name=Frozen | canLevel=true | description=Slows enemies on hit. Creates 3 block radius of frosted ice on water. | details=none
+frozen [trait_level=-1] {name:"Frozen",trait_level:-1} -> {name:"Frozen",trait_level:-1}
+    name=Frozen Invalid Roman Number Value | canLevel=true | description=Slows enemies on hit. Creates 2 block radius of frosted ice on water. | details=none
+frozen [legacy level=-1] {level:-1,name:"Frozen"} -> {name:"Frozen",trait_level:-1}
+    name=Frozen Invalid Roman Number Value | canLevel=true | description=Slows enemies on hit. Creates 2 block radius of frosted ice on water. | details=none
+frozen [trait_level=0] {name:"Frozen",trait_level:0} -> {name:"Frozen",trait_level:0}
+    name=Frozen | canLevel=true | description=Slows enemies on hit. Creates 3 block radius of frosted ice on water. | details=none
+frozen [legacy level=0] {level:0,name:"Frozen"} -> {name:"Frozen",trait_level:0}
+    name=Frozen | canLevel=true | description=Slows enemies on hit. Creates 3 block radius of frosted ice on water. | details=none
+frozen [trait_level=1] {name:"Frozen",trait_level:1} -> {name:"Frozen",trait_level:1}
+    name=Frozen II | canLevel=true | description=Slows enemies on hit. Creates 4 block radius of frosted ice on water. | details=none
+frozen [legacy level=1] {level:1,name:"Frozen"} -> {name:"Frozen",trait_level:1}
+    name=Frozen II | canLevel=true | description=Slows enemies on hit. Creates 4 block radius of frosted ice on water. | details=none
+frozen [trait_level=2] {name:"Frozen",trait_level:2} -> {name:"Frozen",trait_level:2}
+    name=Frozen III | canLevel=false | description=Slows enemies on hit. Creates 5 block radius of frosted ice on water. | details=none
+frozen [legacy level=2] {level:2,name:"Frozen"} -> {name:"Frozen",trait_level:2}
+    name=Frozen III | canLevel=false | description=Slows enemies on hit. Creates 5 block radius of frosted ice on water. | details=none
+frozen [trait_level=3] {name:"Frozen",trait_level:3} -> {name:"Frozen",trait_level:3}
+    name=Frozen IV | canLevel=false | description=Slows enemies on hit. Creates 6 block radius of frosted ice on water. | details=none
+frozen [legacy level=3] {level:3,name:"Frozen"} -> {name:"Frozen",trait_level:3}
+    name=Frozen IV | canLevel=false | description=Slows enemies on hit. Creates 6 block radius of frosted ice on water. | details=none
+frozen [trait_level=9] {name:"Frozen",trait_level:9} -> {name:"Frozen",trait_level:9}
+    name=Frozen X | canLevel=false | description=Slows enemies on hit. Creates 12 block radius of frosted ice on water. | details=none
+frozen [legacy level=9] {level:9,name:"Frozen"} -> {name:"Frozen",trait_level:9}
+    name=Frozen X | canLevel=false | description=Slows enemies on hit. Creates 12 block radius of frosted ice on water. | details=none
+frozen [trait_level=40] {name:"Frozen",trait_level:40} -> {name:"Frozen",trait_level:40}
+    name=Frozen XLI | canLevel=false | description=Slows enemies on hit. Creates 43 block radius of frosted ice on water. | details=none
+frozen [legacy level=40] {level:40,name:"Frozen"} -> {name:"Frozen",trait_level:40}
+    name=Frozen XLI | canLevel=false | description=Slows enemies on hit. Creates 43 block radius of frosted ice on water. | details=none
+haileys_wrath [empty] {} -> {name:"Hailey's Wrath"}
+    name=Hailey's Wrath | canLevel=false | description=Spawns a bee when the target is killed | details=none
+haileys_wrath [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Spawns a bee when the target is killed | details=none
+haileys_wrath [stray key] {name:"Hailey's Wrath",stray:1b} -> {name:"Hailey's Wrath"}
+    name=Hailey's Wrath | canLevel=false | description=Spawns a bee when the target is killed | details=none
+hasty [empty] {} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [renamed] {name:"Renamed",power:0,trait_level:0} -> {name:"Renamed",power:0,trait_level:0}
+    name=Renamed | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [stray key] {name:"Hasty",power:0,stray:1b,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [trait_level=-1] {name:"Hasty",power:0,trait_level:-1} -> {name:"Hasty",power:-1,trait_level:-1}
+    name=Hasty Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the Haste Invalid Roman Number Value effect. | details=none
+hasty [legacy level=-1] {level:-1,name:"Hasty",power:0} -> {name:"Hasty",power:-1,trait_level:-1}
+    name=Hasty Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the Haste Invalid Roman Number Value effect. | details=none
+hasty [trait_level=0] {name:"Hasty",power:0,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [legacy level=0] {level:0,name:"Hasty",power:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [trait_level=1] {name:"Hasty",power:0,trait_level:1} -> {name:"Hasty",power:1,trait_level:1}
+    name=Hasty II | canLevel=false | description=While holding or wearing this item, get the Haste II effect. | details=none
+hasty [legacy level=1] {level:1,name:"Hasty",power:0} -> {name:"Hasty",power:1,trait_level:1}
+    name=Hasty II | canLevel=false | description=While holding or wearing this item, get the Haste II effect. | details=none
+hasty [trait_level=2] {name:"Hasty",power:0,trait_level:2} -> {name:"Hasty",power:2,trait_level:2}
+    name=Hasty III | canLevel=false | description=While holding or wearing this item, get the Haste III effect. | details=none
+hasty [legacy level=2] {level:2,name:"Hasty",power:0} -> {name:"Hasty",power:2,trait_level:2}
+    name=Hasty III | canLevel=false | description=While holding or wearing this item, get the Haste III effect. | details=none
+hasty [trait_level=3] {name:"Hasty",power:0,trait_level:3} -> {name:"Hasty",power:3,trait_level:3}
+    name=Hasty IV | canLevel=false | description=While holding or wearing this item, get the Haste IV effect. | details=none
+hasty [legacy level=3] {level:3,name:"Hasty",power:0} -> {name:"Hasty",power:3,trait_level:3}
+    name=Hasty IV | canLevel=false | description=While holding or wearing this item, get the Haste IV effect. | details=none
+hasty [trait_level=9] {name:"Hasty",power:0,trait_level:9} -> {name:"Hasty",power:9,trait_level:9}
+    name=Hasty X | canLevel=false | description=While holding or wearing this item, get the Haste X effect. | details=none
+hasty [legacy level=9] {level:9,name:"Hasty",power:0} -> {name:"Hasty",power:9,trait_level:9}
+    name=Hasty X | canLevel=false | description=While holding or wearing this item, get the Haste X effect. | details=none
+hasty [trait_level=40] {name:"Hasty",power:0,trait_level:40} -> {name:"Hasty",power:40,trait_level:40}
+    name=Hasty XLI | canLevel=false | description=While holding or wearing this item, get the Haste XLI effect. | details=none
+hasty [legacy level=40] {level:40,name:"Hasty",power:0} -> {name:"Hasty",power:40,trait_level:40}
+    name=Hasty XLI | canLevel=false | description=While holding or wearing this item, get the Haste XLI effect. | details=none
+hasty [power=-1] {name:"Hasty",power:-1,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=0] {name:"Hasty",power:0,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=1] {name:"Hasty",power:1,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=2] {name:"Hasty",power:2,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=3] {name:"Hasty",power:3,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=9] {name:"Hasty",power:9,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hasty [power=40] {name:"Hasty",power:40,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+hunter [empty] {} -> {name:"Hunter"}
+    name=Hunter | canLevel=false | description=Nearby hostile mobs get the glowing effect | details=none
+hunter [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Nearby hostile mobs get the glowing effect | details=none
+hunter [stray key] {name:"Hunter",stray:1b} -> {name:"Hunter"}
+    name=Hunter | canLevel=false | description=Nearby hostile mobs get the glowing effect | details=none
+learning [empty] {} -> {count:0,name:"Learning",points:3}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 3 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [renamed] {count:0,name:"Renamed",points:3} -> {count:0,name:"Renamed",points:3}
+    name=Renamed | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 3 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [stray key] {count:0,name:"Learning",points:3,stray:1b} -> {count:0,name:"Learning",points:3}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 3 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=-1] {count:0,name:"Learning",points:-1} -> {count:0,name:"Learning",points:-1}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain -1 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=0] {count:0,name:"Learning",points:0} -> {count:0,name:"Learning",points:0}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 0 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=1] {count:0,name:"Learning",points:1} -> {count:0,name:"Learning",points:1}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 1 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=2] {count:0,name:"Learning",points:2} -> {count:0,name:"Learning",points:2}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 2 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=3] {count:0,name:"Learning",points:3} -> {count:0,name:"Learning",points:3}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 3 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=9] {count:0,name:"Learning",points:9} -> {count:0,name:"Learning",points:9}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 9 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+learning [points=40] {count:0,name:"Learning",points:40} -> {count:0,name:"Learning",points:40}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 40 experience points. | details=empty[style={color=gray}, siblings=[literal{0% Learned}]]
+living [empty] {} -> {name:"Living",trait_level:1}
+    name=Living | canLevel=true | description=While held or worn, 0.5% chance per tick to repair itself | details=none
+living [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=While held or worn, 0.5% chance per tick to repair itself | details=none
+living [stray key] {name:"Living",stray:1b,trait_level:1} -> {name:"Living",trait_level:1}
+    name=Living | canLevel=true | description=While held or worn, 0.5% chance per tick to repair itself | details=none
+living [trait_level=-1] {name:"Living",trait_level:-1} -> {name:"Living",trait_level:-1}
+    name=Living Invalid Roman Number Value | canLevel=true | description=While held or worn, 0.1% chance per tick to repair itself | details=none
+living [legacy level=-1] {level:-1,name:"Living"} -> {name:"Living",trait_level:-1}
+    name=Living Invalid Roman Number Value | canLevel=true | description=While held or worn, 0.1% chance per tick to repair itself | details=none
+living [trait_level=0] {name:"Living",trait_level:0} -> {name:"Living",trait_level:0}
+    name=Living Invalid Roman Number Value | canLevel=true | description=While held or worn, 0.3% chance per tick to repair itself | details=none
+living [legacy level=0] {level:0,name:"Living"} -> {name:"Living",trait_level:0}
+    name=Living Invalid Roman Number Value | canLevel=true | description=While held or worn, 0.3% chance per tick to repair itself | details=none
+living [trait_level=1] {name:"Living",trait_level:1} -> {name:"Living",trait_level:1}
+    name=Living | canLevel=true | description=While held or worn, 0.5% chance per tick to repair itself | details=none
+living [legacy level=1] {level:1,name:"Living"} -> {name:"Living",trait_level:1}
+    name=Living | canLevel=true | description=While held or worn, 0.5% chance per tick to repair itself | details=none
+living [trait_level=2] {name:"Living",trait_level:2} -> {name:"Living",trait_level:2}
+    name=Living II | canLevel=true | description=While held or worn, 1.0% chance per tick to repair itself | details=none
+living [legacy level=2] {level:2,name:"Living"} -> {name:"Living",trait_level:2}
+    name=Living II | canLevel=true | description=While held or worn, 1.0% chance per tick to repair itself | details=none
+living [trait_level=3] {name:"Living",trait_level:3} -> {name:"Living",trait_level:3}
+    name=Living III | canLevel=false | description=While held or worn, 2.0% chance per tick to repair itself | details=none
+living [legacy level=3] {level:3,name:"Living"} -> {name:"Living",trait_level:3}
+    name=Living III | canLevel=false | description=While held or worn, 2.0% chance per tick to repair itself | details=none
+living [trait_level=9] {name:"Living",trait_level:9} -> {name:"Living",trait_level:9}
+    name=Living IX | canLevel=false | description=While held or worn, 128.0% chance per tick to repair itself | details=none
+living [legacy level=9] {level:9,name:"Living"} -> {name:"Living",trait_level:9}
+    name=Living IX | canLevel=false | description=While held or worn, 128.0% chance per tick to repair itself | details=none
+living [trait_level=40] {name:"Living",trait_level:40} -> {name:"Living",trait_level:40}
+    name=Living XL | canLevel=false | description=While held or worn, 274877906944.0% chance per tick to repair itself | details=none
+living [legacy level=40] {level:40,name:"Living"} -> {name:"Living",trait_level:40}
+    name=Living XL | canLevel=false | description=While held or worn, 274877906944.0% chance per tick to repair itself | details=none
+lumbering [empty] {} -> {name:"Lumbering"}
+    name=Lumbering | canLevel=false | description=Breaking a log fells all connected logs | details=none
+lumbering [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Breaking a log fells all connected logs | details=none
+lumbering [stray key] {name:"Lumbering",stray:1b} -> {name:"Lumbering"}
+    name=Lumbering | canLevel=false | description=Breaking a log fells all connected logs | details=none
+magnetized [empty] {} -> {name:"Magnetized"}
+    name=Magnetized | canLevel=false | description=While worn, nearby items are pulled toward you. | details=none
+magnetized [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=While worn, nearby items are pulled toward you. | details=none
+magnetized [stray key] {name:"Magnetized",stray:1b} -> {name:"Magnetized"}
+    name=Magnetized | canLevel=false | description=While worn, nearby items are pulled toward you. | details=none
+melting [empty] {} -> {name:"Melting"}
+    name=Melting | canLevel=false | description=Items dropped by blocks broken with this tool will be smelted. | details=none
+melting [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Items dropped by blocks broken with this tool will be smelted. | details=none
+melting [stray key] {name:"Melting",stray:1b} -> {name:"Melting"}
+    name=Melting | canLevel=false | description=Items dropped by blocks broken with this tool will be smelted. | details=none
+munchies [empty] {} -> {name:"Munchies",trait_level:1}
+    name=Munchies | canLevel=true | description=15% stat boost, but 10% chance to consume hunger on use | details=none
+munchies [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=15% stat boost, but 10% chance to consume hunger on use | details=none
+munchies [stray key] {name:"Munchies",stray:1b,trait_level:1} -> {name:"Munchies",trait_level:1}
+    name=Munchies | canLevel=true | description=15% stat boost, but 10% chance to consume hunger on use | details=none
+munchies [trait_level=-1] {name:"Munchies",trait_level:-1} -> {name:"Munchies",trait_level:-1}
+    name=Munchies Invalid Roman Number Value | canLevel=true | description=15% stat boost, but 14% chance to consume hunger on use | details=none
+munchies [legacy level=-1] {level:-1,name:"Munchies"} -> {name:"Munchies",trait_level:-1}
+    name=Munchies Invalid Roman Number Value | canLevel=true | description=15% stat boost, but 14% chance to consume hunger on use | details=none
+munchies [trait_level=0] {name:"Munchies",trait_level:0} -> {name:"Munchies",trait_level:0}
+    name=Munchies Invalid Roman Number Value | canLevel=true | description=15% stat boost, but 12% chance to consume hunger on use | details=none
+munchies [legacy level=0] {level:0,name:"Munchies"} -> {name:"Munchies",trait_level:0}
+    name=Munchies Invalid Roman Number Value | canLevel=true | description=15% stat boost, but 12% chance to consume hunger on use | details=none
+munchies [trait_level=1] {name:"Munchies",trait_level:1} -> {name:"Munchies",trait_level:1}
+    name=Munchies | canLevel=true | description=15% stat boost, but 10% chance to consume hunger on use | details=none
+munchies [legacy level=1] {level:1,name:"Munchies"} -> {name:"Munchies",trait_level:1}
+    name=Munchies | canLevel=true | description=15% stat boost, but 10% chance to consume hunger on use | details=none
+munchies [trait_level=2] {name:"Munchies",trait_level:2} -> {name:"Munchies",trait_level:2}
+    name=Munchies II | canLevel=true | description=15% stat boost, but 8% chance to consume hunger on use | details=none
+munchies [legacy level=2] {level:2,name:"Munchies"} -> {name:"Munchies",trait_level:2}
+    name=Munchies II | canLevel=true | description=15% stat boost, but 8% chance to consume hunger on use | details=none
+munchies [trait_level=3] {name:"Munchies",trait_level:3} -> {name:"Munchies",trait_level:3}
+    name=Munchies III | canLevel=true | description=15% stat boost, but 6% chance to consume hunger on use | details=none
+munchies [legacy level=3] {level:3,name:"Munchies"} -> {name:"Munchies",trait_level:3}
+    name=Munchies III | canLevel=true | description=15% stat boost, but 6% chance to consume hunger on use | details=none
+munchies [trait_level=9] {name:"Munchies",trait_level:9} -> {name:"Munchies",trait_level:9}
+    name=Munchies IX | canLevel=false | description=15% stat boost, but -6% chance to consume hunger on use | details=none
+munchies [legacy level=9] {level:9,name:"Munchies"} -> {name:"Munchies",trait_level:9}
+    name=Munchies IX | canLevel=false | description=15% stat boost, but -6% chance to consume hunger on use | details=none
+munchies [trait_level=40] {name:"Munchies",trait_level:40} -> {name:"Munchies",trait_level:40}
+    name=Munchies XL | canLevel=false | description=15% stat boost, but -68% chance to consume hunger on use | details=none
+munchies [legacy level=40] {level:40,name:"Munchies"} -> {name:"Munchies",trait_level:40}
+    name=Munchies XL | canLevel=false | description=15% stat boost, but -68% chance to consume hunger on use | details=none
+naturalist [empty] {} -> {name:"Naturalist",trait_level:1}
+    name=Naturalist | canLevel=true | description=Bone meals nearby crops and saplings every 10 seconds | details=none
+naturalist [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=Bone meals nearby crops and saplings every 10 seconds | details=none
+naturalist [stray key] {name:"Naturalist",stray:1b,trait_level:1} -> {name:"Naturalist",trait_level:1}
+    name=Naturalist | canLevel=true | description=Bone meals nearby crops and saplings every 10 seconds | details=none
+naturalist [trait_level=-1] {name:"Naturalist",trait_level:-1} -> {name:"Naturalist",trait_level:-1}
+    name=Naturalist Invalid Roman Number Value | canLevel=true | description=Bone meals nearby crops and saplings every 16 seconds | details=none
+naturalist [legacy level=-1] {level:-1,name:"Naturalist"} -> {name:"Naturalist",trait_level:-1}
+    name=Naturalist Invalid Roman Number Value | canLevel=true | description=Bone meals nearby crops and saplings every 16 seconds | details=none
+naturalist [trait_level=0] {name:"Naturalist",trait_level:0} -> {name:"Naturalist",trait_level:0}
+    name=Naturalist Invalid Roman Number Value | canLevel=true | description=Bone meals nearby crops and saplings every 13 seconds | details=none
+naturalist [legacy level=0] {level:0,name:"Naturalist"} -> {name:"Naturalist",trait_level:0}
+    name=Naturalist Invalid Roman Number Value | canLevel=true | description=Bone meals nearby crops and saplings every 13 seconds | details=none
+naturalist [trait_level=1] {name:"Naturalist",trait_level:1} -> {name:"Naturalist",trait_level:1}
+    name=Naturalist | canLevel=true | description=Bone meals nearby crops and saplings every 10 seconds | details=none
+naturalist [legacy level=1] {level:1,name:"Naturalist"} -> {name:"Naturalist",trait_level:1}
+    name=Naturalist | canLevel=true | description=Bone meals nearby crops and saplings every 10 seconds | details=none
+naturalist [trait_level=2] {name:"Naturalist",trait_level:2} -> {name:"Naturalist",trait_level:2}
+    name=Naturalist II | canLevel=true | description=Bone meals nearby crops and saplings every 7 seconds | details=none
+naturalist [legacy level=2] {level:2,name:"Naturalist"} -> {name:"Naturalist",trait_level:2}
+    name=Naturalist II | canLevel=true | description=Bone meals nearby crops and saplings every 7 seconds | details=none
+naturalist [trait_level=3] {name:"Naturalist",trait_level:3} -> {name:"Naturalist",trait_level:3}
+    name=Naturalist III | canLevel=false | description=Bone meals nearby crops and saplings every 4 seconds | details=none
+naturalist [legacy level=3] {level:3,name:"Naturalist"} -> {name:"Naturalist",trait_level:3}
+    name=Naturalist III | canLevel=false | description=Bone meals nearby crops and saplings every 4 seconds | details=none
+naturalist [trait_level=9] {name:"Naturalist",trait_level:9} -> {name:"Naturalist",trait_level:9}
+    name=Naturalist IX | canLevel=false | description=Bone meals nearby crops and saplings every -14 seconds | details=none
+naturalist [legacy level=9] {level:9,name:"Naturalist"} -> {name:"Naturalist",trait_level:9}
+    name=Naturalist IX | canLevel=false | description=Bone meals nearby crops and saplings every -14 seconds | details=none
+naturalist [trait_level=40] {name:"Naturalist",trait_level:40} -> {name:"Naturalist",trait_level:40}
+    name=Naturalist XL | canLevel=false | description=Bone meals nearby crops and saplings every -107 seconds | details=none
+naturalist [legacy level=40] {level:40,name:"Naturalist"} -> {name:"Naturalist",trait_level:40}
+    name=Naturalist XL | canLevel=false | description=Bone meals nearby crops and saplings every -107 seconds | details=none
+necrotic [empty] {} -> {name:"Necrotic",points:2}
+    name=Necrotic | canLevel=true | description=Heals 10% of damage dealt to target. | details=none
+necrotic [renamed] {name:"Renamed",points:2} -> {name:"Renamed",points:2}
+    name=Renamed | canLevel=true | description=Heals 10% of damage dealt to target. | details=none
+necrotic [stray key] {name:"Necrotic",points:2,stray:1b} -> {name:"Necrotic",points:2}
+    name=Necrotic | canLevel=true | description=Heals 10% of damage dealt to target. | details=none
+necrotic [points=-1] {name:"Necrotic",points:-1} -> {name:"Necrotic",points:-1}
+    name=Necrotic Invalid Roman Number Value | canLevel=true | description=Heals -5% of damage dealt to target. | details=none
+necrotic [points=0] {name:"Necrotic",points:0} -> {name:"Necrotic",points:0}
+    name=Necrotic Invalid Roman Number Value | canLevel=true | description=Heals 0% of damage dealt to target. | details=none
+necrotic [points=1] {name:"Necrotic",points:1} -> {name:"Necrotic",points:1}
+    name=Necrotic Invalid Roman Number Value | canLevel=true | description=Heals 5% of damage dealt to target. | details=none
+necrotic [points=2] {name:"Necrotic",points:2} -> {name:"Necrotic",points:2}
+    name=Necrotic | canLevel=true | description=Heals 10% of damage dealt to target. | details=none
+necrotic [points=3] {name:"Necrotic",points:3} -> {name:"Necrotic",points:3}
+    name=Necrotic II | canLevel=true | description=Heals 15% of damage dealt to target. | details=none
+necrotic [points=9] {name:"Necrotic",points:9} -> {name:"Necrotic",points:9}
+    name=Necrotic VIII | canLevel=true | description=Heals 45% of damage dealt to target. | details=none
+necrotic [points=40] {name:"Necrotic",points:40} -> {name:"Necrotic",points:40}
+    name=Necrotic XXXIX | canLevel=false | description=Heals 200% of damage dealt to target. | details=none
+nemesis [empty] {} -> {killCounts:{},name:"Nemesis",trait_level:1}
+    name=Nemesis | canLevel=true | description=Tracks mob kills and deals 5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [renamed] {killCounts:{},name:"Renamed",trait_level:1} -> {killCounts:{},name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=Tracks mob kills and deals 5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [stray key] {killCounts:{},name:"Nemesis",stray:1b,trait_level:1} -> {killCounts:{},name:"Nemesis",trait_level:1}
+    name=Nemesis | canLevel=true | description=Tracks mob kills and deals 5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=-1] {killCounts:{},name:"Nemesis",trait_level:-1} -> {killCounts:{},name:"Nemesis",trait_level:-1}
+    name=Nemesis Invalid Roman Number Value | canLevel=true | description=Tracks mob kills and deals -5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=-1] {killCounts:{},level:-1,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:-1}
+    name=Nemesis Invalid Roman Number Value | canLevel=true | description=Tracks mob kills and deals -5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=0] {killCounts:{},name:"Nemesis",trait_level:0} -> {killCounts:{},name:"Nemesis",trait_level:0}
+    name=Nemesis Invalid Roman Number Value | canLevel=true | description=Tracks mob kills and deals 0% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=0] {killCounts:{},level:0,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:0}
+    name=Nemesis Invalid Roman Number Value | canLevel=true | description=Tracks mob kills and deals 0% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=1] {killCounts:{},name:"Nemesis",trait_level:1} -> {killCounts:{},name:"Nemesis",trait_level:1}
+    name=Nemesis | canLevel=true | description=Tracks mob kills and deals 5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=1] {killCounts:{},level:1,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:1}
+    name=Nemesis | canLevel=true | description=Tracks mob kills and deals 5% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=2] {killCounts:{},name:"Nemesis",trait_level:2} -> {killCounts:{},name:"Nemesis",trait_level:2}
+    name=Nemesis II | canLevel=true | description=Tracks mob kills and deals 10% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=2] {killCounts:{},level:2,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:2}
+    name=Nemesis II | canLevel=true | description=Tracks mob kills and deals 10% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=3] {killCounts:{},name:"Nemesis",trait_level:3} -> {killCounts:{},name:"Nemesis",trait_level:3}
+    name=Nemesis III | canLevel=false | description=Tracks mob kills and deals 15% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=3] {killCounts:{},level:3,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:3}
+    name=Nemesis III | canLevel=false | description=Tracks mob kills and deals 15% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=9] {killCounts:{},name:"Nemesis",trait_level:9} -> {killCounts:{},name:"Nemesis",trait_level:9}
+    name=Nemesis IX | canLevel=false | description=Tracks mob kills and deals 45% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=9] {killCounts:{},level:9,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:9}
+    name=Nemesis IX | canLevel=false | description=Tracks mob kills and deals 45% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [trait_level=40] {killCounts:{},name:"Nemesis",trait_level:40} -> {killCounts:{},name:"Nemesis",trait_level:40}
+    name=Nemesis XL | canLevel=false | description=Tracks mob kills and deals 200% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+nemesis [legacy level=40] {killCounts:{},level:40,name:"Nemesis"} -> {killCounts:{},name:"Nemesis",trait_level:40}
+    name=Nemesis XL | canLevel=false | description=Tracks mob kills and deals 200% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{No nemesis yet}]]
+overgrown [empty] {} -> {name:"Overgrown",trait_level:0}
+    name=Overgrown | canLevel=true | description=Grants poison immunity. Deals 2.5 bonus damage to arthropods. | details=none
+overgrown [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Grants poison immunity. Deals 2.5 bonus damage to arthropods. | details=none
+overgrown [stray key] {name:"Overgrown",stray:1b,trait_level:0} -> {name:"Overgrown",trait_level:0}
+    name=Overgrown | canLevel=true | description=Grants poison immunity. Deals 2.5 bonus damage to arthropods. | details=none
+overgrown [trait_level=-1] {name:"Overgrown",trait_level:-1} -> {name:"Overgrown",trait_level:-1}
+    name=Overgrown Invalid Roman Number Value | canLevel=true | description=Grants poison immunity. Deals 0.0 bonus damage to arthropods. | details=none
+overgrown [legacy level=-1] {level:-1,name:"Overgrown"} -> {name:"Overgrown",trait_level:-1}
+    name=Overgrown Invalid Roman Number Value | canLevel=true | description=Grants poison immunity. Deals 0.0 bonus damage to arthropods. | details=none
+overgrown [trait_level=0] {name:"Overgrown",trait_level:0} -> {name:"Overgrown",trait_level:0}
+    name=Overgrown | canLevel=true | description=Grants poison immunity. Deals 2.5 bonus damage to arthropods. | details=none
+overgrown [legacy level=0] {level:0,name:"Overgrown"} -> {name:"Overgrown",trait_level:0}
+    name=Overgrown | canLevel=true | description=Grants poison immunity. Deals 2.5 bonus damage to arthropods. | details=none
+overgrown [trait_level=1] {name:"Overgrown",trait_level:1} -> {name:"Overgrown",trait_level:1}
+    name=Overgrown II | canLevel=true | description=Grants poison immunity. Deals 5.0 bonus damage to arthropods. | details=none
+overgrown [legacy level=1] {level:1,name:"Overgrown"} -> {name:"Overgrown",trait_level:1}
+    name=Overgrown II | canLevel=true | description=Grants poison immunity. Deals 5.0 bonus damage to arthropods. | details=none
+overgrown [trait_level=2] {name:"Overgrown",trait_level:2} -> {name:"Overgrown",trait_level:2}
+    name=Overgrown III | canLevel=false | description=Grants poison immunity. Deals 7.5 bonus damage to arthropods. | details=none
+overgrown [legacy level=2] {level:2,name:"Overgrown"} -> {name:"Overgrown",trait_level:2}
+    name=Overgrown III | canLevel=false | description=Grants poison immunity. Deals 7.5 bonus damage to arthropods. | details=none
+overgrown [trait_level=3] {name:"Overgrown",trait_level:3} -> {name:"Overgrown",trait_level:3}
+    name=Overgrown IV | canLevel=false | description=Grants poison immunity. Deals 10.0 bonus damage to arthropods. | details=none
+overgrown [legacy level=3] {level:3,name:"Overgrown"} -> {name:"Overgrown",trait_level:3}
+    name=Overgrown IV | canLevel=false | description=Grants poison immunity. Deals 10.0 bonus damage to arthropods. | details=none
+overgrown [trait_level=9] {name:"Overgrown",trait_level:9} -> {name:"Overgrown",trait_level:9}
+    name=Overgrown X | canLevel=false | description=Grants poison immunity. Deals 25.0 bonus damage to arthropods. | details=none
+overgrown [legacy level=9] {level:9,name:"Overgrown"} -> {name:"Overgrown",trait_level:9}
+    name=Overgrown X | canLevel=false | description=Grants poison immunity. Deals 25.0 bonus damage to arthropods. | details=none
+overgrown [trait_level=40] {name:"Overgrown",trait_level:40} -> {name:"Overgrown",trait_level:40}
+    name=Overgrown XLI | canLevel=false | description=Grants poison immunity. Deals 102.5 bonus damage to arthropods. | details=none
+overgrown [legacy level=40] {level:40,name:"Overgrown"} -> {name:"Overgrown",trait_level:40}
+    name=Overgrown XLI | canLevel=false | description=Grants poison immunity. Deals 102.5 bonus damage to arthropods. | details=none
+poison [empty] {} -> {name:"Poisonous",power:0}
+    name=Poisonous | canLevel=true | description=When attacking with tool, apply the poison I effect to the target for 5 seconds. | details=none
+poison [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=When attacking with tool, apply the poison I effect to the target for 5 seconds. | details=none
+poison [stray key] {name:"Poisonous",power:0,stray:1b} -> {name:"Poisonous",power:0}
+    name=Poisonous | canLevel=true | description=When attacking with tool, apply the poison I effect to the target for 5 seconds. | details=none
+poison [power=-1] {name:"Poisonous",power:-1} -> {name:"Poisonous",power:-1}
+    name=Poisonous Invalid Roman Number Value | canLevel=true | description=When attacking with tool, apply the poison Invalid Roman Number Value effect to the target for 5 seconds. | details=none
+poison [power=0] {name:"Poisonous",power:0} -> {name:"Poisonous",power:0}
+    name=Poisonous | canLevel=true | description=When attacking with tool, apply the poison I effect to the target for 5 seconds. | details=none
+poison [power=1] {name:"Poisonous",power:1} -> {name:"Poisonous",power:1}
+    name=Poisonous II | canLevel=true | description=When attacking with tool, apply the poison II effect to the target for 5 seconds. | details=none
+poison [power=2] {name:"Poisonous",power:2} -> {name:"Poisonous",power:2}
+    name=Poisonous III | canLevel=true | description=When attacking with tool, apply the poison III effect to the target for 5 seconds. | details=none
+poison [power=3] {name:"Poisonous",power:3} -> {name:"Poisonous",power:3}
+    name=Poisonous IV | canLevel=true | description=When attacking with tool, apply the poison IV effect to the target for 5 seconds. | details=none
+poison [power=9] {name:"Poisonous",power:9} -> {name:"Poisonous",power:4}
+    name=Poisonous V | canLevel=false | description=When attacking with tool, apply the poison V effect to the target for 5 seconds. | details=none
+poison [power=40] {name:"Poisonous",power:40} -> {name:"Poisonous",power:4}
+    name=Poisonous V | canLevel=false | description=When attacking with tool, apply the poison V effect to the target for 5 seconds. | details=none
+prospector [empty] {} -> {name:"Prospector",totalFinds:0,trait_level:1}
+    name=Prospector | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [renamed] {name:"Renamed",totalFinds:0,trait_level:1} -> {name:"Renamed",totalFinds:0,trait_level:1}
+    name=Renamed | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [stray key] {name:"Prospector",stray:1b,totalFinds:0,trait_level:1} -> {name:"Prospector",totalFinds:0,trait_level:1}
+    name=Prospector | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=-1] {name:"Prospector",totalFinds:0,trait_level:-1} -> {name:"Prospector",totalFinds:0,trait_level:-1}
+    name=Prospector Invalid Roman Number Value | canLevel=true | description=Mining stone has a 2% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=-1] {level:-1,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:-1}
+    name=Prospector Invalid Roman Number Value | canLevel=true | description=Mining stone has a 2% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=0] {name:"Prospector",totalFinds:0,trait_level:0} -> {name:"Prospector",totalFinds:0,trait_level:0}
+    name=Prospector Invalid Roman Number Value | canLevel=true | description=Mining stone has a 3% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=0] {level:0,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:0}
+    name=Prospector Invalid Roman Number Value | canLevel=true | description=Mining stone has a 3% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=1] {name:"Prospector",totalFinds:0,trait_level:1} -> {name:"Prospector",totalFinds:0,trait_level:1}
+    name=Prospector | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=1] {level:1,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:1}
+    name=Prospector | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=2] {name:"Prospector",totalFinds:0,trait_level:2} -> {name:"Prospector",totalFinds:0,trait_level:2}
+    name=Prospector II | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=2] {level:2,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:2}
+    name=Prospector II | canLevel=true | description=Mining stone has a 4% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=3] {name:"Prospector",totalFinds:0,trait_level:3} -> {name:"Prospector",totalFinds:0,trait_level:3}
+    name=Prospector III | canLevel=true | description=Mining stone has a 6% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=3] {level:3,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:3}
+    name=Prospector III | canLevel=true | description=Mining stone has a 6% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=9] {name:"Prospector",totalFinds:0,trait_level:9} -> {name:"Prospector",totalFinds:0,trait_level:9}
+    name=Prospector IX | canLevel=true | description=Mining stone has a 12% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=9] {level:9,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:9}
+    name=Prospector IX | canLevel=true | description=Mining stone has a 12% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [trait_level=40] {name:"Prospector",totalFinds:0,trait_level:40} -> {name:"Prospector",totalFinds:0,trait_level:40}
+    name=Prospector XL | canLevel=false | description=Mining stone has a 42% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+prospector [legacy level=40] {level:40,name:"Prospector",totalFinds:0} -> {name:"Prospector",totalFinds:0,trait_level:40}
+    name=Prospector XL | canLevel=false | description=Mining stone has a 42% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{No minerals found yet}]]
+pummeling [empty] {} -> {name:"Pummeling"}
+    name=Pummeling | canLevel=false | description=Slams enemies into the ground | details=none
+pummeling [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Slams enemies into the ground | details=none
+pummeling [stray key] {name:"Pummeling",stray:1b} -> {name:"Pummeling"}
+    name=Pummeling | canLevel=false | description=Slams enemies into the ground | details=none
+rainy [empty] {} -> {name:"Rainy"}
+    name=Rainy | canLevel=false | description=While holding or wearing this item in the rain, mine faster! | details=none
+rainy [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=While holding or wearing this item in the rain, mine faster! | details=none
+rainy [stray key] {name:"Rainy",stray:1b} -> {name:"Rainy"}
+    name=Rainy | canLevel=false | description=While holding or wearing this item in the rain, mine faster! | details=none
+regeneration [empty] {} -> {name:"Healing",power:0}
+    name=Healing | canLevel=true | description=While holding or wearing this item, get the regeneration I effect. | details=none
+regeneration [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=While holding or wearing this item, get the regeneration I effect. | details=none
+regeneration [stray key] {name:"Healing",power:0,stray:1b} -> {name:"Healing",power:0}
+    name=Healing | canLevel=true | description=While holding or wearing this item, get the regeneration I effect. | details=none
+regeneration [power=-1] {name:"Healing",power:-1} -> {name:"Healing",power:-1}
+    name=Healing Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the regeneration Invalid Roman Number Value effect. | details=none
+regeneration [power=0] {name:"Healing",power:0} -> {name:"Healing",power:0}
+    name=Healing | canLevel=true | description=While holding or wearing this item, get the regeneration I effect. | details=none
+regeneration [power=1] {name:"Healing",power:1} -> {name:"Healing",power:1}
+    name=Healing II | canLevel=true | description=While holding or wearing this item, get the regeneration II effect. | details=none
+regeneration [power=2] {name:"Healing",power:2} -> {name:"Healing",power:2}
+    name=Healing III | canLevel=true | description=While holding or wearing this item, get the regeneration III effect. | details=none
+regeneration [power=3] {name:"Healing",power:3} -> {name:"Healing",power:3}
+    name=Healing IV | canLevel=true | description=While holding or wearing this item, get the regeneration IV effect. | details=none
+regeneration [power=9] {name:"Healing",power:9} -> {name:"Healing",power:4}
+    name=Healing V | canLevel=false | description=While holding or wearing this item, get the regeneration V effect. | details=none
+regeneration [power=40] {name:"Healing",power:40} -> {name:"Healing",power:4}
+    name=Healing V | canLevel=false | description=While holding or wearing this item, get the regeneration V effect. | details=none
+resistance [empty] {} -> {name:"Resistant",power:0}
+    name=Resistant | canLevel=true | description=While holding or wearing this item, get the resistance I effect. | details=none
+resistance [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=While holding or wearing this item, get the resistance I effect. | details=none
+resistance [stray key] {name:"Resistant",power:0,stray:1b} -> {name:"Resistant",power:0}
+    name=Resistant | canLevel=true | description=While holding or wearing this item, get the resistance I effect. | details=none
+resistance [power=-1] {name:"Resistant",power:-1} -> {name:"Resistant",power:-1}
+    name=Resistant Invalid Roman Number Value | canLevel=true | description=While holding or wearing this item, get the resistance Invalid Roman Number Value effect. | details=none
+resistance [power=0] {name:"Resistant",power:0} -> {name:"Resistant",power:0}
+    name=Resistant | canLevel=true | description=While holding or wearing this item, get the resistance I effect. | details=none
+resistance [power=1] {name:"Resistant",power:1} -> {name:"Resistant",power:1}
+    name=Resistant II | canLevel=true | description=While holding or wearing this item, get the resistance II effect. | details=none
+resistance [power=2] {name:"Resistant",power:2} -> {name:"Resistant",power:2}
+    name=Resistant III | canLevel=true | description=While holding or wearing this item, get the resistance III effect. | details=none
+resistance [power=3] {name:"Resistant",power:3} -> {name:"Resistant",power:3}
+    name=Resistant IV | canLevel=true | description=While holding or wearing this item, get the resistance IV effect. | details=none
+resistance [power=9] {name:"Resistant",power:9} -> {name:"Resistant",power:4}
+    name=Resistant V | canLevel=false | description=While holding or wearing this item, get the resistance V effect. | details=none
+resistance [power=40] {name:"Resistant",power:40} -> {name:"Resistant",power:4}
+    name=Resistant V | canLevel=false | description=While holding or wearing this item, get the resistance V effect. | details=none
+scorched [empty] {} -> {name:"Scorched",trait_level:0}
+    name=Scorched | canLevel=true | description=Sets enemies on fire for 4 seconds. Grants fire resistance while held. | details=none
+scorched [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Sets enemies on fire for 4 seconds. Grants fire resistance while held. | details=none
+scorched [stray key] {name:"Scorched",stray:1b,trait_level:0} -> {name:"Scorched",trait_level:0}
+    name=Scorched | canLevel=true | description=Sets enemies on fire for 4 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=-1] {name:"Scorched",trait_level:-1} -> {name:"Scorched",trait_level:-1}
+    name=Scorched Invalid Roman Number Value | canLevel=true | description=Sets enemies on fire for 2 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=-1] {level:-1,name:"Scorched"} -> {name:"Scorched",trait_level:-1}
+    name=Scorched Invalid Roman Number Value | canLevel=true | description=Sets enemies on fire for 2 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=0] {name:"Scorched",trait_level:0} -> {name:"Scorched",trait_level:0}
+    name=Scorched | canLevel=true | description=Sets enemies on fire for 4 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=0] {level:0,name:"Scorched"} -> {name:"Scorched",trait_level:0}
+    name=Scorched | canLevel=true | description=Sets enemies on fire for 4 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=1] {name:"Scorched",trait_level:1} -> {name:"Scorched",trait_level:1}
+    name=Scorched II | canLevel=true | description=Sets enemies on fire for 6 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=1] {level:1,name:"Scorched"} -> {name:"Scorched",trait_level:1}
+    name=Scorched II | canLevel=true | description=Sets enemies on fire for 6 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=2] {name:"Scorched",trait_level:2} -> {name:"Scorched",trait_level:2}
+    name=Scorched III | canLevel=false | description=Sets enemies on fire for 8 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=2] {level:2,name:"Scorched"} -> {name:"Scorched",trait_level:2}
+    name=Scorched III | canLevel=false | description=Sets enemies on fire for 8 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=3] {name:"Scorched",trait_level:3} -> {name:"Scorched",trait_level:3}
+    name=Scorched IV | canLevel=false | description=Sets enemies on fire for 10 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=3] {level:3,name:"Scorched"} -> {name:"Scorched",trait_level:3}
+    name=Scorched IV | canLevel=false | description=Sets enemies on fire for 10 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=9] {name:"Scorched",trait_level:9} -> {name:"Scorched",trait_level:9}
+    name=Scorched X | canLevel=false | description=Sets enemies on fire for 22 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=9] {level:9,name:"Scorched"} -> {name:"Scorched",trait_level:9}
+    name=Scorched X | canLevel=false | description=Sets enemies on fire for 22 seconds. Grants fire resistance while held. | details=none
+scorched [trait_level=40] {name:"Scorched",trait_level:40} -> {name:"Scorched",trait_level:40}
+    name=Scorched XLI | canLevel=false | description=Sets enemies on fire for 84 seconds. Grants fire resistance while held. | details=none
+scorched [legacy level=40] {level:40,name:"Scorched"} -> {name:"Scorched",trait_level:40}
+    name=Scorched XLI | canLevel=false | description=Sets enemies on fire for 84 seconds. Grants fire resistance while held. | details=none
+soulbound [empty] {} -> {name:"Soulbound"}
+    name=Soulbound | canLevel=false | description=Grants 15% bonus damage and mining speed when wielded by the original owner. | details=none
+soulbound [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=Grants 15% bonus damage and mining speed when wielded by the original owner. | details=none
+soulbound [stray key] {name:"Soulbound",stray:1b} -> {name:"Soulbound"}
+    name=Soulbound | canLevel=false | description=Grants 15% bonus damage and mining speed when wielded by the original owner. | details=none
+spawner [empty] {} -> {name:"Tomb Raider"}
+    name=Tomb Raider | canLevel=false | description=While held or worn, spawners around you will glow. | details=none
+spawner [renamed] {name:"Renamed"} -> {name:"Renamed"}
+    name=Renamed | canLevel=false | description=While held or worn, spawners around you will glow. | details=none
+spawner [stray key] {name:"Tomb Raider",stray:1b} -> {name:"Tomb Raider"}
+    name=Tomb Raider | canLevel=false | description=While held or worn, spawners around you will glow. | details=none
+stench [empty] {} -> {name:"Stench",trait_level:1}
+    name=Stench | canLevel=true | description=Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. | details=none
+stench [renamed] {name:"Renamed",trait_level:1} -> {name:"Renamed",trait_level:1}
+    name=Renamed | canLevel=true | description=Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. | details=none
+stench [stray key] {name:"Stench",stray:1b,trait_level:1} -> {name:"Stench",trait_level:1}
+    name=Stench | canLevel=true | description=Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=-1] {name:"Stench",trait_level:-1} -> {name:"Stench",trait_level:-1}
+    name=Stench Invalid Roman Number Value | canLevel=true | description=Hostile mobs within 2 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=-1] {level:-1,name:"Stench"} -> {name:"Stench",trait_level:-1}
+    name=Stench Invalid Roman Number Value | canLevel=true | description=Hostile mobs within 2 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=0] {name:"Stench",trait_level:0} -> {name:"Stench",trait_level:0}
+    name=Stench Invalid Roman Number Value | canLevel=true | description=Hostile mobs within 4 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=0] {level:0,name:"Stench"} -> {name:"Stench",trait_level:0}
+    name=Stench Invalid Roman Number Value | canLevel=true | description=Hostile mobs within 4 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=1] {name:"Stench",trait_level:1} -> {name:"Stench",trait_level:1}
+    name=Stench | canLevel=true | description=Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=1] {level:1,name:"Stench"} -> {name:"Stench",trait_level:1}
+    name=Stench | canLevel=true | description=Hostile mobs within 6 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=2] {name:"Stench",trait_level:2} -> {name:"Stench",trait_level:2}
+    name=Stench II | canLevel=true | description=Hostile mobs within 8 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=2] {level:2,name:"Stench"} -> {name:"Stench",trait_level:2}
+    name=Stench II | canLevel=true | description=Hostile mobs within 8 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=3] {name:"Stench",trait_level:3} -> {name:"Stench",trait_level:3}
+    name=Stench III | canLevel=false | description=Hostile mobs within 10 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=3] {level:3,name:"Stench"} -> {name:"Stench",trait_level:3}
+    name=Stench III | canLevel=false | description=Hostile mobs within 10 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=9] {name:"Stench",trait_level:9} -> {name:"Stench",trait_level:9}
+    name=Stench IX | canLevel=false | description=Hostile mobs within 22 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=9] {level:9,name:"Stench"} -> {name:"Stench",trait_level:9}
+    name=Stench IX | canLevel=false | description=Hostile mobs within 22 blocks are afflicted with Slowness and Weakness. | details=none
+stench [trait_level=40] {name:"Stench",trait_level:40} -> {name:"Stench",trait_level:40}
+    name=Stench XL | canLevel=false | description=Hostile mobs within 84 blocks are afflicted with Slowness and Weakness. | details=none
+stench [legacy level=40] {level:40,name:"Stench"} -> {name:"Stench",trait_level:40}
+    name=Stench XL | canLevel=false | description=Hostile mobs within 84 blocks are afflicted with Slowness and Weakness. | details=none
+thorny [empty] {} -> {name:"Thorny",trait_level:0}
+    name=Thorny | canLevel=true | description=Reflects 15% of damage taken back at the attacker. | details=none
+thorny [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Reflects 15% of damage taken back at the attacker. | details=none
+thorny [stray key] {name:"Thorny",stray:1b,trait_level:0} -> {name:"Thorny",trait_level:0}
+    name=Thorny | canLevel=true | description=Reflects 15% of damage taken back at the attacker. | details=none
+thorny [trait_level=-1] {name:"Thorny",trait_level:-1} -> {name:"Thorny",trait_level:-1}
+    name=Thorny Invalid Roman Number Value | canLevel=true | description=Reflects 0% of damage taken back at the attacker. | details=none
+thorny [legacy level=-1] {level:-1,name:"Thorny"} -> {name:"Thorny",trait_level:-1}
+    name=Thorny Invalid Roman Number Value | canLevel=true | description=Reflects 0% of damage taken back at the attacker. | details=none
+thorny [trait_level=0] {name:"Thorny",trait_level:0} -> {name:"Thorny",trait_level:0}
+    name=Thorny | canLevel=true | description=Reflects 15% of damage taken back at the attacker. | details=none
+thorny [legacy level=0] {level:0,name:"Thorny"} -> {name:"Thorny",trait_level:0}
+    name=Thorny | canLevel=true | description=Reflects 15% of damage taken back at the attacker. | details=none
+thorny [trait_level=1] {name:"Thorny",trait_level:1} -> {name:"Thorny",trait_level:1}
+    name=Thorny II | canLevel=true | description=Reflects 30% of damage taken back at the attacker. | details=none
+thorny [legacy level=1] {level:1,name:"Thorny"} -> {name:"Thorny",trait_level:1}
+    name=Thorny II | canLevel=true | description=Reflects 30% of damage taken back at the attacker. | details=none
+thorny [trait_level=2] {name:"Thorny",trait_level:2} -> {name:"Thorny",trait_level:2}
+    name=Thorny III | canLevel=true | description=Reflects 45% of damage taken back at the attacker. | details=none
+thorny [legacy level=2] {level:2,name:"Thorny"} -> {name:"Thorny",trait_level:2}
+    name=Thorny III | canLevel=true | description=Reflects 45% of damage taken back at the attacker. | details=none
+thorny [trait_level=3] {name:"Thorny",trait_level:3} -> {name:"Thorny",trait_level:3}
+    name=Thorny IV | canLevel=true | description=Reflects 60% of damage taken back at the attacker. | details=none
+thorny [legacy level=3] {level:3,name:"Thorny"} -> {name:"Thorny",trait_level:3}
+    name=Thorny IV | canLevel=true | description=Reflects 60% of damage taken back at the attacker. | details=none
+thorny [trait_level=9] {name:"Thorny",trait_level:9} -> {name:"Thorny",trait_level:9}
+    name=Thorny X | canLevel=false | description=Reflects 150% of damage taken back at the attacker. | details=none
+thorny [legacy level=9] {level:9,name:"Thorny"} -> {name:"Thorny",trait_level:9}
+    name=Thorny X | canLevel=false | description=Reflects 150% of damage taken back at the attacker. | details=none
+thorny [trait_level=40] {name:"Thorny",trait_level:40} -> {name:"Thorny",trait_level:40}
+    name=Thorny XLI | canLevel=false | description=Reflects 615% of damage taken back at the attacker. | details=none
+thorny [legacy level=40] {level:40,name:"Thorny"} -> {name:"Thorny",trait_level:40}
+    name=Thorny XLI | canLevel=false | description=Reflects 615% of damage taken back at the attacker. | details=none
+torch_place [empty] {} -> {DAMAGE:10,name:"Spelunking"}
+    name=Spelunking | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. | details=none
+torch_place [renamed] {DAMAGE:10,name:"Renamed"} -> {DAMAGE:10,name:"Renamed"}
+    name=Renamed | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. | details=none
+torch_place [stray key] {DAMAGE:10,name:"Spelunking",stray:1b} -> {DAMAGE:10,name:"Spelunking"}
+    name=Spelunking | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a torch and use 10 durability points. | details=none
+unbreaking [empty] {} -> {name:"Unbreaking",trait_level:0}
+    name=Unbreaking | canLevel=true | description=This tool has a 20% chance of not taking damage. | details=none
+unbreaking [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=This tool has a 20% chance of not taking damage. | details=none
+unbreaking [stray key] {name:"Unbreaking",stray:1b,trait_level:0} -> {name:"Unbreaking",trait_level:0}
+    name=Unbreaking | canLevel=true | description=This tool has a 20% chance of not taking damage. | details=none
+unbreaking [trait_level=-1] {name:"Unbreaking",trait_level:-1} -> {name:"Unbreaking",trait_level:-1}
+    name=Unbreaking Invalid Roman Number Value | canLevel=true | description=This tool has a 0% chance of not taking damage. | details=none
+unbreaking [legacy level=-1] {level:-1,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:-1}
+    name=Unbreaking Invalid Roman Number Value | canLevel=true | description=This tool has a 0% chance of not taking damage. | details=none
+unbreaking [trait_level=0] {name:"Unbreaking",trait_level:0} -> {name:"Unbreaking",trait_level:0}
+    name=Unbreaking | canLevel=true | description=This tool has a 20% chance of not taking damage. | details=none
+unbreaking [legacy level=0] {level:0,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:0}
+    name=Unbreaking | canLevel=true | description=This tool has a 20% chance of not taking damage. | details=none
+unbreaking [trait_level=1] {name:"Unbreaking",trait_level:1} -> {name:"Unbreaking",trait_level:1}
+    name=Unbreaking II | canLevel=true | description=This tool has a 40% chance of not taking damage. | details=none
+unbreaking [legacy level=1] {level:1,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:1}
+    name=Unbreaking II | canLevel=true | description=This tool has a 40% chance of not taking damage. | details=none
+unbreaking [trait_level=2] {name:"Unbreaking",trait_level:2} -> {name:"Unbreaking",trait_level:2}
+    name=Unbreaking III | canLevel=true | description=This tool has a 60% chance of not taking damage. | details=none
+unbreaking [legacy level=2] {level:2,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:2}
+    name=Unbreaking III | canLevel=true | description=This tool has a 60% chance of not taking damage. | details=none
+unbreaking [trait_level=3] {name:"Unbreaking",trait_level:3} -> {name:"Unbreaking",trait_level:3}
+    name=Unbreaking IV | canLevel=true | description=This tool has a 80% chance of not taking damage. | details=none
+unbreaking [legacy level=3] {level:3,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:3}
+    name=Unbreaking IV | canLevel=true | description=This tool has a 80% chance of not taking damage. | details=none
+unbreaking [trait_level=9] {name:"Unbreaking",trait_level:9} -> {name:"Unbreaking",trait_level:9}
+    name=Unbreakable | canLevel=false | description=This tool has a 200% chance of not taking damage. | details=none
+unbreaking [legacy level=9] {level:9,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:9}
+    name=Unbreakable | canLevel=false | description=This tool has a 200% chance of not taking damage. | details=none
+unbreaking [trait_level=40] {name:"Unbreaking",trait_level:40} -> {name:"Unbreaking",trait_level:40}
+    name=Unbreakable | canLevel=false | description=This tool has a 820% chance of not taking damage. | details=none
+unbreaking [legacy level=40] {level:40,name:"Unbreaking"} -> {name:"Unbreaking",trait_level:40}
+    name=Unbreakable | canLevel=false | description=This tool has a 820% chance of not taking damage. | details=none
+veiny [empty] {} -> {name:"Veiny",power:5.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 5 in each direction. | details=none
+veiny [renamed] {name:"Renamed",power:5.0f} -> {name:"Renamed",power:5.0f}
+    name=Renamed | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 5 in each direction. | details=none
+veiny [stray key] {name:"Veiny",power:5.0f,stray:1b} -> {name:"Veiny",power:5.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 5 in each direction. | details=none
+veiny [power=-1] {name:"Veiny",power:-1.0f} -> {name:"Veiny",power:-1.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to -1 in each direction. | details=none
+veiny [power=0] {name:"Veiny",power:0.0f} -> {name:"Veiny",power:0.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 0 in each direction. | details=none
+veiny [power=1] {name:"Veiny",power:1.0f} -> {name:"Veiny",power:1.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 1 in each direction. | details=none
+veiny [power=2] {name:"Veiny",power:2.0f} -> {name:"Veiny",power:2.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 2 in each direction. | details=none
+veiny [power=3] {name:"Veiny",power:3.0f} -> {name:"Veiny",power:3.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 3 in each direction. | details=none
+veiny [power=9] {name:"Veiny",power:9.0f} -> {name:"Veiny",power:9.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 9 in each direction. | details=none
+veiny [power=40] {name:"Veiny",power:40.0f} -> {name:"Veiny",power:40.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 40 in each direction. | details=none
+void_touched [empty] {} -> {name:"Void-Touched",trait_level:0}
+    name=Void-Touched | canLevel=true | description=Right-click to teleport up to 8.0 blocks. Costs 10 durability. | details=none
+void_touched [renamed] {name:"Renamed",trait_level:0} -> {name:"Renamed",trait_level:0}
+    name=Renamed | canLevel=true | description=Right-click to teleport up to 8.0 blocks. Costs 10 durability. | details=none
+void_touched [stray key] {name:"Void-Touched",stray:1b,trait_level:0} -> {name:"Void-Touched",trait_level:0}
+    name=Void-Touched | canLevel=true | description=Right-click to teleport up to 8.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=-1] {name:"Void-Touched",trait_level:-1} -> {name:"Void-Touched",trait_level:-1}
+    name=Void-Touched Invalid Roman Number Value | canLevel=true | description=Right-click to teleport up to 4.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=-1] {level:-1,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:-1}
+    name=Void-Touched Invalid Roman Number Value | canLevel=true | description=Right-click to teleport up to 4.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=0] {name:"Void-Touched",trait_level:0} -> {name:"Void-Touched",trait_level:0}
+    name=Void-Touched | canLevel=true | description=Right-click to teleport up to 8.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=0] {level:0,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:0}
+    name=Void-Touched | canLevel=true | description=Right-click to teleport up to 8.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=1] {name:"Void-Touched",trait_level:1} -> {name:"Void-Touched",trait_level:1}
+    name=Void-Touched II | canLevel=true | description=Right-click to teleport up to 12.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=1] {level:1,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:1}
+    name=Void-Touched II | canLevel=true | description=Right-click to teleport up to 12.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=2] {name:"Void-Touched",trait_level:2} -> {name:"Void-Touched",trait_level:2}
+    name=Void-Touched III | canLevel=false | description=Right-click to teleport up to 16.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=2] {level:2,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:2}
+    name=Void-Touched III | canLevel=false | description=Right-click to teleport up to 16.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=3] {name:"Void-Touched",trait_level:3} -> {name:"Void-Touched",trait_level:3}
+    name=Void-Touched IV | canLevel=false | description=Right-click to teleport up to 20.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=3] {level:3,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:3}
+    name=Void-Touched IV | canLevel=false | description=Right-click to teleport up to 20.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=9] {name:"Void-Touched",trait_level:9} -> {name:"Void-Touched",trait_level:9}
+    name=Void-Touched X | canLevel=false | description=Right-click to teleport up to 44.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=9] {level:9,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:9}
+    name=Void-Touched X | canLevel=false | description=Right-click to teleport up to 44.0 blocks. Costs 10 durability. | details=none
+void_touched [trait_level=40] {name:"Void-Touched",trait_level:40} -> {name:"Void-Touched",trait_level:40}
+    name=Void-Touched XLI | canLevel=false | description=Right-click to teleport up to 168.0 blocks. Costs 10 durability. | details=none
+void_touched [legacy level=40] {level:40,name:"Void-Touched"} -> {name:"Void-Touched",trait_level:40}
+    name=Void-Touched XLI | canLevel=false | description=Right-click to teleport up to 168.0 blocks. Costs 10 durability. | details=none
+wither [empty] {} -> {name:"Withering",power:0}
+    name=Withering | canLevel=true | description=When attacking with tool, apply the wither I effect to the target for 3 seconds. | details=none
+wither [renamed] {name:"Renamed",power:0} -> {name:"Renamed",power:0}
+    name=Renamed | canLevel=true | description=When attacking with tool, apply the wither I effect to the target for 3 seconds. | details=none
+wither [stray key] {name:"Withering",power:0,stray:1b} -> {name:"Withering",power:0}
+    name=Withering | canLevel=true | description=When attacking with tool, apply the wither I effect to the target for 3 seconds. | details=none
+wither [power=-1] {name:"Withering",power:-1} -> {name:"Withering",power:-1}
+    name=Withering Invalid Roman Number Value | canLevel=true | description=When attacking with tool, apply the wither Invalid Roman Number Value effect to the target for 3 seconds. | details=none
+wither [power=0] {name:"Withering",power:0} -> {name:"Withering",power:0}
+    name=Withering | canLevel=true | description=When attacking with tool, apply the wither I effect to the target for 3 seconds. | details=none
+wither [power=1] {name:"Withering",power:1} -> {name:"Withering",power:1}
+    name=Withering II | canLevel=true | description=When attacking with tool, apply the wither II effect to the target for 3 seconds. | details=none
+wither [power=2] {name:"Withering",power:2} -> {name:"Withering",power:2}
+    name=Withering III | canLevel=true | description=When attacking with tool, apply the wither III effect to the target for 3 seconds. | details=none
+wither [power=3] {name:"Withering",power:3} -> {name:"Withering",power:3}
+    name=Withering IV | canLevel=true | description=When attacking with tool, apply the wither IV effect to the target for 3 seconds. | details=none
+wither [power=9] {name:"Withering",power:9} -> {name:"Withering",power:4}
+    name=Withering V | canLevel=false | description=When attacking with tool, apply the wither V effect to the target for 3 seconds. | details=none
+wither [power=40] {name:"Withering",power:40} -> {name:"Withering",power:4}
+    name=Withering V | canLevel=false | description=When attacking with tool, apply the wither V effect to the target for 3 seconds. | details=none
+nemesis [saved] {killCounts:{"minecraft:spider":1,"minecraft:zombie":3},name:"Nemesis",trait_level:2} -> {killCounts:{"minecraft:spider":1,"minecraft:zombie":3},name:"Nemesis",trait_level:2}
+    name=Nemesis II | canLevel=true | description=Tracks mob kills and deals 10% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{Zombie +10%}]]
+nemesis [saved] {killCounts:{"minecraft:creeper":40},level:3,name:"Nemesis"} -> {killCounts:{"minecraft:creeper":40},name:"Nemesis",trait_level:3}
+    name=Nemesis III | canLevel=false | description=Tracks mob kills and deals 15% bonus damage to your most killed mob type. | details=empty[style={color=gray}, siblings=[literal{Creeper +15%}]]
+combo [saved] {charged:123456L,name:"Dexterous",points:5} -> {charged:123456L,name:"Dexterous",points:5}
+    name=Dexterous | canLevel=false | description=Hitting enemies within 5 seconds after hitting them deals an extra 25% damage. | details=none
+charged [saved] {charged:999L,name:"Charged",points:7} -> {charged:999L,name:"Charged",points:7}
+    name=Charged | canLevel=false | description=After 7 seconds, hitting and enemy will summon a lightning bolt and empty the charge meter. | details=none
+learning [saved] {count:7,name:"Learning",points:9} -> {count:7,name:"Learning",points:9}
+    name=Learning | canLevel=false | description=After breaking 10 blocks as allowed by this tool, gain 9 experience points. | details=empty[style={color=gray}, siblings=[literal{70% Learned}]]
+prospector [saved] {name:"Prospector",totalFinds:12,trait_level:4} -> {name:"Prospector",totalFinds:12,trait_level:4}
+    name=Prospector IV | canLevel=true | description=Mining stone has a 7% chance to discover bonus minerals. | details=empty[style={color=gray}, siblings=[literal{12 minerals found}]]
+chaotic [saved] {chaoticSeed:987654321L,name:"Chaotic"} -> {chaoticSeed:987654321L,name:"Chaotic"}
+    name=Chaotic | canLevel=false | description=Melee damage bonus randomly fluctuates every 5 seconds, up to +50% | details=empty[style={color=gray}, siblings=[literal{Unknown}]]
+dirt_place [saved] {DAMAGE:3,name:"Nobody's Grace"} -> {DAMAGE:3,name:"Nobody's Grace"}
+    name=Nobody's Grace | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a dirt block and use 3 durability points. | details=none
+dirt_place [saved] {DAMAGE:1} -> {DAMAGE:1,name:"<a forger>'s Grace"}
+    name=<a forger>'s Grace | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a dirt block and use 1 durability points. | details=none
+torch_place [saved] {DAMAGE:4,name:"Spelunking"} -> {DAMAGE:4,name:"Spelunking"}
+    name=Spelunking | canLevel=false | description=Right clicking on a block while crouching with the tool in hand will place a torch and use 4 durability points. | details=none
+fire_place [saved] {DAMAGE:5,name:"Fire Starter"} -> {DAMAGE:5,name:"Fire Starter"}
+    name=Fire Starter | canLevel=false | description=Right clicking on the top of a block while crouching with the tool in hand will start a fire and use 5 durability points. | details=none
+flame_thrower [saved] {DAMAGE:6,name:"Flame Thrower"} -> {DAMAGE:6,name:"Flame Thrower"}
+    name=Flame Thrower | canLevel=false | description=Right clicking throws a fire ball. | details=none
+explode [saved] {name:"Explosive",power:6.5f} -> {name:"Explosive",power:6.5f}
+    name=Explosive | canLevel=false | description=Upon breaking a block (allowed by tool type), the current block position will explode causing damage to surrounding blocks. | details=none
+veiny [saved] {name:"Veiny",power:3.0f} -> {name:"Veiny",power:3.0f}
+    name=Veiny | canLevel=false | description=Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to 3 in each direction. | details=none
+hasty [saved] {name:"Hasty",power:1} -> {name:"Hasty",power:1,trait_level:1}
+    name=Hasty II | canLevel=false | description=While holding or wearing this item, get the Haste II effect. | details=none
+hasty [saved] {level:1,name:"Hasty"} -> {name:"Hasty",power:1,trait_level:1}
+    name=Hasty II | canLevel=false | description=While holding or wearing this item, get the Haste II effect. | details=none
+hasty [saved] {name:"Hasty",power:0,trait_level:1} -> {name:"Hasty",power:1,trait_level:1}
+    name=Hasty II | canLevel=false | description=While holding or wearing this item, get the Haste II effect. | details=none
+hasty [saved] {name:"Hasty",power:1,trait_level:0} -> {name:"Hasty",power:0,trait_level:0}
+    name=Hasty | canLevel=true | description=While holding or wearing this item, get the Haste I effect. | details=none
+blinding [saved] {name:"Blinding",power:3} -> {name:"Blinding",power:0}
+    name=Blinding | canLevel=false | description=When attacking with tool, apply the blindness I effect to the target for 4 seconds. | details=none
+fire_resistance [saved] {name:"Heat Resistant",power:2} -> {name:"Heat Resistant",power:0}
+    name=Heat Resistant | canLevel=false | description=While holding or wearing this item, get the fire resistance I effect. | details=none
+poison [saved] {name:"Poisonous",power:4} -> {name:"Poisonous",power:4}
+    name=Poisonous V | canLevel=false | description=When attacking with tool, apply the poison V effect to the target for 5 seconds. | details=none
+flaming [saved] {name:"Flaming",points:4} -> {name:"Flaming",points:4}
+    name=Flaming III | canLevel=true | description=Sets enemy on fire for 4 seconds. | details=none
+necrotic [saved] {name:"Necrotic",points:7} -> {name:"Necrotic",points:7}
+    name=Necrotic VI | canLevel=true | description=Heals 35% of damage dealt to target. | details=none
+unbreaking [saved] {name:"Unbreaking",trait_level:4} -> {name:"Unbreaking",trait_level:4}
+    name=Unbreakable | canLevel=false | description=This tool has a 100% chance of not taking damage. | details=none
+featherweight [saved] {name:"Featherweight",trait_level:3} -> {name:"Featherweight",trait_level:3}
+    name=Weightless | canLevel=false | description=Reduces fall damage by 100%. | details=none

@@ -13,7 +13,7 @@ package dev.marston.randomloot.loot;
  * test.
  *
  * <p>{@code statMultiplier} is the product of the gear's {@code StatsModifier} traits -
- * see {@link LootUtils#statMultiplier(net.minecraft.world.item.ItemStack)}.
+ * see {@code TraitDispatch.statMultiplier(ItemStack)}.
  */
 public final class GearStats {
 
@@ -23,6 +23,38 @@ public final class GearStats {
 	/** XP needed to go from {@code level} to the next one. */
 	public static int maxXp(int level) {
 		return (int) (500 * Math.pow(2, level));
+	}
+
+	/**
+	 * What gaining XP does to a piece of gear's level.
+	 *
+	 * @param level        the level it ends on
+	 * @param xp           the XP left over towards the next level
+	 * @param levelsGained how many levels it went up, each of which is a level-up
+	 */
+	public record XpStep(int level, int xp, int levelsGained) {
+	}
+
+	/**
+	 * Adds {@code amount} XP to gear at {@code level} with {@code xp} towards the next
+	 * one. Each level costs its own {@link #maxXp}, so one large gain can cross several.
+	 */
+	public static XpStep xpStep(int level, int xp, int amount) {
+		// long, and floored at zero: a huge grant used to wrap the int negative, leaving
+		// gear that could never level again. The floor repairs gear that already did.
+		long total = Math.max(0, xp) + (long) amount;
+
+		int gained = 0;
+		int max = maxXp(level);
+		while (total >= max) {
+			total -= max;
+			level++;
+			gained++;
+			max = maxXp(level);
+		}
+
+		// The loop leaves total below max, which is an int.
+		return new XpStep(level, (int) total, gained);
 	}
 
 	/** Goodness gained per level-up: a flat 10% on the existing stats. */

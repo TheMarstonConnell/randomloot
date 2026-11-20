@@ -1,18 +1,12 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
 import dev.marston.randomloot.Config;
-import dev.marston.randomloot.loot.NbtCompat;
-
-import dev.marston.randomloot.loot.ToolType;
-import dev.marston.randomloot.loot.modifiers.ModifierConstants;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.LeveledModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.Util;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -20,9 +14,7 @@ import net.minecraft.world.level.Level;
 
 import java.util.List;
 
-
-public class Healing extends LeveledModifier implements HoldModifier {
-
+public class Healing extends AbstractModifier implements HoldModifier {
 	/** Shared by every Living item, so wearing several doesn't multiply the whispers. */
 	private static final WhisperLimiter WHISPERS = new WhisperLimiter();
 
@@ -37,53 +29,14 @@ public class Healing extends LeveledModifier implements HoldModifier {
 			"...hello?",
 			"mmm...");
 
-	public Healing(String name, int level) {
-		this.name = name;
-		this.level = level;
-	}
-
-	public Healing() {
-		this("Living", 1);
-	}
-
-	@Override
-	protected int minLevel() {
-		return 1;
-	}
-
-	@Override
-	protected int maxLevel() {
-		return 3;
-	}
-
 	private float getPower() {
 		// Level 1: 0.5%, Level 2: 1%, Level 3: 2%
-		return 0.005f * (float) Math.pow(2, level - 1);
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Healing(NbtCompat.getStringOr(tag, NAME, "Living"), ModifierConstants.getLevel(tag, 1));
-	}
-
-	@Override
-	public String tagName() {
-		return "living";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GREEN;
+		return 0.005f * (float) Math.pow(2, traitLevel() - 1);
 	}
 
 	@Override
 	public String description() {
 		return "While held or worn, " + String.format("%.1f", getPower() * 100) + "% chance per tick to repair itself";
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return true;
 	}
 
 	@Override
@@ -99,7 +52,7 @@ public class Healing extends LeveledModifier implements HoldModifier {
 			stack.setDamageValue(Math.max(stack.getDamageValue() - 1, 0));
 
 			if (f < power / 5 && holder instanceof Player p
-					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LivingWhispersPerMinute)) {
+					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LIVING_WHISPERS_PER_MINUTE.get())) {
 				MutableComponent comp = Component.empty();
 
 				comp.append(Util.getRandom(WHISPER_LINES, level.getRandom()));

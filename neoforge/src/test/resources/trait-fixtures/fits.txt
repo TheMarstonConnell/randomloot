@@ -1,0 +1,61 @@
+# one letter per ToolType in declaration order [Pickaxe, Shovel, Axe, Sword, Helmet, Chestplate, Leggings, Boots, Null], then one per place [plains, ocean, frozen, desert, jungle, nether, end, unknown] (- for a trait with no biome rule)
+absorption YYY.YYYY. --------
+adrenaline ....YYYY. --------
+aquatic YYY.YYYY. .Y...... Ocean and river biomes
+attracting YYY...... --------
+bezerk ..YY..... --------
+blinding ..YY..... --------
+bulwark ....YYYY. --------
+busted YYY...... --------
+catalyst YYYYYYYYY --------
+chaotic YYYY....Y --------
+charged ..YY..... --------
+clunky ..YY..... --------
+combo ..YY..... --------
+critical ..YY..... --------
+crowd_pleaser ..YY..... --------
+detecting YYY.YYYY. --------
+dirt_place YYYY....Y --------
+early_bird ..YY..... --------
+excavator YYY...... --------
+executioner ..YY..... --------
+explode YYY...... --------
+feasting YYYY....Y --------
+featherweight .......Y. --------
+fierce YYYY....Y --------
+filling YYY.YYYY. --------
+fire_place YYYY....Y --------
+fire_resistance YYY.YYYY. --------
+flame_thrower ...Y..... --------
+flaming ..YY..... --------
+fragile YYYY....Y --------
+frozen ..YY..... ..Y..... Cold biomes (temperature <= 0.15)
+haileys_wrath ..YY..... --------
+hasty YYY.YYYY. --------
+hunter ...YYYYY. --------
+learning YYY...... --------
+living YYYYYYYYY --------
+lumbering ..Y...... --------
+magnetized ....YYYY. --------
+melting YYY...... --------
+munchies YYYY....Y --------
+naturalist YYYYYYYYY --------
+necrotic ..YY..... --------
+nemesis ..YY..... --------
+overgrown .YYY..... ....Y... Jungle, swamp and bamboo biomes
+poison ..YY..... --------
+prospector Y........ --------
+pummeling ..YY..... --------
+rainy YYY.YYYY. --------
+regeneration YYY.YYYY. --------
+resistance YYY.YYYY. --------
+scorched ..YY..... ...Y.Y.. Hot biomes (temperature >= 1.0) or the Nether
+soulbound YYYY....Y --------
+spawner YYYYYYYYY --------
+stench YYYYYYYYY --------
+thorny ....YYYY. --------
+torch_place YYYY....Y --------
+unbreaking YYYYYYYYY --------
+veiny YYY...... --------
+void_touched YYYY....Y ......Y. The End dimension only
+wither ..YY..... --------

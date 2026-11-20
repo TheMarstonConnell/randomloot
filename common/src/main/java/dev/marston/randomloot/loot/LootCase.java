@@ -28,9 +28,9 @@ public class LootCase extends Item {
 				Direction direction = source.state().getValue(DispenserBlock.FACING);
 				Position position = DispenserBlock.getDispensePosition(source);
 
-				ItemStack tool = LootUtils.genTool(null, source.level(), source.pos());
+				ItemStack gear = LootUtils.dispenseCase(source.level(), source.pos());
 
-				spawnTool(source.level(), tool, 6, direction, position);
+				spawnTool(source.level(), gear, 6, direction, position);
 
 				return ItemStack.EMPTY;
 			}
@@ -73,25 +73,26 @@ public class LootCase extends Item {
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
 		if (!level.isClientSide() && player instanceof ServerPlayer sPlayer) {
-			ItemStack tool = LootUtils.generateTool(sPlayer, level);
+			ItemStack gear = LootUtils.openCase(sPlayer);
 			// The gear is fully decided here; the roll only delays the reveal while the
 			// texture wheel spins. Dispensed gear (initDispenser above) skips the roll:
 			// item entities never inventory-tick, so they could not settle on the ground.
-			LootUtils.startRoll(tool, level.getGameTime() + LootUtils.ROLL_TICKS);
+			LootUtils.startRoll(gear, level.getGameTime() + LootUtils.ROLL_TICKS);
 			if (consumeCase) {
-				// The case stacks to 1, so the new tool takes its slot directly
+				// The case stacks to 1, so the new gear takes its slot directly
 				// instead of landing in the first free inventory slot.
-				player.setItemInHand(hand, tool);
-			} else if (!player.getInventory().add(tool)) {
-				// Creative keeps the case in hand, so the tool goes to the inventory.
-				player.drop(tool, false);
+				player.setItemInHand(hand, gear);
+			} else if (!player.getInventory().add(gear)) {
+				// Creative keeps the case in hand, so the gear goes to the inventory.
+				player.drop(gear, false);
 			}
 		} else if (consumeCase) {
 			lootCase.shrink(1); // client prediction; the server replaces the stack above
 		}
 
-		// Awards the single ITEM_USED stat for the case. genTool() reads this exact
-		// stat to size the loot "goodness" curve, so it must only be counted once.
+		// Awards the single ITEM_USED stat for the case. LootUtils.openCase reads this
+		// exact stat to size the loot "goodness" curve, so it must only be counted once,
+		// and only after the case has been opened.
 		player.awardStat(Stats.ITEM_USED.get(this));
 
 		return InteractionResultHolder.sidedSuccess(player.getItemInHand(hand), level.isClientSide());

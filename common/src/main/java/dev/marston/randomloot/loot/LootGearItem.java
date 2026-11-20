@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import dev.marston.randomloot.component.ModDataComponents;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponentMap;
@@ -141,16 +142,8 @@ public abstract class LootGearItem extends Item {
 			return;
 		}
 
-		// The GearTags.has guard skips the per-tick trait deserialization for
-		// trait-less gear.
-		if (!isInHoldSlot(stack, holder, slotId, selected) || !GearTags.has(stack, Modifier.MODTAG)) {
-			return;
-		}
-
-		for (Modifier mod : LootUtils.getModifiers(stack)) {
-			if (mod instanceof HoldModifier holdMod) {
-				holdMod.hold(stack, level, holder);
-			}
+		if (isInHoldSlot(stack, holder, slotId, selected)) {
+			TraitDispatch.tick(stack, level, holder);
 		}
 	}
 

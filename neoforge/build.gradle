@@ -55,5 +55,14 @@ dependencies {
 
 tasks.named('test', Test) {
     useJUnitPlatform()
+
+    // The unit-test JVM boots the mod, config file included, out of a game directory that
+    // outlives the run, and a config file keeps the values it already holds. One written
+    // before a default changed made every test that expects defaults fail, on that checkout
+    // only. So each run starts without the file and the mod writes a fresh one.
+    def modConfig = "config/${mod_id}-common.toml".toString()
+    doFirst {
+        new File(workingDir, modConfig).delete()
+    }
 }
 

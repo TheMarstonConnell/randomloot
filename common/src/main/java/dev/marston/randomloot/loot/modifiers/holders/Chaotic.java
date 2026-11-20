@@ -1,76 +1,43 @@
 package dev.marston.randomloot.loot.modifiers.holders;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
 import java.util.Random;
 
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
 import dev.marston.randomloot.loot.modifiers.StatsModifier;
+import dev.marston.randomloot.loot.modifiers.Stored;
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 public class Chaotic extends AbstractModifier implements StatsModifier, EntityHurtModifier {
-
     private static final String SEED = "chaoticSeed";
     private static final long UPDATE_INTERVAL = 100L; // 5 seconds = 100 ticks (20 ticks/sec)
     private static final float MAX_MODIFIER = 0.50f; // +/- 50% max
 
-    private long seed;
+    /**
+     * What this tool's swings are drawn from. Every grant gets its own ({@link #granted});
+     * one seed shared by every Chaotic tool made them all swing in step.
+     */
+    private final Stored<Long> seed = stored(SEED, 12345L);
 
-    public Chaotic() {
-        this.name = "Chaotic";
-        this.seed = new Random().nextLong();
-    }
-
-    public Chaotic(String name, long seed) {
-        this.name = name;
-        this.seed = seed;
-    }
-
+    /** A fresh Chaotic with a seed of its own, drawn from the grant's random source. */
     @Override
-    public String tagName() {
-        return "chaotic";
-    }
-
-    @Override
-    public ChatFormatting color() {
-        return ChatFormatting.DARK_PURPLE;
+    public Modifier granted(RandomSource random) {
+        Chaotic fresh = (Chaotic) super.granted(random);
+        fresh.seed.set(random.nextLong());
+        return fresh;
     }
 
     @Override
     public String description() {
         return "Melee damage bonus randomly fluctuates every 5 seconds, up to +50%";
-    }
-
-    @Override
-    public CompoundTag toNBT() {
-        CompoundTag tag = new CompoundTag();
-        tag.putString(NAME, name);
-        tag.putLong(SEED, seed);
-        return tag;
-    }
-
-    @Override
-    public Modifier fromNBT(CompoundTag tag) {
-        String name = NbtCompat.getStringOr(tag, NAME, "Chaotic");
-        long s = NbtCompat.getLongOr(tag, SEED, 12345L); // Fixed default seed
-        return new Chaotic(name, s);
-    }
-
-    @Override
-    public boolean forTool(ToolType type) {
-        // The swing only ever shows up as bonus melee damage, so on armor it would be
-        // a dead trait with a tooltip that fluctuates for no reason.
-        return !type.isArmor();
     }
 
     /**
@@ -84,7 +51,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
         // Get which "period" we're in (changes every UPDATE_INTERVAL ticks)
         long period = level.getGameTime() / UPDATE_INTERVAL;
         // Use seed XOR'd with period * large prime for better distribution
-        Random rand = new Random(seed ^ (period * 6364136223846793005L));
+        Random rand = new Random(seed.get() ^ (period * 6364136223846793005L));
         return (rand.nextFloat() * 2 * MAX_MODIFIER) - MAX_MODIFIER;
     }
 
@@ -125,11 +92,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
     }
 
     @Override
-    public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        if (hurtee.level().isClientSide()) {
-            return false;
-        }
-
+    public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
         float currentState = getCurrentState(hurtee.level());
 
         // Apply damage modifier based on current state. dealBonusDamage ignores
@@ -139,7 +102,5 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
             float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
             dealBonusDamage(hurtee, hurter, baseDamage * currentState);
         }
-
-        return false;
     }
 }

@@ -1,16 +1,13 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.Stored;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,24 +21,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class Veiny extends AbstractModifier implements BlockBreakModifier {
-
-	private float power;
 	private final static String POWER = "power";
 
-	public Veiny(String name, float power) {
-		this.name = name;
-		this.power = power;
-	}
-
-	public Veiny() {
-		this.name = "Veiny";
-		this.power = 5.0f;
-	}
+	/** How far the vein is followed. Stored, so gear keeps the reach it was made with. */
+	private final Stored<Float> power = stored(POWER, 5.0f);
 
 	public void checkAndBreak(ItemStack itemstack, BlockPos pos, Player player, Level level, int index, Block blockType,
 			Set<BlockPos> tobreak, Set<BlockPos> visited) {
 
-		if (index > power) {
+		if (index > power.get()) {
 			return;
 		}
 
@@ -74,28 +62,24 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
-			return false;
+			return;
 		}
 
 		ServerPlayer player = (ServerPlayer) p;
 
 		if (!player.isCrouching()) {
-			return false;
+			return;
 		}
 
 		Level l = player.level();
 
-		if (l.isClientSide()) {
-			return false;
-		}
-
 		LootItem li = (LootItem) itemstack.getItem();
 
 		if (!li.isCorrectToolForDrops(itemstack, broken)) {
-			return false;
+			return;
 		}
 
 		Block b = broken.getBlock();
@@ -108,56 +92,17 @@ public class Veiny extends AbstractModifier implements BlockBreakModifier {
 			boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, l, l.getBlockState(blockPos));
 
 			if (destroyed) {
-				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 				if (itemstack.isEmpty()) {
 					break;
 				}
 			}
 		}
-		return false;
-	}
-
-	@Override
-	public CompoundTag toNBT() {
-
-		CompoundTag tag = new CompoundTag();
-
-		tag.putFloat(POWER, power);
-
-		tag.putString(NAME, name);
-
-		return tag;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Veiny(NbtCompat.getStringOr(tag, NAME, "Veiny"), NbtCompat.getFloatOr(tag, POWER, 5.0f));
-	}
-
-	@Override
-	public String tagName() {
-		return "veiny";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.DARK_GREEN;
 	}
 
 	@Override
 	public String description() {
 		return "Breaking any block while crouching will cause all blocks of the same type adjacent to it to break up to "
-				+ ((int) power) + " in each direction.";
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		// Incompatible with Excavator
-		return !(mod instanceof Excavator);
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
+				+ power.get().intValue() + " in each direction.";
 	}
 }

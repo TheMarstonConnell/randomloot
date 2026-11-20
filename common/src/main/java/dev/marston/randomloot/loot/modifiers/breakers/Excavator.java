@@ -1,17 +1,13 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,15 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Excavator extends AbstractModifier implements BlockBreakModifier {
-
-	public Excavator(String name) {
-		this.name = name;
-	}
-
-	public Excavator() {
-		this.name = "Excavator";
-	}
-
 	private List<BlockPos> get3x3Positions(BlockPos center, ServerPlayer player) {
 		List<BlockPos> positions = new ArrayList<>();
 
@@ -71,23 +58,19 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 	}
 
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity p) {
 
 		if (!(p instanceof ServerPlayer)) {
-			return false;
+			return;
 		}
 
 		ServerPlayer player = (ServerPlayer) p;
 
 		if (!player.isCrouching()) {
-			return false;
+			return;
 		}
 
 		Level level = player.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		LootItem li = (LootItem) itemstack.getItem();
 		List<BlockPos> positions = get3x3Positions(pos, player);
@@ -108,41 +91,13 @@ public class Excavator extends AbstractModifier implements BlockBreakModifier {
 			// along (so a shulker box keeps its contents); only real breaks cost
 			// durability.
 			if (LootUtils.breakBlockAsPlayer(itemstack, blockPos, player, level, state)) {
-				LootUtils.damageGear(itemstack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
 			}
 		}
-
-		return false;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Excavator(NbtCompat.getStringOr(tag, NAME, "Excavator"));
-	}
-
-	@Override
-	public String tagName() {
-		return "excavator";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.GREEN;
 	}
 
 	@Override
 	public String description() {
 		return "Breaking blocks while crouching mines a 3x3 area perpendicular to the surface.";
-	}
-
-	@Override
-	public boolean compatible(Modifier mod) {
-		// Incompatible with Veiny
-		return !(mod instanceof Veiny);
-	}
-
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
 	}
 }

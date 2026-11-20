@@ -3,8 +3,7 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
-import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import dev.marston.randomloot.platform.Services;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
@@ -25,7 +24,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -50,7 +48,7 @@ public class LootArmorItem extends LootGearItem {
 	}
 
 	public static float getDefense(ItemStack stack, ToolType type) {
-		return GearStats.defense(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
+		return GearStats.defense(LootUtils.getStats(stack), type, TraitDispatch.statMultiplier(stack));
 	}
 
 	public static float getToughness(ItemStack stack, ToolType type) {

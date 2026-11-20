@@ -3,6 +3,7 @@ package dev.marston.randomloot.neoforge;
 import dev.marston.randomloot.loot.LootArmorItem;
 import dev.marston.randomloot.loot.LootGearItem;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
@@ -17,8 +18,8 @@ public class NeoForgeLootArmorItem extends LootArmorItem {
 
     @Override
     public boolean supportsEnchantment(ItemStack stack, Holder<Enchantment> enchantment) {
-        Boolean common = supportsEnchantmentCommon(stack, enchantment);
-        return common != null ? common : super.supportsEnchantment(stack, enchantment);
+        return GameHooks.enchantGate(stack, enchantment, true, false,
+                () -> super.supportsEnchantment(stack, enchantment));
     }
 
     /** tool_mod changes on nearly every use (XP); it alone should not replay the re-equip animation. */
