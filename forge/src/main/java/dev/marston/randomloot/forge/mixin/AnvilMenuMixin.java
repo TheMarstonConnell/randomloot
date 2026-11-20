@@ -1,6 +1,6 @@
 package dev.marston.randomloot.forge.mixin;
 
-import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.inventory.AnvilMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -21,9 +21,6 @@ public abstract class AnvilMenuMixin {
     @Redirect(method = "createResult", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/world/item/enchantment/Enchantment;canEnchant(Lnet/minecraft/world/item/ItemStack;)Z"))
     private boolean randomloot$gearEnchantGate(Enchantment enchantment, ItemStack stack) {
-        if (LootUtils.isLootGear(stack)) {
-            return LootUtils.gearAcceptsEnchantment(stack, enchantment);
-        }
-        return enchantment.canEnchant(stack);
+        return GameHooks.enchantGate(stack, enchantment, true, false, () -> enchantment.canEnchant(stack));
     }
 }

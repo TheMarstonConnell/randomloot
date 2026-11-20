@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.marston.randomloot.loot.NameGenerator;
 import java.util.Arrays;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -12,6 +13,11 @@ import org.junit.jupiter.api.Test;
  * resolve to the same smith, drawn from that band's name list.
  */
 class ForgerWorldConstantTest {
+
+	@BeforeAll
+	static void bootstrap() {
+		McBootstrap.init();
+	}
 
 	private static final float COLD = 0.0f;
 	private static final float TEMPERATE = 0.7f;

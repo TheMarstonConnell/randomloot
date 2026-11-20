@@ -3,8 +3,7 @@ package dev.marston.randomloot.loot;
 import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.advancements.TraitObtainedTrigger;
-import dev.marston.randomloot.loot.modifiers.*;
-import dev.marston.randomloot.loot.modifiers.hurter.EarlyBird;
+import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -53,7 +52,7 @@ public class LootItem extends LootGearItem {
 	}
 
 	public static float getDigSpeed(ItemStack stack, ToolType type) {
-		return GearStats.digSpeed(LootUtils.getStats(stack), type, LootUtils.statMultiplier(stack));
+		return GearStats.digSpeed(LootUtils.getStats(stack), type, TraitDispatch.statMultiplier(stack));
 	}
 
 	public static float getAttackSpeed(ItemStack stack, ToolType type) {
@@ -187,34 +186,19 @@ public class LootItem extends LootGearItem {
 	@Override
 	public boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 
+		// A rolling weapon earns no XP either; its traits are the dispatch's to skip.
 		if (LootUtils.isRolling(itemstack)) {
 			return true;
 		}
 
 		ToolType type = LootUtils.getToolType(itemstack);
 
+		// Before the traits: a trait this XP rolls onto the weapon joins the same hit.
 		if (type == ToolType.AXE || type == ToolType.SWORD) {
 			LootUtils.addXp(itemstack, hurter, 1);
 		}
 
-		List<Modifier> mods = LootUtils.getModifiers(itemstack);
-		// Early Bird judges the target's health from before this hit, recorded by the
-		// pre-damage hook. Run it first: another trait's bonus hit would overwrite that.
-		mods.sort(Comparator.comparing(mod -> !(mod instanceof EarlyBird)));
-
-		boolean shouldSkipBreak = false;
-		for (Modifier mod : mods) {
-			if (mod instanceof EntityHurtModifier ehm) {
-				if (ehm.hurtEnemy(itemstack, hurtee, hurter)) {
-					shouldSkipBreak = true;
-				}
-			}
-
-		}
-		if (!shouldSkipBreak) {
-			// damageGear gives the Unbreaking trait its roll.
-			LootUtils.damageGear(itemstack, 1, hurter, EquipmentSlot.MAINHAND);
-		}
+		TraitDispatch.hit(itemstack, hurtee, hurter);
 		return true;
 	}
 
@@ -249,25 +233,8 @@ public class LootItem extends LootGearItem {
 		}
 
 		if (!level.isClientSide() && blockState.getDestroySpeed(level, pos) != 0.0F) {
-
-			List<Modifier> mods = LootUtils.getModifiers(stack);
-
-			boolean shouldSkipBreak = false;
-			for (Modifier mod : mods) {
-
-				if (mod instanceof BlockBreakModifier bbm && bbm.startBreak(stack, blockState, pos, player)) {
-					shouldSkipBreak = true;
-				}
-
-			}
-
-			if (!shouldSkipBreak) {
-				// damageGear gives the Unbreaking trait its roll.
-				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
-			}
-
+			TraitDispatch.blockBroken(stack, blockState, pos, player);
 			LootUtils.addXp(stack, player, 1);
-
 		}
 
 		return true;
@@ -283,21 +250,14 @@ public class LootItem extends LootGearItem {
 			return InteractionResult.PASS;
 		}
 		ToolType type = LootUtils.getToolType(itemstack);
-		List<Modifier> mods = LootUtils.getModifiers(itemstack);
 
-		// First, try UseModifier abilities
-		for (Modifier mod : mods) {
-
-			if (mod instanceof UseModifier um) {
-				InteractionResult result = um.use(ctx);
-				if (result.consumesAction()) {
-					return result;  // Modifier consumed the action
-				}
-			}
-
+		// Traits get the click first.
+		InteractionResult traitResult = TraitDispatch.useOn(ctx);
+		if (traitResult.consumesAction()) {
+			return traitResult;
 		}
 
-		// No modifier consumed - try vanilla tool behaviors
+		// No trait consumed it - try vanilla tool behaviors
 		if (type == ToolType.AXE) {
 			InteractionResult result = tryAxeActions(ctx);
 			if (result.consumesAction()) return result;
@@ -325,7 +285,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, stripped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -337,7 +297,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, scraped, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -349,7 +309,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, unwaxed, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				LootUtils.damageGear(stack, 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -372,7 +332,7 @@ public class LootItem extends LootGearItem {
 			if (!level.isClientSide()) {
 				level.setBlock(pos, flattened, 11);
 				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				LootUtils.damageGear(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
+				TraitDispatch.spendDurability(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
 			}
 			return InteractionResult.SUCCESS;
 		}
@@ -390,18 +350,13 @@ public class LootItem extends LootGearItem {
 	public @NotNull InteractionResultHolder<ItemStack> use(@NotNull Level level, Player player, @NotNull InteractionHand hand) {
 		ItemStack toolItem = player.getItemInHand(hand);
 
-		if (LootUtils.isRolling(toolItem)) {
-			return InteractionResultHolder.pass(toolItem);
-		}
-
 		// A right-click-anywhere trait in the main hand gives the off-hand item the click
 		// first. The client always predicts PASS for these traits and goes on to use the
 		// off hand as well, so firing here would do both: raise the shield AND throw the
 		// fireball. Whether the off-hand item acts can't be known without using it, so
 		// wait for its real result: afterUseItem fires the trait if that use passes.
 		if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer serverPlayer
-				&& !player.getOffhandItem().isEmpty() && LootUtils.getModifiers(toolItem).stream()
-						.anyMatch(mod -> mod instanceof UseModifier um && um.useAnywhere())) {
+				&& !player.getOffhandItem().isEmpty() && TraitDispatch.usesAnywhere(toolItem)) {
 			DEFERRED_USES.put(serverPlayer, level.getGameTime());
 			return InteractionResultHolder.pass(toolItem);
 		}
@@ -431,7 +386,7 @@ public class LootItem extends LootGearItem {
 		}
 
 		ItemStack tool = player.getMainHandItem();
-		if (tool.getItem() instanceof LootItem item && !LootUtils.isRolling(tool)) {
+		if (tool.getItem() instanceof LootItem item) {
 			item.useAnywhereTraits(player.level(), player, InteractionHand.MAIN_HAND, tool);
 		}
 	}
@@ -450,13 +405,7 @@ public class LootItem extends LootGearItem {
 
 	/** Runs the tool's right-click-anywhere traits; true when one of them acted. */
 	private boolean useAnywhereTraits(Level level, Player player, InteractionHand hand, ItemStack toolItem) {
-		boolean used = false;
-
-		for (Modifier mod : LootUtils.getModifiers(toolItem)) {
-			if (mod instanceof UseModifier um && um.useAnywhere()) {
-				used = used || um.use(level, player, hand);
-			}
-		}
+		boolean used = TraitDispatch.use(toolItem, level, player, hand);
 
 		// Award the tool's ITEM_USED stat exactly once, server-side. awardStat also
 		// updates scoreboard objectives, unlike a bare getStats().increment().

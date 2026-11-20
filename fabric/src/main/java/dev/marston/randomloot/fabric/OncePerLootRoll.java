@@ -3,6 +3,7 @@ package dev.marston.randomloot.fabric;
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonSerializationContext;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -18,8 +19,9 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 /**
- * Gate on the loot pools Fabric injects: passes for the first pool carrying
- * {@code item} that a {@link LootContext} reaches and fails for every later one.
+ * The condition on the loot pools Fabric injects: the first pool carrying {@code item}
+ * that a {@link LootContext} reaches gets the item's roll, at the chance the config
+ * holds at that moment, and every later one fails.
  *
  * <p>A table that rolls other tables hands them its own context, and every matching
  * table carries the injected pools, so without this one chest rolled once per nested
@@ -56,8 +58,12 @@ public record OncePerLootRoll(Item item) implements LootItemCondition {
     @Override
     public boolean test(LootContext context) {
         // Loot can be generated off the server thread (worldgen), hence the lock.
+        // The context's one roll is spent whether or not the chance then comes up.
         synchronized (ROLLED) {
-            return ROLLED.computeIfAbsent(context, c -> new HashSet<>(2)).add(this.item);
+            if (!ROLLED.computeIfAbsent(context, c -> new HashSet<>(2)).add(this.item)) {
+                return false;
+            }
         }
+        return GameHooks.lootInjectionRolls(this.item, context);
     }
 }

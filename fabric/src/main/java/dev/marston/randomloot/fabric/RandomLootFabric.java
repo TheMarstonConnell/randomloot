@@ -2,12 +2,7 @@ package dev.marston.randomloot.fabric;
 
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.commands.ModCommands;
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootInjection;
-import dev.marston.randomloot.loot.modifiers.KillDispatcher;
-import dev.marston.randomloot.loot.modifiers.holders.BlockHighlighter;
-import dev.marston.randomloot.platform.GameHook;
 import dev.marston.randomloot.platform.GameHooks;
 import fuzs.forgeconfigapiport.api.config.v2.ForgeConfigRegistry;
 import fuzs.forgeconfigapiport.api.config.v2.ModConfigEvents;
@@ -21,15 +16,25 @@ import net.fabricmc.fabric.api.loot.v2.LootTableEvents;
 import net.minecraft.core.Registry;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.storage.loot.LootPool;
-import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraftforge.fml.config.ModConfig;
 
 import static net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem;
 
+/**
+ * The Fabric mod entrypoint and, in {@link #registerHooks}, most of the Fabric shim for
+ * the loader hook contract: each listener unpacks one Fabric API event and makes one call
+ * to {@link GameHooks}, whose javadoc says what that hook has to be handed.
+ *
+ * <p>Fabric API has no event, or none at the right stage, for seven hooks; those are
+ * mixins, listed in {@code randomloot.fabric.mixins.json}: DAMAGE_PRE and DAMAGE_POST
+ * ({@code LivingEntityMixin} and {@code PlayerMixin}), BREAK_SPEED ({@code PlayerMixin}),
+ * AFTER_USE_ITEM ({@code ServerPlayerGameModeMixin}), ANVIL_COMBINE
+ * ({@code AnvilMenuMixin}), ENCHANT_GATE ({@code EnchantmentHelperMixin} for the table,
+ * {@code AnvilMenuMixin} for books) and SMITHING_TAKE ({@code SmithingMenuMixin}).
+ */
 public class RandomLootFabric implements ModInitializer {
 
     @Override
@@ -45,86 +50,46 @@ public class RandomLootFabric implements ModInitializer {
                 new ResourceLocation(RandomLoot.MODID, "once_per_loot_roll"), OncePerLootRoll.TYPE);
 
         // Forge-style TOML config via Forge Config API Port; same file name on both loaders.
+        // The hooks go first: Forge Config API Port loads the file inside register(), so a
+        // loading listener added after it never hears the first load, and the mod then runs
+        // on its defaults whatever the file says.
+        registerHooks();
         ForgeConfigRegistry.INSTANCE.register(RandomLoot.MODID, ModConfig.Type.COMMON, Config.SPEC);
-        ModConfigEvents.loading(RandomLoot.MODID).register(config -> Config.onLoad());
-        // Both registrations matter: dropping .reloading silently breaks /reload-time
-        // config refresh, which Forge gets from the single ModConfigEvent.
-        ModConfigEvents.reloading(RandomLoot.MODID).register(config -> Config.onLoad());
-        GameHooks.bind(GameHook.CONFIG);
-
-        registerEvents();
     }
 
-    private static void registerEvents() {
-        ServerLivingEntityEvents.AFTER_DEATH.register(KillDispatcher::onLivingDeath);
-        GameHooks.bind(GameHook.KILL);
+    private static void registerHooks() {
+        // Both registrations matter: dropping .reloading silently breaks /reload-time
+        // config refresh, which Forge gets from the single ModConfigEvent.
+        ModConfigEvents.loading(RandomLoot.MODID).register(config -> GameHooks.config());
+        ModConfigEvents.reloading(RandomLoot.MODID).register(config -> GameHooks.config());
 
-        // Wired by mixin rather than a Fabric API callback - see randomloot.fabric.mixins.json.
-        // LivingEntityMixin (@WrapOperation on the actuallyHurt calls inside hurt: the
-        // pre-damage trait hook before, the armor XP/durability hook after - Fabric API
-        // for 1.20.1 has no AFTER_DAMAGE event), PlayerMixin (getDestroySpeed),
-        // AnvilMenuMixin, SmithingMenuMixin (onTake).
-        GameHooks.bind(GameHook.DAMAGE_PRE);
-        GameHooks.bind(GameHook.DAMAGE_POST);
-        // No hook to wire: vanilla only damages ArmorItem instances, so
-        // ArmorDispatcher.onLivingDamagePost spends armor durability (and rolls
-        // Unbreaking through onArmorHurt) itself.
-        GameHooks.bind(GameHook.ARMOR_HURT);
-        GameHooks.bind(GameHook.BREAK_SPEED);
-        GameHooks.bind(GameHook.ANVIL_COMBINE);
-        GameHooks.bind(GameHook.SMITHING_TAKE);
+        ServerLivingEntityEvents.AFTER_DEATH.register(GameHooks::kill);
 
-        // ServerPlayerGameModeMixin (useItem and useItemOn RETURN): off-hand arbitration
-        // for right-click traits.
-        GameHooks.bind(GameHook.AFTER_USE_ITEM);
+        ServerTickEvents.END_SERVER_TICK.register(server -> GameHooks.serverTick());
 
-        ServerTickEvents.END_SERVER_TICK.register(server -> BlockHighlighter.onServerTick());
-        GameHooks.bind(GameHook.SERVER_TICK);
-
-        ServerLifecycleEvents.SERVER_STOPPING.register(server -> BlockHighlighter.onServerStopping());
-        GameHooks.bind(GameHook.SERVER_STOPPING);
+        ServerLifecycleEvents.SERVER_STOPPING.register(server -> GameHooks.serverStopping());
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) ->
-                ModCommands.register(dispatcher));
-        GameHooks.bind(GameHook.COMMANDS);
+                GameHooks.commands(dispatcher));
 
-        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(output -> {
-            for (Item item : ModItems.creativeTabItems()) {
-                output.accept(item);
-            }
-        });
-        GameHooks.bind(GameHook.CREATIVE_TAB);
+        ItemGroupEvents.modifyEntriesEvent(ModItems.CREATIVE_TAB).register(output ->
+                GameHooks.creativeTab(ModItems.CREATIVE_TAB, output::accept));
 
-        // Per-type/per-piece enchantment gating, by mixin: EnchantmentHelperMixin (the
-        // table's candidate list) and AnvilMenuMixin (books). Fabric API for 1.20.1 has
-        // no enchanting event, and vanilla's EnchantmentCategory instanceof checks
-        // refuse the single gear item outright.
-        GameHooks.bind(GameHook.ENCHANT_GATE);
-
-        // Loot injection: the LootInjection policy is common; pools are Fabric's
-        // delivery mechanism (Forge uses the case_item global loot modifier). Every
-        // matching table gets the pools, including tables that are only ever rolled
+        // Fabric API for 1.20.1 has no LootTableEvents.MODIFY_DROPS (26.x appends to the
+        // finished drops through it), so the injected items are pools added to each table
+        // as it loads. Every matching table gets them, including tables only ever rolled
         // from inside another matching table (a datapack chest table that rolls other
         // chest tables), so each pool is gated on OncePerLootRoll: nested tables share
-        // the parent's LootContext, and only the first pool to reach it rolls. Without
-        // that gate such chests paid out several times Forge's rate.
-        // (26.x appends to the finished drops through LootTableEvents.MODIFY_DROPS
-        // instead; Fabric API for 1.20.1 has no such event.)
+        // the parent's LootContext, and only the first pool to reach it rolls. The chance
+        // is asked for at that roll, not baked into the pool, so the config as it stands
+        // then decides, as on Forge. Forge's shim is the case_item global loot modifier.
         LootTableEvents.MODIFY.register((resourceManager, lootManager, id, tableBuilder, source) -> {
-            if (!LootInjection.matchesTable(id.getPath())) {
-                return;
-            }
-
-            for (LootInjection.Entry entry : LootInjection.entries()) {
+            for (Item item : GameHooks.lootInjectionPools(id)) {
                 tableBuilder.withPool(LootPool.lootPool()
                         .setRolls(ConstantValue.exactly(1.0f))
-                        // Order matters: the gate goes first so a context's one roll is
-                        // spent whether or not the chance then comes up.
-                        .when(() -> new OncePerLootRoll(entry.item()))
-                        .when(LootItemRandomChanceCondition.randomChance((float) entry.chance()))
-                        .add(lootTableItem(entry.item())));
+                        .when(() -> new OncePerLootRoll(item))
+                        .add(lootTableItem(item)));
             }
         });
-        GameHooks.bind(GameHook.LOOT_INJECTION);
     }
 }

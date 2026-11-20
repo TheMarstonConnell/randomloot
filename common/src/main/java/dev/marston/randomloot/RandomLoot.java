@@ -25,8 +25,6 @@ public class RandomLoot {
         ModCriteria.init();
         ModItems.init();
         Recipies.init();
-
-        GenWiki.genWiki();
     }
 
     /**

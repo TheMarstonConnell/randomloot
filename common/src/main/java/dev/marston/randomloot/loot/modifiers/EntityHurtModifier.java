@@ -5,7 +5,12 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 public interface EntityHurtModifier extends Modifier {
-	boolean hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter);
+	/**
+	 * Called by {@link TraitDispatch#hit} after a melee hit with the gear has landed, on
+	 * the server only. The hit's durability is the dispatch's to spend, and so is saving
+	 * this trait if the hook changed what it stores.
+	 */
+	void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter);
 
 	/**
 	 * Applies follow-up bonus damage from a {@link #hurtEnemy} handler.

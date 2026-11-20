@@ -1,17 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.breakers;
 
-import dev.marston.randomloot.loot.NbtCompat;
-
-import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -28,23 +21,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class Melting extends AbstractModifier implements BlockBreakModifier {
-
-	public Melting(String name) {
-		this.name = name;
-	}
-
-	public Melting() {
-		this.name = "Melting";
-	}
-
 	@Override
-	public boolean startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
+	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
 
 		Level level = player.level();
-
-		if (level.isClientSide()) {
-			return false;
-		}
 
 		ServerLevel serverLevel = (ServerLevel) level;
 		AABB box = new AABB(Vec3.atCenterOf(pos.east().south().below()), Vec3.atCenterOf(pos.west().north().above()));
@@ -110,23 +90,6 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 			}
 			});
 		});
-
-		return false;
-	}
-
-	@Override
-	public Modifier fromNBT(CompoundTag tag) {
-		return new Melting(NbtCompat.getStringOr(tag, NAME, "Melting"));
-	}
-
-	@Override
-	public String tagName() {
-		return "melting";
-	}
-
-	@Override
-	public ChatFormatting color() {
-		return ChatFormatting.RED;
 	}
 
 	@Override
@@ -134,8 +97,4 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 		return "Items dropped by blocks broken with this tool will be smelted.";
 	}
 
-	@Override
-	public boolean forTool(ToolType type) {
-		return isMiningTool(type);
-	}
 }

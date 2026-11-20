@@ -5,10 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.marston.randomloot.loot.modifiers.holders.WhisperLimiter;
 import java.util.UUID;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /** The Living trait's per-player whisper budget (issue #182). */
 class WhisperLimiterTest {
+
+	@BeforeAll
+	static void bootstrap() {
+		McBootstrap.init();
+	}
 
 	private static final UUID ALEX = UUID.randomUUID();
 	private static final UUID STEVE = UUID.randomUUID();

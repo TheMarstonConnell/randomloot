@@ -7,6 +7,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
@@ -113,6 +114,14 @@ public interface Modifier {
 	default Modifier forWorld(long worldSeed) {
 		return this;
 	}
+
+	/**
+	 * This trait as a fresh grant puts it on gear: a new instance holding the same
+	 * state, with anything the trait rolls per grant drawn from {@code random}. No two
+	 * grants share an instance, so nothing one piece of gear does to its trait can
+	 * reach another's.
+	 */
+	Modifier granted(RandomSource random);
 
 	default boolean canLevel() {
 		return false;

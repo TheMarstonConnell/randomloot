@@ -3,10 +3,16 @@ package dev.marston.randomloot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import dev.marston.randomloot.loot.LootUtils;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /** Pure-math helpers that back tool naming and leveling. */
 class LootUtilsMathTest {
+
+	@BeforeAll
+	static void bootstrap() {
+		McBootstrap.init();
+	}
 
 	@Test
 	void romanNumeralsCoverEachBreakpoint() {

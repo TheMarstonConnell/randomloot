@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import dev.marston.randomloot.loot.GearStats;
 import dev.marston.randomloot.loot.ToolType;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -13,6 +14,11 @@ import org.junit.jupiter.api.Test;
  * the numbers directly, so the curves are checkable here.
  */
 class GearStatsTest {
+
+	@BeforeAll
+	static void bootstrap() {
+		McBootstrap.init();
+	}
 
 	private static final float EPSILON = 0.0001f;
 
@@ -87,6 +93,32 @@ class GearStatsTest {
 		assertEquals(500, GearStats.maxXp(0));
 		assertEquals(1000, GearStats.maxXp(1));
 		assertEquals(2000, GearStats.maxXp(2));
+	}
+
+	@Test
+	void xpStepCrossesEachLevelAtItsOwnCost() {
+		// 500 for the first level and 1000 for the second leave 100 of 1600. The loop once
+		// reused the starting level's cost, which turned the same XP into three levels.
+		assertEquals(new GearStats.XpStep(2, 100, 2), GearStats.xpStep(0, 0, 1600));
+
+		assertEquals(new GearStats.XpStep(0, 499, 0), GearStats.xpStep(0, 0, 499));
+		assertEquals(new GearStats.XpStep(1, 0, 1), GearStats.xpStep(0, 0, 500));
+		assertEquals(new GearStats.XpStep(2, 0, 1), GearStats.xpStep(1, 900, 100), "XP already earned counts");
+	}
+
+	@Test
+	void xpStepSurvivesAGrantThatOnceOverflowed() {
+		// xp + amount used to be added as ints and wrap negative, leaving gear that could
+		// never level again.
+		GearStats.XpStep huge = GearStats.xpStep(0, 400, Integer.MAX_VALUE);
+
+		assertTrue(huge.xp() >= 0 && huge.xp() < GearStats.maxXp(huge.level()),
+				"XP left over should sit below the next level's cost, got " + huge);
+		assertEquals(huge.level(), huge.levelsGained(), "from level 0, every level reached was gained");
+		assertTrue(huge.level() >= 20, "two billion XP is at least twenty levels, got " + huge.level());
+
+		// Gear that wrapped back then is repaired the next time it earns anything.
+		assertEquals(new GearStats.XpStep(3, 10, 0), GearStats.xpStep(3, -50, 10));
 	}
 
 	@Test

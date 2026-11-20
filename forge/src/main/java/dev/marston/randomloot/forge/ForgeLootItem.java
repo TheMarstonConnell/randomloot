@@ -3,6 +3,7 @@ package dev.marston.randomloot.forge;
 import dev.marston.randomloot.loot.LootGearItem;
 import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
+import dev.marston.randomloot.platform.GameHooks;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraftforge.common.ToolAction;
@@ -21,7 +22,8 @@ public class ForgeLootItem extends LootItem {
     /** The enchanting table's per-item hook; the anvil path is mixin/AnvilMenuMixin. */
     @Override
     public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-        return LootUtils.gearAcceptsEnchantment(stack, enchantment);
+        return GameHooks.enchantGate(stack, enchantment, true, false,
+                () -> super.canApplyAtEnchantingTable(stack, enchantment));
     }
 
     /** The mod's NBT changes on nearly every use (XP); it alone should not replay the re-equip animation. */
