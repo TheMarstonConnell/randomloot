@@ -522,6 +522,9 @@ Port fixes across from 26.x; the mechanical API deltas are:
   run client-side and predict the cost. `CompoundTag.copy()` sizes its map to the
   contents here, so trait iteration order differs from 26.x - a ported gametest that
   leans on that order can pass without the fix it guards; re-break the fix to check.
+- **Gametests that clean up after themselves** must only discard what they made: the
+  shared tests run side by side in 3x3x3 plots, and a "discard every entity within 8
+  blocks" in one test removed the item another had just dropped (it showed on 1.20.1).
 - **Releases**: publish.yml (same file on 26.x) builds BOTH version branches per tag and
   skips CurseForge/Modrinth for a jar whose `scripts/modhash.sh` hash matches the
   previous release (reproducible archives are configured in build-logic).

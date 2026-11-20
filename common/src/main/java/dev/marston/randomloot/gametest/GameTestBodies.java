@@ -71,6 +71,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.entity.projectile.LargeFireball;
+import net.minecraft.world.entity.projectile.Projectile;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
@@ -1340,6 +1341,10 @@ public final class GameTestBodies {
 	public static void armorXpPerHit(GameTestHelper helper) {
 		enablePvp(helper);
 		ServerPlayer attacker = mockVulnerablePlayer(helper);
+		// Inside this test's own structure, wearers included (they stand two blocks from
+		// the attacker): raising a shield ticks the wearer, and a ticked player picks up
+		// any item lying where it stands - another test's, if it stood in that test.
+		attacker.setPos(helper.absoluteVec(new Vec3(1.5, 1.0, 3.5)));
 
 		// Generic damage skips armor: 10 dealt, 10 taken.
 		ServerPlayer plain = chestplateWearer(helper, attacker, 0.0);
@@ -2760,9 +2765,11 @@ public final class GameTestBodies {
 		boolean fired = sword.getDamageValue() > 0;
 
 		// Leave nothing behind for the next case or the neighbouring tests: thrown
-		// projectiles, fireballs, a raised shield.
+		// projectiles, fireballs, a raised shield. Projectiles only: the box reaches into
+		// the tests next door, and discarding everything in it took the item another
+		// test had just dropped (seen on 1.20.1, where the two ended up neighbours).
 		player.stopUsingItem();
-		helper.getLevel().getEntities(player, player.getBoundingBox().inflate(8.0), e -> !(e instanceof ServerPlayer))
+		helper.getLevel().getEntities(player, player.getBoundingBox().inflate(8.0), e -> e instanceof Projectile)
 				.forEach(e -> e.discard());
 		return fired;
 	}
