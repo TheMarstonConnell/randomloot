@@ -87,8 +87,9 @@ class ConfigSettingTest {
 	}
 
 	@Test
-	void aSettingReadsAsItsDefaultBeforeTheFileLoads() {
-		// No config file is loaded in a unit test, which is the state early world gen can see.
+	void aSettingReadsAsItsDefaultFromAFreshFile() {
+		// A unit-test run loads the config file as the game does. The test task deletes the
+		// file first, so the mod has just written it and every setting holds its default.
 		for (Setting<?> setting : everySetting()) {
 			assertEquals(setting.defaultValue(), setting.get(), setting.key());
 		}
