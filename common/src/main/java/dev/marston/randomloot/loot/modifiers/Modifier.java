@@ -74,6 +74,11 @@ public interface Modifier {
 	 */
 	Component displayName();
 
+	/** The trait's line in a gear tooltip: its display name in its colour. */
+	default Component loreLine() {
+		return makeComp(displayName()).withStyle(color());
+	}
+
 	/**
 	 * Translatable description, keyed {@code modifier.randomloot.<tag>.description} with
 	 * {@link #description()} as fallback. Leveling traits ship no lang entry on purpose:

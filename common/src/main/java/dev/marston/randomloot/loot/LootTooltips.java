@@ -107,7 +107,7 @@ final class LootTooltips {
 		mods.sort(Comparator.comparing(Modifier::tagName));
 
 		for (Modifier modifier : mods) {
-			tipList.accept(Modifier.makeComp(modifier.displayName()).withStyle(modifier.color()));
+			tipList.accept(modifier.loreLine());
 			if (show) {
 				Component details = modifier.writeDetailsToLore(level);
 

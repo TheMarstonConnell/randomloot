@@ -25,6 +25,9 @@ public class Melting extends AbstractModifier implements BlockBreakModifier {
 			SingleRecipeInput input = new SingleRecipeInput(stack);
 			level.recipeAccess().getRecipeFor(RecipeType.SMELTING, input, level).ifPresent(holder -> {
 				ItemStack result = holder.value().assemble(input);
+				if (result.isEmpty()) {
+					return;
+				}
 
 				// The recipe result is for ONE input item, but a drop is often a
 				// stack (2-5 raw copper, Fortune), so smelt the whole stack rather

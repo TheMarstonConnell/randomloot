@@ -394,8 +394,8 @@ class TraitFixtureTest {
 
 	/** What gear shows for a trait: the name with its level, the description, and how both are rendered. */
 	private static String render(Modifier trait) {
-		List<Component> lore = List.of(Modifier.makeComp(trait.displayName()).withStyle(trait.color()));
-		List<Component> shiftLore = List.of(Modifier.makeComp(trait.displayName()).withStyle(trait.color()));
+		List<Component> lore = List.of(trait.loreLine());
+		List<Component> shiftLore = List.of(trait.loreLine());
 		String details = details(trait);
 
 		return "name=" + trait.name() + " | canLevel=" + trait.canLevel() + " | color=" + trait.color().name()
