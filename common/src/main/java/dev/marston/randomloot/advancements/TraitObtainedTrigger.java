@@ -45,13 +45,9 @@ public class TraitObtainedTrigger extends SimpleCriterionTrigger<TraitObtainedTr
 				.apply(i, TriggerInstance::new));
 
 		public boolean matches(List<String> traits, String source) {
-			if (this.trait.isPresent() && !traits.contains(this.trait.get())) {
-				return false;
-			}
-			if (!this.count.matches(traits.size())) {
-				return false;
-			}
-			return this.source.isEmpty() || this.source.get().equals(source);
+			return this.trait.map(traits::contains).orElse(true)
+					&& this.count.matches(traits.size())
+					&& this.source.map(s -> s.equals(source)).orElse(true);
 		}
 	}
 }

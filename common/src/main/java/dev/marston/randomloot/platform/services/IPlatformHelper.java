@@ -11,9 +11,6 @@ import org.jetbrains.annotations.Nullable;
 
 public interface IPlatformHelper {
 
-    /** The loader's name ("NeoForge"/"Fabric"), for logging. */
-    String platformName();
-
     /**
      * Creates the main tool item. Loaders may return a subclass that hooks
      * their item extension points (NeoForge's canPerformAction,

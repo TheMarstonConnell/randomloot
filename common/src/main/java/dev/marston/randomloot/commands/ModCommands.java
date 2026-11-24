@@ -5,7 +5,6 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
-import dev.marston.randomloot.items.ModItems;
 import dev.marston.randomloot.loot.GearStats;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
@@ -43,8 +42,8 @@ public class ModCommands {
 		if (player == null) {
 			return builder.buildFuture();
 		}
-		ItemStack held = heldGear(player);
-		if (held.isEmpty()) {
+		ItemStack held = player.getMainHandItem();
+		if (!LootUtils.isLootGear(held)) {
 			return builder.buildFuture();
 		}
 		return SharedSuggestionProvider.suggest(ModifierRegistry.getModifiers().values().stream()
@@ -93,17 +92,12 @@ public class ModCommands {
 	private static int give(CommandSourceStack source, String typeName) throws CommandSyntaxException {
 		ServerPlayer player = source.getPlayerOrException();
 
-		ToolType parsed;
-		try {
-			parsed = ToolType.valueOf(typeName.toUpperCase(Locale.ROOT));
-		} catch (IllegalArgumentException e) {
-			parsed = ToolType.NULL;
-		}
-		if (parsed == ToolType.NULL) {
+		ToolType type = Stream.of(ToolType.values())
+				.filter(t -> t != ToolType.NULL && t.name().equalsIgnoreCase(typeName)).findFirst().orElse(null);
+		if (type == null) {
 			source.sendFailure(Component.literal("Unknown gear type: " + typeName));
 			return 0;
 		}
-		ToolType type = parsed;
 
 		ItemStack stack = LootUtils.buildTool(player, player.level(), player.blockPosition(), type, 0.0f);
 
@@ -121,21 +115,22 @@ public class ModCommands {
 		return 1;
 	}
 
-	/** The held Random Loot tool/armor piece, or EMPTY if the main hand holds anything else. */
-	private static ItemStack heldGear(ServerPlayer player) {
-		ItemStack held = player.getMainHandItem();
-		if (!held.is(ModItems.TOOL.get()) && !held.is(ModItems.ARMOR.get())) {
-			return ItemStack.EMPTY;
+	/**
+	 * The held Random Loot tool/armor piece; if the main hand holds anything else, tells the
+	 * source so and returns EMPTY.
+	 */
+	private static ItemStack heldGearOrFail(CommandSourceStack source) throws CommandSyntaxException {
+		ItemStack held = source.getPlayerOrException().getMainHandItem();
+		if (LootUtils.isLootGear(held)) {
+			return held;
 		}
-		return held;
+		source.sendFailure(Component.literal("Hold a Random Loot tool or armor piece in your main hand."));
+		return ItemStack.EMPTY;
 	}
 
 	private static int addTrait(CommandSourceStack source, String traitName) throws CommandSyntaxException {
-		ServerPlayer player = source.getPlayerOrException();
-
-		ItemStack held = heldGear(player);
+		ItemStack held = heldGearOrFail(source);
 		if (held.isEmpty()) {
-			source.sendFailure(Component.literal("Hold a Random Loot tool or armor piece in your main hand."));
 			return 0;
 		}
 
@@ -161,11 +156,8 @@ public class ModCommands {
 	}
 
 	private static int removeTrait(CommandSourceStack source, String traitName) throws CommandSyntaxException {
-		ServerPlayer player = source.getPlayerOrException();
-
-		ItemStack held = heldGear(player);
+		ItemStack held = heldGearOrFail(source);
 		if (held.isEmpty()) {
-			source.sendFailure(Component.literal("Hold a Random Loot tool or armor piece in your main hand."));
 			return 0;
 		}
 
@@ -189,15 +181,12 @@ public class ModCommands {
 	}
 
 	private static int addXp(CommandSourceStack source, int amount) throws CommandSyntaxException {
-		ServerPlayer player = source.getPlayerOrException();
-
-		ItemStack held = heldGear(player);
+		ItemStack held = heldGearOrFail(source);
 		if (held.isEmpty()) {
-			source.sendFailure(Component.literal("Hold a Random Loot tool or armor piece in your main hand."));
 			return 0;
 		}
 
-		LootUtils.addXp(held, player, amount);
+		LootUtils.addXp(held, source.getPlayerOrException(), amount);
 
 		int level = LootUtils.getLevel(held);
 		int xp = LootUtils.getXP(held);

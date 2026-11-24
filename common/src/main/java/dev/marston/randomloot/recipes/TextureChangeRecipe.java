@@ -13,14 +13,8 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-import java.util.function.Predicate;
 
 public class TextureChangeRecipe extends CustomRecipe {
-	private static final List<Predicate<ItemStack>> ITEM_PREDICATES = List.of(
-			TextureChangeRecipe::isLootGear,
-			TextureChangeRecipe::isEssence
-	);
-
 	/** Tools and armor both support cosmetic texture cycling - once they've settled. */
 	private static boolean isLootGear(ItemStack stack) {
 		return LootUtils.isLootGear(stack) && !LootUtils.isRolling(stack);
@@ -30,11 +24,6 @@ public class TextureChangeRecipe extends CustomRecipe {
 	// touches the item registry during class load.
 	private static boolean isEssence(ItemStack stack) {
 		return stack.is(ModItems.ESSENCE.get());
-	}
-
-
-
-	public TextureChangeRecipe() {
 	}
 
 	public static final TextureChangeRecipe INSTANCE = new TextureChangeRecipe();
@@ -69,39 +58,16 @@ public class TextureChangeRecipe extends CustomRecipe {
 		}
 
 		// Require an actual tool: matches() must not pass on essence alone, or
-		// assemble() would return EMPTY.
+		// assemble() would have no gear to retexture.
 		return hasTool;
 	}
 
 	@Override
 	public @NotNull ItemStack assemble(@NotNull CraftingInput craftingInput) {
-		int modCount = 0;
-		List<ItemStack> stacks = craftingInput.items();
-
-		ItemStack result = ItemStack.EMPTY;
-        for (ItemStack item : stacks) {
-			if (item.isEmpty()) {
-				continue;
-			}
-
-            if (isLootGear(item)) {
-                result = LootUtils.CloneItem(item);
-				continue;
-            }
-
-
-			if (isEssence(item)) {
-				modCount++;
-			}
-
-        }
-
-		if (result.isEmpty()) {
-			return ItemStack.EMPTY;
-		}
-
-		LootUtils.addTexture(result, modCount);
-
+		// matches admits exactly one settled gear stack, and essence for every other stack.
+		ItemStack result = LootUtils.CloneItem(craftingInput.items().stream()
+				.filter(TextureChangeRecipe::isLootGear).findFirst().orElseThrow());
+		LootUtils.addTexture(result, craftingInput.ingredientCount() - 1);
 		return result;
 	}
 
@@ -109,6 +75,4 @@ public class TextureChangeRecipe extends CustomRecipe {
 	public RecipeSerializer<TextureChangeRecipe> getSerializer() {
 		return Recipies.TEXTURE_CHANGE_SHAPELESS.get();
 	}
-
-
 }

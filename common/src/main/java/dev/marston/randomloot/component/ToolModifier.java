@@ -8,40 +8,19 @@ import net.minecraft.nbt.CompoundTag;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.TreeMap;
 
 
-public class ToolModifier {
+public record ToolModifier(Map<String, CompoundTag> tags) {
 
     private static final int MAX_MODIFIERS = 256;
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (obj.getClass() != ToolModifier.class) {
-            return false;
-        }
-        ToolModifier t = (ToolModifier) obj;
-
-        return t.tags.equals(this.tags);
+    public ToolModifier {
+        tags = Collections.unmodifiableMap(new HashMap<>(enforceLimit(tags)));
     }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(tags);
-    }
-
-    private final Map<String, CompoundTag> tags;
 
     public Map<String, CompoundTag> getTags() {
         return new HashMap<>(this.tags);
-    }
-
-    public ToolModifier(Map<String, CompoundTag> tagIn) {
-        this.tags = Collections.unmodifiableMap(new HashMap<>(enforceLimit(tagIn)));
     }
 
     /**
@@ -63,18 +42,13 @@ public class ToolModifier {
         return trimmed;
     }
 
+    // The constructor enforces the limit, so a decoded map is capped too.
     public static final Codec<ToolModifier> CODEC = RecordCodecBuilder.create(
             builder -> builder.group(
                             Codec.unboundedMap(Codec.STRING, CompoundTag.CODEC)
-                                    .xmap(ToolModifier::enforceLimit, m -> m)
                                     .fieldOf("tags")
                                     .forGetter(ToolModifier::getTags)
                     )
                     .apply(builder, ToolModifier::new)
     );
-
-
-
-
-
 }
