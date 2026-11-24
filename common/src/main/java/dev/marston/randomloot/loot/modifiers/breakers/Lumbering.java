@@ -3,15 +3,11 @@ package dev.marston.randomloot.loot.modifiers.breakers;
 import java.util.HashSet;
 import java.util.Set;
 
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -25,21 +21,13 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 		return "Breaking a log fells all connected logs";
 	}
 
-	private boolean isLog(BlockState state) {
-		return state.is(BlockTags.LOGS);
-	}
-
 	private void findConnectedLogs(Level level, BlockPos pos, Set<BlockPos> found) {
-		if (found.size() >= MAX_BLOCKS) {
-			return;
-		}
-
-		if (found.contains(pos)) {
+		if (found.size() >= MAX_BLOCKS || found.contains(pos)) {
 			return;
 		}
 
 		BlockState state = level.getBlockState(pos);
-		if (!isLog(state)) {
+		if (!state.is(BlockTags.LOGS)) {
 			return;
 		}
 
@@ -73,7 +61,7 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 
 		Level level = player.level();
 
-		if (!isLog(broken)) {
+		if (!broken.is(BlockTags.LOGS)) {
 			return;
 		}
 
@@ -87,18 +75,6 @@ public class Lumbering extends AbstractModifier implements BlockBreakModifier {
 		}
 		logsToBreak.remove(pos);
 
-		for (BlockPos logPos : logsToBreak) {
-			BlockState logState = level.getBlockState(logPos);
-			if (isLog(logState)) {
-				boolean destroyed = LootUtils.breakBlockAsPlayer(itemstack, logPos, player, level, logState);
-				if (destroyed) {
-					TraitDispatch.spendDurability(itemstack, 1, player, EquipmentSlot.MAINHAND);
-
-					if (itemstack.isEmpty()) {
-						break;
-					}
-				}
-			}
-		}
+		BlockBreakModifier.breakAlso(itemstack, logsToBreak, player, s -> s.is(BlockTags.LOGS));
 	}
 }

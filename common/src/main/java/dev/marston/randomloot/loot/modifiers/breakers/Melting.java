@@ -4,95 +4,49 @@ import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.Entity;
-import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SingleRecipeInput;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 
 public class Melting extends AbstractModifier implements BlockBreakModifier {
 	@Override
 	public void startBreak(ItemStack itemstack, BlockState broken, BlockPos pos, LivingEntity player) {
+		ServerLevel level = (ServerLevel) player.level();
 
-		Level level = player.level();
-
-		ServerLevel serverLevel = (ServerLevel) level;
-		AABB box = new AABB(Vec3.atCenterOf(pos.east().south().below()), Vec3.atCenterOf(pos.west().north().above()));
-
-		// Schedule execution after a short delay to allow block drops to spawn
-		// Then submit to server thread for thread-safe execution
-		CompletableFuture.delayedExecutor(50, TimeUnit.MILLISECONDS).execute(() -> {
-			serverLevel.getServer().execute(() -> {
-			List<Entity> items = level.getEntities(null, box);
-
-			for (Entity entity : items) {
-				if (entity.getType() != EntityTypes.ITEM) {
-					continue;
-				}
-
-				ItemEntity i = (ItemEntity) entity;
-				if (i.getAge() > 10) {
-					continue;
-				}
-
-				ItemStack stack = i.getItem();
-
-				RecipeManager manager = serverLevel.recipeAccess();
-
-				Collection<RecipeHolder<?>> recipes = manager.getRecipes();
-				List<SingleItemRecipe> smeltingRecipes = recipes.stream()
-						.map(RecipeHolder::value)
-						.filter(r -> r.getType() == RecipeType.SMELTING)
-						.filter(r -> r instanceof SingleItemRecipe)
-						.map(r -> (SingleItemRecipe) r)
-						.toList();
-
-				for (SingleItemRecipe recipe : smeltingRecipes) {
-					if (!recipe.matches(new SingleRecipeInput(stack), level)) {
-						continue;
-					}
-
-					ItemStack result = recipe.assemble(new SingleRecipeInput(stack));
-
-					if (result.isEmpty()) {
-						continue;
-					}
-
-					// The recipe result is for ONE input item, but a drop is often a
-					// stack (2-5 raw copper, Fortune), so smelt the whole stack rather
-					// than replacing it with a single result.
-					int remaining = result.getCount() * stack.getCount();
-
-					// Capture position and motion before removing the original item
-					var motion = i.getDeltaMovement();
-					double x = i.getX();
-					double y = i.getY();
-					double z = i.getZ();
-					i.discard();
-
-					while (remaining > 0) {
-						int count = Math.min(remaining, result.getMaxStackSize());
-						ItemEntity k = new ItemEntity(level, x, y, z, result.copyWithCount(count));
-						level.addFreshEntity(k);
-
-						// Set motion after spawn to prevent it being reset
-						k.setDeltaMovement(motion);
-						remaining -= count;
-					}
-
-					break;
-				}
+		BlockBreakModifier.forDropsAfter(50, level, pos, i -> {
+			if (i.getAge() > 10) {
+				return;
 			}
+
+			ItemStack stack = i.getItem();
+			SingleRecipeInput input = new SingleRecipeInput(stack);
+			level.recipeAccess().getRecipeFor(RecipeType.SMELTING, input, level).ifPresent(holder -> {
+				ItemStack result = holder.value().assemble(input);
+
+				// The recipe result is for ONE input item, but a drop is often a
+				// stack (2-5 raw copper, Fortune), so smelt the whole stack rather
+				// than replacing it with a single result.
+				int remaining = result.getCount() * stack.getCount();
+
+				// Capture position and motion before removing the original item
+				var motion = i.getDeltaMovement();
+				double x = i.getX();
+				double y = i.getY();
+				double z = i.getZ();
+				i.discard();
+
+				while (remaining > 0) {
+					int count = Math.min(remaining, result.getMaxStackSize());
+					ItemEntity k = new ItemEntity(level, x, y, z, result.copyWithCount(count));
+					level.addFreshEntity(k);
+
+					// Set motion after spawn to prevent it being reset
+					k.setDeltaMovement(motion);
+					remaining -= count;
+				}
 			});
 		});
 	}

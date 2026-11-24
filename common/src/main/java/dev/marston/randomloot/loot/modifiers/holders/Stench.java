@@ -35,9 +35,7 @@ public class Stench extends AbstractModifier implements HoldModifier {
 	@Override
 	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		double radius = getRadius();
-		AABB searchBox = new AABB(
-				holder.getX() - radius, holder.getY() - radius, holder.getZ() - radius,
-				holder.getX() + radius, holder.getY() + radius, holder.getZ() + radius);
+		AABB searchBox = AABB.ofSize(holder.position(), 2 * radius, 2 * radius, 2 * radius);
 
 		// Monster covers the hostile mobs; mirrors Hunter's targeting.
 		List<Monster> hostileMobs = level.getEntitiesOfClass(Monster.class, searchBox);

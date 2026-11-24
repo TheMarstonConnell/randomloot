@@ -23,10 +23,7 @@ public class Hunter extends AbstractModifier implements HoldModifier {
     @Override
     public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
         // Create search box around holder
-        AABB searchBox = new AABB(
-            holder.getX() - SEARCH_RADIUS, holder.getY() - SEARCH_RADIUS, holder.getZ() - SEARCH_RADIUS,
-            holder.getX() + SEARCH_RADIUS, holder.getY() + SEARCH_RADIUS, holder.getZ() + SEARCH_RADIUS
-        );
+        AABB searchBox = AABB.ofSize(holder.position(), 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS);
 
         // Find all hostile mobs (Monster class covers most hostile mobs)
         List<Monster> hostileMobs = level.getEntitiesOfClass(Monster.class, searchBox);

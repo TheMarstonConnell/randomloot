@@ -5,7 +5,6 @@ import java.util.Random;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import dev.marston.randomloot.loot.modifiers.Stored;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -14,7 +13,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class Chaotic extends AbstractModifier implements StatsModifier, EntityHurtModifier {
+public class Chaotic extends AbstractModifier implements EntityHurtModifier {
     private static final String SEED = "chaoticSeed";
     private static final long UPDATE_INTERVAL = 100L; // 5 seconds = 100 ticks (20 ticks/sec)
     private static final float MAX_MODIFIER = 0.50f; // +/- 50% max
@@ -43,9 +42,6 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
      * This works on both client and server since it's deterministic.
      */
     private float getCurrentState(Level level) {
-        if (level == null) {
-            return 0f;
-        }
         // Get which "period" we're in (changes every UPDATE_INTERVAL ticks)
         long period = level.getGameTime() / UPDATE_INTERVAL;
         // Use seed XOR'd with period * large prime for better distribution
@@ -80,13 +76,6 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
         }
         
         return Modifier.makeComp(stateText + " (" + secondsUntilUpdate + "s)", stateColor);
-    }
-
-    @Override
-    public float getStats(ItemStack itemstack) {
-        // Can't get level here, so return neutral
-        // The actual effect happens in hurtEnemy
-        return 1.0f;
     }
 
     @Override
