@@ -20,7 +20,9 @@ public class Fierce extends AbstractModifier implements EntityHurtModifier, Stat
 
 	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * wornShare(itemstack) * 0.5f);
+		// Rounded through 1 + x and back, as before the shrink, so the bonus stays the same float.
+		float multiplier = 1.0f + wornShare(itemstack) * 0.5f;
+		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * (multiplier - 1.0f));
 	}
 
 	@Override
