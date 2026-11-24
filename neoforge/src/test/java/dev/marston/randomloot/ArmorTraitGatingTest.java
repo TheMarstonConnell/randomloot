@@ -19,35 +19,23 @@ import org.junit.jupiter.api.Test;
 class ArmorTraitGatingTest {
 
 	@Test
-	void armorTraitsNeverApplyToHandTools() {
-		Modifier[] armorTraits = { getModifier("thorny"), getModifier("bulwark"), getModifier("adrenaline"), getModifier("magnetized"), getModifier("featherweight") };
-
-		for (Modifier trait : armorTraits) {
-			for (ToolType tool : new ToolType[] { ToolType.PICKAXE, ToolType.AXE, ToolType.SHOVEL, ToolType.SWORD }) {
-				assertFalse(trait.forTool(tool), trait.tagName() + " must not apply to " + tool);
-			}
-		}
-	}
-
-	@Test
-	void generalArmorTraitsApplyToEveryPiece() {
-		Modifier[] generalArmorTraits = { getModifier("thorny"), getModifier("bulwark"), getModifier("adrenaline"), getModifier("magnetized") };
-
-		for (Modifier trait : generalArmorTraits) {
-			for (ToolType piece : new ToolType[] { ToolType.HELMET, ToolType.CHESTPLATE, ToolType.LEGGINGS, ToolType.BOOTS }) {
-				assertTrue(trait.forTool(piece), trait.tagName() + " should apply to " + piece);
+	void generalArmorTraitsFitEveryPieceAndNoTool() {
+		for (String tag : new String[] { "thorny", "bulwark", "adrenaline", "magnetized" }) {
+			for (ToolType type : ToolType.values()) {
+				if (type != ToolType.NULL) {
+					assertEquals(type.isArmor(), getModifier(tag).forTool(type), tag + " on " + type);
+				}
 			}
 		}
 	}
 
 	@Test
 	void featherweightIsBootsOnly() {
-		Modifier featherweight = getModifier("featherweight");
-
-		assertTrue(featherweight.forTool(ToolType.BOOTS));
-		assertFalse(featherweight.forTool(ToolType.HELMET));
-		assertFalse(featherweight.forTool(ToolType.CHESTPLATE));
-		assertFalse(featherweight.forTool(ToolType.LEGGINGS));
+		for (ToolType type : ToolType.values()) {
+			if (type != ToolType.NULL) {
+				assertEquals(type == ToolType.BOOTS, getModifier("featherweight").forTool(type), "featherweight on " + type);
+			}
+		}
 	}
 
 	@Test
