@@ -12,9 +12,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.BonemealSource;
@@ -42,11 +41,7 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
     }
 
     @Override
-    public void hold(ItemStack stack, Level level, Entity holder) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
+    public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
         // Paced off the game clock rather than a timestamp stored on the item: writing
         // to the held stack every few seconds resets the block the holder is mining.
         if (level.getGameTime() % getUpdateInterval() != 0) {
@@ -83,10 +78,10 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
 
             if (block instanceof BonemealableBlock bonemealable) {
                 if (bonemealable.isBonemealSuccess(level, random, targetPos, state, BonemealSource.INTERACTION)) {
-                    bonemealable.performBonemeal(serverLevel, random, targetPos, state, BonemealSource.INTERACTION);
+                    bonemealable.performBonemeal(level, random, targetPos, state, BonemealSource.INTERACTION);
 
                     // Spawn particles
-                    serverLevel.sendParticles(
+                    level.sendParticles(
                         ParticleTypes.HAPPY_VILLAGER,
                         targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
                         10, 0.5, 0.5, 0.5, 0.0

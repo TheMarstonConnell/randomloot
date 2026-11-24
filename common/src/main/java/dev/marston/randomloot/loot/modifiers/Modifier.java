@@ -11,7 +11,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
-import java.util.List;
 import java.util.Random;
 
 public interface Modifier {
@@ -57,8 +56,6 @@ public interface Modifier {
 
 	public String tagName();
 
-	public void writeToLore(List<Component> list, boolean shift);
-
 	public String description();
 
 	public String name();
@@ -75,9 +72,7 @@ public interface Modifier {
 	 * Translatable display name, keyed {@code modifier.randomloot.<tag>.name} with the
 	 * raw English {@link #name()} as fallback. Use this for anything player-facing.
 	 */
-	default Component displayName() {
-		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".name", name());
-	}
+	Component displayName();
 
 	/**
 	 * Translatable description, keyed {@code modifier.randomloot.<tag>.description} with
@@ -101,9 +96,7 @@ public interface Modifier {
 		return null;
 	}
 
-	default boolean compatible(Modifier mod) {
-		return true;
-	}
+	boolean compatible(Modifier mod);
 
 	/**
 	 * Returns the variant of this modifier for the given world, or {@code this} when the
@@ -123,10 +116,7 @@ public interface Modifier {
 	 */
 	Modifier granted(RandomSource random);
 
-	default boolean canLevel() {
-		return false;
-	}
+	boolean canLevel();
 
-	default void levelUp() {
-	}
+	void levelUp();
 }

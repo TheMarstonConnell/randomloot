@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -114,10 +113,7 @@ final class LootTooltips {
 		mods.sort(Comparator.comparing(Modifier::tagName));
 
 		for (Modifier modifier : mods) {
-			// Wrapper to bridge List<Component> interface to Consumer<Component>
-			List<Component> tempList = new ArrayList<>();
-			modifier.writeToLore(tempList, show);
-			tempList.forEach(tipList);
+			tipList.accept(Modifier.makeComp(modifier.displayName()).withStyle(modifier.color()));
 			if (show) {
 				Component details = modifier.writeDetailsToLore(level);
 

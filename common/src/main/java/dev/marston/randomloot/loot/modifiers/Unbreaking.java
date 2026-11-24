@@ -10,14 +10,6 @@ public class Unbreaking extends AbstractModifier {
 		return "This tool has a " + String.format("%.0f", chance() * 100) + "% chance of not taking damage.";
 	}
 
-	@Override
-	public String name() {
-		if (traitLevel() > 0 && !this.canLevel()) {
-			return "Unbreakable";
-		}
-		return super.name();
-	}
-
 	private float chance() {
 		return CHANCE_PER_LEVEL * (float) (traitLevel() + 1);
 	}

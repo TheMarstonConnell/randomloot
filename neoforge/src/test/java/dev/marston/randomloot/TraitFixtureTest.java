@@ -398,10 +398,8 @@ class TraitFixtureTest {
 
 	/** What gear shows for a trait: the name with its level, the description, and how both are rendered. */
 	private static String render(Modifier trait) {
-		List<Component> lore = new ArrayList<>();
-		trait.writeToLore(lore, false);
-		List<Component> shiftLore = new ArrayList<>();
-		trait.writeToLore(shiftLore, true);
+		List<Component> lore = List.of(Modifier.makeComp(trait.displayName()).withStyle(trait.color()));
+		List<Component> shiftLore = List.of(Modifier.makeComp(trait.displayName()).withStyle(trait.color()));
 		String details;
 		try {
 			Component component = trait.writeDetailsToLore(null);

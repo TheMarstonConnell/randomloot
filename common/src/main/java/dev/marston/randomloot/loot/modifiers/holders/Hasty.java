@@ -3,12 +3,11 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class Hasty extends AbstractModifier implements HoldModifier {
 	@Override
@@ -17,12 +16,8 @@ public class Hasty extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		// hold() runs every tick; a too-short duration makes the effect timer flicker.
-		MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 40, traitLevel(), true, false);
-
-		if (holder instanceof LivingEntity le) {
-			le.addEffect(haste);
-		}
+		holder.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, traitLevel(), true, false));
 	}
 }

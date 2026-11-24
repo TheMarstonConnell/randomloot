@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import net.minecraft.world.entity.LivingEntity;
@@ -21,13 +19,11 @@ public class Bezerk extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-
 		float maxHealth = hurter.getMaxHealth();
 		float currentHealth = Math.max(hurter.getHealth(), 1.0f);
 
 		float ratio = maxHealth / currentHealth;
 
-		dealBonusDamage(hurtee, hurter, dmg * BONUS_DAMAGE_SCALE * (ratio - 1));
+		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * BONUS_DAMAGE_SCALE * (ratio - 1));
 	}
 }

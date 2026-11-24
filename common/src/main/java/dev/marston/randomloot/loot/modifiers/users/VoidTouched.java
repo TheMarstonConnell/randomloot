@@ -12,10 +12,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -25,11 +23,6 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 	public String description() {
 		float distance = 8.0f + (traitLevel() * 4.0f);
 		return "Right-click to teleport up to " + distance + " blocks. Costs 10 durability.";
-	}
-
-	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		return InteractionResult.PASS;
 	}
 
 	@Override

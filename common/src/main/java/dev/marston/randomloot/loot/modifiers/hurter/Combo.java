@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.ChargeTracker;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
@@ -49,9 +47,7 @@ public class Combo extends AbstractModifier implements EntityHurtModifier {
 
 		if (ChargeTracker.getCharge(level, charged.get(), points.get()) < 1.0f) {
 
-			float damage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-
-			dealBonusDamage(hurtee, hurter, damage * 0.25f);
+			dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * 0.25f);
 
 			Modifier.TrackEntityParticle(level, hurtee, ParticleTypes.CRIT);
 

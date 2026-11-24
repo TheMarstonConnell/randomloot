@@ -79,6 +79,8 @@ public final class TraitDeclaration {
 	int maxLevel;
 	boolean capsOnLoad;
 	String levelMirrorKey;
+	/** Null unless the trait has a name of its own once it cannot level further. */
+	String maxedName;
 
 	private Supplier<? extends AbstractModifier> factory;
 
@@ -116,6 +118,12 @@ public final class TraitDeclaration {
 	/** Also writes the level under an older key, and reads it from there when gear has nothing newer. */
 	public TraitDeclaration mirrorsLevelAs(String legacyKey) {
 		this.levelMirrorKey = legacyKey;
+		return this;
+	}
+
+	/** What the trait is called instead once it is at its top level ("Unbreakable"). */
+	public TraitDeclaration maxedName(String name) {
+		this.maxedName = name;
 		return this;
 	}
 

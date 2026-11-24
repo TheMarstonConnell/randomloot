@@ -1,15 +1,10 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import java.util.List;
-
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier {
@@ -24,30 +19,13 @@ public class CrowdPleaser extends AbstractModifier implements EntityHurtModifier
 
     @Override
     public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-        Level level = hurtee.level();
-        // Get the type of entity being attacked
         EntityType<?> targetType = hurtee.getType();
-        
-        // Create bounding box for search area
-        AABB searchBox = new AABB(
-            hurtee.getX() - SEARCH_RADIUS, hurtee.getY() - SEARCH_RADIUS, hurtee.getZ() - SEARCH_RADIUS,
-            hurtee.getX() + SEARCH_RADIUS, hurtee.getY() + SEARCH_RADIUS, hurtee.getZ() + SEARCH_RADIUS
-        );
-        
+
         // Count nearby entities of the same type (excluding the target itself)
-        List<? extends LivingEntity> nearbyEntities = level.getEntitiesOfClass(
-            LivingEntity.class, 
-            searchBox, 
-            entity -> entity.getType().equals(targetType) && entity != hurtee && entity.isAlive()
-        );
-        
-        int nearbyCount = nearbyEntities.size();
-        
-        if (nearbyCount > 0) {
-            // Calculate bonus damage
-            float bonusPercent = Math.min(nearbyCount * BONUS_PER_MOB, MAX_BONUS);
-            float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-            dealBonusDamage(hurtee, hurter, baseDamage * bonusPercent);
-        }
+        int nearby = hurtee.level().getEntitiesOfClass(LivingEntity.class,
+            AABB.ofSize(hurtee.position(), 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS),
+            e -> e.getType().equals(targetType) && e != hurtee && e.isAlive()).size();
+
+        dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * Math.min(nearby * BONUS_PER_MOB, MAX_BONUS));
     }
 }

@@ -6,12 +6,9 @@ import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
-import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.UseOnContext;
-import net.minecraft.world.level.Level;
 
 /**
  * Base for right-click traits that place or ignite a block while crouching and charge
@@ -46,15 +43,5 @@ public abstract class PlaceOnUseModifier extends AbstractModifier implements Use
 		}
 
 		return result;
-	}
-
-	@Override
-	public boolean use(Level level, Player player, InteractionHand hand) {
-		return true;
-	}
-
-	@Override
-	public boolean useAnywhere() {
-		return false;
 	}
 }

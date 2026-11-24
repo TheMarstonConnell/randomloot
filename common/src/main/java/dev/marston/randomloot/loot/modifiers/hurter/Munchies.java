@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -9,6 +7,7 @@ import dev.marston.randomloot.loot.modifiers.StatsModifier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.food.FoodData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -26,13 +25,9 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	}
 
 	private void tryConsumeHunger(LivingEntity entity) {
-		if (entity instanceof Player player) {
-			if (player.level().getRandom().nextFloat() < getHungerChance()) {
-				int currentFood = player.getFoodData().getFoodLevel();
-				if (currentFood > 0) {
-					player.getFoodData().setFoodLevel(currentFood - 1);
-				}
-			}
+		if (entity instanceof Player player && player.level().getRandom().nextFloat() < getHungerChance()) {
+			FoodData food = player.getFoodData();
+			food.setFoodLevel(Math.max(0, food.getFoodLevel() - 1));
 		}
 	}
 
@@ -40,8 +35,7 @@ public class Munchies extends AbstractModifier implements EntityHurtModifier, Bl
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// The melee half of the "15% stat boost". getStats only reaches mining speed,
 		// so without this a Munchies sword drained hunger for nothing.
-		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-		dealBonusDamage(hurtee, hurter, baseDamage * STAT_BOOST);
+		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * STAT_BOOST);
 
 		// Chance to consume hunger
 		tryConsumeHunger(hurter);

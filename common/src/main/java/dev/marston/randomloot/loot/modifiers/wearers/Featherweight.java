@@ -19,14 +19,6 @@ public class Featherweight extends AbstractModifier implements WearerHurtModifie
 		return "Reduces fall damage by " + String.format("%.0f", reduction() * 100) + "%.";
 	}
 
-	@Override
-	public String name() {
-		if (traitLevel() > 0 && !this.canLevel()) {
-			return "Weightless";
-		}
-		return super.name();
-	}
-
 	private float reduction() {
 		return REDUCTION_PER_LEVEL * (float) (traitLevel() + 1);
 	}

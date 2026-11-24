@@ -1,5 +1,6 @@
 package dev.marston.randomloot.loot.modifiers;
 
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 
 /**
@@ -20,23 +21,8 @@ public final class ChargeTracker {
 	 * @return A value from 0.0 to 1.0 representing charge percentage
 	 */
 	public static float getCharge(Level level, long lastTriggered, int chargeTime) {
-		if (level == null) {
-			return 0.0f;
-		}
-
-		long time = level.getGameTime();
-		long diff = time - lastTriggered;
-
-		float rate = (float) diff / (float) (chargeTime * 20);
-		if (rate > 1.0f) {
-			rate = 1.0f;
-		}
 		// A tool carried into a world with a lower total game time can produce a
 		// negative diff; clamp so the charge meter never shows a negative percentage.
-		if (rate < 0.0f) {
-			rate = 0.0f;
-		}
-
-		return rate;
+		return Mth.clamp((float) (level.getGameTime() - lastTriggered) / (float) (chargeTime * 20), 0.0f, 1.0f);
 	}
 }

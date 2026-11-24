@@ -6,11 +6,11 @@ import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Util;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -40,7 +40,7 @@ public class Healing extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		float power = getPower();
 		float f = level.getRandom().nextFloat();
 		if (f < power) {

@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BlockBreakModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -24,12 +22,11 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 
 	private float getDurabilityMultiplier() {
 		// Level 1: 2.0x, Level 2: 1.6x, Level 3: 1.25x
-		switch (traitLevel()) {
-			case 1: return 2.0f;
-			case 2: return 1.6f;
-			case 3: return 1.25f;
-			default: return 2.0f;
-		}
+		return switch (traitLevel()) {
+			case 2 -> 1.6f;
+			case 3 -> 1.25f;
+			default -> 2.0f;
+		};
 	}
 
 	/** Chance-based extra durability cost: 2.0x -> always, 1.6x -> 60%, 1.25x -> 25%. */
@@ -43,8 +40,7 @@ public class Fragile extends AbstractModifier implements EntityHurtModifier, Blo
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
 		// The "25% more damage" half of the trait. getStats only reaches mining speed,
 		// so without this a Fragile sword paid the durability cost for nothing.
-		float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-		dealBonusDamage(hurtee, hurter, baseDamage * STAT_BOOST);
+		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * STAT_BOOST);
 
 		if (hurter instanceof ServerPlayer player) {
 			tryExtraDamage(itemstack, player);

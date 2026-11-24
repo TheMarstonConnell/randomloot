@@ -141,13 +141,13 @@ public final class TraitDispatch {
 
 	/** One server tick of the gear being held, or worn in its own slot. */
 	public static void tick(ItemStack gear, ServerLevel level, Entity holder) {
-		if (LootUtils.isRolling(gear)) {
+		if (LootUtils.isRolling(gear) || !(holder instanceof LivingEntity living)) {
 			return;
 		}
 
 		for (Modifier trait : traitsOf(gear)) {
 			if (trait instanceof HoldModifier onHold) {
-				run(gear, trait, level, () -> onHold.hold(gear, level, holder));
+				run(gear, trait, level, () -> onHold.hold(gear, level, living));
 			}
 		}
 	}

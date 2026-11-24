@@ -2,8 +2,6 @@ package dev.marston.randomloot.loot.modifiers.holders;
 
 import java.util.Random;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.Modifier;
@@ -99,8 +97,7 @@ public class Chaotic extends AbstractModifier implements StatsModifier, EntityHu
         // non-positive amounts, so negative fluctuations simply add no bonus
         // (a negative hurt() would heal the target).
         if (currentState > 0) {
-            float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-            dealBonusDamage(hurtee, hurter, baseDamage * currentState);
+            dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * currentState);
         }
     }
 }

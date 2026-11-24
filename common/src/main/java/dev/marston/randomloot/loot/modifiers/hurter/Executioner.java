@@ -30,19 +30,18 @@ public class Executioner extends AbstractModifier implements EntityHurtModifier 
 
             ModCriteria.traitUsed(hurter, this);
 
-            if (hurtee.level() instanceof ServerLevel serverLevel) {
-                serverLevel.sendParticles(
-                    ParticleTypes.CRIT,
-                    hurtee.getX(), hurtee.getY() + hurtee.getBbHeight() / 2, hurtee.getZ(),
-                    20, 0.5, 0.5, 0.5, 0.1
-                );
+            ServerLevel serverLevel = (ServerLevel) hurtee.level();
+            serverLevel.sendParticles(
+                ParticleTypes.CRIT,
+                hurtee.getX(), hurtee.getY() + hurtee.getBbHeight() / 2, hurtee.getZ(),
+                20, 0.5, 0.5, 0.5, 0.1
+            );
 
-                serverLevel.playSound(
-                    null, hurtee.getX(), hurtee.getY(), hurtee.getZ(),
-                    SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS,
-                    1.0f, 0.5f
-                );
-            }
+            serverLevel.playSound(
+                null, hurtee.getX(), hurtee.getY(), hurtee.getZ(),
+                SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS,
+                1.0f, 0.5f
+            );
         }
     }
 }

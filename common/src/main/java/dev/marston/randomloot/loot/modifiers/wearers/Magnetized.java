@@ -2,10 +2,10 @@ package dev.marston.randomloot.loot.modifiers.wearers;
 
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
@@ -25,7 +25,7 @@ public class Magnetized extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, holder.getBoundingBox().inflate(RANGE));
 
 		for (ItemEntity item : items) {

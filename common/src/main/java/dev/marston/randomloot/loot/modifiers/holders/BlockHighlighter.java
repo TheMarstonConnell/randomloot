@@ -3,9 +3,11 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.item.ItemStack;
@@ -91,7 +93,7 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		if (level.getGameTime() % SCAN_INTERVAL != 0) {
 			return;
 		}
