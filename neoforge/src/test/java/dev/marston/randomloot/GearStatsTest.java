@@ -87,6 +87,7 @@ class GearStatsTest {
 		assertEquals(500, GearStats.maxXp(0));
 		assertEquals(1000, GearStats.maxXp(1));
 		assertEquals(2000, GearStats.maxXp(2));
+		assertEquals(8000, GearStats.maxXp(4));
 	}
 
 	@Test

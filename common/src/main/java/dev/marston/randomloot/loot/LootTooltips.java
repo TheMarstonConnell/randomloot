@@ -26,12 +26,6 @@ final class LootTooltips {
 	private LootTooltips() {
 	}
 
-	static MutableComponent makeComp(String text, ChatFormatting color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		return comp.withStyle(color);
-	}
-
 	// The enchanting table's Standard Galactic Alphabet font.
 	private static final FontDescription ROLLING_FONT =
 			new FontDescription.Resource(Identifier.fromNamespaceAndPath("minecraft", "alt"));
@@ -54,7 +48,7 @@ final class LootTooltips {
 	}
 
 	private static void newLine(Consumer<Component> tipList) {
-		tipList.accept(makeComp("", ChatFormatting.GRAY));
+		tipList.accept(Modifier.makeComp("", ChatFormatting.GRAY));
 	}
 
 	/**
@@ -96,7 +90,7 @@ final class LootTooltips {
 			tipList.accept(Component.empty().append(tt.displayName()).withStyle(ChatFormatting.BLUE));
 		}
 
-		tipList.accept(makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY));
+		tipList.accept(Modifier.makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY));
 
 		if (show) {
 			newLine(tipList);
@@ -104,7 +98,7 @@ final class LootTooltips {
 			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.level", "Level: %s", itemLevel)
 					.withStyle(ChatFormatting.GRAY));
 			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.xp", "XP: %s / %s",
-					LootUtils.getXP(item), LootUtils.getMaxXP(itemLevel)).withStyle(ChatFormatting.GRAY));
+					LootUtils.getXP(item), GearStats.maxXp(itemLevel)).withStyle(ChatFormatting.GRAY));
 		}
 
 		newLine(tipList);
@@ -118,13 +112,13 @@ final class LootTooltips {
 				Component details = modifier.writeDetailsToLore(level);
 
 				if (details != null) {
-					MutableComponent detailComp = makeComp(" - ", ChatFormatting.GRAY);
+					MutableComponent detailComp = Modifier.makeComp(" - ", ChatFormatting.GRAY);
 					detailComp.append(details);
 					tipList.accept(detailComp);
 				}
 			}
 			if (showDescription) {
-				MutableComponent detailComp = makeComp("", ChatFormatting.GRAY);
+				MutableComponent detailComp = Modifier.makeComp("", ChatFormatting.GRAY);
 				detailComp.append(modifier.displayDescription());
 				tipList.accept(detailComp);
 			}

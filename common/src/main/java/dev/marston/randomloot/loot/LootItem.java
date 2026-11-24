@@ -1,14 +1,9 @@
 package dev.marston.randomloot.loot;
 
-import dev.marston.randomloot.RandomLoot;
-import dev.marston.randomloot.advancements.ModCriteria;
-import dev.marston.randomloot.advancements.TraitObtainedTrigger;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.Identifier;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
@@ -26,7 +21,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.entity.LivingEntity;
@@ -35,8 +29,6 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.inventory.SmithingMenu;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
@@ -44,10 +36,9 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.gameevent.GameEvent;
-import net.minecraft.server.level.ServerLevel;
 import dev.marston.randomloot.platform.ToolAction;
-import net.minecraft.world.item.component.TooltipDisplay;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Consumer;
@@ -60,10 +51,6 @@ public class LootItem extends LootGearItem {
 
 	public static float getDigSpeed(ItemStack stack, ToolType type) {
 		return GearStats.digSpeed(LootUtils.getStats(stack), type, TraitDispatch.statMultiplier(stack));
-	}
-
-	public static float getAttackSpeed(ItemStack stack, ToolType type) {
-		return GearStats.attackSpeed(type);
 	}
 
 	public static float getAttackDamage(ItemStack stack, ToolType type) {
@@ -80,63 +67,43 @@ public class LootItem extends LootGearItem {
 
 		ToolType type = LootUtils.getToolType(stack);
 
-		TagKey<Block> blocks = null;
-
-		if (type == ToolType.PICKAXE) {
-			blocks = BlockTags.MINEABLE_WITH_PICKAXE;
-		} else if (type == ToolType.AXE) {
-			blocks = BlockTags.MINEABLE_WITH_AXE;
-		} else if (type == ToolType.SHOVEL) {
-			blocks = BlockTags.MINEABLE_WITH_SHOVEL;
-		} else if (type == ToolType.SWORD) {
-			Block blockType = block.getBlock();
-
+		if (type == ToolType.SWORD) {
 			// Cobwebs - instant break (vanilla sword behavior)
-			if (blockType == Blocks.COBWEB) {
+			if (block.is(Blocks.COBWEB)) {
 				return 15.0f;
 			}
 
 			// Bamboo - instant break (vanilla sword behavior)
-			if (blockType == Blocks.BAMBOO || blockType == Blocks.BAMBOO_SAPLING) {
+			if (block.is(Blocks.BAMBOO) || block.is(Blocks.BAMBOO_SAPLING)) {
 				return 100.0f;
 			}
 
 			// Leaves - faster than fists (vanilla sword behavior)
-			if (block.is(BlockTags.LEAVES)) {
-				return 1.5f;
-			}
-
-			return 1.0f;
-		} else {
-			return 1.0f;
+			return block.is(BlockTags.LEAVES) ? 1.5f : 1.0f;
 		}
 
-		return block.is(blocks) ? getDigSpeed(stack, type) : 1.0F;
+		TagKey<Block> mineable = mineable(type);
+		return mineable != null && block.is(mineable) ? getDigSpeed(stack, type) : 1.0F;
 	}
-
 
 	@Override
 	public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
-
 		if (LootUtils.isRolling(stack)) {
 			return false;
 		}
+		TagKey<Block> mineable = mineable(LootUtils.getToolType(stack));
+		return mineable != null && state.is(mineable);
+	}
 
-		ToolType type = LootUtils.getToolType(stack);
-
-		TagKey<Block> blocks = null;
-
-		if (type == ToolType.PICKAXE) {
-			blocks = BlockTags.MINEABLE_WITH_PICKAXE;
-		} else if (type == ToolType.SHOVEL) {
-			blocks = BlockTags.MINEABLE_WITH_SHOVEL;
-		} else if (type == ToolType.AXE) {
-			blocks = BlockTags.MINEABLE_WITH_AXE;
-		} else {
-			return false;
-		}
-
-		return state.is(blocks);
+	/** The blocks the type mines, or null for a type that mines nothing (sword, armor). */
+	@Nullable
+	private static TagKey<Block> mineable(ToolType type) {
+		return switch (type) {
+			case PICKAXE -> BlockTags.MINEABLE_WITH_PICKAXE;
+			case AXE -> BlockTags.MINEABLE_WITH_AXE;
+			case SHOVEL -> BlockTags.MINEABLE_WITH_SHOVEL;
+			default -> null;
+		};
 	}
 
 
@@ -147,17 +114,10 @@ public class LootItem extends LootGearItem {
 	 */
 	@Override
 	public ItemAttributeModifiers buildAttributeModifiers(ItemStack stack) {
-
-		// No attributes while rolling: hides the tooltip lines and keeps the
-		// undecided tool from working as a weapon.
-		if (LootUtils.isRolling(stack)) {
-			return ItemAttributeModifiers.builder().build();
-		}
-
 		ToolType tt = LootUtils.getToolType(stack);
 
 		float attack = getAttackDamage(stack, tt);
-		float speed = getAttackSpeed(stack, tt);
+		float speed = GearStats.attackSpeed(tt);
 
 		return ItemAttributeModifiers.builder().add(
 				Attributes.ATTACK_DAMAGE, new AttributeModifier(Item.BASE_ATTACK_DAMAGE_ID, attack, AttributeModifier.Operation.ADD_VALUE), EquipmentSlotGroup.MAINHAND)
@@ -170,17 +130,12 @@ public class LootItem extends LootGearItem {
 		if (LootUtils.isRolling(itemStack)) {
 			return false;
 		}
-		ToolType type = LootUtils.getToolType(itemStack);
-
-		if (type == ToolType.AXE) {
-			return action == ToolAction.AXE_STRIP ||
-				   action == ToolAction.AXE_SCRAPE ||
-				   action == ToolAction.AXE_WAX_OFF;
-		}
-		if (type == ToolType.SHOVEL) {
-			return action == ToolAction.SHOVEL_FLATTEN;
-		}
-		return false;
+		return switch (LootUtils.getToolType(itemStack)) {
+			case AXE -> action == ToolAction.AXE_STRIP || action == ToolAction.AXE_SCRAPE
+					|| action == ToolAction.AXE_WAX_OFF;
+			case SHOVEL -> action == ToolAction.SHOVEL_FLATTEN;
+			default -> false;
+		};
 	}
 
 	@Override
@@ -200,30 +155,6 @@ public class LootItem extends LootGearItem {
 
 		TraitDispatch.hit(itemstack, hurtee, hurter);
 	}
-
-//	@Override
-//	public boolean canApplyAtEnchantingTable(ItemStack stack, Enchantment enchantment) {
-//
-//		if (enchantment.category.equals(EnchantmentCategory.BREAKABLE)) { // all these items are breakable so we can
-//																			// enchant them first!
-//			return true;
-//		}
-//
-//		ToolType type = LootUtils.getToolType(stack);
-//		if (enchantment.category.equals(EnchantmentCategory.DIGGER)) {
-//			if (type == ToolType.AXE || type == ToolType.SHOVEL || type == ToolType.PICKAXE) {
-//				return true;
-//			}
-//		}
-//
-//		if (enchantment.category.equals(EnchantmentCategory.WEAPON)) {
-//			if (type == ToolType.AXE || type == ToolType.SWORD) {
-//				return true;
-//			}
-//		}
-//
-//		return enchantment.category.canEnchant(stack.getItem());
-//	}
 
 	@Override
 	public boolean mineBlock(@NotNull ItemStack stack, Level level, @NotNull BlockState blockState, @NotNull BlockPos pos, @NotNull LivingEntity player) {
@@ -257,85 +188,52 @@ public class LootItem extends LootGearItem {
 		}
 
 		// No trait consumed it - try vanilla tool behaviors
-		if (type == ToolType.AXE) {
-			InteractionResult result = tryAxeActions(ctx);
-			if (result.consumesAction()) return result;
-		}
-
-		if (type == ToolType.SHOVEL) {
-			InteractionResult result = tryShovelFlatten(ctx);
-			if (result.consumesAction()) return result;
-		}
-
-		return InteractionResult.PASS;
+		return switch (type) {
+			case AXE -> tryAxeActions(ctx);
+			case SHOVEL -> tryShovelFlatten(ctx);
+			default -> InteractionResult.PASS;
+		};
 	}
 
 	private InteractionResult tryAxeActions(UseOnContext ctx) {
-		Level level = ctx.getLevel();
-		BlockPos pos = ctx.getClickedPos();
-		BlockState state = level.getBlockState(pos);
-		Player player = ctx.getPlayer();
-		ItemStack stack = ctx.getItemInHand();
-
-		// Try stripping logs
-		BlockState stripped = getToolModifiedState(ctx, ToolAction.AXE_STRIP);
-		if (stripped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_STRIP.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, stripped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, stripped));
-				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
+		// Strip logs, else scrape oxidation, else remove wax. Each state is only worked
+		// out when the one before did not apply: stripping draws from the level's random.
+		InteractionResult result = transform(ctx, getToolModifiedState(ctx, ToolAction.AXE_STRIP),
+				SoundEvents.AXE_STRIP.value());
+		if (!result.consumesAction()) {
+			result = transform(ctx, getToolModifiedState(ctx, ToolAction.AXE_SCRAPE), SoundEvents.AXE_SCRAPE.value());
 		}
-
-		// Try scraping oxidation
-		BlockState scraped = getToolModifiedState(ctx, ToolAction.AXE_SCRAPE);
-		if (scraped != null) {
-			level.playSound(player, pos, SoundEvents.AXE_SCRAPE.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, scraped, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, scraped));
-				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
+		if (!result.consumesAction()) {
+			result = transform(ctx, getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF), SoundEvents.AXE_WAX_OFF.value());
 		}
-
-		// Try removing wax
-		BlockState unwaxed = getToolModifiedState(ctx, ToolAction.AXE_WAX_OFF);
-		if (unwaxed != null) {
-			level.playSound(player, pos, SoundEvents.AXE_WAX_OFF.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, unwaxed, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, unwaxed));
-				TraitDispatch.spendDurability(stack, 1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
-		}
-
-		return InteractionResult.PASS;
+		return result;
 	}
 
 	private InteractionResult tryShovelFlatten(UseOnContext ctx) {
-		if (ctx.getClickedFace() != Direction.UP) return InteractionResult.PASS;
+		if (ctx.getClickedFace() != Direction.UP || !ctx.getLevel().getBlockState(ctx.getClickedPos().above()).isAir()) {
+			return InteractionResult.PASS;
+		}
+		return transform(ctx, getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN), SoundEvents.SHOVEL_FLATTEN.value());
+	}
 
+	/**
+	 * Turns the clicked block into {@code newState} with the tool action's sound, charging
+	 * the tool one durability; PASS when the action does not apply ({@code newState} null).
+	 */
+	private static InteractionResult transform(UseOnContext ctx, @Nullable BlockState newState, SoundEvent sound) {
+		if (newState == null) {
+			return InteractionResult.PASS;
+		}
 		Level level = ctx.getLevel();
 		BlockPos pos = ctx.getClickedPos();
-
-		if (!level.getBlockState(pos.above()).isAir()) return InteractionResult.PASS;
-
-		BlockState flattened = getToolModifiedState(ctx, ToolAction.SHOVEL_FLATTEN);
-		if (flattened != null) {
-			Player player = ctx.getPlayer();
-			level.playSound(player, pos, SoundEvents.SHOVEL_FLATTEN.value(), SoundSource.BLOCKS, 1.0F, 1.0F);
-			if (!level.isClientSide()) {
-				level.setBlock(pos, flattened, 11);
-				level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, flattened));
-				TraitDispatch.spendDurability(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
-			}
-			return InteractionResult.SUCCESS;
+		Player player = ctx.getPlayer();
+		level.playSound(player, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+		if (!level.isClientSide()) {
+			level.setBlock(pos, newState, 11);
+			level.gameEvent(GameEvent.BLOCK_CHANGE, pos, GameEvent.Context.of(player, newState));
+			TraitDispatch.spendDurability(ctx.getItemInHand(), 1, player, EquipmentSlot.MAINHAND);
 		}
-		return InteractionResult.PASS;
+		return InteractionResult.SUCCESS;
 	}
 
 	/**
@@ -417,13 +315,8 @@ public class LootItem extends LootGearItem {
 
 	@Override
 	protected void appendStatLines(ItemStack item, ToolType tt, Consumer<Component> tips) {
-		float digSpeed = getDigSpeed(item, tt);
-		tips.accept(Component.translatableWithFallback("tooltip.randomloot.speed", "Speed: %s",
-				String.format("%.2f", digSpeed)).withStyle(ChatFormatting.GRAY));
-
-		float attackDamage = getAttackDamage(item, tt);
-		tips.accept(Component.translatableWithFallback("tooltip.randomloot.damage", "Damage: %s",
-				String.format("%.2f", attackDamage)).withStyle(ChatFormatting.GRAY));
+		statLine(tips, "tooltip.randomloot.speed", "Speed: %s", getDigSpeed(item, tt));
+		statLine(tips, "tooltip.randomloot.damage", "Damage: %s", getAttackDamage(item, tt));
 	}
 
 	/** Hold-style traits run while the tool is actually held. */
@@ -433,14 +326,10 @@ public class LootItem extends LootGearItem {
 	}
 
 	// Datapack-editable enchantment groups; see data/randomloot/tags/enchantment/.
-	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "all_tools"));
-	private static final TagKey<Enchantment> MINING_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "mining_tools"));
-	private static final TagKey<Enchantment> WEAPON_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "weapons"));
-	private static final TagKey<Enchantment> SWORD_ENCHANTS = TagKey.create(Registries.ENCHANTMENT,
-			Identifier.fromNamespaceAndPath(RandomLoot.MODID, "swords"));
+	private static final TagKey<Enchantment> ALL_TOOL_ENCHANTS = enchantTag("all_tools");
+	private static final TagKey<Enchantment> MINING_ENCHANTS = enchantTag("mining_tools");
+	private static final TagKey<Enchantment> WEAPON_ENCHANTS = enchantTag("weapons");
+	private static final TagKey<Enchantment> SWORD_ENCHANTS = enchantTag("swords");
 
 	/**
 	 * The per-tool-type filter has to live in supportsEnchantment, not isPrimaryItemFor:
@@ -452,10 +341,6 @@ public class LootItem extends LootGearItem {
 	 */
 	@Override
 	public Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment) {
-		if (LootUtils.isRolling(stack)) {
-			return false;
-		}
-
 		ToolType type = LootUtils.getToolType(stack);
 
 		if (enchantment.is(ALL_TOOL_ENCHANTS)) {

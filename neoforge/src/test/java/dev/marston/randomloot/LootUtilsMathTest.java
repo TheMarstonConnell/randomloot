@@ -27,13 +27,4 @@ class LootUtilsMathTest {
 		assertEquals("Invalid Roman Number Value", LootUtils.roman(0));
 		assertEquals("Invalid Roman Number Value", LootUtils.roman(4000));
 	}
-
-	@Test
-	void maxXpFollowsDoublingCurve() {
-		// getMaxXP(level) = 500 * 2^level
-		assertEquals(500, LootUtils.getMaxXP(0));
-		assertEquals(1000, LootUtils.getMaxXP(1));
-		assertEquals(2000, LootUtils.getMaxXP(2));
-		assertEquals(8000, LootUtils.getMaxXP(4));
-	}
 }

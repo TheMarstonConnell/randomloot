@@ -138,22 +138,6 @@ public final class GearRoll {
 			return "an Unknown Biome";
 		}
 
-		// Remove namespace (minecraft:desert -> desert)
-		String biomeName = biomeKey.contains(":") ? biomeKey.substring(biomeKey.indexOf(":") + 1) : biomeKey;
-
-		// Replace underscores with spaces and capitalize each word
-		String[] words = biomeName.split("_");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (word.isEmpty()) {
-				continue; // Skip empty strings from split
-			}
-			if (result.length() > 0) {
-				result.append(" ");
-			}
-			result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
-		}
-
-		return "a " + result.toString();
+		return "a " + LootUtils.titleCase(biomeKey);
 	}
 }

@@ -6,6 +6,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.SuggestionProvider;
 
 import dev.marston.randomloot.items.ModItems;
+import dev.marston.randomloot.loot.GearStats;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.TraitEligibility;
@@ -200,7 +201,7 @@ public class ModCommands {
 
 		int level = LootUtils.getLevel(held);
 		int xp = LootUtils.getXP(held);
-		int max = LootUtils.getMaxXP(level);
+		int max = GearStats.maxXp(level);
 		source.sendSuccess(() -> Component.literal("Added " + amount + " XP to ").append(held.getDisplayName())
 				.append(" - now level " + level + " (" + xp + "/" + max + " XP)"), true);
 		return 1;
