@@ -13,14 +13,10 @@ import net.neoforged.neoforge.common.ItemAbility;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.IdentityHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 public class NeoForgePlatformHelper implements IPlatformHelper {
-
-    @Override
-    public String platformName() {
-        return "NeoForge";
-    }
 
     @Override
     public LootItem createLootItem(Item.Properties props) {
@@ -46,19 +42,11 @@ public class NeoForgePlatformHelper implements IPlatformHelper {
     // ItemAbilities (vanilla's BLOCK_TRANSFORMER registry now drives those actions, and
     // LootItem resolves them in common). The ability *names* still intern via
     // ItemAbility.get, so NeoForgeLootItem keeps advertising the tool's capabilities.
-    static ItemAbility toItemAbility(ToolAction action) {
-        return switch (action) {
-            case AXE_STRIP -> ItemAbility.get("axe_strip");
-            case AXE_SCRAPE -> ItemAbility.get("axe_scrape");
-            case AXE_WAX_OFF -> ItemAbility.get("axe_wax_off");
-            case SHOVEL_FLATTEN -> ItemAbility.get("shovel_flatten");
-        };
-    }
-
+    // A ToolAction constant's name, lower-cased, is the NeoForge ability id (axe_strip, ...).
     private static final Map<ItemAbility, ToolAction> BY_ABILITY = new IdentityHashMap<>();
     static {
         for (ToolAction action : ToolAction.values()) {
-            BY_ABILITY.put(toItemAbility(action), action);
+            BY_ABILITY.put(ItemAbility.get(action.name().toLowerCase(Locale.ROOT)), action);
         }
     }
 

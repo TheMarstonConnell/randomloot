@@ -104,21 +104,17 @@ public final class TraitEligibility {
 
 	/** Whether {@code trait} may be added to the gear described by {@code ctx}. */
 	public static Result check(GearContext ctx, Modifier trait) {
-		if (!ctx.gear()) {
-			return new Result(Verdict.NOT_GEAR, null, ctx.type());
-		}
-		if (ctx.rolling()) {
-			return new Result(Verdict.ROLLING, null, ctx.type());
-		}
-		if (!Config.traitEnabled(trait.tagName())) {
-			return new Result(Verdict.DISABLED, null, ctx.type());
-		}
-		if (!trait.forTool(ctx.type())) {
-			return new Result(Verdict.WRONG_TYPE, null, ctx.type());
-		}
-		if (trait instanceof BiomeRestrictedModifier restricted
-				&& !restricted.canSpawnInBiome(ctx.biomeKey(), ctx.temperature(), ctx.dimension())) {
-			return new Result(Verdict.WRONG_BIOME, null, ctx.type());
+		// The refusals that need no look at the traits already on the gear, in order.
+		Verdict early = !ctx.gear() ? Verdict.NOT_GEAR
+				: ctx.rolling() ? Verdict.ROLLING
+				: !Config.traitEnabled(trait.tagName()) ? Verdict.DISABLED
+				: !trait.forTool(ctx.type()) ? Verdict.WRONG_TYPE
+				: trait instanceof BiomeRestrictedModifier restricted
+						&& !restricted.canSpawnInBiome(ctx.biomeKey(), ctx.temperature(), ctx.dimension())
+								? Verdict.WRONG_BIOME
+				: Verdict.OK;
+		if (early != Verdict.OK) {
+			return new Result(early, null, ctx.type());
 		}
 
 		for (Modifier existing : ctx.existing()) {

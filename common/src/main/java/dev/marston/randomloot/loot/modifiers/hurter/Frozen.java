@@ -5,13 +5,12 @@ import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -30,7 +29,7 @@ public class Frozen extends AbstractModifier implements EntityHurtModifier, Hold
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		if (!(holder instanceof Player player)) return;
 
 		// Check every 2 ticks for smoother ice generation
@@ -38,16 +37,13 @@ public class Frozen extends AbstractModifier implements EntityHurtModifier, Hold
 
 		BlockPos centerPos = player.blockPosition().below();
 
-		// Radius scales with level: 3.0, 4.0, 5.0
-		double radius = 3.0 + traitLevel();
+		// Radius scales with level: 3, 4, 5
+		int radius = 3 + traitLevel();
 
 		// Create circular pattern of frosted ice (like Frost Walker but wider)
-		int radiusInt = (int) Math.ceil(radius);
-		for (int xOffset = -radiusInt; xOffset <= radiusInt; xOffset++) {
-			for (int zOffset = -radiusInt; zOffset <= radiusInt; zOffset++) {
-				// Use floating-point distance for smoother circle
-				double distance = Math.sqrt(xOffset * xOffset + zOffset * zOffset);
-				if (distance > radius) {
+		for (int xOffset = -radius; xOffset <= radius; xOffset++) {
+			for (int zOffset = -radius; zOffset <= radius; zOffset++) {
+				if (xOffset * xOffset + zOffset * zOffset > radius * radius) {
 					continue; // Skip blocks outside the circle
 				}
 

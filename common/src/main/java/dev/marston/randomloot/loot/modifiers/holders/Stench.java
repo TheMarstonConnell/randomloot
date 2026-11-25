@@ -4,12 +4,12 @@ import java.util.List;
 
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 /**
@@ -33,11 +33,9 @@ public class Stench extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		double radius = getRadius();
-		AABB searchBox = new AABB(
-				holder.getX() - radius, holder.getY() - radius, holder.getZ() - radius,
-				holder.getX() + radius, holder.getY() + radius, holder.getZ() + radius);
+		AABB searchBox = AABB.ofSize(holder.position(), 2 * radius, 2 * radius, 2 * radius);
 
 		// Monster covers the hostile mobs; mirrors Hunter's targeting.
 		List<Monster> hostileMobs = level.getEntitiesOfClass(Monster.class, searchBox);

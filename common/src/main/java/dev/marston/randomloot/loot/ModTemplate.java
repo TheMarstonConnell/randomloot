@@ -26,35 +26,13 @@ public class ModTemplate extends Item {
 
 	@Override
 	public InteractionResult use(Level level, Player player, InteractionHand hand) {
-		ItemStack template = player.getItemInHand(hand);
-
 		Modifier.TrackEntityParticle(level, player, ParticleTypes.CLOUD);
 
+		// Swaps the template for the other one.
 		if (!level.isClientSide()) {
-
-			ItemStack s;
-
-			if (this.add) {
-				s = new ItemStack(ModItems.MOD_SUB.get());
-			} else {
-				s = new ItemStack(ModItems.MOD_ADD.get());
-			}
-
-			player.setItemInHand(hand, s);
+			player.setItemInHand(hand, new ItemStack(this.add ? ModItems.MOD_SUB.get() : ModItems.MOD_ADD.get()));
 		}
 
 		return InteractionResult.SUCCESS;
 	}
-
-//	@Override
-//	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tipList, TooltipFlag flag) {
-//
-//		MutableComponent comp = Component.empty();
-//		comp.append("Right-click to change function");
-//		comp = comp.withStyle(ChatFormatting.GRAY);
-//
-//		tipList.add(comp);
-//
-//	}
-
 }

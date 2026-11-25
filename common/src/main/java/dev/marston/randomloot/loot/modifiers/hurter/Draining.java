@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import net.minecraft.world.entity.LivingEntity;
@@ -20,8 +18,6 @@ public class Draining extends AbstractModifier implements EntityHurtModifier {
 
 	@Override
 	public void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter) {
-		float damage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-
-		hurter.heal(damage * drain());
+		hurter.heal(attackDamage(itemstack) * drain());
 	}
 }

@@ -1,17 +1,13 @@
 package dev.marston.randomloot.loot.modifiers.users;
 
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.Stored;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.entity.projectile.hurtingprojectile.LargeFireball;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 
@@ -20,11 +16,6 @@ public class FireBall extends AbstractModifier implements UseModifier {
 
 	/** Durability a fire ball costs. Stored, so gear keeps the cost it was made with. */
 	private final Stored<Integer> damage = stored(DAMAGE, 20);
-
-	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		return InteractionResult.PASS;
-	}
 
 	@Override
 	public String description() {

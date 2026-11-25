@@ -3,9 +3,10 @@ package dev.marston.randomloot.loot.modifiers.holders;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.monster.Shulker;
 import net.minecraft.world.item.ItemStack;
@@ -13,8 +14,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base for "finder" traits that highlight target blocks by spawning short-lived
@@ -36,19 +37,21 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 
 	private static int time = 0;
 
-	// Thread-safe lists for concurrent access between tick events and hold()
-	private static final List<Shulker> shulkers = new CopyOnWriteArrayList<>();
-	private static final List<Integer> timings = new CopyOnWriteArrayList<>();
+	/**
+	 * Live markers and the lifecycle sweeps each has survived (from -1). Only touched on
+	 * the server thread. An expired marker is discarded outright, with no death animation
+	 * or drops. This used to teleport it to (0, -256, 0) with zero health and wait for it
+	 * to die, but an entity moved into an unloaded chunk stops ticking and is saved there
+	 * instead - so every expired marker piled up in chunk (0, 0)'s entity storage.
+	 */
+	private static final Map<Shulker, Integer> markers = new HashMap<>();
 
 	/** True for blocks this trait should highlight. */
 	protected abstract boolean isTarget(BlockState state);
 
 	public static void onServerStopping() {
-		for (Shulker shulker : shulkers) {
-			kill(shulker);
-		}
-		shulkers.clear();
-		timings.clear();
+		markers.keySet().forEach(Shulker::discard);
+		markers.clear();
 	}
 
 	/** Post-server-tick marker lifecycle sweep. */
@@ -58,40 +61,24 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 			return;
 		}
 
-		for (int i = shulkers.size() - 1; i >= 0; i--) {
-			if (i >= shulkers.size() || i >= timings.size()) {
-				continue; // List may have been modified
-			}
-
-			int tick = timings.get(i) + 1;
-			timings.set(i, tick);
-			Shulker sh = shulkers.get(i);
-
+		markers.replaceAll((sh, n) -> n + 1);
+		markers.entrySet().removeIf(e -> {
+			Shulker sh = e.getKey();
 			// Check loaded-ness first: getBlockState on an unloaded position would
 			// force the chunk back in just to ask about a marker nobody can see.
-			if (tick > MAX_MARKER_LIFE
+			boolean gone = e.getValue() > MAX_MARKER_LIFE
 					|| sh.isRemoved()
 					|| !sh.level().isLoaded(sh.blockPosition())
-					|| sh.level().getBlockState(sh.blockPosition()).isAir()) {
-				kill(sh);
-				shulkers.remove(i);
-				timings.remove(i);
+					|| sh.level().getBlockState(sh.blockPosition()).isAir();
+			if (gone) {
+				sh.discard();
 			}
-		}
-	}
-
-	/**
-	 * Removes the marker outright, with no death animation or drops. This used to
-	 * teleport it to (0, -256, 0) with zero health and wait for it to die, but an
-	 * entity moved into an unloaded chunk stops ticking and is saved there instead -
-	 * so every expired marker piled up in chunk (0, 0)'s entity storage.
-	 */
-	private static void kill(Shulker shulker) {
-		shulker.discard();
+			return gone;
+		});
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		if (level.getGameTime() % SCAN_INTERVAL != 0) {
 			return;
 		}
@@ -101,24 +88,13 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 				for (int k = -SCAN_RADIUS; k < SCAN_RADIUS; k++) {
 					BlockPos p = new BlockPos((int) (holder.getX() + i), (int) (holder.getY() + j),
 							(int) (holder.getZ() + k));
-					if (!isTarget(level.getBlockState(p))) {
-						continue;
-					}
-					if (!hasMarker(level, p)) {
+					if (isTarget(level.getBlockState(p))
+							&& level.getEntities(EntityTypes.SHULKER, new AABB(p), e -> true).isEmpty()) {
 						spawnMarker(level, p);
 					}
 				}
 			}
 		}
-	}
-
-	private static boolean hasMarker(Level level, BlockPos p) {
-		for (Entity entity : level.getEntities(null, new AABB(p))) {
-			if (entity.getType() == EntityTypes.SHULKER) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	private static void spawnMarker(Level level, BlockPos p) {
@@ -141,7 +117,6 @@ public abstract class BlockHighlighter extends AbstractModifier implements HoldM
 		level.addFreshEntity(se);
 		se.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 1200, 0, false, false));
 
-		shulkers.add(se);
-		timings.add(-1);
+		markers.put(se, -1);
 	}
 }

@@ -4,12 +4,11 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRestrictedModifier {
 	@Override
@@ -18,15 +17,13 @@ public class Aquatic extends AbstractModifier implements HoldModifier, BiomeRest
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof LivingEntity living)) return;
-
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		// Water breathing
-		living.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, 40, 0, false, false));
+		holder.addEffect(new MobEffectInstance(MobEffects.WATER_BREATHING, 40, 0, false, false));
 
 		// Extra haste when underwater
-		if (living.isUnderWater()) {
-			living.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, traitLevel() + 1, true, false));
+		if (holder.isUnderWater()) {
+			holder.addEffect(new MobEffectInstance(MobEffects.HASTE, 40, traitLevel() + 1, true, false));
 		}
 	}
 

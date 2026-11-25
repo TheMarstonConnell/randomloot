@@ -4,11 +4,10 @@ import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EffectModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class Effect extends EffectModifier implements HoldModifier {
 
@@ -24,13 +23,9 @@ public class Effect extends EffectModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof LivingEntity livingHolder)) {
-			return;
-		}
-
-		if (!livingHolder.hasEffect(effect)) {
-			livingHolder.addEffect(makeInstance());
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
+		if (!holder.hasEffect(effect)) {
+			holder.addEffect(makeInstance());
 		}
 	}
 }

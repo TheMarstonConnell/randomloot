@@ -383,32 +383,20 @@ class TraitFixtureTest {
 	/** A stored tag as text, with Chaotic's seed shown by shape when it was just rolled. */
 	private static String shape(String tag, CompoundTag stored, boolean rolled) {
 		CompoundTag shown = stored.copy();
-		String text;
 		if (rolled && tag.equals("chaotic") && shown.contains("chaoticSeed")) {
 			shown.remove("chaoticSeed");
 			shown.putString("chaoticSeed", "<a long>");
-			text = shown.toString();
 		} else if (rolled && tag.equals("dirt_place")) {
-			text = forgerShape(shown.toString());
-		} else {
-			text = shown.toString();
+			return forgerShape(shown.toString());
 		}
-		return text;
+		return shown.toString();
 	}
 
 	/** What gear shows for a trait: the name with its level, the description, and how both are rendered. */
 	private static String render(Modifier trait) {
-		List<Component> lore = new ArrayList<>();
-		trait.writeToLore(lore, false);
-		List<Component> shiftLore = new ArrayList<>();
-		trait.writeToLore(shiftLore, true);
-		String details;
-		try {
-			Component component = trait.writeDetailsToLore(null);
-			details = component == null ? "none" : component.toString();
-		} catch (RuntimeException e) {
-			details = "throws " + e.getClass().getSimpleName();
-		}
+		List<Component> lore = List.of(trait.loreLine());
+		List<Component> shiftLore = List.of(trait.loreLine());
+		String details = details(trait);
 
 		return "name=" + trait.name() + " | canLevel=" + trait.canLevel() + " | color=" + trait.color().name()
 				+ " | description=" + trait.description() + " | displayName=" + trait.displayName()
@@ -418,15 +406,18 @@ class TraitFixtureTest {
 
 	/** The parts of {@link #render} that depend on what was stored; the rest follows from them. */
 	private static String renderBriefly(Modifier trait) {
-		String details;
+		return "name=" + trait.name() + " | canLevel=" + trait.canLevel() + " | description=" + trait.description()
+				+ " | details=" + details(trait);
+	}
+
+	/** The trait's extra lore line, "none" when it has none, or what it throws. */
+	private static String details(Modifier trait) {
 		try {
 			Component component = trait.writeDetailsToLore(null);
-			details = component == null ? "none" : component.toString();
+			return component == null ? "none" : component.toString();
 		} catch (RuntimeException e) {
-			details = "throws " + e.getClass().getSimpleName();
+			return "throws " + e.getClass().getSimpleName();
 		}
-		return "name=" + trait.name() + " | canLevel=" + trait.canLevel() + " | description=" + trait.description()
-				+ " | details=" + details;
 	}
 
 	/** Replaces whichever temperate forger was rolled, so a rolled name compares by shape. */

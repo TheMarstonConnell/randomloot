@@ -18,17 +18,8 @@ public enum ToolType {
 
 	@Override
 	public String toString() {
-		return switch (this) {
-		case PICKAXE -> "Pickaxe";
-		case SHOVEL -> "Shovel";
-		case AXE -> "Axe";
-		case SWORD -> "Sword";
-		case HELMET -> "Helmet";
-		case CHESTPLATE -> "Chestplate";
-		case LEGGINGS -> "Leggings";
-		case BOOTS -> "Boots";
-		default -> "Null";
-		};
+		// PICKAXE -> "Pickaxe", CHESTPLATE -> "Chestplate", NULL -> "Null".
+		return name().charAt(0) + name().substring(1).toLowerCase(Locale.ROOT);
 	}
 
 	/** Translatable display name for tooltips, falling back to the English toString(). */

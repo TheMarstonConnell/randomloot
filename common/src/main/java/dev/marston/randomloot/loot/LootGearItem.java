@@ -5,11 +5,16 @@ import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import dev.marston.randomloot.RandomLoot;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import dev.marston.randomloot.platform.Services;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.TagKey;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.Item;
@@ -39,7 +44,10 @@ public abstract class LootGearItem extends Item {
 		super(p.stacksTo(1).durability(100));
 	}
 
-	/** The stack's attributes, derived from its goodness, type and traits. */
+	/**
+	 * The stack's attributes, derived from its goodness, type and traits. Never asked of
+	 * gear in its reveal roll: {@link LootUtils#refreshDerivedComponents} gives that none.
+	 */
 	public abstract ItemAttributeModifiers buildAttributeModifiers(ItemStack stack);
 
 	/**
@@ -56,9 +64,21 @@ public abstract class LootGearItem extends Item {
 	 * The mod's per-type enchant filter: {@code true}/{@code false} to decide, or
 	 * {@code null} to defer to the loader's default check. Both gear items sit in every
 	 * relevant {@code minecraft:enchantable/*} tag, so the per-type split has to happen
-	 * here rather than in the tags.
+	 * here rather than in the tags. Never asked of gear in its reveal roll:
+	 * {@link LootUtils#gearEnchantGate} refuses every enchantment for that.
 	 */
 	public abstract Boolean supportsEnchantmentCommon(ItemStack stack, Holder<Enchantment> enchantment);
+
+	/** A datapack-editable enchantment group; see data/randomloot/tags/enchantment/. */
+	protected static TagKey<Enchantment> enchantTag(String path) {
+		return TagKey.create(Registries.ENCHANTMENT, Identifier.fromNamespaceAndPath(RandomLoot.MODID, path));
+	}
+
+	/** One gray "Name: value" line of the shift-expanded tooltip, to two decimals. */
+	protected static void statLine(Consumer<Component> tips, String key, String fallback, float value) {
+		tips.accept(Component.translatableWithFallback(key, fallback, String.format("%.2f", value))
+				.withStyle(ChatFormatting.GRAY));
+	}
 
 	/** Durability derived from goodness; stored as the vanilla MAX_DAMAGE component. */
 	public static int computeMaxDamage(ItemStack stack) {

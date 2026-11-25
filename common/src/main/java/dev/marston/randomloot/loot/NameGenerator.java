@@ -35,16 +35,17 @@ public class NameGenerator {
 	public static final String[] HotNames = new String[] { "Blazicus", "Dante", "Fyrus", "Pyrok", "Spaisee",
 			"Infernus" };
 
-	public static String generateForger(RandomSource random, float temp) {
-		String[] list = TemperateNames;
+	/** The temperature band's choice: cold at 0.1 and below, hot from 1 up, else temperate. */
+	private static <T> T band(float temp, T cold, T temperate, T hot) {
+		return temp <= 0.1f ? cold : temp >= 1 ? hot : temperate;
+	}
 
-		if (temp <= 0.1f) {
-			list = ColdNames;
-		} else if (temp >= 1) {
-			list = HotNames;
-		}
-
+	private static String pick(RandomSource random, String[] list) {
 		return list[random.nextInt(list.length)];
+	}
+
+	public static String generateForger(RandomSource random, float temp) {
+		return pick(random, band(temp, ColdNames, TemperateNames, HotNames));
 	}
 
 	/**
@@ -54,16 +55,8 @@ public class NameGenerator {
 	 * doesn't land on the same list index for all three bands.
 	 */
 	public static String forgerForWorld(long worldSeed, float temp) {
-		String[] list = TemperateNames;
-		long salt = 0x9E3779B97F4A7C15L;
-
-		if (temp <= 0.1f) {
-			list = ColdNames;
-			salt = 0xC2B2AE3D27D4EB4FL;
-		} else if (temp >= 1) {
-			list = HotNames;
-			salt = 0x165667B19E3779F9L;
-		}
+		String[] list = band(temp, ColdNames, TemperateNames, HotNames);
+		long salt = band(temp, 0xC2B2AE3D27D4EB4FL, 0x9E3779B97F4A7C15L, 0x165667B19E3779F9L);
 
 		// SplitMix64-style mix so neighboring seeds don't pick neighboring names.
 		long h = worldSeed ^ salt;
@@ -77,34 +70,15 @@ public class NameGenerator {
 	}
 
 	public static final String getAdj(RandomSource random, float temp, boolean raining) {
-		String[] list = TemperateAdj;
-
-		if (raining) {
-			list = RainingAdj;
-		} else {
-			if (temp <= 0.1f) {
-				list = ColdAdj;
-			} else if (temp >= 1) {
-				list = HotAdj;
-			}
-		}
-
-		return list[random.nextInt(list.length)];
+		return pick(random, raining ? RainingAdj : band(temp, ColdAdj, TemperateAdj, HotAdj));
 	}
 
 	public static String generateName(RandomSource random) {
-		String prefix = Prefixes[random.nextInt(Prefixes.length)];
-		String suffix = Suffixes[random.nextInt(Suffixes.length)];
-
-		return prefix + suffix;
-
+		return pick(random, Prefixes) + pick(random, Suffixes);
 	}
 
+	// Draws the adjective, then the prefix, then the suffix: Java evaluates + left to right.
 	public static String generateNameWPrefix(RandomSource random, float temp, boolean raining) {
-		String pref = getAdj(random, temp, raining);
-		String suff = generateName(random);
-
-		return pref + " " + suff;
-
+		return getAdj(random, temp, raining) + " " + generateName(random);
 	}
 }

@@ -1,7 +1,6 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
 import dev.marston.randomloot.items.ModItems;
-import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.ToolType;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
@@ -30,24 +29,14 @@ public class Soulbound extends AbstractModifier implements EntityHurtModifier {
 		}
 
 		// Apply 15% bonus damage
-		float baseDamage = LootItem.getAttackDamage(itemstack, type);
-		dealBonusDamage(hurtee, hurter, baseDamage * 0.15f);
+		dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * 0.15f);
 	}
 
 	/**
 	 * Check if the given entity is the original owner of the tool.
 	 */
 	public static boolean isOwner(ItemStack stack, LivingEntity entity) {
-		if (entity == null) {
-			return false;
-		}
-
-		String ownerUUID = LootUtils.getOwnerUUID(stack);
-		if (ownerUUID.isEmpty()) {
-			return false;
-		}
-
-		return ownerUUID.equals(entity.getStringUUID());
+		return LootUtils.getOwnerUUID(stack).equals(entity.getStringUUID());
 	}
 
 	/**

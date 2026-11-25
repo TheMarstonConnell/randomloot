@@ -10,7 +10,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class HaileysWrath extends AbstractModifier implements EntityKillModifier {
     @Override
@@ -20,17 +19,14 @@ public class HaileysWrath extends AbstractModifier implements EntityKillModifier
 
     @Override
     public void onKill(ItemStack itemstack, LivingEntity victim, LivingEntity killer) {
-        Level level = victim.level();
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
+        ServerLevel serverLevel = (ServerLevel) victim.level();
 
         // Spawn a bee at the victim's location
         BlockPos pos = victim.blockPosition();
         Entity bee = EntityTypes.BEE.create(serverLevel, null, pos, EntitySpawnReason.MOB_SUMMONED, false, false);
         if (bee != null) {
             bee.setPos(victim.getX(), victim.getY(), victim.getZ());
-            level.addFreshEntity(bee);
+            serverLevel.addFreshEntity(bee);
             ModCriteria.traitUsed(killer, this);
         }
     }

@@ -5,13 +5,12 @@ import java.util.ArrayList;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.core.Holder;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 /**
  * Cinnabar-themed holder trait: the mod's alchemical "catalyst". While the item is held or
@@ -40,15 +39,11 @@ public class Catalyst extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
-		if (!(holder instanceof LivingEntity livingHolder)) {
-			return;
-		}
-
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		float refundChance = getRefundChance();
 
 		// Copy first: addEffect below mutates the live active-effects collection.
-		for (MobEffectInstance active : new ArrayList<>(livingHolder.getActiveEffects())) {
+		for (MobEffectInstance active : new ArrayList<>(holder.getActiveEffects())) {
 			Holder<MobEffect> effect = active.getEffect();
 
 			if (effect.value().getCategory() != MobEffectCategory.BENEFICIAL) {
@@ -63,7 +58,7 @@ public class Catalyst extends AbstractModifier implements HoldModifier {
 
 			if (level.getRandom().nextFloat() < refundChance) {
 				// Re-add one tick longer; vanilla extends the duration when the amplifier matches.
-				livingHolder.addEffect(new MobEffectInstance(effect, duration + 1, active.getAmplifier(),
+				holder.addEffect(new MobEffectInstance(effect, duration + 1, active.getAmplifier(),
 						active.isAmbient(), active.isVisible(), active.showIcon()));
 			}
 		}

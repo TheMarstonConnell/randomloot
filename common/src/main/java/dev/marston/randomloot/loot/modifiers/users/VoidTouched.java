@@ -3,8 +3,6 @@ package dev.marston.randomloot.loot.modifiers.users;
 import dev.marston.randomloot.advancements.ModCriteria;
 import dev.marston.randomloot.loot.modifiers.BiomeRestrictedModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
-import dev.marston.randomloot.loot.modifiers.Modifier;
-import dev.marston.randomloot.loot.modifiers.ModifierRegistry;
 import dev.marston.randomloot.loot.modifiers.UseModifier;
 import dev.marston.randomloot.loot.modifiers.TraitDispatch;
 import net.minecraft.core.BlockPos;
@@ -12,10 +10,8 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -28,19 +24,9 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 	}
 
 	@Override
-	public InteractionResult use(UseOnContext ctx) {
-		return InteractionResult.PASS;
-	}
-
-	@Override
 	public boolean use(Level level, Player player, InteractionHand hand) {
 		float distance = 8.0f + (traitLevel() * 4.0f);
-		Vec3 lookVec = player.getLookAngle();
-		Vec3 destination = player.position().add(
-			lookVec.x * distance,
-			lookVec.y * distance,
-			lookVec.z * distance
-		);
+		Vec3 destination = player.position().add(player.getLookAngle().scale(distance));
 
 		BlockPos targetPos = BlockPos.containing(destination);
 		BlockPos safePos = findSafeTeleportLocation(level, targetPos);
@@ -52,11 +38,9 @@ public class VoidTouched extends AbstractModifier implements UseModifier, BiomeR
 
 		player.teleportTo(safePos.getX() + 0.5, safePos.getY(), safePos.getZ() + 0.5);
 
-		if (level instanceof ServerLevel serverLevel) {
-			serverLevel.sendParticles(ParticleTypes.PORTAL,
-				player.getX(), player.getY() + 1, player.getZ(),
-				32, 0.5, 0.5, 0.5, 0.1);
-		}
+		((ServerLevel) level).sendParticles(ParticleTypes.PORTAL,
+			player.getX(), player.getY() + 1, player.getZ(),
+			32, 0.5, 0.5, 0.5, 0.1);
 
 		TraitDispatch.spendDurability(player.getItemInHand(hand), 10, player, EquipmentSlot.MAINHAND);
 		player.playSound(SoundEvents.ENDERMAN_TELEPORT, 1.0f, 1.0f);

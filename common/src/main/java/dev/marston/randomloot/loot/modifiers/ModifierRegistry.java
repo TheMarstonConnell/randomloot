@@ -3,20 +3,9 @@ package dev.marston.randomloot.loot.modifiers;
 import dev.marston.randomloot.loot.modifiers.breakers.*;
 import dev.marston.randomloot.loot.modifiers.holders.*;
 import dev.marston.randomloot.loot.modifiers.hurter.*;
-import dev.marston.randomloot.loot.modifiers.hurter.Pummeling;
-import dev.marston.randomloot.loot.modifiers.hurter.Soulbound;
 import dev.marston.randomloot.loot.modifiers.stats.Busted;
-import dev.marston.randomloot.loot.modifiers.hurter.Munchies;
-import dev.marston.randomloot.loot.modifiers.wearers.Adrenaline;
-import dev.marston.randomloot.loot.modifiers.wearers.Bulwark;
-import dev.marston.randomloot.loot.modifiers.wearers.Featherweight;
-import dev.marston.randomloot.loot.modifiers.wearers.Magnetized;
-import dev.marston.randomloot.loot.modifiers.wearers.Thorny;
-import dev.marston.randomloot.loot.modifiers.users.DirtPlace;
-import dev.marston.randomloot.loot.modifiers.users.FireBall;
-import dev.marston.randomloot.loot.modifiers.users.FirePlace;
-import dev.marston.randomloot.loot.modifiers.users.VoidTouched;
-import dev.marston.randomloot.loot.modifiers.users.TorchPlace;
+import dev.marston.randomloot.loot.modifiers.wearers.*;
+import dev.marston.randomloot.loot.modifiers.users.*;
 import dev.marston.randomloot.loot.ToolType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
@@ -166,7 +155,7 @@ public class ModifierRegistry {
 			.levels(1, 5).make(Munchies::new);
 
 	public static Modifier UNBREAKING = trait("unbreaking", "Unbreaking", ChatFormatting.AQUA, ANY_GEAR, Group.MISC)
-			.levels(0, 4).make(Unbreaking::new);
+			.levels(0, 4).maxedName("Unbreakable").make(Unbreaking::new);
 	public static Modifier FEASTING = trait("feasting", "Feasting", ChatFormatting.GOLD, HAND_HELD, Group.HURTERS, Group.HOLDERS)
 			.make(Feasting::new);
 
@@ -179,7 +168,7 @@ public class ModifierRegistry {
 	public static Modifier THORNY = trait("thorny", "Thorny", ChatFormatting.DARK_GREEN, ARMOR, Group.WEARERS)
 			.levels(0, 4).make(Thorny::new);
 	public static Modifier FEATHERWEIGHT = trait("featherweight", "Featherweight", ChatFormatting.WHITE, only(ToolType.BOOTS), Group.WEARERS)
-			.levels(0, 3).make(Featherweight::new);
+			.levels(0, 3).maxedName("Weightless").make(Featherweight::new);
 	public static Modifier BULWARK = trait("bulwark", "Bulwark", ChatFormatting.DARK_AQUA, ARMOR, Group.WEARERS)
 			.levels(0, 4).make(Bulwark::new);
 	public static Modifier ADRENALINE = trait("adrenaline", "Adrenaline", ChatFormatting.RED, ARMOR, Group.WEARERS)

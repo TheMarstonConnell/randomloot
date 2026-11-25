@@ -14,11 +14,6 @@ import net.minecraft.world.level.block.state.BlockState;
 public class FabricPlatformHelper implements IPlatformHelper {
 
     @Override
-    public String platformName() {
-        return "Fabric";
-    }
-
-    @Override
     public LootItem createLootItem(Item.Properties props) {
         // Fabric has no item-ability hook; LootItem's own useOn handles strip/scrape/flatten.
         return new LootItem(props);

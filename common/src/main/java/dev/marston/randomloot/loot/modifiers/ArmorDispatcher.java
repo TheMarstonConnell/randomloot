@@ -48,10 +48,6 @@ public final class ArmorDispatcher {
 
 	/** Pre-damage hook: wearer-hurt traits may reduce (or alter) the damage. Returns the new damage. */
 	public static float onLivingDamagePre(LivingEntity wearer, DamageSource source, float damage) {
-		if (wearer.level().isClientSide()) {
-			return damage;
-		}
-
 		// This is the one place both loaders call before damage lands on any living
 		// entity, so traits that read pre-hit state take their note from here - for
 		// every hit, since each one has to set or clear that note.
@@ -70,10 +66,6 @@ public final class ArmorDispatcher {
 
 	/** Post-damage hook: armor earns XP by soaking hits, mirroring tools earning XP per block/swing. */
 	public static void onLivingDamagePost(LivingEntity wearer, float inflictedDamage) {
-		if (wearer.level().isClientSide()) {
-			return;
-		}
-
 		if (inflictedDamage <= 0.0f) {
 			return;
 		}

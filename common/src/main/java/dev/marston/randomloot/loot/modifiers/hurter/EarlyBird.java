@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.PreHitModifier;
 import net.minecraft.world.entity.LivingEntity;
@@ -44,12 +42,11 @@ public class EarlyBird extends AbstractModifier implements PreHitModifier {
 
 	private float getBonusDamage() {
 		// Level 1: 15%, Level 2: 25%, Level 3: 40%
-		switch (traitLevel()) {
-			case 1: return 0.15f;
-			case 2: return 0.25f;
-			case 3: return 0.40f;
-			default: return 0.15f;
-		}
+		return switch (traitLevel()) {
+			case 2 -> 0.25f;
+			case 3 -> 0.40f;
+			default -> 0.15f;
+		};
 	}
 
 	@Override
@@ -64,8 +61,7 @@ public class EarlyBird extends AbstractModifier implements PreHitModifier {
 		// that undercounts any hit that crits or carries Sharpness/Strength, and those
 		// then failed the check against a genuinely untouched target.
 		if (wasAtFullHealth(hurtee)) {
-			float dmg = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-			dealBonusDamage(hurtee, hurter, dmg * getBonusDamage());
+			dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * getBonusDamage());
 		}
 	}
 }

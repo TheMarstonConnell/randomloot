@@ -19,6 +19,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * Wiki generation: the repo's player docs (MODIFIERS.md, CONFIG.md, PROGRESSION.md,
@@ -48,9 +49,20 @@ public final class GenWiki {
         f.append(s).append('\n');
     }
 
-    private static String stripItemName(String name) {
-        Identifier loc = Identifier.tryParse(name);
-        return loc.getPath();
+    /** A heading, a blank line, a paragraph and a blank line. */
+    private static void section(String heading, String text, StringBuilder f) {
+        write(heading + "\n\n" + text + "\n", f);
+    }
+
+    /** A MODIFIERS.md link to the trait's entry. */
+    private static String modLink(Modifier m) {
+        String name = docName(m);
+        return "[" + name + "](MODIFIERS.md#" + name.toLowerCase().replace(" ", "-") + ")";
+    }
+
+    /** Every trait in the registry, by tag name. */
+    private static Collection<Modifier> traitsByTag() {
+        return new TreeMap<>(ModifierRegistry.getModifiers()).values();
     }
 
     // On gear, Grace is named after the forger of the world it was granted in
@@ -84,35 +96,29 @@ public final class GenWiki {
 
     private void writeMod(Modifier m, StringBuilder f) {
         String tag = m.tagName();
-        String recipe = "n/a";
-        // The count is what the Addition Template charges; one item is implied.
-        String cost = "";
         TraitAdditionRecipe loaded = recipes.get(tag);
         if (loaded == null) {
             // Never reaches a file: render() throws once every page has been through.
             withoutRecipe.add(tag);
-        } else {
-            recipe = loaded.additionItem().getRegisteredName();
-            if (loaded.additionCount() > 1) {
-                cost = " \u00d7" + loaded.additionCount();
-            }
+            return;
         }
+        String recipe = loaded.additionItem().getRegisteredName();
+        String item = loaded.additionItem().unwrapKey().orElseThrow().identifier().getPath();
+        // The count is what the Addition Template charges; one item is implied.
+        String cost = loaded.additionCount() > 1 ? " \u00d7" + loaded.additionCount() : "";
         write("### " + docName(m), f);
 
-        write("**id:** `" + tag + "` | **crafting:** `" + recipe + "`" + cost + " ![" + stripItemName(recipe)
+        write("**id:** `" + tag + "` | **crafting:** `" + recipe + "`" + cost + " ![" + item
                 + "](https://raw.githubusercontent.com/anish-shanbhag/minecraft-api/master/public/images/items/"
-                + stripItemName(recipe) + ".png)", f);
+                + item + ".png)", f);
         write("", f);
         write("**Description:** " + m.description(), f);
     }
 
-    private void writeMods(Set<Modifier> mods, StringBuilder f) {
-        List<Modifier> sortedList = new ArrayList<>(mods);
-        sortedList.sort(Comparator.comparing(GenWiki::docName));
-
-        for (Modifier modifier : sortedList) {
-            writeMod(modifier, f);
-        }
+    private void writeMods(String heading, String blurb, Set<Modifier> mods, StringBuilder f) {
+        write(heading, f);
+        write(blurb, f);
+        mods.stream().sorted(Comparator.comparing(GenWiki::docName)).forEach(m -> writeMod(m, f));
     }
 
     private void writeModifiers(StringBuilder f) {
@@ -120,41 +126,25 @@ public final class GenWiki {
         write("# Modifiers", f);
         write("This is a full list of modifiers in the game and a description of what they do.", f);
 
-        write("## Breakers", f);
-        write("These effects are applied when breaking blocks.", f);
-        writeMods(ModifierRegistry.BREAKERS, f);
-
-        write("## Holders", f);
-        write("These effects are applied when holding the tool.", f);
-        writeMods(ModifierRegistry.HOLDERS, f);
-
-        write("## Users", f);
-        write("These effects are applied when right clicking.", f);
-        writeMods(ModifierRegistry.USERS, f);
-
-        write("## Hurters", f);
-        write("These effects are applied when hurting enemies.", f);
-        writeMods(ModifierRegistry.HURTERS, f);
-
-        write("## Wearers", f);
-        write("These effects are exclusive to armor and trigger while worn.", f);
-        writeMods(ModifierRegistry.WEARERS, f);
-
-        write("## Stats", f);
-        write("These effects are used to calculate stats for tools.", f);
-        writeMods(ModifierRegistry.STATS, f);
-
-        write("## Misc.", f);
-        write("These effects are general and don't fit into any other categories.", f);
-        writeMods(ModifierRegistry.MISC, f);
+        writeMods("## Breakers", "These effects are applied when breaking blocks.", ModifierRegistry.BREAKERS, f);
+        writeMods("## Holders", "These effects are applied when holding the tool.", ModifierRegistry.HOLDERS, f);
+        writeMods("## Users", "These effects are applied when right clicking.", ModifierRegistry.USERS, f);
+        writeMods("## Hurters", "These effects are applied when hurting enemies.", ModifierRegistry.HURTERS, f);
+        writeMods("## Wearers", "These effects are exclusive to armor and trigger while worn.", ModifierRegistry.WEARERS, f);
+        writeMods("## Stats", "These effects are used to calculate stats for tools.", ModifierRegistry.STATS, f);
+        writeMods("## Misc.", "These effects are general and don't fit into any other categories.", ModifierRegistry.MISC, f);
     }
 
     /** One CONFIG.md table: a row per setting of the group, rendered from its declaration rather than restated. */
-    private static void writeSettingRows(Config.Group group, StringBuilder f) {
+    private static void settingsTable(String heading, String blurb, Config.Group group, StringBuilder f) {
+        section(heading, blurb, f);
+        write("| Option | Default | Range | Description |", f);
+        write("|--------|---------|-------|-------------|", f);
         for (Config.Setting<?> setting : Config.settings(group)) {
             write("| `" + setting.key() + "` | " + defaultCell(setting) + " | " + rangeCell(setting) + " | "
                     + setting.description() + " |", f);
         }
+        write("", f);
     }
 
     /** A number as Java prints it (0.25, and 1.0 for a decimal but 1 for a whole number); a list as inline code. */
@@ -177,61 +167,29 @@ public final class GenWiki {
     }
 
     private static void writeConfig(StringBuilder f) {
-        write("# Configuration Guide", f);
-        write("", f);
-        write("This document describes all configuration options available for Random Loot.", f);
-        write("", f);
+        section("# Configuration Guide", "This document describes all configuration options available for Random Loot.", f);
 
-        write("## Loot Chances", f);
-        write("", f);
-        write("These settings control how often Random Loot items appear in structure chests.", f);
-        write("", f);
-        write("| Option | Default | Range | Description |", f);
-        write("|--------|---------|-------|-------------|", f);
-        writeSettingRows(Config.Group.LOOT_CHANCES, f);
-        write("", f);
+        settingsTable("## Loot Chances", "These settings control how often Random Loot items appear in structure chests.",
+                Config.Group.LOOT_CHANCES, f);
 
-        write("## Progression", f);
-        write("", f);
-        write("These settings affect how tools improve over time.", f);
-        write("", f);
-        write("| Option | Default | Range | Description |", f);
-        write("|--------|---------|-------|-------------|", f);
-        writeSettingRows(Config.Group.PROGRESSION, f);
-        write("", f);
+        settingsTable("## Progression", "These settings affect how tools improve over time.",
+                Config.Group.PROGRESSION, f);
 
-        write("## Modifier Settings", f);
-        write("", f);
-        write("These settings tune how individual modifiers behave.", f);
-        write("", f);
-        write("| Option | Default | Range | Description |", f);
-        write("|--------|---------|-------|-------------|", f);
-        writeSettingRows(Config.Group.MODIFIER_SETTINGS, f);
-        write("", f);
+        settingsTable("## Modifier Settings", "These settings tune how individual modifiers behave.",
+                Config.Group.MODIFIER_SETTINGS, f);
 
-        write("## Modifier Toggles", f);
-        write("", f);
-        write("Each modifier can be individually enabled or disabled. Set to `false` to disable a modifier.", f);
-        write("", f);
+        section("## Modifier Toggles", "Each modifier can be individually enabled or disabled. Set to `false` to disable a modifier.", f);
         write("| Config Option | Modifier | Description |", f);
         write("|---------------|----------|-------------|", f);
 
-        List<Map.Entry<String, Modifier>> sortedMods = new ArrayList<>(ModifierRegistry.getModifiers().entrySet());
-        sortedMods.sort(Comparator.comparing(Map.Entry::getKey));
-
-        for (Map.Entry<String, Modifier> entry : sortedMods) {
-            String key = entry.getKey();
-            Modifier mod = entry.getValue();
-            write("| `" + Config.traitToggle(key).key() + "` | [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | " + mod.description() + " |", f);
+        for (Modifier mod : traitsByTag()) {
+            write("| `" + Config.traitToggle(mod.tagName()).key() + "` | " + modLink(mod) + " | " + mod.description() + " |", f);
         }
         write("", f);
     }
 
     private static void writeProgression(StringBuilder f) {
-        write("# Tool Progression", f);
-        write("", f);
-        write("This document explains how Random Loot tools improve over time.", f);
-        write("", f);
+        section("# Tool Progression", "This document explains how Random Loot tools improve over time.", f);
 
         write("## Tool Stats (Goodness)", f);
         write("", f);
@@ -260,10 +218,7 @@ public final class GenWiki {
         write("**Durability Formula:** `(goodness + 10) × 80`", f);
         write("", f);
 
-        write("## Leveling System", f);
-        write("", f);
-        write("Tools gain XP from mining blocks and attacking enemies. Each level grants a **10% stat boost**.", f);
-        write("", f);
+        section("## Leveling System", "Tools gain XP from mining blocks and attacking enemies. Each level grants a **10% stat boost**.", f);
         write(String.format("Each level-up also has a **%d%%** chance to roll a bonus trait, or to level up a trait the gear already has"
                 + " (`%s` in [CONFIG.md](CONFIG.md)).",
                 Math.round(Config.LEVEL_UP_TRAIT_CHANCE.defaultValue() * 100), Config.LEVEL_UP_TRAIT_CHANCE.key()), f);
@@ -272,24 +227,17 @@ public final class GenWiki {
         write("", f);
         write("| Level | XP Required | Total XP | Stat Multiplier |", f);
         write("|-------|-------------|----------|-----------------|", f);
+        int totalXP = 0;
+        float multiplier = 1.0f;
         for (int i = 0; i <= 10; i++) {
-            int totalXP = 0;
-            for (int j = 0; j < i; j++) {
-                totalXP += GearStats.maxXp(j);
-            }
-            // Walk the same 10%-per-level step the game applies, rather than restating it.
-            float multiplier = 1.0f;
-            for (int j = 0; j < i; j++) {
-                multiplier = GearStats.leveledGoodness(multiplier);
-            }
             write(String.format("| %d | %,d | %,d | %.2fx |", i, GearStats.maxXp(i), totalXP, multiplier), f);
+            totalXP += GearStats.maxXp(i);
+            // Walk the same 10%-per-level step the game applies, rather than restating it.
+            multiplier = GearStats.leveledGoodness(multiplier);
         }
         write("", f);
 
-        write("## Progression Curve", f);
-        write("", f);
-        write("The more cases you open, the better your new tools become. Goodness is calculated as:", f);
-        write("", f);
+        section("## Progression Curve", "The more cases you open, the better your new tools become. Goodness is calculated as:", f);
         write("**Goodness Formula:** `√(cases_opened + 1) × goodness_rate`", f);
         write("", f);
         write("**Starting Traits:** `floor(goodness / 2)`", f);
@@ -304,10 +252,7 @@ public final class GenWiki {
         }
         write("", f);
 
-        write("## Tool Types", f);
-        write("", f);
-        write("Random Loot generates four types of tools, each with multiple texture variants:", f);
-        write("", f);
+        section("## Tool Types", "Random Loot generates four types of tools, each with multiple texture variants:", f);
         write("| Tool Type | Texture Variants | Primary Use |", f);
         write("|-----------|------------------|-------------|", f);
         write("| Pickaxe | " + LootUtils.textureCount(ToolType.PICKAXE) + " | Mining stone and ores |", f);
@@ -320,10 +265,7 @@ public final class GenWiki {
     }
 
     private static void writeNames(StringBuilder f) {
-        write("# Name Generation", f);
-        write("", f);
-        write("This document explains how Random Loot tool names are generated.", f);
-        write("", f);
+        section("# Name Generation", "This document explains how Random Loot tool names are generated.", f);
 
         write("## Name Structure", f);
         write("", f);
@@ -335,64 +277,29 @@ public final class GenWiki {
         write("Example: \"Blazing Fytenblade\" or \"Frozen Halbedda\"", f);
         write("", f);
 
-        write("## Base Names", f);
-        write("", f);
-        write("### Prefixes", f);
-        write("", f);
-        writeStringArray(NameGenerator.Prefixes, f);
-        write("", f);
+        write("## Base Names\n", f);
+        section("### Prefixes", codeList(NameGenerator.Prefixes), f);
 
-        write("### Suffixes", f);
-        write("", f);
-        writeStringArray(NameGenerator.Suffixes, f);
-        write("", f);
+        section("### Suffixes", codeList(NameGenerator.Suffixes), f);
 
-        write("## Temperature-Based Adjectives", f);
-        write("", f);
-        write("The adjective is chosen based on the biome temperature where the tool is created.", f);
-        write("", f);
+        section("## Temperature-Based Adjectives", "The adjective is chosen based on the biome temperature where the tool is created.", f);
 
-        write("### Hot Biomes (temp ≥ 1.0)", f);
-        write("", f);
-        writeStringArray(NameGenerator.HotAdj, f);
-        write("", f);
+        section("### Hot Biomes (temp ≥ 1.0)", codeList(NameGenerator.HotAdj), f);
 
-        write("### Cold Biomes (temp ≤ 0.1)", f);
-        write("", f);
-        writeStringArray(NameGenerator.ColdAdj, f);
-        write("", f);
+        section("### Cold Biomes (temp ≤ 0.1)", codeList(NameGenerator.ColdAdj), f);
 
-        write("### Temperate Biomes (0.1 < temp < 1.0)", f);
-        write("", f);
-        writeStringArray(NameGenerator.TemperateAdj, f);
-        write("", f);
+        section("### Temperate Biomes (0.1 < temp < 1.0)", codeList(NameGenerator.TemperateAdj), f);
 
-        write("### Rainy Weather", f);
-        write("", f);
-        write("If it's raining when the tool is created, these adjectives are used instead:", f);
-        write("", f);
-        writeStringArray(NameGenerator.RainingAdj, f);
-        write("", f);
+        section("### Rainy Weather", "If it's raining when the tool is created, these adjectives are used instead:", f);
+        write(codeList(NameGenerator.RainingAdj) + "\n", f);
 
-        write("## Forger Names", f);
-        write("", f);
-        write("Each tool's lore mentions a forger. The forger name is based on biome temperature.", f);
-        write("", f);
+        section("## Forger Names", "Each tool's lore mentions a forger. The forger name is based on biome temperature.", f);
 
-        write("### Hot Biome Forgers", f);
-        write("", f);
-        writeStringArray(NameGenerator.HotNames, f);
-        write("", f);
+        section("### Hot Biome Forgers", codeList(NameGenerator.HotNames), f);
 
-        write("### Cold Biome Forgers", f);
-        write("", f);
-        writeStringArray(NameGenerator.ColdNames, f);
-        write("", f);
+        section("### Cold Biome Forgers", codeList(NameGenerator.ColdNames), f);
 
-        write("### Temperate Biome Forgers", f);
-        write("", f);
-        writeStringArray(NameGenerator.TemperateNames, f);
-        write("", f);
+        section("### Temperate Biome Forgers", codeList(NameGenerator.TemperateNames), f);
 
         write("## Example", f);
         write("", f);
@@ -404,22 +311,12 @@ public final class GenWiki {
         write("", f);
     }
 
-    private static void writeStringArray(String[] array, StringBuilder f) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < array.length; i++) {
-            sb.append("`").append(array[i]).append("`");
-            if (i < array.length - 1) {
-                sb.append(", ");
-            }
-        }
-        write(sb.toString(), f);
+    private static String codeList(String[] names) {
+        return Arrays.stream(names).map(n -> "`" + n + "`").collect(Collectors.joining(", "));
     }
 
     private static void writeBiomes(StringBuilder f) {
-        write("# Biome-Specific Traits", f);
-        write("", f);
-        write("Some traits in Random Loot are tied to specific biomes. These special traits can only appear on tools generated in matching biomes, and can only be added via smithing table to tools that originated from compatible biomes.", f);
-        write("", f);
+        section("# Biome-Specific Traits", "Some traits in Random Loot are tied to specific biomes. These special traits can only appear on tools generated in matching biomes, and can only be added via smithing table to tools that originated from compatible biomes.", f);
 
         write("## How It Works", f);
         write("", f);
@@ -437,24 +334,16 @@ public final class GenWiki {
         write("|-------|-------------------|---------|", f);
         // Every biome-restricted trait in the registry describes its own restriction, so
         // a sixth one shows up here without an edit.
-        List<Map.Entry<String, Modifier>> biomeMods = new ArrayList<>(ModifierRegistry.getModifiers().entrySet());
-        biomeMods.sort(Comparator.comparing(Map.Entry::getKey));
-        for (Map.Entry<String, Modifier> entry : biomeMods) {
-            if (!(entry.getValue() instanceof BiomeRestrictedModifier restricted)) {
-                continue;
+        for (Modifier mod : traitsByTag()) {
+            if (mod instanceof BiomeRestrictedModifier restricted) {
+                write("| " + modLink(mod) + " | " + restricted.describeRestriction() + " | " + mod.description() + " |", f);
             }
-            Modifier mod = entry.getValue();
-            write("| [" + docName(mod) + "](MODIFIERS.md#" + docName(mod).toLowerCase().replace(" ", "-") + ") | "
-                    + restricted.describeRestriction() + " | " + mod.description() + " |", f);
         }
         write("", f);
         write("See [MODIFIERS.md](MODIFIERS.md) for full effect descriptions and crafting recipes.", f);
         write("", f);
 
-        write("## Crafting Restrictions", f);
-        write("", f);
-        write("When using the Smithing Table to add a biome-specific trait, the recipe will only work if the tool was originally created in a compatible biome. A tool created in the desert cannot have the Frozen trait added to it, even with a Smithing Table.", f);
-        write("", f);
+        section("## Crafting Restrictions", "When using the Smithing Table to add a biome-specific trait, the recipe will only work if the tool was originally created in a compatible biome. A tool created in the desert cannot have the Frozen trait added to it, even with a Smithing Table.", f);
 
         write("## Tips", f);
         write("", f);
@@ -477,10 +366,7 @@ public final class GenWiki {
     }
 
     private void writeLoot(StringBuilder f) {
-        write("# Loot & Crafting Guide", f);
-        write("", f);
-        write("This document explains where to find Random Loot items and how to craft with them.", f);
-        write("", f);
+        section("# Loot & Crafting Guide", "This document explains where to find Random Loot items and how to craft with them.", f);
 
         write("## Finding Loot Cases", f);
         write("", f);
@@ -498,10 +384,7 @@ public final class GenWiki {
         write("Default spawn chance: **" + percent(Config.CASE_CHANCE) + "** (configurable in [CONFIG.md](CONFIG.md))", f);
         write("", f);
 
-        write("## Using Loot Cases", f);
-        write("", f);
-        write("**Right-click** with a Loot Case in hand to open it and receive a random tool.", f);
-        write("", f);
+        section("## Using Loot Cases", "**Right-click** with a Loot Case in hand to open it and receive a random tool.", f);
         write("The tool's quality depends on how many cases you've opened - see [PROGRESSION.md](PROGRESSION.md) for details.", f);
         write("", f);
 
@@ -515,24 +398,15 @@ public final class GenWiki {
         write("- **Note:** Opening cases with a dispenser does not advance player progression", f);
         write("", f);
 
-        write("## Repairing Tools", f);
-        write("", f);
-        write("Random Tools can be repaired in an **Anvil** with a repair material (default: **Diamond**). Each material restores 25% of the tool's maximum durability, just like vanilla tool repair. Repairing keeps the tool's name, traits, level and XP.", f);
-        write("", f);
+        section("## Repairing Tools", "Random Tools can be repaired in an **Anvil** with a repair material (default: **Diamond**). Each material restores 25% of the tool's maximum durability, just like vanilla tool repair. Repairing keeps the tool's name, traits, level and XP.", f);
         write("Modpacks can change which items count as repair materials by editing the `randomloot:tool_repair_materials` item tag.", f);
         write("", f);
 
-        write("## Finding Trait Templates", f);
-        write("", f);
-        write("Trait Templates also spawn in structure chests.", f);
-        write("", f);
+        section("## Finding Trait Templates", "Trait Templates also spawn in structure chests.", f);
         write("Default spawn chance: **" + percent(Config.MOD_CHANCE) + "** (configurable in [CONFIG.md](CONFIG.md))", f);
         write("", f);
 
-        write("## Trait Templates", f);
-        write("", f);
-        write("There are two types of Trait Templates:", f);
-        write("", f);
+        section("## Trait Templates", "There are two types of Trait Templates:", f);
         write("| Template | Function |", f);
         write("|----------|----------|", f);
         write("| Addition Template | Add a new trait to a tool |", f);
@@ -541,10 +415,7 @@ public final class GenWiki {
         write("**Right-click** with a template to toggle between Addition and Subtraction modes.", f);
         write("", f);
 
-        write("### Using the Smithing Table", f);
-        write("", f);
-        write("To add or remove traits:", f);
-        write("", f);
+        section("### Using the Smithing Table", "To add or remove traits:", f);
         write("1. Open a **Smithing Table**", f);
         write("2. Place a **Trait Template** in the template slot", f);
         write("3. Place your **Random Tool** in the base slot", f);
@@ -552,10 +423,7 @@ public final class GenWiki {
         write("5. Preview and take your modified tool", f);
         write("", f);
 
-        write("## Trait Recipes", f);
-        write("", f);
-        write("Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIERS.md) for the full list.", f);
-        write("", f);
+        section("## Trait Recipes", "Each trait requires a specific item to add or remove. See [MODIFIERS.md](MODIFIERS.md) for the full list.", f);
         write("**Count** is what the Addition Template needs in the slot and uses up, and a leveled trait pays it again for every level. The Subtraction Template only ever takes one.", f);
         write("", f);
         write("| Trait | Required Item | Count |", f);
@@ -601,12 +469,11 @@ public final class GenWiki {
         Map<String, String> entries = new TreeMap<>();
 
         // Start from the current file so hand-maintained keys survive regeneration.
-        if (langFile.isFile()) {
-            try (FileReader r = new FileReader(langFile)) {
-                JsonObject existing = gson.fromJson(r, JsonObject.class);
-                for (Map.Entry<String, JsonElement> e : existing.entrySet()) {
-                    entries.put(e.getKey(), e.getValue().getAsString());
-                }
+        // generate() has already checked the file is there.
+        try (FileReader r = new FileReader(langFile)) {
+            JsonObject existing = gson.fromJson(r, JsonObject.class);
+            for (Map.Entry<String, JsonElement> e : existing.entrySet()) {
+                entries.put(e.getKey(), e.getValue().getAsString());
             }
         }
 

@@ -10,6 +10,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.DoublePredicate;
 
 import dev.marston.randomloot.loot.GearRoll;
 import dev.marston.randomloot.loot.GearStats;
@@ -43,22 +44,30 @@ class GearRollTest {
 		return new GearRoll.Scene(place, WORLD, false, TESTER);
 	}
 
+	/**
+	 * Over 4000 tries at the chance the thing happens about that often, and over 200
+	 * rounds it never happens at 0 and always does at 1.
+	 */
+	private static void assertHappensAtItsChance(double chance, String what, DoublePredicate happens) {
+		int tries = 4000;
+		int happened = 0;
+		for (int i = 0; i < tries; i++) {
+			if (happens.test(chance)) {
+				happened++;
+			}
+		}
+		assertEquals(chance, happened / (double) tries, 0.03, "share of " + what + " at a chance of " + chance);
+
+		for (int i = 0; i < 200; i++) {
+			assertFalse(happens.test(0.0), what + " at chance 0");
+			assertTrue(happens.test(1.0), "no " + what + " at chance 1");
+		}
+	}
+
 	@Test
 	void armorShareIsTheArmorChance() {
 		RandomSource random = RandomSource.create(1L);
-		int rolls = 4000;
-		int armor = 0;
-		for (int i = 0; i < rolls; i++) {
-			if (GearRoll.roll(1.0f, scene(PLAINS), 0.15, random).type().isArmor()) {
-				armor++;
-			}
-		}
-		assertEquals(0.15, armor / (double) rolls, 0.03, "share of armor at an armor chance of 0.15");
-
-		for (int i = 0; i < 200; i++) {
-			assertFalse(GearRoll.roll(1.0f, scene(PLAINS), 0.0, random).type().isArmor(), "armor at chance 0");
-			assertTrue(GearRoll.roll(1.0f, scene(PLAINS), 1.0, random).type().isArmor(), "a tool at chance 1");
-		}
+		assertHappensAtItsChance(0.15, "armor", chance -> GearRoll.roll(1.0f, scene(PLAINS), chance, random).type().isArmor());
 	}
 
 	@Test
@@ -261,19 +270,6 @@ class GearRollTest {
 	void aLevelUpBringsABonusTraitAboutAsOftenAsItsChance() {
 		RandomSource random = RandomSource.create(10L);
 		GearContext sword = GearContext.of(ToolType.SWORD, List.of());
-
-		int levelUps = 4000;
-		int bonuses = 0;
-		for (int i = 0; i < levelUps; i++) {
-			if (GearRoll.bonusTrait(sword, 0.2, random) != null) {
-				bonuses++;
-			}
-		}
-		assertEquals(0.2, bonuses / (double) levelUps, 0.03, "share of level-ups with a bonus trait at 0.2");
-
-		for (int i = 0; i < 200; i++) {
-			assertNull(GearRoll.bonusTrait(sword, 0.0, random), "a bonus trait at chance 0");
-			assertNotNull(GearRoll.bonusTrait(sword, 1.0, random), "no bonus trait at chance 1");
-		}
+		assertHappensAtItsChance(0.2, "a bonus trait", chance -> GearRoll.bonusTrait(sword, chance, random) != null);
 	}
 }

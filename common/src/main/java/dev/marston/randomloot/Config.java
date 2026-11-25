@@ -89,10 +89,9 @@ public final class Config
 
     private static Map<String, Setting<Boolean>> declareTraitToggles() {
         Map<String, Setting<Boolean>> toggles = new LinkedHashMap<>();
-        for (Map.Entry<String, Modifier> entry : ModifierRegistry.getModifiers().entrySet()) {
-            String tagName = entry.getKey();
-            toggles.put(tagName, flag(Group.TRAIT_TOGGLES, tagName + "_enabled", true,
-                    "should the " + entry.getValue().name() + " trait be enabled"));
+        for (Modifier mod : ModifierRegistry.getModifiers().values()) {
+            toggles.put(mod.tagName(), flag(Group.TRAIT_TOGGLES, mod.tagName() + "_enabled", true,
+                    "should the " + mod.name() + " trait be enabled"));
         }
         return toggles;
     }
@@ -111,13 +110,7 @@ public final class Config
 
     /** A group's settings in declaration order, which is the order the file lists them in (and CONFIG.md, which only re-sorts the trait toggles). */
     public static List<Setting<?>> settings(Group group) {
-        List<Setting<?>> inGroup = new ArrayList<>();
-        for (Setting<?> setting : DECLARED) {
-            if (setting.group() == group) {
-                inGroup.add(setting);
-            }
-        }
-        return inGroup;
+        return DECLARED.stream().filter(setting -> setting.group() == group).toList();
     }
 
     /** Whether a trait is switched on. A tag name with no trait behind it counts as on. */

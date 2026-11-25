@@ -1,5 +1,7 @@
 package dev.marston.randomloot.loot.modifiers;
 
+import dev.marston.randomloot.loot.LootItem;
+import dev.marston.randomloot.loot.LootUtils;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -11,6 +13,11 @@ public interface EntityHurtModifier extends Modifier {
 	 * this trait if the hook changed what it stores.
 	 */
 	void hurtEnemy(ItemStack itemstack, LivingEntity hurtee, LivingEntity hurter);
+
+	/** The weapon's attack damage, which most bonus-damage traits take a share of. */
+	default float attackDamage(ItemStack weapon) {
+		return LootItem.getAttackDamage(weapon, LootUtils.getToolType(weapon));
+	}
 
 	/**
 	 * Applies follow-up bonus damage from a {@link #hurtEnemy} handler.

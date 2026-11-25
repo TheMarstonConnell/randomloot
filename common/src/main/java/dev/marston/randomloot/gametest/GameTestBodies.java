@@ -198,8 +198,7 @@ public final class GameTestBodies {
 		assertRefused(helper, newTool(ToolType.PICKAXE), ModifierRegistry.getModifier("void_touched"),
 				TraitEligibility.Verdict.WRONG_BIOME);
 
-		ItemStack veinyPickaxe = newTool(ToolType.PICKAXE);
-		TraitGrant.force(veinyPickaxe, veiny);
+		ItemStack veinyPickaxe = newTool(ToolType.PICKAXE, "veiny");
 		assertRefused(helper, veinyPickaxe, ModifierRegistry.getModifier("excavator"),
 				TraitEligibility.Verdict.INCOMPATIBLE);
 		// Veiny has a single level, so a second one is refused, not silently dropped.
@@ -253,13 +252,11 @@ public final class GameTestBodies {
 				&& absent.refusal() != null, "a trait the gear lacks should be NOT_PRESENT, got " + absent.kind());
 		helper.assertTrue(ItemStack.matches(bare, sword), "removing a trait that is not there must change nothing");
 
-		ItemStack thornySword = newTool(ToolType.SWORD);
-		TraitGrant.force(thornySword, thorny);
+		ItemStack thornySword = newTool(ToolType.SWORD, "thorny");
 		helper.assertTrue(TraitGrant.remove(thornySword, thorny).kind() == TraitGrant.Kind.REMOVED,
 				"a trait on the wrong kind of gear should still come off");
 
-		ItemStack switchedOff = newTool(ToolType.SWORD);
-		TraitGrant.force(switchedOff, critical);
+		ItemStack switchedOff = newTool(ToolType.SWORD, "critical");
 		try (Config.Substitution off = Config.traitToggle("critical").substitute(false)) {
 			helper.assertTrue(TraitGrant.remove(switchedOff, critical).kind() == TraitGrant.Kind.REMOVED,
 					"a trait switched off in the config should still come off");
@@ -541,8 +538,7 @@ public final class GameTestBodies {
 		helper.assertTrue(axe.getDamageValue() > 0 && axe.getDamageValue() < 100,
 				"a tool should roll Unbreaking per point, spent " + axe.getDamageValue() + " of 100");
 
-		ItemStack chestplate = newArmor(ToolType.CHESTPLATE);
-		TraitGrant.force(chestplate, ModifierRegistry.getModifier("unbreaking"));
+		ItemStack chestplate = newArmor(ToolType.CHESTPLATE, "unbreaking");
 		float charged = TraitDispatch.armorDurability(chestplate, helper.getLevel(), 100.0f);
 		helper.assertTrue(charged > 0.0f && charged < 100.0f,
 				"worn armor should roll Unbreaking per point, charged " + charged + " of 100");
@@ -556,11 +552,8 @@ public final class GameTestBodies {
 
 	/** Gear of the given type at goodness 4 with the given traits, put into its reveal roll if asked. */
 	private static ItemStack gear(GameTestHelper helper, ToolType type, boolean rolling, String... traits) {
-		ItemStack gear = type.isArmor() ? newArmor(type) : newTool(type);
+		ItemStack gear = type.isArmor() ? newArmor(type, traits) : newTool(type, traits);
 		LootUtils.setStats(gear, 4.0f);
-		for (String trait : traits) {
-			TraitGrant.force(gear, ModifierRegistry.getModifier(trait));
-		}
 		if (rolling) {
 			LootUtils.startRoll(gear, helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS);
 		}
@@ -719,18 +712,13 @@ public final class GameTestBodies {
 	 * players don't reliably tick their inventories.
 	 */
 	public static void caseRollReveal(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
-		player.setItemInHand(InteractionHand.MAIN_HAND, new ItemStack(ModItems.CASE.get()));
+		ServerPlayer player = survivalPlayerHolding(helper, new ItemStack(ModItems.CASE.get()));
 
 		player.gameMode.useItem(player, helper.getLevel(), player.getMainHandItem(), InteractionHand.MAIN_HAND);
 
 		ItemStack held = player.getMainHandItem();
 		helper.assertTrue(LootUtils.isRolling(held), "freshly opened gear should be rolling");
-		helper.assertTrue(held.get(DataComponents.CUSTOM_NAME) == null, "rolling gear should hide its name");
-		helper.assertTrue(held.get(DataComponents.EQUIPPABLE) == null, "rolling gear should not be equippable");
-		helper.assertTrue(heldAttributes(held).modifiers().isEmpty(),
-				"rolling gear should grant no attributes");
+		assertRolling(helper, held);
 		helper.assertTrue(LootUtils.getRollEnd(held) == helper.getLevel().getGameTime() + LootUtils.ROLL_TICKS,
 				"the roll should end ROLL_TICKS after opening");
 
@@ -741,18 +729,7 @@ public final class GameTestBodies {
 			}
 		});
 
-		helper.succeedWhen(() -> {
-			ItemStack inHand = player.getMainHandItem();
-			helper.assertFalse(LootUtils.isRolling(inHand), "the roll should finish");
-			helper.assertTrue(inHand.get(DataComponents.CUSTOM_NAME) != null,
-					"revealed gear should get its name back");
-			if (LootUtils.getToolType(inHand).isArmor()) {
-				helper.assertTrue(inHand.get(DataComponents.EQUIPPABLE) != null,
-						"revealed armor should become equippable");
-			}
-			helper.assertFalse(heldAttributes(inHand).modifiers().isEmpty(),
-					"revealed gear should grant attributes again");
-		});
+		helper.succeedWhen(() -> assertRevealed(helper, player.getMainHandItem()));
 	}
 
 	/** Both item implementations reveal through their production inventoryTick lifecycle. */
@@ -774,12 +751,8 @@ public final class GameTestBodies {
 		player.setItemInHand(InteractionHand.MAIN_HAND, sword);
 		player.setItemInHand(InteractionHand.OFF_HAND, chestplate);
 
-		helper.assertTrue(heldAttributes(sword).modifiers().isEmpty(),
-				"rolling tool should have no attributes");
-		helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) == null,
-				"rolling armor should not be equippable");
-		helper.assertTrue(heldAttributes(chestplate).modifiers().isEmpty(),
-				"rolling armor should have no attributes");
+		assertRolling(helper, sword);
+		assertRolling(helper, chestplate);
 
 		helper.onEachTick(() -> {
 			sword.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
@@ -787,19 +760,28 @@ public final class GameTestBodies {
 		});
 
 		helper.succeedWhen(() -> {
-			helper.assertFalse(LootUtils.isRolling(sword), "tool roll should finish through inventoryTick");
-			helper.assertFalse(LootUtils.isRolling(chestplate), "armor roll should finish through inventoryTick");
-			helper.assertTrue(sword.get(DataComponents.CUSTOM_NAME) != null,
-					"revealed tool should restore its name");
-			helper.assertFalse(heldAttributes(sword).modifiers().isEmpty(),
-					"revealed tool should restore attributes");
-			helper.assertTrue(chestplate.get(DataComponents.CUSTOM_NAME) != null,
-					"revealed armor should restore its name");
-			helper.assertTrue(chestplate.get(DataComponents.EQUIPPABLE) != null,
-					"revealed armor should restore its equippable component");
-			helper.assertFalse(heldAttributes(chestplate).modifiers().isEmpty(),
-					"revealed armor should restore attributes");
+			assertRevealed(helper, sword);
+			assertRevealed(helper, chestplate);
 		});
+	}
+
+	/** Gear in its reveal roll hides its name, is not equippable and grants no attributes. */
+	private static void assertRolling(GameTestHelper helper, ItemStack gear) {
+		ToolType type = LootUtils.getToolType(gear);
+		helper.assertTrue(gear.get(DataComponents.CUSTOM_NAME) == null, "rolling " + type + " should hide its name");
+		helper.assertTrue(gear.get(DataComponents.EQUIPPABLE) == null, "rolling " + type + " should not be equippable");
+		helper.assertTrue(heldAttributes(gear).modifiers().isEmpty(), "rolling " + type + " should grant no attributes");
+	}
+
+	/** Revealed gear has finished its roll and has its name, attributes and (armor) equippable back. */
+	private static void assertRevealed(GameTestHelper helper, ItemStack gear) {
+		ToolType type = LootUtils.getToolType(gear);
+		helper.assertFalse(LootUtils.isRolling(gear), type + " roll should finish through inventoryTick");
+		helper.assertTrue(gear.get(DataComponents.CUSTOM_NAME) != null, "revealed " + type + " should restore its name");
+		helper.assertTrue(!type.isArmor() || gear.get(DataComponents.EQUIPPABLE) != null,
+				"revealed " + type + " should restore its equippable component");
+		helper.assertFalse(heldAttributes(gear).modifiers().isEmpty(),
+				"revealed " + type + " should restore attributes");
 	}
 
 	/** Attributes live in the vanilla component now, refreshed by LootUtils.refreshDerivedComponents. */
@@ -875,7 +857,7 @@ public final class GameTestBodies {
 	/** Hits a maxed-Thorny wearer who mitigates most of it and checks what comes back at the attacker. */
 	private static void assertThornyReflectsDamageTaken(GameTestHelper helper, LivingEntity wearer,
 			LivingEntity attacker, DamageSource source) {
-		wearer.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "thorny"));
+		wearer.setItemSlot(EquipmentSlot.CHEST, maxed(newArmor(ToolType.CHESTPLATE), "thorny"));
 		// Full diamond's worth of armor, so the hit before and after it are far apart.
 		wearer.getAttribute(Attributes.ARMOR).setBaseValue(20.0);
 
@@ -911,19 +893,27 @@ public final class GameTestBodies {
 		return player;
 	}
 
-	/** A fresh Random Tool of the given type. */
-	private static ItemStack newTool(ToolType type) {
+	/** A fresh Random Tool of the given type, carrying the given traits. */
+	private static ItemStack newTool(ToolType type, String... traits) {
 		ItemStack tool = new ItemStack(ModItems.TOOL.get());
 		LootUtils.setToolType(tool, type);
-		return tool;
+		return withTraits(tool, traits);
 	}
 
-	/** A fresh Random Armor piece of the given type (first texture set). */
-	private static ItemStack newArmor(ToolType type) {
+	/** A fresh Random Armor piece of the given type (first texture set), carrying the given traits. */
+	private static ItemStack newArmor(ToolType type, String... traits) {
 		ItemStack piece = new ItemStack(ModItems.ARMOR.get());
 		LootUtils.setToolType(piece, type);
 		LootUtils.setTexture(piece, 0);
-		return piece;
+		return withTraits(piece, traits);
+	}
+
+	/** Forces each trait onto the gear, past the gate, and returns the gear. */
+	private static ItemStack withTraits(ItemStack gear, String... traits) {
+		for (String trait : traits) {
+			TraitGrant.force(gear, ModifierRegistry.getModifier(trait));
+		}
+		return gear;
 	}
 
 	/** PvP (a game rule in 26.x) is off by default and gates ServerPlayer.hurtServer. */
@@ -931,17 +921,14 @@ public final class GameTestBodies {
 		helper.getLevel().getGameRules().set(GameRules.PVP, true, helper.getLevel().getServer());
 	}
 
-	/** An armor piece of the given type wearing the given trait leveled to its max. */
-	private static ItemStack maxedTraitArmor(ToolType type, String trait) {
-		ItemStack piece = new ItemStack(ModItems.ARMOR.get());
-		LootUtils.setToolType(piece, type);
-		LootUtils.setTexture(piece, 0);
+	/** The gear with the given trait leveled to its max. */
+	private static ItemStack maxed(ItemStack gear, String trait) {
 		Modifier mod = ModifierRegistry.getModifier(trait);
 		// First add lands at the base level; every repeat levels it up until maxed.
 		for (int i = 0; i < 16; i++) {
-			TraitGrant.force(piece, mod);
+			TraitGrant.force(gear, mod);
 		}
-		return piece;
+		return gear;
 	}
 
 	/** Hurts the wearer once with full effect: no i-frames, health reset so they never die. */
@@ -969,14 +956,12 @@ public final class GameTestBodies {
 		stats.putFloat("goodness", 5.0f);
 		GearTags.write(tool, GearTags.STATS, stats);
 
-		helper.assertTrue(
-				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
+		helper.assertTrue(heldAttributes(tool).modifiers().isEmpty(),
 				"pre-migration item should have no stamped attributes");
 
 		tool.getItem().inventoryTick(tool, helper.getLevel(), player, EquipmentSlot.MAINHAND);
 
-		helper.assertFalse(
-				tool.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers().isEmpty(),
+		helper.assertFalse(heldAttributes(tool).modifiers().isEmpty(),
 				"inventoryTick should stamp attributes onto a pre-component item");
 		helper.assertTrue(tool.getMaxDamage() == LootItem.computeMaxDamage(tool),
 				"inventoryTick should stamp the stats-derived max damage, got " + tool.getMaxDamage());
@@ -987,7 +972,7 @@ public final class GameTestBodies {
 	/** Featherweight (maxed = 100%) cancels fall damage for a player wearer. */
 	public static void featherweightSoftensFallDamage(GameTestHelper helper) {
 		ServerPlayer traited = mockVulnerablePlayer(helper);
-		traited.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+		traited.setItemSlot(EquipmentSlot.FEET, maxed(newArmor(ToolType.BOOTS), "featherweight"));
 
 		ServerPlayer plain = mockVulnerablePlayer(helper);
 		ItemStack plainBoots = newArmor(ToolType.BOOTS);
@@ -1007,8 +992,7 @@ public final class GameTestBodies {
 	/** Adrenaline grants a speed burst when the wearer is hit. */
 	public static void adrenalineGrantsSpeed(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
-		ItemStack chest = newArmor(ToolType.CHESTPLATE);
-		TraitGrant.force(chest, ModifierRegistry.getModifier("adrenaline"));
+		ItemStack chest = newArmor(ToolType.CHESTPLATE, "adrenaline");
 		player.setItemSlot(EquipmentSlot.CHEST, chest);
 
 		helper.assertFalse(player.hasEffect(MobEffects.SPEED), "no speed before the hit");
@@ -1021,7 +1005,7 @@ public final class GameTestBodies {
 	/** Bulwark (maxed = 50% chance to halve a hit) measurably reduces damage over many hits. */
 	public static void bulwarkBlocksSomeHits(GameTestHelper helper) {
 		ServerPlayer player = mockVulnerablePlayer(helper);
-		player.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "bulwark"));
+		player.setItemSlot(EquipmentSlot.CHEST, maxed(newArmor(ToolType.CHESTPLATE), "bulwark"));
 
 		int hits = 60;
 		float perHit = 4.0f;
@@ -1057,7 +1041,7 @@ public final class GameTestBodies {
 				"control armor should lose durability from soaked hits");
 
 		ServerPlayer player = mockVulnerablePlayer(helper);
-		player.setItemSlot(EquipmentSlot.CHEST, maxedTraitArmor(ToolType.CHESTPLATE, "unbreaking"));
+		player.setItemSlot(EquipmentSlot.CHEST, maxed(newArmor(ToolType.CHESTPLATE), "unbreaking"));
 		for (int i = 0; i < 5; i++) {
 			freshHit(helper, player, player.damageSources().playerAttack(attacker), 8.0f);
 		}
@@ -1072,8 +1056,7 @@ public final class GameTestBodies {
 	public static void soulboundOwnerMinesFaster(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 
-		ItemStack pick = newTool(ToolType.PICKAXE);
-		TraitGrant.force(pick, ModifierRegistry.getModifier("soulbound"));
+		ItemStack pick = newTool(ToolType.PICKAXE, "soulbound");
 		LootUtils.setOwnerUUID(pick, player.getStringUUID());
 		player.setItemInHand(InteractionHand.MAIN_HAND, pick);
 
@@ -1175,9 +1158,6 @@ public final class GameTestBodies {
 	 */
 	public static void anvilCannotCombineLootGear(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		var menu = new AnvilMenu(1, player.getInventory(),
-				ContainerLevelAccess.create(helper.getLevel(),
-						helper.absolutePos(BlockPos.ZERO)));
 
 		// Damaged left + enchanted right: without the block, vanilla's combine path
 		// definitely produces a repaired, enchant-merged result (two pristine tools
@@ -1189,19 +1169,13 @@ public final class GameTestBodies {
 		ItemStack right = newTool(ToolType.SWORD);
 		right.enchant(sharpness, 1);
 
-		menu.getSlot(0).set(left);
-		menu.getSlot(1).set(right);
-		menu.createResult();
-		helper.assertTrue(menu.getSlot(2).getItem().isEmpty(),
-				"combining two Random Tools in an anvil must yield nothing, got " + menu.getSlot(2).getItem());
+		ItemStack combined = anvilResult(helper, player, left, right);
+		helper.assertTrue(combined.isEmpty(), "combining two Random Tools in an anvil must yield nothing, got " + combined);
 
 		// Control: the tag-driven material repair path must still work.
 		ItemStack damaged = newTool(ToolType.SWORD);
 		damaged.set(DataComponents.DAMAGE, 50);
-		menu.getSlot(0).set(damaged);
-		menu.getSlot(1).set(new ItemStack(Items.DIAMOND));
-		menu.createResult();
-		helper.assertFalse(menu.getSlot(2).getItem().isEmpty(),
+		helper.assertFalse(anvilResult(helper, player, damaged, new ItemStack(Items.DIAMOND)).isEmpty(),
 				"diamond material repair should still produce an anvil result");
 
 		helper.succeed();
@@ -1243,13 +1217,17 @@ public final class GameTestBodies {
 			Holder<Enchantment> enchantment) {
 		ItemStack book = new ItemStack(Items.ENCHANTED_BOOK);
 		book.enchant(enchantment, 1);
+		return anvilResult(helper, player, gear, book).getEnchantments().getLevel(enchantment) == 1;
+	}
 
+	/** What an anvil offers for the two inputs. */
+	private static ItemStack anvilResult(GameTestHelper helper, ServerPlayer player, ItemStack left, ItemStack right) {
 		var menu = new AnvilMenu(1, player.getInventory(),
 				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(BlockPos.ZERO)));
-		menu.getSlot(0).set(gear);
-		menu.getSlot(1).set(book);
+		menu.getSlot(0).set(left);
+		menu.getSlot(1).set(right);
 		menu.createResult();
-		return menu.getSlot(2).getItem().getEnchantments().getLevel(enchantment) == 1;
+		return menu.getSlot(2).getItem();
 	}
 
 	/**
@@ -1259,11 +1237,7 @@ public final class GameTestBodies {
 	 * probability ~1e-25.
 	 */
 	public static void lootInjectionAddsCases(GameTestHelper helper) {
-		var key = ResourceKey.create(Registries.LOOT_TABLE,
-				Identifier.withDefaultNamespace("chests/simple_dungeon"));
-		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		helper.assertTrue(table != LootTable.EMPTY,
-				"simple_dungeon loot table should exist");
+		LootTable table = lootTable(helper, "chests/simple_dungeon");
 
 		var params = new LootParams.Builder(helper.getLevel())
 				.create(LootContextParamSets.EMPTY);
@@ -1286,10 +1260,7 @@ public final class GameTestBodies {
 	 * 200 rolls: a regression survives with probability ~1e-38.
 	 */
 	public static void lootInjectionSkipsBlockDrops(GameTestHelper helper) {
-		var key = ResourceKey.create(Registries.LOOT_TABLE,
-				Identifier.withDefaultNamespace("blocks/chest"));
-		var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(key);
-		helper.assertTrue(table != LootTable.EMPTY, "chest block loot table should exist");
+		LootTable table = lootTable(helper, "blocks/chest");
 
 		var params = new LootParams.Builder(helper.getLevel())
 				.withParameter(LootContextParams.ORIGIN, helper.absoluteVec(Vec3.ZERO))
@@ -1305,6 +1276,14 @@ public final class GameTestBodies {
 		}
 
 		helper.succeed();
+	}
+
+	/** The vanilla loot table at the path, which has to exist. */
+	private static LootTable lootTable(GameTestHelper helper, String path) {
+		LootTable table = helper.getLevel().getServer().reloadableRegistries()
+				.getLootTable(ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
+		helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
+		return table;
 	}
 
 	/** Worn Random Armor gains XP when its wearer takes damage (the armor leveling path). */
@@ -1359,7 +1338,7 @@ public final class GameTestBodies {
 
 		// Maxed Featherweight cancels the fall; boots that soaked nothing learn nothing. Fabric gave 6.
 		ServerPlayer faller = mockVulnerablePlayer(helper);
-		faller.setItemSlot(EquipmentSlot.FEET, maxedTraitArmor(ToolType.BOOTS, "featherweight"));
+		faller.setItemSlot(EquipmentSlot.FEET, maxed(newArmor(ToolType.BOOTS), "featherweight"));
 		assertArmorXpFromHit(helper, "a fall Featherweight cancels", faller, EquipmentSlot.FEET,
 				faller.damageSources().fall(), 6.0f, 0.0f, 0);
 
@@ -1433,26 +1412,17 @@ public final class GameTestBodies {
 
 	/** The anvil's material-repair path accepts items from the armor_repair_materials tag. */
 	public static void armorRepairable(GameTestHelper helper) {
-		ItemStack armor = new ItemStack(ModItems.ARMOR.get());
-
-		helper.assertTrue(armor.isValidRepairItem(new ItemStack(Items.DIAMOND)),
-				"diamond should repair Random Armor (armor_repair_materials tag)");
-		helper.assertFalse(armor.isValidRepairItem(new ItemStack(Items.STICK)),
-				"stick should not repair Random Armor");
-
-		helper.succeed();
+		assertDiamondRepairsOnly(helper, ModItems.ARMOR.get(), "armor_repair_materials");
 	}
 
 	/** A survival player mines with Random Loot gear through the real server game-mode path. */
 	public static void breakBlock(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
+		ItemStack tool = newTool(ToolType.SHOVEL);
+		ServerPlayer player = survivalPlayerHolding(helper, tool);
 		BlockPos relative = new BlockPos(1, 1, 1);
 		helper.setBlock(relative, Blocks.DIRT);
 
 		BlockPos absolute = helper.absolutePos(relative);
-		ItemStack tool = newTool(ToolType.SHOVEL);
-		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 		int damageBefore = tool.getDamageValue();
 		int xpBefore = LootUtils.getXP(tool);
 
@@ -1475,12 +1445,8 @@ public final class GameTestBodies {
 	 * Hailey's Wrath effectively dead.
 	 */
 	public static void killTraitHooks(GameTestHelper helper) {
-		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
-		ItemStack tool = newTool(ToolType.SWORD);
-		TraitGrant.force(tool, ModifierRegistry.getModifier("haileys_wrath"));
-		TraitGrant.force(tool, ModifierRegistry.getModifier("nemesis"));
-		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		ItemStack tool = newTool(ToolType.SWORD, "haileys_wrath", "nemesis");
+		ServerPlayer player = survivalPlayerHolding(helper, tool);
 		int damageBefore = tool.getDamageValue();
 		int xpBefore = LootUtils.getXP(tool);
 
@@ -1495,10 +1461,7 @@ public final class GameTestBodies {
 				"a real weapon hit should consume one durability");
 		helper.assertEntityPresent(EntityTypes.BEE);
 
-		Modifier nemesis = LootUtils.getModifiers(player.getMainHandItem()).stream()
-				.filter(m -> m.tagName().equals("nemesis")).findFirst().orElse(null);
-		helper.assertTrue(nemesis != null, "nemesis trait should still be on the tool");
-		int zombieKills = nemesis.toNBT().getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
+		int zombieKills = storedTrait(tool, "nemesis").getCompoundOrEmpty("killCounts").getIntOr("minecraft:zombie", 0);
 		helper.assertTrue(zombieKills == 1, "nemesis should record the zombie kill, got " + zombieKills);
 		assertAdvancementDone(helper, player, "beekeeper");
 
@@ -1517,8 +1480,7 @@ public final class GameTestBodies {
 		player.addEffect(new MobEffectInstance(MobEffects.SPEED, 100, 0, false, false));
 		player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0, false, false));
 
-		ItemStack tool = newTool(ToolType.SWORD);
-		TraitGrant.force(tool, ModifierRegistry.getModifier("catalyst"));
+		ItemStack tool = newTool(ToolType.SWORD, "catalyst");
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		for (int i = 0; i < 200; i++) {
@@ -1544,23 +1506,10 @@ public final class GameTestBodies {
 	 * and the {@code minecraft:cinnabar}/{@code minecraft:sulfur} ids resolve.
 	 */
 	public static void newTraitRecipesLoad(GameTestHelper helper) {
-		var recipes = helper.getLevel().recipeAccess().getRecipes();
-
-		record Expected(String trait, Identifier ingredient) {
-		}
-		Expected[] expected = {
-				new Expected("catalyst", Identifier.withDefaultNamespace("cinnabar")),
-				new Expected("stench", Identifier.withDefaultNamespace("sulfur")),
-		};
-
-		for (Expected e : expected) {
-			helper.assertTrue(BuiltInRegistries.ITEM.containsKey(e.ingredient()),
-					"ingredient item should exist: " + e.ingredient());
-
-			Identifier recipeId = Identifier.fromNamespaceAndPath(RandomLoot.MODID, "trait_" + e.trait());
-			boolean present = recipes.stream().anyMatch(
-					h -> h.id().identifier().equals(recipeId) && h.value() instanceof TraitAdditionRecipe);
-			helper.assertTrue(present, "trait recipe should load: " + recipeId);
+		for (String[] pair : new String[][] { { "catalyst", "cinnabar" }, { "stench", "sulfur" } }) {
+			Identifier ingredient = Identifier.withDefaultNamespace(pair[1]);
+			helper.assertTrue(BuiltInRegistries.ITEM.containsKey(ingredient), "ingredient item should exist: " + ingredient);
+			traitRecipe(helper, pair[0]);
 		}
 
 		helper.succeed();
@@ -1574,8 +1523,7 @@ public final class GameTestBodies {
 		// Stand the holder on the zombie so it's well within the aura radius.
 		player.setPos(zombie.getX(), zombie.getY(), zombie.getZ());
 
-		ItemStack tool = newTool(ToolType.SWORD);
-		TraitGrant.force(tool, ModifierRegistry.getModifier("stench"));
+		ItemStack tool = newTool(ToolType.SWORD, "stench");
 		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
 
 		tool.inventoryTick(helper.getLevel(), player, EquipmentSlot.MAINHAND);
@@ -1636,8 +1584,7 @@ public final class GameTestBodies {
 	 * of its traits: {@code getModifiers} is what every trait dispatch reads.
 	 */
 	public static void disabledTraitIsFiltered(GameTestHelper helper) {
-		ItemStack armor = newArmor(ToolType.CHESTPLATE);
-		TraitGrant.force(armor, ModifierRegistry.getModifier("thorny"));
+		ItemStack armor = newArmor(ToolType.CHESTPLATE, "thorny");
 		helper.assertTrue(LootUtils.getModifiers(armor).size() == 1 && LootUtils.hasEnabledModifier(armor, "thorny"),
 				"an enabled trait should be one of the gear's traits, got " + LootUtils.getModifiers(armor));
 
@@ -1691,13 +1638,15 @@ public final class GameTestBodies {
 
 	/** The anvil's material-repair path accepts items from the tool_repair_materials tag. */
 	public static void toolRepairable(GameTestHelper helper) {
-		ItemStack tool = new ItemStack(ModItems.TOOL.get());
+		assertDiamondRepairsOnly(helper, ModItems.TOOL.get(), "tool_repair_materials");
+	}
 
-		helper.assertTrue(tool.isValidRepairItem(new ItemStack(Items.DIAMOND)),
-				"diamond should repair Random Tools (tool_repair_materials tag)");
-		helper.assertFalse(tool.isValidRepairItem(new ItemStack(Items.STICK)),
-				"stick should not repair Random Tools");
-
+	/** Diamond repairs the item (through the given repair-materials tag) and a stick does not. */
+	private static void assertDiamondRepairsOnly(GameTestHelper helper, Item item, String tag) {
+		ItemStack gear = new ItemStack(item);
+		helper.assertTrue(gear.isValidRepairItem(new ItemStack(Items.DIAMOND)),
+				"diamond should repair " + item + " (" + tag + " tag)");
+		helper.assertFalse(gear.isValidRepairItem(new ItemStack(Items.STICK)), "stick should not repair " + item);
 		helper.succeed();
 	}
 
@@ -1712,13 +1661,8 @@ public final class GameTestBodies {
 		CommandDispatcher<CommandSourceStack> commands = helper.getLevel().getServer().getCommands().getDispatcher();
 
 		helper.assertTrue(run(commands, source, "randomloot give sword") == 1, "give should succeed");
-		ItemStack given = ItemStack.EMPTY;
-		for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-			if (player.getInventory().getItem(i).is(ModItems.TOOL.get())) {
-				given = player.getInventory().getItem(i);
-				break;
-			}
-		}
+		ItemStack given = player.getInventory().getNonEquipmentItems().stream()
+				.filter(s -> s.is(ModItems.TOOL.get())).findFirst().orElse(ItemStack.EMPTY);
 		helper.assertTrue(!given.isEmpty(), "give should put a tool in the player's inventory");
 		helper.assertTrue(LootUtils.getToolType(given) == ToolType.SWORD, "give should respect the requested type");
 		helper.assertTrue(LootUtils.getStats(given) == 0f, "given tool should have 0 goodness");
@@ -1834,8 +1778,7 @@ public final class GameTestBodies {
 		// consumed the template and the addition and handed back an identical item.
 		helper.assertFalse(thorny.matches(new SmithingRecipeInput(subTemplate, sword, cactus), level),
 				"the subtraction template must not match gear that lacks the trait");
-		ItemStack mismatched = newTool(ToolType.SWORD);
-		TraitGrant.force(mismatched, ModifierRegistry.getModifier("thorny"));
+		ItemStack mismatched = newTool(ToolType.SWORD, "thorny");
 		helper.assertTrue(thorny.matches(new SmithingRecipeInput(subTemplate, mismatched, cactus), level),
 				"the subtraction template should still strip a mismatched trait");
 
@@ -1844,9 +1787,7 @@ public final class GameTestBodies {
 		// re-forging of forger names belongs to a change, and the recipe knows this
 		// world's seed by now from the matches above.
 		ItemStack refused = newTool(ToolType.SWORD);
-		CompoundTag foreignGrace = ModifierRegistry.getModifier("dirt_place").toNBT();
-		foreignGrace.putString(Modifier.NAME, "Nobody's Grace");
-		TraitGrant.force(refused, ModifierRegistry.loadModifier("dirt_place", foreignGrace));
+		TraitGrant.force(refused, graceOf("Nobody"));
 		ItemStack handedBack = thorny.assemble(new SmithingRecipeInput(addTemplate, refused, cactus));
 		helper.assertTrue(
 				GearTags.read(handedBack, Modifier.MODTAG).equals(GearTags.read(refused, Modifier.MODTAG)),
@@ -1866,24 +1807,18 @@ public final class GameTestBodies {
 	/** A real SmithingMenu resolves the datapack recipe, crafts it, and runs the take-result hooks. */
 	public static void smithingCraftSequence(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		BlockPos tablePos = new BlockPos(1, 1, 1);
-		helper.setBlock(tablePos, Blocks.SMITHING_TABLE);
 
 		var enchants = helper.getLevel().registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
 		Holder<Enchantment> sharpness = enchants.getOrThrow(Enchantments.SHARPNESS);
-		ItemStack sword = LootUtils.buildTool(player, helper.getLevel(), helper.absolutePos(tablePos),
+		ItemStack sword = LootUtils.buildTool(player, helper.getLevel(), helper.absolutePos(new BlockPos(1, 1, 1)),
 				ToolType.SWORD, 0.0f);
 		sword.enchant(sharpness, 3);
 		sword.set(DataComponents.REPAIR_COST, 5);
 		sword.set(DataComponents.DAMAGE, 7);
 		TraitGrant.force(sword, graceOf("Nobody"));
 
-		SmithingMenu menu = new SmithingMenu(1, player.getInventory(),
-				ContainerLevelAccess.create(helper.getLevel(), helper.absolutePos(tablePos)));
-		player.containerMenu = menu;
-		menu.getSlot(SmithingMenu.TEMPLATE_SLOT).set(new ItemStack(ModItems.MOD_ADD.get()));
-		menu.getSlot(SmithingMenu.BASE_SLOT).set(sword);
-		menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).set(new ItemStack(Items.GHAST_TEAR));
+		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_ADD.get()), sword,
+				new ItemStack(Items.GHAST_TEAR));
 
 		ItemStack preview = menu.getSlot(SmithingMenu.RESULT_SLOT).getItem();
 		helper.assertFalse(preview.isEmpty(), "the loaded critical recipe should produce a smithing result");
@@ -2057,11 +1992,8 @@ public final class GameTestBodies {
 
 		menu.clicked(SmithingMenu.RESULT_SLOT, 0, ContainerInput.QUICK_MOVE, player);
 
-		ItemStack taken = ItemStack.EMPTY;
-		Inventory inventory = player.getInventory();
-		for (int i = 0; i < inventory.getContainerSize() && !hasTrait(taken, "thorny"); i++) {
-			taken = inventory.getItem(i);
-		}
+		ItemStack taken = player.getInventory().getNonEquipmentItems().stream()
+				.filter(s -> hasTrait(s, "thorny")).findFirst().orElse(ItemStack.EMPTY);
 		helper.assertTrue(hasTrait(taken, "thorny"),
 				"shift-clicking should move the thorny chestplate into the inventory");
 		ItemStack left = menu.getSlot(SmithingMenu.ADDITIONAL_SLOT).getItem();
@@ -2084,8 +2016,7 @@ public final class GameTestBodies {
 	 */
 	public static void smithingRemovalCostsOne(GameTestHelper helper) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
-		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE);
-		TraitGrant.force(thornyChestplate, ModifierRegistry.getModifier("thorny"));
+		ItemStack thornyChestplate = newArmor(ToolType.CHESTPLATE, "thorny");
 
 		SmithingMenu menu = openSmithing(helper, player, new ItemStack(ModItems.MOD_SUB.get()), thornyChestplate,
 				new ItemStack(Items.CACTUS));
@@ -2120,23 +2051,18 @@ public final class GameTestBodies {
 
 		List<ItemStack> tools = List.of(newTool(ToolType.SWORD), newTool(ToolType.SWORD), newTool(ToolType.SWORD));
 		tools.forEach(tool -> TraitGrant.force(tool, chaotic));
-		List<CompoundTag> granted = tools.stream().map(GameTestBodies::chaoticData).toList();
+		List<CompoundTag> granted = tools.stream().map(tool -> storedTrait(tool, "chaotic")).toList();
 		helper.assertTrue(granted.stream().distinct().count() == 3,
 				"three chaotic grants should carry three seeds, got " + granted);
 
 		// Only the grant rolls: a seed that is on the gear stays there through a rewrite.
 		ItemStack tool = tools.get(0);
 		LootUtils.updateModifier(tool, LootUtils.getModifiers(tool).get(0));
-		helper.assertTrue(chaoticData(tool).equals(granted.get(0)),
-				"rewriting chaotic on the gear should keep its seed, got " + chaoticData(tool) + " after "
+		helper.assertTrue(storedTrait(tool, "chaotic").equals(granted.get(0)),
+				"rewriting chaotic on the gear should keep its seed, got " + storedTrait(tool, "chaotic") + " after "
 						+ granted.get(0));
 
 		helper.succeed();
-	}
-
-	/** What the gear stores for its Chaotic trait: the name and the seed. */
-	private static CompoundTag chaoticData(ItemStack gear) {
-		return GearTags.read(gear, Modifier.MODTAG).getCompoundOrEmpty("chaotic");
 	}
 
 	/**
@@ -2209,9 +2135,7 @@ public final class GameTestBodies {
 		helper.assertTrue(clone.getOrDefault(DataComponents.DAMAGE, 0) == 7,
 				"clone should keep its durability damage");
 
-		helper.assertFalse(
-				clone.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY).modifiers()
-						.isEmpty(),
+		helper.assertFalse(heldAttributes(clone).modifiers().isEmpty(),
 				"clone should arrive with its attributes already stamped");
 		helper.assertTrue(clone.getMaxDamage() == LootItem.computeMaxDamage(sword),
 				"clone should arrive with the right durability, not the item default");
@@ -2256,11 +2180,7 @@ public final class GameTestBodies {
 		buildCreativeTab(helper, ModItems.CREATIVE_TAB);
 
 		// ANVIL_COMBINE
-		var anvil = new AnvilMenu(1, player.getInventory(),
-				ContainerLevelAccess.create(level, helper.absolutePos(BlockPos.ZERO)));
-		anvil.getSlot(0).set(newTool(ToolType.SWORD));
-		anvil.getSlot(1).set(newTool(ToolType.SWORD));
-		anvil.createResult();
+		anvilResult(helper, player, newTool(ToolType.SWORD), newTool(ToolType.SWORD));
 
 		// ENCHANT_GATE
 		var enchants = level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT);
@@ -2268,9 +2188,7 @@ public final class GameTestBodies {
 				enchants.getOrThrow(Enchantments.EFFICIENCY));
 
 		// LOOT_INJECTION
-		level.getServer().reloadableRegistries()
-				.getLootTable(ResourceKey.create(Registries.LOOT_TABLE,
-						Identifier.withDefaultNamespace("chests/simple_dungeon")))
+		lootTable(helper, "chests/simple_dungeon")
 				.getRandomItems(new LootParams.Builder(level).create(LootContextParamSets.EMPTY));
 
 		// SMITHING_TAKE
@@ -2329,14 +2247,11 @@ public final class GameTestBodies {
 		}
 	}
 
-	/** A survival mock player holding a fresh tool of the given type with the given traits. */
-	private static ServerPlayer survivalPlayerHolding(GameTestHelper helper, ItemStack tool, String... traits) {
+	/** A survival mock player holding the given stack in the main hand. */
+	private static ServerPlayer survivalPlayerHolding(GameTestHelper helper, ItemStack held) {
 		ServerPlayer player = helper.makeMockServerPlayerInLevel();
 		player.gameMode.changeGameModeForPlayer(GameType.SURVIVAL);
-		for (String trait : traits) {
-			TraitGrant.force(tool, ModifierRegistry.getModifier(trait));
-		}
-		player.setItemInHand(InteractionHand.MAIN_HAND, tool);
+		player.setItemInHand(InteractionHand.MAIN_HAND, held);
 		return player;
 	}
 
@@ -2350,7 +2265,7 @@ public final class GameTestBodies {
 		for (int y = 0; y < 3; y++) {
 			helper.setBlock(new BlockPos(1, y, 1), Blocks.OAK_LOG);
 		}
-		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.AXE), "lumbering");
+		ServerPlayer player = survivalPlayerHolding(helper, newTool(ToolType.AXE, "lumbering"));
 
 		helper.assertTrue(player.gameMode.destroyBlock(helper.absolutePos(new BlockPos(1, 0, 1))),
 				"the bottom log should break");
@@ -2365,8 +2280,8 @@ public final class GameTestBodies {
 		for (int x = 0; x < 3; x++) {
 			helper.setBlock(new BlockPos(x, 1, 1), Blocks.IRON_ORE);
 		}
-		ItemStack pick = newTool(ToolType.PICKAXE);
-		ServerPlayer player = survivalPlayerHolding(helper, pick, "veiny");
+		ItemStack pick = newTool(ToolType.PICKAXE, "veiny");
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
 		// Veiny only spreads while crouching; a mock player never ticks its own pose.
 		player.setShiftKeyDown(true);
 		player.setPose(Pose.CROUCHING);
@@ -2463,8 +2378,8 @@ public final class GameTestBodies {
 	public static void detectingMarkersAreDiscarded(GameTestHelper helper) {
 		BlockPos relative = new BlockPos(1, 1, 1);
 		helper.setBlock(relative, Blocks.COAL_ORE);
-		ItemStack pick = newTool(ToolType.PICKAXE);
-		ServerPlayer player = survivalPlayerHolding(helper, pick, "detecting");
+		ItemStack pick = newTool(ToolType.PICKAXE, "detecting");
+		ServerPlayer player = survivalPlayerHolding(helper, pick);
 		player.setPos(helper.absoluteVec(new Vec3(1.5, 2.0, 1.5)));
 
 		ServerLevel level = helper.getLevel();
@@ -2521,12 +2436,7 @@ public final class GameTestBodies {
 	 * pays, not just block breaks and hits: here the shared helper and a log strip.
 	 */
 	public static void unbreakableToolKeepsDurability(GameTestHelper helper) {
-		ItemStack axe = newTool(ToolType.AXE);
-		Modifier unbreaking = ModifierRegistry.getModifier("unbreaking");
-		// First add lands at the base level; every repeat levels it up until maxed.
-		for (int i = 0; i < 16; i++) {
-			TraitGrant.force(axe, unbreaking);
-		}
+		ItemStack axe = maxed(newTool(ToolType.AXE), "unbreaking");
 		ServerPlayer player = survivalPlayerHolding(helper, axe);
 
 		TraitDispatch.spendDurability(axe, 25, player, EquipmentSlot.MAINHAND);
@@ -2551,9 +2461,7 @@ public final class GameTestBodies {
 	 */
 	public static void lootInjectionRollsOncePerChest(GameTestHelper helper) {
 		for (String path : List.of("chests/simple_dungeon", "chests/trial_chambers/reward")) {
-			var table = helper.getLevel().getServer().reloadableRegistries().getLootTable(
-					ResourceKey.create(Registries.LOOT_TABLE, Identifier.withDefaultNamespace(path)));
-			helper.assertTrue(table != LootTable.EMPTY, path + " loot table should exist");
+			LootTable table = lootTable(helper, path);
 
 			try (Config.Substitution cases = Config.CASE_CHANCE.substitute(1.0);
 					Config.Substitution templates = Config.MOD_CHANCE.substitute(1.0)) {
@@ -2660,8 +2568,8 @@ public final class GameTestBodies {
 	 * sword's damage says which way the click went.
 	 */
 	public static void rightClickTraitsYieldToUsableOffhand(GameTestHelper helper) {
-		ItemStack sword = newTool(ToolType.SWORD);
-		ServerPlayer player = survivalPlayerHolding(helper, sword, "flame_thrower");
+		ItemStack sword = newTool(ToolType.SWORD, "flame_thrower");
+		ServerPlayer player = survivalPlayerHolding(helper, sword);
 		BlockPos floor = new BlockPos(1, 0, 1);
 		helper.setBlock(floor, Blocks.STONE);
 		Vec3 onFloor = helper.absoluteVec(new Vec3(1.5, 1.0, 1.5));

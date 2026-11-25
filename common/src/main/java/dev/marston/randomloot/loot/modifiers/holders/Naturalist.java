@@ -12,9 +12,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.BonemealableBlock;
 import net.minecraft.world.level.block.BonemealSource;
@@ -42,11 +41,7 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
     }
 
     @Override
-    public void hold(ItemStack stack, Level level, Entity holder) {
-        if (!(level instanceof ServerLevel serverLevel)) {
-            return;
-        }
-
+    public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
         // Paced off the game clock rather than a timestamp stored on the item: writing
         // to the held stack every few seconds resets the block the holder is mining.
         if (level.getGameTime() % getUpdateInterval() != 0) {
@@ -64,35 +59,33 @@ public class Naturalist extends AbstractModifier implements HoldModifier {
                 for (int z = -SEARCH_RADIUS; z <= SEARCH_RADIUS; z++) {
                     BlockPos checkPos = holderPos.offset(x, y, z);
                     BlockState state = level.getBlockState(checkPos);
-                    Block block = state.getBlock();
 
-                    if (state.is(TARGETS) && block instanceof BonemealableBlock bonemealable) {
-                        if (bonemealable.isValidBonemealTarget(level, checkPos, state, BonemealSource.INTERACTION)) {
-                            bonemealableBlocks.add(checkPos);
-                        }
+                    if (state.is(TARGETS) && state.getBlock() instanceof BonemealableBlock bonemealable
+                            && bonemealable.isValidBonemealTarget(level, checkPos, state, BonemealSource.INTERACTION)) {
+                        bonemealableBlocks.add(checkPos);
                     }
                 }
             }
         }
 
-        // Bone meal a random one
-        if (!bonemealableBlocks.isEmpty()) {
-            BlockPos targetPos = bonemealableBlocks.get(random.nextInt(bonemealableBlocks.size()));
-            BlockState state = level.getBlockState(targetPos);
-            Block block = state.getBlock();
+        if (bonemealableBlocks.isEmpty()) {
+            return;
+        }
 
-            if (block instanceof BonemealableBlock bonemealable) {
-                if (bonemealable.isBonemealSuccess(level, random, targetPos, state, BonemealSource.INTERACTION)) {
-                    bonemealable.performBonemeal(serverLevel, random, targetPos, state, BonemealSource.INTERACTION);
+        // Bone meal a random one; nothing has changed the world since the scan saw it.
+        BlockPos targetPos = bonemealableBlocks.get(random.nextInt(bonemealableBlocks.size()));
+        BlockState state = level.getBlockState(targetPos);
+        BonemealableBlock bonemealable = (BonemealableBlock) state.getBlock();
 
-                    // Spawn particles
-                    serverLevel.sendParticles(
-                        ParticleTypes.HAPPY_VILLAGER,
-                        targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                        10, 0.5, 0.5, 0.5, 0.0
-                    );
-                }
-            }
+        if (bonemealable.isBonemealSuccess(level, random, targetPos, state, BonemealSource.INTERACTION)) {
+            bonemealable.performBonemeal(level, random, targetPos, state, BonemealSource.INTERACTION);
+
+            // Spawn particles
+            level.sendParticles(
+                ParticleTypes.HAPPY_VILLAGER,
+                targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
+                10, 0.5, 0.5, 0.5, 0.0
+            );
         }
     }
 }

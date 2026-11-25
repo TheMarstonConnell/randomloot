@@ -12,7 +12,6 @@ import net.minecraft.stats.Stats;
 import net.minecraft.util.Prediction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -30,30 +29,11 @@ public class LootCase extends Item {
 
 				ItemStack gear = LootUtils.dispenseCase(source.level(), source.pos());
 
-				spawnTool(source.level(), gear, 6, direction, position);
+				spawnItem(source.level(), gear, 6, direction, position);
 
 				return ItemStack.EMPTY;
 			}
 		});
-	}
-
-	public static void spawnTool(Level level, ItemStack stack, int speed, Direction direction, Position pos) {
-		double d0 = pos.x();
-		double d1 = pos.y();
-		double d2 = pos.z();
-		if (direction.getAxis() == Direction.Axis.Y) {
-			d1 -= 0.125D;
-		} else {
-			d1 -= 0.15625D;
-		}
-
-		ItemEntity itementity = new ItemEntity(level, d0, d1, d2, stack);
-		double d3 = level.getRandom().nextDouble() * 0.1D + 0.2D;
-		itementity.setDeltaMovement(
-				level.getRandom().triangle((double) direction.getStepX() * d3, 0.0172275D * (double) speed),
-				level.getRandom().triangle(0.2D, 0.0172275D * (double) speed),
-				level.getRandom().triangle((double) direction.getStepZ() * d3, 0.0172275D * (double) speed));
-		level.addFreshEntity(itementity);
 	}
 
 	public LootCase(Properties p) {
@@ -97,16 +77,4 @@ public class LootCase extends Item {
 
 		return InteractionResult.SUCCESS;
 	}
-
-//	@Override
-//	public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tipList, TooltipFlag flag) {
-//
-//		MutableComponent comp = Component.empty();
-//		comp.append("Right-click for loot!");
-//		comp = comp.withStyle(ChatFormatting.GRAY);
-//
-//		tipList.add(comp);
-//
-//	}
-
 }

@@ -1,6 +1,5 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
 import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.EntityKillModifier;
@@ -65,37 +64,6 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 		return mostKilled;
 	}
 
-	private int getMostKilledCount() {
-		String mostKilled = getMostKilledEntity();
-		if (mostKilled == null) {
-			return 0;
-		}
-		return killCounts.get().getOrDefault(mostKilled, 0);
-	}
-
-	private String getEntityDisplayName(String registryName) {
-		// Extract simple name from registry name (e.g., "minecraft:zombie" -> "Zombie")
-		String simpleName = registryName;
-		if (simpleName.contains(":")) {
-			simpleName = simpleName.substring(simpleName.indexOf(":") + 1);
-		}
-		// Replace underscores with spaces and capitalize each word
-		String[] words = simpleName.split("_");
-		StringBuilder result = new StringBuilder();
-		for (String word : words) {
-			if (!word.isEmpty()) {
-				if (result.length() > 0) {
-					result.append(" ");
-				}
-				result.append(Character.toUpperCase(word.charAt(0)));
-				if (word.length() > 1) {
-					result.append(word.substring(1));
-				}
-			}
-		}
-		return result.toString();
-	}
-
 	@Override
 	public Component writeDetailsToLore(Level level) {
 		String mostKilled = getMostKilledEntity();
@@ -103,7 +71,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 			return Modifier.makeComp("No nemesis yet", ChatFormatting.GRAY);
 		}
 
-		String entityName = getEntityDisplayName(mostKilled);
+		String entityName = LootUtils.titleCase(mostKilled);
 		int bonusPercent = (int) (bonusDamagePercent() * 100);
 
 		return Modifier.makeComp(entityName + " +" + bonusPercent + "%", ChatFormatting.GRAY);
@@ -116,8 +84,7 @@ public class Nemesis extends AbstractModifier implements EntityHurtModifier, Ent
 
 		// Apply bonus damage if attacking most-killed type
 		if (mostKilled != null && mostKilled.equals(entityKey)) {
-			float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-			dealBonusDamage(hurtee, hurter, baseDamage * bonusDamagePercent());
+			dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * bonusDamagePercent());
 		}
 	}
 

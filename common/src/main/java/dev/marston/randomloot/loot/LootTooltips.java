@@ -11,7 +11,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -25,12 +24,6 @@ import java.util.function.Consumer;
 final class LootTooltips {
 
 	private LootTooltips() {
-	}
-
-	static MutableComponent makeComp(String text, ChatFormatting color) {
-		MutableComponent comp = Component.empty();
-		comp.append(text);
-		return comp.withStyle(color);
 	}
 
 	// The enchanting table's Standard Galactic Alphabet font.
@@ -55,7 +48,7 @@ final class LootTooltips {
 	}
 
 	private static void newLine(Consumer<Component> tipList) {
-		tipList.accept(makeComp("", ChatFormatting.GRAY));
+		tipList.accept(Modifier.makeComp("", ChatFormatting.GRAY));
 	}
 
 	/**
@@ -97,7 +90,7 @@ final class LootTooltips {
 			tipList.accept(Component.empty().append(tt.displayName()).withStyle(ChatFormatting.BLUE));
 		}
 
-		tipList.accept(makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY));
+		tipList.accept(Modifier.makeComp(LootUtils.getItemLore(item), ChatFormatting.GRAY));
 
 		if (show) {
 			newLine(tipList);
@@ -105,7 +98,7 @@ final class LootTooltips {
 			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.level", "Level: %s", itemLevel)
 					.withStyle(ChatFormatting.GRAY));
 			tipList.accept(Component.translatableWithFallback("tooltip.randomloot.xp", "XP: %s / %s",
-					LootUtils.getXP(item), LootUtils.getMaxXP(itemLevel)).withStyle(ChatFormatting.GRAY));
+					LootUtils.getXP(item), GearStats.maxXp(itemLevel)).withStyle(ChatFormatting.GRAY));
 		}
 
 		newLine(tipList);
@@ -114,21 +107,18 @@ final class LootTooltips {
 		mods.sort(Comparator.comparing(Modifier::tagName));
 
 		for (Modifier modifier : mods) {
-			// Wrapper to bridge List<Component> interface to Consumer<Component>
-			List<Component> tempList = new ArrayList<>();
-			modifier.writeToLore(tempList, show);
-			tempList.forEach(tipList);
+			tipList.accept(modifier.loreLine());
 			if (show) {
 				Component details = modifier.writeDetailsToLore(level);
 
 				if (details != null) {
-					MutableComponent detailComp = makeComp(" - ", ChatFormatting.GRAY);
+					MutableComponent detailComp = Modifier.makeComp(" - ", ChatFormatting.GRAY);
 					detailComp.append(details);
 					tipList.accept(detailComp);
 				}
 			}
 			if (showDescription) {
-				MutableComponent detailComp = makeComp("", ChatFormatting.GRAY);
+				MutableComponent detailComp = Modifier.makeComp("", ChatFormatting.GRAY);
 				detailComp.append(modifier.displayDescription());
 				tipList.accept(detailComp);
 			}

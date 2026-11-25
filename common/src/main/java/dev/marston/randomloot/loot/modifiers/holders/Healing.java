@@ -5,12 +5,11 @@ import dev.marston.randomloot.loot.modifiers.HoldModifier;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Util;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 import java.util.List;
 
@@ -40,29 +39,19 @@ public class Healing extends AbstractModifier implements HoldModifier {
 	}
 
 	@Override
-	public void hold(ItemStack stack, Level level, Entity holder) {
+	public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
 		float power = getPower();
 		float f = level.getRandom().nextFloat();
-		if (f < power) {
-
-			if (stack.getDamageValue() == 0) {
-				return;
-			}
-
-			stack.setDamageValue(Math.max(stack.getDamageValue() - 1, 0));
-
-			if (f < power / 5 && holder instanceof Player p
-					&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LIVING_WHISPERS_PER_MINUTE.get())) {
-				MutableComponent comp = Component.empty();
-
-				comp.append(Util.getRandom(WHISPER_LINES, level.getRandom()));
-				comp = comp.withStyle(ChatFormatting.GRAY);
-				comp = comp.withStyle(ChatFormatting.ITALIC);
-
-				p.sendSystemMessage(comp);
-			}
-
+		if (f >= power || stack.getDamageValue() == 0) {
+			return;
 		}
 
+		stack.setDamageValue(stack.getDamageValue() - 1);
+
+		if (f < power / 5 && holder instanceof Player p
+				&& WHISPERS.tryWhisper(p.getUUID(), Util.getMillis(), Config.LIVING_WHISPERS_PER_MINUTE.get())) {
+			p.sendSystemMessage(Component.literal(Util.getRandom(WHISPER_LINES, level.getRandom()))
+					.withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+		}
 	}
 }

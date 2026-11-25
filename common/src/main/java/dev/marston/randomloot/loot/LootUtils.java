@@ -1,7 +1,5 @@
 package dev.marston.randomloot.loot;
 
-import com.google.gson.JsonObject;
-import com.mojang.serialization.DataResult;
 import com.mojang.serialization.MapCodec;
 import dev.marston.randomloot.Config;
 import dev.marston.randomloot.RandomLoot;
@@ -22,10 +20,7 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.core.component.DataComponentMap;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
 import net.minecraft.server.level.ServerLevel;
@@ -40,6 +35,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.resources.Identifier;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.component.ItemAttributeModifiers;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.equipment.Equippable;
 import net.minecraft.world.item.equipment.EquipmentAsset;
@@ -73,10 +69,6 @@ public class LootUtils {
 		}
 	}
 
-	private static int PICKAXE_COUNT = 22;
-	private static int AXE_COUNT = 18;
-	private static int SHOVEL_COUNT = 12;
-	private static int SWORD_COUNT = 53;
 	/** Number of armor texture sets; each set is one helmet/chestplate/leggings/boots look. */
 	public static final int ARMOR_SET_COUNT = 19;
 
@@ -136,7 +128,8 @@ public class LootUtils {
 	@Nullable
 	public static Boolean gearEnchantGate(ItemStack stack, Holder<Enchantment> enchantment) {
 		if (stack.getItem() instanceof LootGearItem gear) {
-			return gear.supportsEnchantmentCommon(stack, enchantment);
+			// Gear in its reveal roll takes no enchantment.
+			return isRolling(stack) ? Boolean.FALSE : gear.supportsEnchantmentCommon(stack, enchantment);
 		}
 		return null;
 	}
@@ -167,7 +160,10 @@ public class LootUtils {
 	 */
 	public static void refreshDerivedComponents(ItemStack stack) {
 		if (stack.getItem() instanceof LootGearItem gear) {
-			stack.set(DataComponents.ATTRIBUTE_MODIFIERS, gear.buildAttributeModifiers(stack));
+			// No attributes while rolling: hides the tooltip lines and keeps the undecided
+			// gear from working as a weapon or armor until the reveal.
+			stack.set(DataComponents.ATTRIBUTE_MODIFIERS,
+					isRolling(stack) ? ItemAttributeModifiers.EMPTY : gear.buildAttributeModifiers(stack));
 			stack.set(DataComponents.MAX_DAMAGE, LootGearItem.computeMaxDamage(stack));
 		}
 	}
@@ -266,15 +262,9 @@ public class LootUtils {
 			return copy;
 		}
 
-		// Build the new map first, then create ToolModifier with it
-		Map<String, CompoundTag> newTags = new HashMap<>();
-		Map<String, CompoundTag> tags = mods.getTags();
-		tags.forEach((s, compoundTag) -> {
-			newTags.put(s, compoundTag.copy());
-		});
-
-		ToolModifier copyMods = new ToolModifier(newTags);
-		copy.set(ModDataComponents.TOOL_MODIFIER.get(), copyMods);
+		// Shared, like vanilla's ItemStack.copy(): every write goes through GearTags,
+		// which replaces the component rather than editing a stored tag.
+		copy.set(ModDataComponents.TOOL_MODIFIER.get(), mods);
 
 		copy.set(DataComponents.CUSTOM_NAME, stack.get(DataComponents.CUSTOM_NAME));
 
@@ -310,41 +300,13 @@ public class LootUtils {
 		return true;
 	}
 
-	public static void addLoreLine(ListTag lore, String text, String color) {
-		JsonObject value = new JsonObject();
-
-		value.addProperty("text", text);
-		value.addProperty("color", color);
-		value.addProperty("italic", false);
-
-		StringTag nbtName = StringTag.valueOf(value.toString());
-
-		lore.add(nbtName);
-	}
-
 	public static void setItemName(ItemStack stack, String name, String color) {
-		MutableComponent comp = Component.literal(name);
-
-		Style style = Style.EMPTY;
-		style = style.withItalic(false);
-		DataResult<TextColor> col = TextColor.parseColor(color);
-		style = style.withColor(col.getOrThrow());
-
-		comp = comp.withStyle(style);
-
-		stack.set(DataComponents.CUSTOM_NAME, comp);
-	}
-
-	public static void setItemLore(ItemStack stack, String lore) {
-		GearTags.mutate(stack, GearTags.LORE, tag -> tag.putString("itemLore", lore));
+		stack.set(DataComponents.CUSTOM_NAME, Component.literal(name)
+				.withStyle(Style.EMPTY.withItalic(false).withColor(TextColor.parseColor(color).getOrThrow())));
 	}
 
 	public static String getItemLore(ItemStack stack) {
 		return GearTags.read(stack, GearTags.LORE).getStringOr("itemLore", "");
-	}
-
-	public static int getMaxXP(int level) {
-		return GearStats.maxXp(level);
 	}
 
 	/**
@@ -385,10 +347,7 @@ public class LootUtils {
 	 * component, without deserializing the whole modifier list like getModifiers does.
 	 */
 	public static boolean hasEnabledModifier(ItemStack stack, String tagName) {
-		if (!Config.traitEnabled(tagName)) {
-			return false;
-		}
-		return hasRawTrait(stack, tagName);
+		return Config.traitEnabled(tagName) && hasRawTrait(stack, tagName);
 	}
 
 	/**
@@ -431,13 +390,11 @@ public class LootUtils {
 		return GearTags.read(item, GearTags.XP).getIntOr("xp", 0);
 	}
 
-	public static ItemStack setLevelAndXP(ItemStack item, int level, int xp) {
+	public static void setLevelAndXP(ItemStack item, int level, int xp) {
 		GearTags.mutate(item, GearTags.XP, tag -> {
 			tag.putInt("level", level);
 			tag.putInt("xp", xp);
 		});
-
-		return item;
 	}
 
 	public static List<Modifier> getModifiers(ItemStack item) {
@@ -449,27 +406,15 @@ public class LootUtils {
 	 * on a stack, or what a {@link GearRoll} has decided so far.
 	 */
 	public static List<Modifier> getModifiers(CompoundTag modifiers) {
-
-		ArrayList<Modifier> tags = new ArrayList<Modifier>();
-
-        Set<String> mods = modifiers.keySet();
-
-        for (String string : mods) {
-            CompoundTag modTag = modifiers.getCompoundOrEmpty(string);
-
-            Modifier finalModifier = ModifierRegistry.loadModifier(string, modTag);
-            if (finalModifier == null) {
-                continue;
-            }
-			if (!Config.traitEnabled(finalModifier.tagName())) {
-				continue;
+		List<Modifier> traits = new ArrayList<>();
+		for (String tag : modifiers.keySet()) {
+			// Null for a tag of a trait that no longer exists, which saved gear can carry.
+			Modifier trait = ModifierRegistry.loadModifier(tag, modifiers.getCompoundOrEmpty(tag));
+			if (trait != null && Config.traitEnabled(trait.tagName())) {
+				traits.add(trait);
 			}
-
-            tags.add(finalModifier);
-
-        }
-
-		return tags;
+		}
+		return traits;
 	}
 
 	/**
@@ -571,10 +516,10 @@ public class LootUtils {
 	/** How many texture variants exist for the given type. */
 	public static int textureCount(ToolType type) {
 		return switch (type) {
-		case PICKAXE -> PICKAXE_COUNT;
-		case AXE -> AXE_COUNT;
-		case SHOVEL -> SHOVEL_COUNT;
-		case SWORD -> SWORD_COUNT;
+		case PICKAXE -> 22;
+		case AXE -> 18;
+		case SHOVEL -> 12;
+		case SWORD -> 53;
 		case HELMET, CHESTPLATE, LEGGINGS, BOOTS -> ARMOR_SET_COUNT;
 		default -> 0;
 		};
@@ -592,32 +537,14 @@ public class LootUtils {
 		return ToolType.valueOf(type);
 	}
 
-	public static ItemStack setToolType(ItemStack item, ToolType type) {
+	public static void setToolType(ItemStack item, ToolType type) {
 		GearTags.mutate(item, GearTags.INFO, tag -> tag.putString("type", type.name()));
-		return item;
 	}
 
-	public static int getToolMaxTextures(ItemStack stack) {
-		return textureCount(getToolType(stack));
-	}
-
-	public static int addToolTextures(ItemStack stack, int count) {
-		int max = getToolMaxTextures(stack);
-
-		if (max == 0) {
-			return 0;
-		}
-
-		int current = getTextureIndex(stack);
-
-		int newTexture = (current + count) % max;
-
-		return newTexture;
-
-	}
-
+	/** Moves the gear {@code count} textures on, wrapping; a type-less stack has none and gets 0. */
 	public static void addTexture(ItemStack stack, int count) {
-		setTexture(stack, addToolTextures(stack, count));
+		int max = textureCount(getToolType(stack));
+		setTexture(stack, max == 0 ? 0 : (getTextureIndex(stack) + count) % max);
 	}
 
 	/**
@@ -661,7 +588,7 @@ public class LootUtils {
 		return rollAt(level, pos, goodness, null);
 	}
 
-	private static ItemStack rollAt(Level level, BlockPos pos, float goodness, @Nullable Player opener) {
+	private static ItemStack rollAt(ServerLevel level, BlockPos pos, float goodness, @Nullable Player opener) {
 		return stamp(GearRoll.roll(goodness, sceneAt(level, pos, opener), Config.ARMOR_CHANCE.get(), level.getRandom()));
 	}
 
@@ -671,18 +598,13 @@ public class LootUtils {
 	 * At goodness 0 that is base gear with no traits, which is what
 	 * {@code /randomloot give} hands out.
 	 */
-	public static ItemStack buildTool(@Nullable Player player, Level level, BlockPos pos, ToolType type,
+	public static ItemStack buildTool(@Nullable Player player, ServerLevel level, BlockPos pos, ToolType type,
 			float goodness) {
-
-		if (level.isClientSide()) {
-			return ItemStack.EMPTY;
-		}
-
 		return stamp(GearRoll.ofType(type, goodness, sceneAt(level, pos, player), level.getRandom()));
 	}
 
 	/** Reads what a {@link GearRoll} needs to know about where, and for whom, gear is being made. */
-	private static GearRoll.Scene sceneAt(Level level, BlockPos pos, @Nullable Player opener) {
+	private static GearRoll.Scene sceneAt(ServerLevel level, BlockPos pos, @Nullable Player opener) {
 		Holder<Biome> biomeHolder = level.getBiome(pos);
 
 		String biomeKey = "unknown";
@@ -701,7 +623,7 @@ public class LootUtils {
 
 		GearRoll.Place place = new GearRoll.Place(biomeKey, biomeHolder.value().getBaseTemperature(),
 				level.dimension().identifier().toString());
-		long worldSeed = level instanceof ServerLevel serverLevel ? serverLevel.getSeed() : 0L;
+		long worldSeed = level.getSeed();
 		GearRoll.Owner owner = opener == null ? null
 				: new GearRoll.Owner(opener.getStringUUID(), opener.getDisplayName().getString());
 
@@ -752,6 +674,21 @@ public class LootUtils {
 		refreshDerivedComponents(gear);
 
 		return gear;
+	}
+
+	/** A registry id as words: {@code minecraft:dark_forest} becomes "Dark Forest". */
+	public static String titleCase(String id) {
+		StringBuilder result = new StringBuilder();
+		for (String word : id.substring(id.indexOf(':') + 1).split("_")) {
+			if (word.isEmpty()) {
+				continue;
+			}
+			if (!result.isEmpty()) {
+				result.append(' ');
+			}
+			result.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+		}
+		return result.toString();
 	}
 
 	private static final int[] ROMAN_VALUES = { 1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1 };

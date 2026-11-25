@@ -11,7 +11,8 @@ import net.minecraft.world.item.ItemStack;
  * health in the hurt hook) so kills are credited no matter how the trait's
  * tool finished the job. Reached through
  * {@link dev.marston.randomloot.platform.GameHooks#kill}, which says what a
- * loader hands it; NeoForge also calls on the client, hence the side check.
+ * loader hands it; NeoForge also calls on the client, which TraitDispatch.kill
+ * ignores.
  */
 public final class KillDispatcher {
 
@@ -19,10 +20,6 @@ public final class KillDispatcher {
 	}
 
 	public static void onLivingDeath(LivingEntity victim, DamageSource source) {
-		if (victim.level().isClientSide()) {
-			return;
-		}
-
 		if (!(source.getEntity() instanceof LivingEntity killer)) {
 			return;
 		}

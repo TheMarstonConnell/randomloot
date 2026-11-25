@@ -31,7 +31,7 @@ public abstract class AbstractModifier implements Modifier {
 	protected String name;
 
 	private int level;
-	private List<Stored<?>> stored = List.of();
+	private final List<Stored<?>> stored = new ArrayList<>();
 
 	/** Called once by the registry, straight after construction. */
 	void bind(TraitDeclaration declaration) {
@@ -71,9 +71,6 @@ public abstract class AbstractModifier implements Modifier {
 	/** Declares a field of any other shape, with how to read and write it. */
 	protected final <T> Stored<T> stored(String key, T initial, Stored.Reader<T> reader, Stored.Writer<T> writer) {
 		Stored<T> field = new Stored<>(key, initial, reader, writer);
-		if (this.stored.isEmpty()) {
-			this.stored = new ArrayList<>(2);
-		}
 		this.stored.add(field);
 		return field;
 	}
@@ -104,6 +101,9 @@ public abstract class AbstractModifier implements Modifier {
 	 */
 	@Override
 	public String name() {
+		if (this.declaration.maxedName != null && !canLevel()) {
+			return this.declaration.maxedName;
+		}
 		if (this.declaration.levelKey == null || this.level == this.declaration.minLevel) {
 			return this.name;
 		}
@@ -178,7 +178,7 @@ public abstract class AbstractModifier implements Modifier {
 	public Component displayName() {
 		String full = name();
 		if (hasDynamicName() || name == null || !full.startsWith(name)) {
-			// Custom full names (e.g. Unbreaking's maxed-out "Unbreakable") stay literal so
+			// Custom full names (e.g. a declared maxed name like "Unbreakable") stay literal so
 			// a base-name lang entry can't mask them.
 			return Component.literal(full);
 		}
@@ -186,10 +186,5 @@ public abstract class AbstractModifier implements Modifier {
 		// "<translated Poisonous> II".
 		return Component.translatableWithFallback("modifier.randomloot." + tagName() + ".name", name)
 				.append(full.substring(name.length()));
-	}
-
-	@Override
-	public void writeToLore(List<Component> list, boolean shift) {
-		list.add(Modifier.makeComp(this.displayName()).withStyle(this.color()));
 	}
 }

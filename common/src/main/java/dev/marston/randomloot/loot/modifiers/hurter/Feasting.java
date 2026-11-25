@@ -1,17 +1,14 @@
 package dev.marston.randomloot.loot.modifiers.hurter;
 
-import dev.marston.randomloot.loot.LootItem;
-import dev.marston.randomloot.loot.LootUtils;
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.EntityHurtModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 
 public class Feasting extends AbstractModifier implements EntityHurtModifier, HoldModifier {
     private static final int HUNGER_THRESHOLD = 10; // 50% of max hunger (20)
@@ -39,24 +36,13 @@ public class Feasting extends AbstractModifier implements EntityHurtModifier, Ho
             return;
         }
 
-        float baseDamage = LootItem.getAttackDamage(itemstack, LootUtils.getToolType(itemstack));
-        dealBonusDamage(hurtee, hurter, baseDamage * DAMAGE_BONUS);
+        dealBonusDamage(hurtee, hurter, attackDamage(itemstack) * DAMAGE_BONUS);
     }
 
     @Override
-    public void hold(ItemStack stack, Level level, Entity holder) {
-        if (!(holder instanceof Player player)) {
-            return;
-        }
-
-        if (isWellFed(player)) {
-            // Well fed: Apply haste for faster mining
-            MobEffectInstance haste = new MobEffectInstance(MobEffects.HASTE, 2, 0, true, false);
-            player.addEffect(haste);
-        } else {
-            // Hungry: Apply mining fatigue for slower mining
-            MobEffectInstance fatigue = new MobEffectInstance(MobEffects.MINING_FATIGUE, 2, 0, true, false);
-            player.addEffect(fatigue);
+    public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
+        if (holder instanceof Player player) {
+            player.addEffect(new MobEffectInstance(isWellFed(player) ? MobEffects.HASTE : MobEffects.MINING_FATIGUE, 2, 0, true, false));
         }
     }
 }

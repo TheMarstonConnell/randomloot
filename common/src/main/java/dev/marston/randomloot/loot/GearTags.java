@@ -51,12 +51,7 @@ public final class GearTags {
 	 * through {@link #mutate} to change it.
 	 */
 	public static CompoundTag read(ItemStack stack, String namespace) {
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			return new CompoundTag();
-		}
-
-		CompoundTag tag = mods.getTags().get(namespace);
+		CompoundTag tag = stored(stack, namespace);
 		return tag == null ? new CompoundTag() : tag;
 	}
 
@@ -65,13 +60,15 @@ public final class GearTags {
 	 * {@code !read(...).isEmpty()} on per-tick paths.
 	 */
 	public static boolean has(ItemStack stack, String namespace) {
-		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
-		if (mods == null) {
-			return false;
-		}
-
-		CompoundTag tag = mods.getTags().get(namespace);
+		CompoundTag tag = stored(stack, namespace);
 		return tag != null && !tag.isEmpty();
+	}
+
+	/** The stored {@code namespace} element, or null when the stack has none (or no component). */
+	@Nullable
+	private static CompoundTag stored(ItemStack stack, String namespace) {
+		@Nullable ToolModifier mods = stack.get(ModDataComponents.TOOL_MODIFIER.get());
+		return mods == null ? null : mods.getTags().get(namespace);
 	}
 
 	/** Applies {@code edit} to the stack's {@code namespace} element and refreshes derived components. */

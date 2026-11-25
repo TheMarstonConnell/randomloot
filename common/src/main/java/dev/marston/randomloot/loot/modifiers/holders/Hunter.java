@@ -4,12 +4,12 @@ import java.util.List;
 
 import dev.marston.randomloot.loot.modifiers.AbstractModifier;
 import dev.marston.randomloot.loot.modifiers.HoldModifier;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 
 public class Hunter extends AbstractModifier implements HoldModifier {
@@ -21,12 +21,9 @@ public class Hunter extends AbstractModifier implements HoldModifier {
     }
 
     @Override
-    public void hold(ItemStack stack, Level level, Entity holder) {
+    public void hold(ItemStack stack, ServerLevel level, LivingEntity holder) {
         // Create search box around holder
-        AABB searchBox = new AABB(
-            holder.getX() - SEARCH_RADIUS, holder.getY() - SEARCH_RADIUS, holder.getZ() - SEARCH_RADIUS,
-            holder.getX() + SEARCH_RADIUS, holder.getY() + SEARCH_RADIUS, holder.getZ() + SEARCH_RADIUS
-        );
+        AABB searchBox = AABB.ofSize(holder.position(), 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS, 2 * SEARCH_RADIUS);
 
         // Find all hostile mobs (Monster class covers most hostile mobs)
         List<Monster> hostileMobs = level.getEntitiesOfClass(Monster.class, searchBox);

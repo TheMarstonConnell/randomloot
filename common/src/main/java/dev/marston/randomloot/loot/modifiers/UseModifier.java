@@ -11,13 +11,19 @@ public interface UseModifier extends Modifier {
 	 * The gear was right-clicked on a block ({@link TraitDispatch#useOn}). Runs on the
 	 * client as well as the server, so a placing trait can predict its block.
 	 */
-	public InteractionResult use(UseOnContext ctx);
+	default InteractionResult use(UseOnContext ctx) {
+		return InteractionResult.PASS;
+	}
 
 	/**
 	 * The gear was right-clicked at nothing in particular ({@link TraitDispatch#use}), on
 	 * the server only, and only for a trait that {@link #useAnywhere}. True when it acted.
 	 */
-	public boolean use(Level level, Player player, InteractionHand hand);
+	default boolean use(Level level, Player player, InteractionHand hand) {
+		return false;
+	}
 
-	public boolean useAnywhere();
+	default boolean useAnywhere() {
+		return false;
+	}
 }
